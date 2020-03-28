@@ -6,6 +6,9 @@ It is designed to work with [monitoring mixins](https://github.com/monitoring-mi
 
 **Status: Alpha**. This is a proof of concept. It will have many holes. PRs welcome.
 
+## Building
+Makefile needs sorting out. Build with `go build cmd/g/g.go`.
+
 ## Authentication and Configuration
 This tool interacts with Grafana via its REST API. For this, you will need to establish authentication
 credentials. These are provided to `dash` via environment variables.

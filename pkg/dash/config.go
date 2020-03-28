@@ -12,7 +12,8 @@ type Config struct {
   JsonnetPath string
 }
 
-func parseEnvironment() (*Config, error) {
+// ParseEnvironment parses necessary environment variables
+func ParseEnvironment() (*Config, error) {
   var config Config
   if url, exists := os.LookupEnv("GRAFANA_URL"); exists {
     config.GrafanaURL = url

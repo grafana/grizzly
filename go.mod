@@ -1,4 +1,4 @@
-module github.com/grafana/grafana-dash
+module github.com/malcolmholmes/grafana-dash
 
 go 1.13
 

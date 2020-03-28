@@ -22,7 +22,7 @@ func main() {
   cmd:=args[0]
   jsonnetFile := args[1]
 
-  config, err := parseEnvironment()
+  config, err := dash.ParseEnvironment()
   if err != nil {
     fmt.Println("ERROR", err)
     os.Exit(1)
