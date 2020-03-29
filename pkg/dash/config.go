@@ -37,7 +37,7 @@ func ParseEnvironment() (*Config, error) {
 			path = "/" + path
 		}
 
-		config.GrafanaURL = fmt.Sprintf("%s://%s@%s", protocol, auth, host, path)
+		config.GrafanaURL = fmt.Sprintf("%s://%s@%s%s", protocol, auth, host, path)
 	}
 	return &config, nil
 }
