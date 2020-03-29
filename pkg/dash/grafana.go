@@ -2,8 +2,8 @@ package dash
 
 import (
 	"bytes"
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -11,9 +11,9 @@ import (
 // Board enscapsulates a dashboard for upload to Grafana API
 type Board struct {
 	Dashboard map[string]interface{} `json:"dashboard"`
-	FolderID int `json:"folderId"`
-	Overwrite bool `json:"overwrite"`
-	UID string
+	FolderID  int                    `json:"folderId"`
+	Overwrite bool                   `json:"overwrite"`
+	UID       string
 }
 
 // Boards encasulates a set of dashboards ready for upload
@@ -55,7 +55,7 @@ func parseDashboard(raw string) (*Board, error) {
 	if err := json.Unmarshal([]byte(raw), &board); err != nil {
 		return nil, err
 	}
-    board.UID = fmt.Sprintf("%v", board.Dashboard["uid"])
+	board.UID = fmt.Sprintf("%v", board.Dashboard["uid"])
 	return &board, nil
 }
 
@@ -77,12 +77,12 @@ func getDashboard(config Config, uid string) (*Board, error) {
 
 func postDashboard(config Config, board Board) error {
 	url := fmt.Sprintf("%s/api/dashboards/db", config.GrafanaURL)
-	
+
 	boardJSON, err := board.GetAPIJSON()
 	if err != nil {
 		return err
 	}
-	
+
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(boardJSON)))
 	if err != nil {
 		return err

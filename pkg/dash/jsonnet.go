@@ -1,7 +1,7 @@
 package dash
 
 import (
-  "github.com/google/go-jsonnet"
+	"github.com/google/go-jsonnet"
 )
 
 // ExtendedImporter does stuff
@@ -11,6 +11,7 @@ type ExtendedImporter struct {
 }
 
 type importLoader func(importedFrom, importedPath string) (c *jsonnet.Contents, foundAt string, err error)
+
 // importProcessor are executed after the file import and may modify the result
 // further
 type importProcessor func(contents, foundAt string) (c *jsonnet.Contents, err error)
@@ -66,12 +67,11 @@ func (i *ExtendedImporter) Import(importedFrom, importedPath string) (contents j
 }
 
 func evalToString(script string) (string, error) {
-  vm := jsonnet.MakeVM()
-  jPath := []string{"vendor", "lib", "." };
+	vm := jsonnet.MakeVM()
+	jPath := []string{"vendor", "lib", "."}
 
 	vm.Importer(newExtendedImporter(jPath))
 
-  result, err := vm.EvaluateSnippet("grafana-dash", script)
-  return result, err
+	result, err := vm.EvaluateSnippet("grafana-dash", script)
+	return result, err
 }
-
