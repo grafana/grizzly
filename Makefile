@@ -12,7 +12,7 @@ test:
 
 # Compilation
 dev:
-	go build -ldflags "-X main.Version=dev-${VERSION}"
+	go build -ldflags "-X main.Version=dev-${VERSION}" ./cmd/g
 
 LDFLAGS := '-s -w -extldflags "-static" -X main.Version=${VERSION}'
 static:
