@@ -12,17 +12,17 @@ test:
 
 # Compilation
 dev:
-	go build -ldflags "-X main.Version=dev-${VERSION}" ./cmd/g
+	go build -ldflags "-X main.Version=dev-${VERSION}" ./cmd/grr
 
 LDFLAGS := '-s -w -extldflags "-static" -X main.Version=${VERSION}'
 static:
-	CGO_ENABLED=0 GOOS=linux go build -ldflags=${LDFLAGS} ./cmd/g
+	CGO_ENABLED=0 GOOS=linux go build -ldflags=${LDFLAGS} ./cmd/grr
 
 install:
-	CGO_ENABLED=0 go install -ldflags=${LDFLAGS} ./cmd/g
+	CGO_ENABLED=0 go install -ldflags=${LDFLAGS} ./cmd/grr
 
 uninstall:
-	go clean -i ./cmd/g
+	go clean -i ./cmd/grr
 
 $(GOX):
 	go get -u github.com/mitchellh/gox
