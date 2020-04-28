@@ -13,7 +13,7 @@ var Version = "dev"
 func main() {
 
 	rootCmd := &cli.Command{
-		Use:     "g",
+		Use:     "grr",
 		Short:   "Grafana Dash",
 		Version: Version,
 	}
