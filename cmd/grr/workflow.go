@@ -4,11 +4,13 @@ import (
 	"github.com/go-clix/cli"
 	"github.com/malcolmholmes/grafana-dash/pkg/dash"
 )
+
 func getCmd() *cli.Command {
+
 	cmd := &cli.Command{
 		Use:   "get <dashboard-uid>",
 		Short: "retrieve dashboard json",
-		Args:  cli.Args{},
+		Args:  cli.ArgsAny(),
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 
@@ -26,7 +28,7 @@ func showCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "show <jsonnet-file>",
 		Short: "render Jsonnet dashboard as json",
-		Args:  cli.Args{},
+		Args:  cli.ArgsAny(),
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 
@@ -44,7 +46,7 @@ func diffCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "diff <jsonnet-file>",
 		Short: "compare Jsonnet with dashboard(s) in Grafana",
-		Args:  cli.Args{},
+		Args:  cli.ArgsAny(),
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 
@@ -62,7 +64,7 @@ func applyCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "apply <jsonnet-file>",
 		Short: "render Jsonnet and push dashboard(s) to Grafana",
-		Args:  cli.Args{},
+		Args:  cli.ArgsAny(),
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 
