@@ -127,9 +127,9 @@ local t = %s;
 {
   [k]: { dashboard: f.grafanaDashboards[k], folderId: 0, overwrite: true}
   for k in std.filter(
-		function(n) if std.length(t) > 0 then std.member(t, n) else true,
-		std.objectFields(f.grafanaDashboards)
-	)
+    function(n) if std.length(t) > 0 then std.member(t, n) else true,
+    std.objectFields(f.grafanaDashboards)
+  )
 }`, jsonnetFile, t)
 	output, err := evalToString(jsonnet)
 	if err != nil {
