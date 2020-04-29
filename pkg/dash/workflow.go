@@ -1,8 +1,8 @@
 package dash
 
 import (
+	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/kylelemons/godebug/diff"
 )
@@ -19,8 +19,8 @@ func Get(config Config, dashboardUID string) error {
 }
 
 // Show renders a Jsonnet dashboard as JSON, consuming a jsonnet filename
-func Show(config Config, jsonnetFile string) error {
-	boards, err := renderDashboards(jsonnetFile)
+func Show(config Config, jsonnetFile string, targets *[]string) error {
+	boards, err := renderDashboards(jsonnetFile, targets)
 	if err != nil {
 		return err
 	}
@@ -42,8 +42,8 @@ func normalize(board Board) {
 }
 
 // Diff renders a Jsonnet dashboard and compares it with what is found in Grafana
-func Diff(config Config, jsonnetFile string) error {
-	boards, err := renderDashboards(jsonnetFile)
+func Diff(config Config, jsonnetFile string, targets *[]string) error {
+	boards, err := renderDashboards(jsonnetFile, targets)
 	if err != nil {
 		return err
 	}
@@ -72,8 +72,8 @@ func Diff(config Config, jsonnetFile string) error {
 }
 
 // Apply renders a Jsonnet dashboard then pushes it to Grafana via the API
-func Apply(config Config, jsonnetFile string) error {
-	boards, err := renderDashboards(jsonnetFile)
+func Apply(config Config, jsonnetFile string, targets *[]string) error {
+	boards, err := renderDashboards(jsonnetFile, targets)
 	if err != nil {
 		return err
 	}
@@ -89,15 +89,21 @@ func Apply(config Config, jsonnetFile string) error {
 	return nil
 }
 
-func renderDashboards(jsonnetFile string) (Boards, error) {
-	template := `
-  local f = import "{{FILE}}";
-  {
-    [k]: { dashboard: f.grafanaDashboards[k], folderId: 0, overwrite: true}
-    for k in std.objectFields(f.grafanaDashboards)
-  }
-  `
-	jsonnet := strings.ReplaceAll(template, "{{FILE}}", jsonnetFile)
+func renderDashboards(jsonnetFile string, targets *[]string) (Boards, error) {
+	t := []byte("[]")
+	if len(*targets) > 0 {
+		t, _ = json.Marshal(targets)
+	}
+	jsonnet := fmt.Sprintf(`
+local f = import "%s";
+local t = %s;
+{
+  [k]: { dashboard: f.grafanaDashboards[k], folderId: 0, overwrite: true}
+  for k in std.filter(
+		function(n) if std.length(t) > 0 then std.member(t, n) else true,
+		std.objectFields(f.grafanaDashboards)
+	)
+}`, jsonnetFile, t)
 	output, err := evalToString(jsonnet)
 	if err != nil {
 		return nil, err
