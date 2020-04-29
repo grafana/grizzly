@@ -7,6 +7,7 @@ It is designed to work with [monitoring mixins](https://github.com/monitoring-mi
 **Status: Alpha**. This is a proof of concept. It will have many holes. PRs welcome.
 
 ## Authentication and Configuration
+
 This tool interacts with Grafana via its REST API. For this, you will need to establish authentication
 credentials. These are provided to `grr` via environment variables.
 
@@ -19,10 +20,17 @@ You can either provide a `GRAFANA_URL`, which can include authentication details
 * `GRAFANA_PATH`: If the Grafana instance is not hosted at the root of the domain, you can add specify a path such as `grafana`. Do not specify the initial slash.
 
 ## Commands
+
 ### grr get
 Retrieves a dashboard from Grafana, via its UID:
 ```sh
 $ grr get my-uid
+```
+
+### grr list
+List dashboard keys from file.
+```sh
+$ grr list some-mixin.libsonnet
 ```
 
 ### grr show
@@ -43,6 +51,15 @@ Uploads each dashboard rendered by the mixin to Grafana
 $ grr apply some-mixin.libsonnet
 ```
 
+## Flags
+
+### `-t, --targets strings`
+
+The `show`, `diff`, and `apply` commands accept this flag. It allows the
+targeting of dashboards by key. This can be useful if there are many dashboards
+configured in the Jsonnet file you are working with. Run `grr list` to get a
+list of the dashboard keys.
+
 ## Example
 
 Create a file, called `mydash.libsonnet`, that contains this:
@@ -50,13 +67,13 @@ Create a file, called `mydash.libsonnet`, that contains this:
 ```jsonnet
 {
   grafanaDashboards+:: {
-     "my-dash.json": {
-        "uid": "prod-overview",
-        "title": "Production Overview",
-        "tags": [ "templated" ],
-        "timezone": "browser",
-        "schemaVersion": 16,
-     },
+    'my-dash.json': {
+      uid: 'prod-overview',
+      title: 'Production Overview',
+      tags: ['templated'],
+      timezone: 'browser',
+      schemaVersion: 16,
+    },
   },
 }
 ```
