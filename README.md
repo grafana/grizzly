@@ -53,7 +53,7 @@ $ grr apply some-mixin.libsonnet
 
 ## Flags
 
-### `-t, --targets strings`
+### `-t, --target strings`
 
 The `show`, `diff`, and `apply` commands accept this flag. It allows the
 targeting of dashboards by key. This can be useful if there are many dashboards
