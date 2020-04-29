@@ -14,7 +14,7 @@ func main() {
 
 	rootCmd := &cli.Command{
 		Use:     "grr",
-		Short:   "Grafana Dash",
+		Short:   "Grizzly",
 		Version: Version,
 	}
 
