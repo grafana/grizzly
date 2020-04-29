@@ -21,6 +21,19 @@ func getCmd() *cli.Command {
 	return cmd
 }
 
+func listCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "list <jsonnet-file>",
+		Short: "list dashboard keys from file",
+	}
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		jsonnetFile := args[0]
+
+		return dash.List(jsonnetFile)
+	}
+	return cmd
+}
+
 func showCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "show <jsonnet-file>",

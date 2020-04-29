@@ -3,6 +3,7 @@ package dash
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/kylelemons/godebug/diff"
 )
@@ -15,6 +16,16 @@ func Get(config Config, dashboardUID string) error {
 	}
 	dashboardJSON, _ := board.GetDashboardJSON()
 	fmt.Println(dashboardJSON)
+	return nil
+}
+
+// List outputs the keys of the grafanaDashboards object.
+func List(jsonnetFile string) error {
+	keys, err := dashboardKeys(jsonnetFile)
+	if err != nil {
+		return err
+	}
+	fmt.Println(strings.Join(keys, "\n"))
 	return nil
 }
 
@@ -87,6 +98,22 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 		}
 	}
 	return nil
+}
+
+func dashboardKeys(jsonnetFile string) ([]string, error) {
+	jsonnet := fmt.Sprintf(`
+local f = import "%s";
+std.objectFields(f.grafanaDashboards)`, jsonnetFile)
+	output, err := evalToString(jsonnet)
+	if err != nil {
+		return nil, err
+	}
+	var keys []string
+	err = json.Unmarshal([]byte(output), &keys)
+	if err != nil {
+		return nil, err
+	}
+	return keys, nil
 }
 
 func renderDashboards(jsonnetFile string, targets *[]string) (Boards, error) {
