@@ -6,14 +6,11 @@ import (
 )
 
 func getCmd() *cli.Command {
-
 	cmd := &cli.Command{
 		Use:   "get <dashboard-uid>",
 		Short: "retrieve dashboard json",
-		Args:  cli.ArgsAny(),
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-
 		uid := args[0]
 		config, err := dash.ParseEnvironment()
 		if err != nil {
@@ -24,20 +21,32 @@ func getCmd() *cli.Command {
 	return cmd
 }
 
+func listCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "list <jsonnet-file>",
+		Short: "list dashboard keys from file",
+	}
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		jsonnetFile := args[0]
+
+		return dash.List(jsonnetFile)
+	}
+	return cmd
+}
+
 func showCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "show <jsonnet-file>",
 		Short: "render Jsonnet dashboard as json",
-		Args:  cli.ArgsAny(),
 	}
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-
 		jsonnetFile := args[0]
 		config, err := dash.ParseEnvironment()
 		if err != nil {
 			return err
 		}
-		return dash.Show(*config, jsonnetFile)
+		return dash.Show(*config, jsonnetFile, targets)
 	}
 	return cmd
 }
@@ -46,16 +55,15 @@ func diffCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "diff <jsonnet-file>",
 		Short: "compare Jsonnet with dashboard(s) in Grafana",
-		Args:  cli.ArgsAny(),
 	}
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-
 		jsonnetFile := args[0]
 		config, err := dash.ParseEnvironment()
 		if err != nil {
 			return err
 		}
-		return dash.Diff(*config, jsonnetFile)
+		return dash.Diff(*config, jsonnetFile, targets)
 	}
 	return cmd
 }
@@ -64,16 +72,15 @@ func applyCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "apply <jsonnet-file>",
 		Short: "render Jsonnet and push dashboard(s) to Grafana",
-		Args:  cli.ArgsAny(),
 	}
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-
 		jsonnetFile := args[0]
 		config, err := dash.ParseEnvironment()
 		if err != nil {
 			return err
 		}
-		return dash.Apply(*config, jsonnetFile)
+		return dash.Apply(*config, jsonnetFile, targets)
 	}
 	return cmd
 }

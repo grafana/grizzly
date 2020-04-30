@@ -6,7 +6,7 @@ import (
 	"github.com/go-clix/cli"
 )
 
-// Version is the current version of the tk command.
+// Version is the current version of the grr command.
 // To be overwritten at build time
 var Version = "dev"
 
@@ -14,13 +14,14 @@ func main() {
 
 	rootCmd := &cli.Command{
 		Use:     "grr",
-		Short:   "Grafana Dash",
+		Short:   "Grizzly",
 		Version: Version,
 	}
 
 	// workflow commands
 	rootCmd.AddCommand(
 		getCmd(),
+		listCmd(),
 		showCmd(),
 		diffCmd(),
 		applyCmd(),
