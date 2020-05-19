@@ -18,9 +18,8 @@ environment variables.
 | GRAFANA\_USER | Basic auth username if applicable. | false | `api_key` |
 | GRAFANA\_TOKEN | Basic auth password or API token. | false | - |
 
-To retrieve a token in Grafana, select the configuration option on the left (the
-cog), then 'API Keys'. From there you should be able add a new key, with
-'Editor' permissions.
+See Grafana's [Authentication API
+docs](https://grafana.com/docs/grafana/latest/http_api/auth/) for more info.
 
 ## Commands
 
