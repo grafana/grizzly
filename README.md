@@ -8,16 +8,18 @@ It is designed to work with [monitoring mixins](https://github.com/monitoring-mi
 
 ## Authentication and Configuration
 
-This tool interacts with Grafana via its REST API. For this, you will need to establish authentication
-credentials. These are provided to `grr` via environment variables.
+This tool interacts with Grafana via its REST API. For this, you will need to
+establish authentication credentials. These are provided to `grr` via
+environment variables.
 
-You can either provide a `GRAFANA_URL`, which can include authentication details, or you scan specify separately:
+| Name | Description | Required | Default |
+| --- | --- | --- | --- |
+| GRAFANA\_URL | Fully qualified domain name of your Grafana instance. | true | - |
+| GRAFANA\_USER | Basic auth username if applicable. | false | `api_key` |
+| GRAFANA\_TOKEN | Basic auth password or API token. | false | - |
 
-* `GRAFANA_PROTOCOL`: Defaults to `https`. You can set this to `http` if you Grafana instance does not use SSL.
-* `GRAFANA_USER`: Either basic auth username, or `apikey` if using an API token.
-* `GRAFANA_TOKEN`: Either an API token, or a password for Basic auth. To retrieve a token in Grafana, select the configuration option on the left (the cog), then 'API Keys'. From there you should be able add a new key, with 'Editor' permissions.
-* `GRAFANA_HOST`: The hostname for your Grafana installation.
-* `GRAFANA_PATH`: If the Grafana instance is not hosted at the root of the domain, you can add specify a path such as `grafana`. Do not specify the initial slash.
+See Grafana's [Authentication API
+docs](https://grafana.com/docs/grafana/latest/http_api/auth/) for more info.
 
 ## Commands
 
