@@ -16,12 +16,12 @@ type Config struct {
 func ParseEnvironment() (*Config, error) {
 	var config Config
 	if gu, exists := os.LookupEnv("GRAFANA_URL"); exists {
-		config.GrafanaURL = gu
+		u, err := url.Parse(gu)
+		if err != nil {
+			return nil, err
+		}
+		config.GrafanaURL = u.String()
 		if token, exists := os.LookupEnv("GRAFANA_TOKEN"); exists {
-			u, err := url.Parse(config.GrafanaURL)
-			if err != nil {
-				return nil, err
-			}
 			user, exists := os.LookupEnv("GRAFANA_USER")
 			if !exists {
 				user = "api_key"
