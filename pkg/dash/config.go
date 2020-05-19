@@ -2,7 +2,7 @@ package dash
 
 import (
 	"errors"
-	"fmt"
+	"net/url"
 	"os"
 )
 
@@ -15,29 +15,22 @@ type Config struct {
 // ParseEnvironment parses necessary environment variables
 func ParseEnvironment() (*Config, error) {
 	var config Config
-	if url, exists := os.LookupEnv("GRAFANA_URL"); exists {
-		config.GrafanaURL = url
+	if gu, exists := os.LookupEnv("GRAFANA_URL"); exists {
+		config.GrafanaURL = gu
+		if token, exists := os.LookupEnv("GRAFANA_TOKEN"); exists {
+			u, err := url.Parse(config.GrafanaURL)
+			if err != nil {
+				return nil, err
+			}
+			user, exists := os.LookupEnv("GRAFANA_USER")
+			if !exists {
+				user = "api_key"
+			}
+			u.User = url.UserPassword(user, token)
+			config.GrafanaURL = u.String()
+		}
 	} else {
-		protocol, protocolExists := os.LookupEnv("GRAFANA_PROTOCOL")
-		user, userExists := os.LookupEnv("GRAFANA_USER")
-		token, tokenExists := os.LookupEnv("GRAFANA_TOKEN")
-		host, hostExists := os.LookupEnv("GRAFANA_HOST")
-		path, pathExists := os.LookupEnv("GRAFANA_PATH")
-		if !hostExists {
-			return nil, errors.New("Either GRAFANA_URL or GRAFANA_HOST required")
-		}
-		if !protocolExists {
-			protocol = "https"
-		}
-		auth := ""
-		if userExists && tokenExists {
-			auth = fmt.Sprintf("%s:%s", user, token)
-		}
-		if pathExists {
-			path = "/" + path
-		}
-
-		config.GrafanaURL = fmt.Sprintf("%s://%s@%s%s", protocol, auth, host, path)
+		return nil, errors.New("Must set GRAFANA_URL environment variable.")
 	}
 	return &config, nil
 }
