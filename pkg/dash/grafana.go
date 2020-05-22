@@ -8,6 +8,13 @@ import (
 	"net/http"
 )
 
+// Folder encapsulates a folder object from the Grafana API
+type Folder struct {
+	Id    int64
+	Uid   string
+	Title string
+}
+
 // Board enscapsulates a dashboard for upload to Grafana API
 type Board struct {
 	Dashboard map[string]interface{} `json:"dashboard"`
@@ -57,6 +64,31 @@ func parseDashboard(raw string) (*Board, error) {
 	}
 	board.UID = fmt.Sprintf("%v", board.Dashboard["uid"])
 	return &board, nil
+}
+
+func searchFolder(config Config, name string) (*Folder, error) {
+	url := fmt.Sprintf("%s/api/search?query=%s", config.GrafanaURL, name)
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var folders []Folder
+	if err := json.Unmarshal([]byte(string(body)), &folders); err != nil {
+		return nil, err
+	}
+	var folder Folder
+	for _, f := range folders {
+		if f.Title == name {
+			folder = f
+			break
+		}
+	}
+	return &folder, nil
 }
 
 func getDashboard(config Config, uid string) (*Board, error) {
