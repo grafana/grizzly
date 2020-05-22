@@ -68,6 +68,9 @@ Create a file, called `mydash.libsonnet`, that contains this:
 
 ```jsonnet
 {
+
+  grafanaDashboardFolder: 'my-folder', // optional
+
   grafanaDashboards+:: {
     'my-dash.json': {
       uid: 'prod-overview',
