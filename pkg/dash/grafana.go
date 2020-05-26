@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"path"
 )
 
 // Folder encapsulates a folder object from the Grafana API
@@ -67,8 +69,13 @@ func parseDashboard(raw string) (*Board, error) {
 }
 
 func searchFolder(config Config, name string) (*Folder, error) {
-	url := fmt.Sprintf("%s/api/search?query=%s", config.GrafanaURL, name)
-	resp, err := http.Get(url)
+	u, err := url.Parse(config.GrafanaURL)
+	if err != nil {
+		return nil, err
+	}
+	u.Path = path.Join(u.Path, "api/search")
+	u.Query().Add("query", name)
+	resp, err := http.Get(u.String())
 	if err != nil {
 		return nil, err
 	}
@@ -92,9 +99,12 @@ func searchFolder(config Config, name string) (*Folder, error) {
 }
 
 func getDashboard(config Config, uid string) (*Board, error) {
-
-	url := fmt.Sprintf("%s/api/dashboards/uid/%s", config.GrafanaURL, uid)
-	resp, err := http.Get(url)
+	u, err := url.Parse(config.GrafanaURL)
+	if err != nil {
+		return nil, err
+	}
+	u.Path = path.Join(u.Path, "api/dashboards/uid", uid)
+	resp, err := http.Get(u.String())
 	if err != nil {
 		return nil, err
 	}
@@ -111,14 +121,16 @@ func getDashboard(config Config, uid string) (*Board, error) {
 }
 
 func postDashboard(config Config, board Board) error {
-	url := fmt.Sprintf("%s/api/dashboards/db", config.GrafanaURL)
-
+	u, err := url.Parse(config.GrafanaURL)
+	if err != nil {
+		return err
+	}
+	u.Path = path.Join(u.Path, "api/dashboards/db")
 	boardJSON, err := board.GetAPIJSON()
 	if err != nil {
 		return err
 	}
-
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(boardJSON)))
+	resp, err := http.Post(u.String(), "application/json", bytes.NewBuffer([]byte(boardJSON)))
 	if err != nil {
 		return err
 	}
