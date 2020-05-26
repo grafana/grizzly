@@ -31,7 +31,7 @@ func List(jsonnetFile string) error {
 
 // Show renders a Jsonnet dashboard as JSON, consuming a jsonnet filename
 func Show(config Config, jsonnetFile string, targets *[]string) error {
-	boards, err := renderDashboards(jsonnetFile, targets)
+	boards, err := renderDashboards(jsonnetFile, targets, 0)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func normalize(board Board) {
 
 // Diff renders a Jsonnet dashboard and compares it with what is found in Grafana
 func Diff(config Config, jsonnetFile string, targets *[]string) error {
-	boards, err := renderDashboards(jsonnetFile, targets)
+	boards, err := renderDashboards(jsonnetFile, targets, 0)
 	if err != nil {
 		return err
 	}
@@ -84,11 +84,16 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 
 // Apply renders a Jsonnet dashboard then pushes it to Grafana via the API
 func Apply(config Config, jsonnetFile string, targets *[]string) error {
-	boards, err := renderDashboards(jsonnetFile, targets)
+	folderId, err := folderId(config, jsonnetFile)
+	if err != nil {
+		var fId int64 = 0
+		folderId = &fId
+		fmt.Println("Folder not found and/or configured. Applying to \"General\" folder.")
+	}
+	boards, err := renderDashboards(jsonnetFile, targets, *folderId)
 	if err != nil {
 		return err
 	}
-
 	for name, board := range boards {
 		fmt.Printf("\n== %s ==\n", name)
 
@@ -116,7 +121,27 @@ std.objectFields(f.grafanaDashboards)`, jsonnetFile)
 	return keys, nil
 }
 
-func renderDashboards(jsonnetFile string, targets *[]string) (Boards, error) {
+func folderId(config Config, jsonnetFile string) (*int64, error) {
+	jsonnet := fmt.Sprintf(`
+local f = import "%s";
+f.grafanaDashboardFolder`, jsonnetFile)
+	output, err := evalToString(jsonnet)
+	if err != nil {
+		return nil, err
+	}
+	var name string
+	err = json.Unmarshal([]byte(output), &name)
+	if err != nil {
+		return nil, err
+	}
+	folder, err := searchFolder(config, strings.TrimSpace(name))
+	if err != nil {
+		return nil, err
+	}
+	return &folder.Id, nil
+}
+
+func renderDashboards(jsonnetFile string, targets *[]string, folderId int64) (Boards, error) {
 	t := []byte("[]")
 	if len(*targets) > 0 {
 		t, _ = json.Marshal(targets)
@@ -125,12 +150,12 @@ func renderDashboards(jsonnetFile string, targets *[]string) (Boards, error) {
 local f = import "%s";
 local t = %s;
 {
-  [k]: { dashboard: f.grafanaDashboards[k], folderId: 0, overwrite: true}
+  [k]: { dashboard: f.grafanaDashboards[k], folderId: %d, overwrite: true}
   for k in std.filter(
     function(n) if std.length(t) > 0 then std.member(t, n) else true,
     std.objectFields(f.grafanaDashboards)
   )
-}`, jsonnetFile, t)
+}`, jsonnetFile, t, folderId)
 	output, err := evalToString(jsonnet)
 	if err != nil {
 		return nil, err
