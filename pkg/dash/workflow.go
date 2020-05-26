@@ -66,6 +66,9 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 		existingBoard, err := getDashboard(config, board.UID)
 		if err != nil {
 			return fmt.Errorf("Error retrieving dashboard %s: %v", name, err)
+		} else if existingBoard.Dashboard == nil {
+			fmt.Printf("Remote dashboard not found with UID, %s\n", board.UID)
+			continue
 		}
 		normalize(*existingBoard)
 
