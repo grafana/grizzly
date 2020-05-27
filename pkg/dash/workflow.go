@@ -60,7 +60,6 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 	}
 
 	for name, board := range boards {
-		fmt.Printf("\n== %s ==\n", name)
 		normalize(board)
 
 		existingBoard, err := getDashboard(config, board.UID)
@@ -73,8 +72,9 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 		existingBoardJSON, _ := existingBoard.GetDashboardJSON()
 
 		if boardJSON == existingBoardJSON {
-			fmt.Println("No differences")
+			fmt.Println(name, "no differences")
 		} else {
+			fmt.Println(name, "changes detected:")
 			difference := diff.Diff(existingBoardJSON, boardJSON)
 			fmt.Println(difference)
 		}
@@ -84,22 +84,36 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 
 // Apply renders a Jsonnet dashboard then pushes it to Grafana via the API
 func Apply(config Config, jsonnetFile string, targets *[]string) error {
-	folderId, err := folderId(config, jsonnetFile)
+	folderID, err := folderId(config, jsonnetFile)
 	if err != nil {
-		var fId int64 = 0
-		folderId = &fId
+		var fID int64 = 0
+		folderID = &fID
 		fmt.Println("Folder not found and/or configured. Applying to \"General\" folder.")
 	}
-	boards, err := renderDashboards(jsonnetFile, targets, *folderId)
+	boards, err := renderDashboards(jsonnetFile, targets, *folderID)
 	if err != nil {
 		return err
 	}
 	for name, board := range boards {
-		fmt.Printf("\n== %s ==\n", name)
-
-		err = postDashboard(config, board)
+		normalize(board)
+		existingBoard, err := getDashboard(config, board.UID)
 		if err != nil {
-			return err
+			return fmt.Errorf("Error retrieving dashboard %s: %v", name, err)
+		}
+		normalize(*existingBoard)
+
+		boardJSON, _ := board.GetDashboardJSON()
+		existingBoardJSON, _ := existingBoard.GetDashboardJSON()
+
+		if boardJSON == existingBoardJSON {
+			fmt.Println(name, "unchanged")
+		} else {
+			fmt.Println(name, "updated")
+
+			err = postDashboard(config, board)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
