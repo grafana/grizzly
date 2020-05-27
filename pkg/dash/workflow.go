@@ -64,6 +64,10 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 		normalize(board)
 
 		existingBoard, err := getDashboard(config, board.UID)
+		if err == ErrNotFound {
+			fmt.Println("Dashboard not present in Grafana")
+			continue
+		}
 		if err != nil {
 			return fmt.Errorf("Error retrieving dashboard %s: %v", name, err)
 		}
