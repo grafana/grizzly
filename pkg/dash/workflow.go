@@ -5,7 +5,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/kylelemons/godebug/diff"
+)
+
+var (
+	red    = color.New(color.FgRed).SprintFunc()
+	yellow = color.New(color.FgYellow).SprintFunc()
+	green  = color.New(color.FgGreen).SprintFunc()
 )
 
 // Get retrieves JSON for a dashboard from Grafana, using the dashboard's UID
@@ -37,7 +44,7 @@ func Show(config Config, jsonnetFile string, targets *[]string) error {
 	}
 
 	for name, board := range boards {
-		fmt.Printf("\n== %s ==\n", name)
+		fmt.Println("Found", name)
 		j, err := board.GetDashboardJSON()
 		if err != nil {
 			return err
@@ -72,9 +79,9 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 		existingBoardJSON, _ := existingBoard.GetDashboardJSON()
 
 		if boardJSON == existingBoardJSON {
-			fmt.Println(name, "no differences")
+			fmt.Println(name, yellow("no differences"))
 		} else {
-			fmt.Println(name, "changes detected:")
+			fmt.Println(name, red("changes detected:"))
 			difference := diff.Diff(existingBoardJSON, boardJSON)
 			fmt.Println(difference)
 		}
@@ -106,9 +113,9 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 		existingBoardJSON, _ := existingBoard.GetDashboardJSON()
 
 		if boardJSON == existingBoardJSON {
-			fmt.Println(name, "unchanged")
+			fmt.Println(name, yellow("unchanged"))
 		} else {
-			fmt.Println(name, "updated")
+			fmt.Println(name, green("updated"))
 
 			err = postDashboard(config, board)
 			if err != nil {
