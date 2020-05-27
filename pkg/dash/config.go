@@ -15,8 +15,8 @@ type Config struct {
 // ParseEnvironment parses necessary environment variables
 func ParseEnvironment() (*Config, error) {
 	var config Config
-	if grafanaUrl, exists := os.LookupEnv("GRAFANA_URL"); exists {
-		u, err := url.Parse(grafanaUrl)
+	if grafanaURL, exists := os.LookupEnv("GRAFANA_URL"); exists {
+		u, err := url.Parse(grafanaURL)
 		if err != nil {
 			return nil, err
 		}
@@ -30,7 +30,7 @@ func ParseEnvironment() (*Config, error) {
 			config.GrafanaURL = u.String()
 		}
 	} else {
-		return nil, errors.New("Must set GRAFANA_URL environment variable.")
+		return nil, errors.New("Must set GRAFANA_URL environment variable")
 	}
 	return &config, nil
 }
