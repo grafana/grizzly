@@ -3,6 +3,7 @@ package dash
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -103,6 +104,12 @@ func getDashboard(config Config, uid string) (*Board, error) {
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode == 404 {
+		return nil, ErrNotFound
+	}
+	if resp.StatusCode >= 400 {
+		return nil, errors.New(resp.Status)
+	}
 	board, err := parseDashboard(string(body))
 	if err != nil {
 		return nil, err
@@ -123,7 +130,6 @@ func postDashboard(config Config, board Board) error {
 		return err
 	}
 	if resp.StatusCode != 200 {
-		fmt.Println("Non 200")
 		return fmt.Errorf("Non-200 response from Grafana: %s", resp.Status)
 	}
 	return nil
