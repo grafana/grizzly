@@ -3,9 +3,11 @@ package dash
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/kylelemons/godebug/diff"
+	"gopkg.in/fsnotify.v1"
 )
 
 // Get retrieves JSON for a dashboard from Grafana, using the dashboard's UID
@@ -37,7 +39,7 @@ func Show(config Config, jsonnetFile string, targets *[]string) error {
 	}
 
 	for name, board := range boards {
-		fmt.Printf("\n== %s ==\n", name)
+		fmt.Printf("== %s ==\n", name)
 		j, err := board.GetDashboardJSON()
 		if err != nil {
 			return err
@@ -60,7 +62,7 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 	}
 
 	for name, board := range boards {
-		fmt.Printf("\n== %s ==\n", name)
+		fmt.Printf("== %s ==\n", name)
 		normalize(board)
 
 		existingBoard, err := getDashboard(config, board.UID)
@@ -88,18 +90,18 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 
 // Apply renders a Jsonnet dashboard then pushes it to Grafana via the API
 func Apply(config Config, jsonnetFile string, targets *[]string) error {
-	folderId, err := folderId(config, jsonnetFile)
+	folderID, err := folderId(config, jsonnetFile)
 	if err != nil {
-		var fId int64 = 0
-		folderId = &fId
+		var fID int64 = 0
+		folderID = &fID
 		fmt.Println("Folder not found and/or configured. Applying to \"General\" folder.")
 	}
-	boards, err := renderDashboards(jsonnetFile, targets, *folderId)
+	boards, err := renderDashboards(jsonnetFile, targets, *folderID)
 	if err != nil {
 		return err
 	}
 	for name, board := range boards {
-		fmt.Printf("\n== %s ==\n", name)
+		fmt.Printf("== %s ==\n", name)
 
 		err = postDashboard(config, board)
 		if err != nil {
@@ -109,6 +111,49 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 	return nil
 }
 
+// Watch watches a directory for changes then pushes Jsonnet dashboards to Grafana
+// when changes are noticed
+func Watch(config Config, watchDir, jsonnetFile string, targets *[]string) error {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+	defer watcher.Close()
+
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					config, err := ParseEnvironment()
+					if err != nil {
+						log.Println("error:", err)
+					}
+					log.Println("Changes detected. Applying", jsonnetFile)
+					if err := Apply(*config, jsonnetFile, targets); err != nil {
+						log.Println("error:", err)
+					}
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Println("error:", err)
+			}
+		}
+	}()
+
+	err = watcher.Add(watchDir)
+	if err != nil {
+		return err
+	}
+	<-done
+	return nil
+}
 func dashboardKeys(jsonnetFile string) ([]string, error) {
 	jsonnet := fmt.Sprintf(`
 local f = import "%s";

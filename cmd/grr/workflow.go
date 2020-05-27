@@ -84,3 +84,23 @@ func applyCmd() *cli.Command {
 	}
 	return cmd
 }
+
+func watchCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "watch <dir-to-watch> <jsonnet-file>",
+		Short: "watch for file changes and apply",
+	}
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		watchDir := args[0]
+		jsonnetFile := args[1]
+		config, err := dash.ParseEnvironment()
+		if err != nil {
+			return err
+		}
+
+		return dash.Watch(*config, watchDir, jsonnetFile, targets)
+
+	}
+	return cmd
+}
