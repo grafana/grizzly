@@ -62,7 +62,10 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 	}
 
 	for name, board := range boards {
+<<<<<<< HEAD
 		fmt.Printf("== %s ==\n", name)
+=======
+>>>>>>> More concise output. More tankaesque
 		normalize(board)
 
 		existingBoard, err := getDashboard(config, board.UID)
@@ -79,8 +82,9 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 		existingBoardJSON, _ := existingBoard.GetDashboardJSON()
 
 		if boardJSON == existingBoardJSON {
-			fmt.Println("No differences")
+			fmt.Println(name, "no differences")
 		} else {
+			fmt.Println(name, "changes detected:")
 			difference := diff.Diff(existingBoardJSON, boardJSON)
 			fmt.Println(difference)
 		}
@@ -101,11 +105,31 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 		return err
 	}
 	for name, board := range boards {
+<<<<<<< HEAD
 		fmt.Printf("== %s ==\n", name)
 
 		err = postDashboard(config, board)
+=======
+		normalize(board)
+		existingBoard, err := getDashboard(config, board.UID)
+>>>>>>> More concise output. More tankaesque
 		if err != nil {
-			return err
+			return fmt.Errorf("Error retrieving dashboard %s: %v", name, err)
+		}
+		normalize(*existingBoard)
+
+		boardJSON, _ := board.GetDashboardJSON()
+		existingBoardJSON, _ := existingBoard.GetDashboardJSON()
+
+		if boardJSON == existingBoardJSON {
+			fmt.Println(name, "unchanged")
+		} else {
+			fmt.Println(name, "updated")
+
+			err = postDashboard(config, board)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
