@@ -123,7 +123,6 @@ func postDashboard(config Config, board Board) error {
 		return err
 	}
 	if resp.StatusCode != 200 {
-		fmt.Println("Non 200")
 		return fmt.Errorf("Non-200 response from Grafana: %s", resp.Status)
 	}
 	return nil

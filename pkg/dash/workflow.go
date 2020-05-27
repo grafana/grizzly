@@ -3,6 +3,7 @@ package dash
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/kylelemons/godebug/diff"
@@ -15,7 +16,7 @@ func Get(config Config, dashboardUID string) error {
 		return fmt.Errorf("Error retrieving dashboard %s: %v", dashboardUID, err)
 	}
 	dashboardJSON, _ := board.GetDashboardJSON()
-	fmt.Println(dashboardJSON)
+	log.Println(dashboardJSON)
 	return nil
 }
 
@@ -25,7 +26,7 @@ func List(jsonnetFile string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(strings.Join(keys, "\n"))
+	log.Println(strings.Join(keys, "\n"))
 	return nil
 }
 
@@ -37,12 +38,12 @@ func Show(config Config, jsonnetFile string, targets *[]string) error {
 	}
 
 	for name, board := range boards {
-		fmt.Printf("\n== %s ==\n", name)
+		log.Printf("== %s ==\n", name)
 		j, err := board.GetDashboardJSON()
 		if err != nil {
 			return err
 		}
-		fmt.Println(j)
+		log.Println(j)
 	}
 	return nil
 }
@@ -60,7 +61,7 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 	}
 
 	for name, board := range boards {
-		fmt.Printf("\n== %s ==\n", name)
+		log.Printf("== %s ==\n", name)
 		normalize(board)
 
 		existingBoard, err := getDashboard(config, board.UID)
@@ -73,10 +74,10 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 		existingBoardJSON, _ := existingBoard.GetDashboardJSON()
 
 		if boardJSON == existingBoardJSON {
-			fmt.Println("No differences")
+			log.Println("No differences")
 		} else {
 			difference := diff.Diff(existingBoardJSON, boardJSON)
-			fmt.Println(difference)
+			log.Println(difference)
 		}
 	}
 	return nil
@@ -88,14 +89,14 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 	if err != nil {
 		var fId int64 = 0
 		folderId = &fId
-		fmt.Println("Folder not found and/or configured. Applying to \"General\" folder.")
+		log.Println("Folder not found and/or configured. Applying to \"General\" folder.")
 	}
 	boards, err := renderDashboards(jsonnetFile, targets, *folderId)
 	if err != nil {
 		return err
 	}
 	for name, board := range boards {
-		fmt.Printf("\n== %s ==\n", name)
+		log.Printf("== %s ==\n", name)
 
 		err = postDashboard(config, board)
 		if err != nil {
