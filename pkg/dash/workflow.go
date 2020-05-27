@@ -34,7 +34,9 @@ func List(jsonnetFile string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(strings.Join(keys, "\n"))
+	for _, key := range keys {
+		fmt.Println(key, yellow("found"))
+	}
 	return nil
 }
 
@@ -46,11 +48,7 @@ func Show(config Config, jsonnetFile string, targets *[]string) error {
 	}
 
 	for name, board := range boards {
-<<<<<<< HEAD
-		fmt.Printf("== %s ==\n", name)
-=======
-		fmt.Println("Found", name)
->>>>>>> Colourise
+		fmt.Println(name, yellow("found"))
 		j, err := board.GetDashboardJSON()
 		if err != nil {
 			return err
@@ -73,10 +71,6 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 	}
 
 	for name, board := range boards {
-<<<<<<< HEAD
-		fmt.Printf("== %s ==\n", name)
-=======
->>>>>>> More concise output. More tankaesque
 		normalize(board)
 
 		existingBoard, err := getDashboard(config, board.UID)
@@ -116,14 +110,9 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 		return err
 	}
 	for name, board := range boards {
-<<<<<<< HEAD
-		fmt.Printf("== %s ==\n", name)
-
-		err = postDashboard(config, board)
-=======
 		normalize(board)
 		existingBoard, err := getDashboard(config, board.UID)
->>>>>>> More concise output. More tankaesque
+
 		if err != nil {
 			return fmt.Errorf("Error retrieving dashboard %s: %v", name, err)
 		}
