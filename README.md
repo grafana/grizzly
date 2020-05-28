@@ -1,4 +1,4 @@
-# Grizzy: A Grafana Dashboard Manager
+# Grizzly: A Grafana Dashboard Manager
 
 A utility for managing Jsonnet dashboards - uses the Grafana REST API.
 
