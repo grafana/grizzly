@@ -1,4 +1,4 @@
-module github.com/malcolmholmes/grafana-dash
+module github.com/malcolmholmes/grizzly
 
 go 1.13
 
