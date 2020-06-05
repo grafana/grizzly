@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"path"
 	"strings"
 
@@ -118,7 +119,7 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 		normalize(board)
 		existingBoard, err := getDashboard(config, board.UID)
 		if err == ErrNotFound {
-			fmt.Println(name, yellow("added"))
+			fmt.Println(name, green("added"))
 			err = postDashboard(config, board)
 			if err != nil {
 				return err
@@ -201,13 +202,27 @@ func Export(config Config, jsonnetFile, dashboardDir string, targets *[]string) 
 	if err != nil {
 		return err
 	}
-	for name, board := range boards {
-		fmt.Printf("== %s ==\n", name)
 
-		boardPath := path.Join(dashboardDir, board.Name)
+	for name, board := range boards {
 		boardJSON, err := board.GetDashboardJSON()
 		if err != nil {
 			return err
+		}
+		boardPath := path.Join(dashboardDir, board.Name)
+		existingBoardJSONBytes, err := ioutil.ReadFile(boardPath)
+		existingBoardJSON := string(existingBoardJSONBytes)
+
+		if err != nil && !os.IsNotExist(err) {
+			fmt.Println(err)
+			return err
+		}
+
+		if os.IsNotExist(err) {
+			fmt.Println(name, green("added"))
+		} else if boardJSON == existingBoardJSON {
+			fmt.Println(name, yellow("unchanged"))
+		} else {
+			fmt.Println(name, green("updated"))
 		}
 		err = ioutil.WriteFile(boardPath, []byte(boardJSON), 0644)
 		if err != nil {
