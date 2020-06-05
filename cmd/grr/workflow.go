@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/go-clix/cli"
 	"github.com/malcolmholmes/grafana-dash/pkg/dash"
 )
@@ -101,6 +103,38 @@ func watchCmd() *cli.Command {
 
 		return dash.Watch(*config, watchDir, jsonnetFile, targets)
 
+	}
+	return cmd
+}
+
+func exportCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "export <jsonnet-file> [-d <dashboard-dir>]",
+		Short: "render Jsonnet and save to a directory",
+	}
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
+	dashboardDir := cmd.Flags().StringSliceP("destination", "d", nil, "destination folder")
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		jsonnetFile := args[0]
+		config, err := dash.ParseEnvironment()
+		if err != nil {
+			return err
+		}
+		var boardDir string
+		boardDirCount := len(*dashboardDir)
+		if boardDirCount == 0 {
+			if config.GrafanaDir != "" {
+				boardDir = config.GrafanaDir
+			} else {
+				return fmt.Errorf("Directory required via -d or GRAFANA_DIR")
+			}
+		} else if boardDirCount == 1 {
+			boardDir = (*dashboardDir)[0]
+		} else if boardDirCount > 1 {
+			return fmt.Errorf("Directory required via -d or GRAFANA_DIR")
+		}
+
+		return dash.Export(*config, jsonnetFile, boardDir, targets)
 	}
 	return cmd
 }

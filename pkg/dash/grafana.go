@@ -24,6 +24,7 @@ type Board struct {
 	FolderID  int                    `json:"folderId"`
 	Overwrite bool                   `json:"overwrite"`
 	UID       string
+	Name      string
 }
 
 // Boards encasulates a set of dashboards ready for upload
@@ -55,6 +56,7 @@ func parseDashboards(raw string) (Boards, error) {
 	newBoards := make(Boards)
 	for key, board := range boards {
 		board.UID = fmt.Sprintf("%v", board.Dashboard["uid"])
+		board.Name = key
 		newBoards[key] = board
 	}
 	return newBoards, nil
@@ -70,6 +72,10 @@ func parseDashboard(raw string) (*Board, error) {
 }
 
 func searchFolder(config Config, name string) (*Folder, error) {
+	if config.GrafanaURL == "" {
+		return nil, errors.New("Must set GRAFANA_URL environment variable")
+	}
+
 	u, err := url.Parse(config.GrafanaURL)
 	if err != nil {
 		return nil, err
@@ -100,6 +106,11 @@ func searchFolder(config Config, name string) (*Folder, error) {
 }
 
 func getDashboard(config Config, uid string) (*Board, error) {
+
+	if config.GrafanaURL == "" {
+		return nil, errors.New("Must set GRAFANA_URL environment variable")
+	}
+
 	u, err := url.Parse(config.GrafanaURL)
 	if err != nil {
 		return nil, err
@@ -128,6 +139,11 @@ func getDashboard(config Config, uid string) (*Board, error) {
 }
 
 func postDashboard(config Config, board Board) error {
+
+	if config.GrafanaURL == "" {
+		return errors.New("Must set GRAFANA_URL environment variable")
+	}
+
 	u, err := url.Parse(config.GrafanaURL)
 	if err != nil {
 		return err

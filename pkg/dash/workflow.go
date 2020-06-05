@@ -3,7 +3,9 @@ package dash
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"path"
 	"strings"
 
 	"github.com/fatih/color"
@@ -100,7 +102,7 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 	return nil
 }
 
-// Apply renders a Jsonnet dashboard then pushes it to Grafana via the API
+// Apply renders Jsonnet dashboards then pushes them to Grafana via the API
 func Apply(config Config, jsonnetFile string, targets *[]string) error {
 	folderID, err := folderId(config, jsonnetFile)
 	if err != nil {
@@ -186,6 +188,35 @@ func Watch(config Config, watchDir, jsonnetFile string, targets *[]string) error
 	<-done
 	return nil
 }
+
+// Export renders Jsonnet dashboards then saves them to a directory
+func Export(config Config, jsonnetFile, dashboardDir string, targets *[]string) error {
+	folderID, err := folderId(config, jsonnetFile)
+	if err != nil {
+		var fID int64 = 0
+		folderID = &fID
+		fmt.Println("Folder not found and/or configured. Applying to \"General\" folder.")
+	}
+	boards, err := renderDashboards(jsonnetFile, targets, *folderID)
+	if err != nil {
+		return err
+	}
+	for name, board := range boards {
+		fmt.Printf("== %s ==\n", name)
+
+		boardPath := path.Join(dashboardDir, board.Name)
+		boardJSON, err := board.GetDashboardJSON()
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(boardPath, []byte(boardJSON), 0644)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func dashboardKeys(jsonnetFile string) ([]string, error) {
 	jsonnet := fmt.Sprintf(`
 local f = import "%s";

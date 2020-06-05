@@ -26,6 +26,7 @@ func main() {
 		diffCmd(),
 		applyCmd(),
 		watchCmd(),
+		exportCmd(),
 	)
 
 	// Run!
