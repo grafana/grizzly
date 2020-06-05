@@ -6,8 +6,15 @@ import (
 	"log"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/kylelemons/godebug/diff"
 	"gopkg.in/fsnotify.v1"
+)
+
+var (
+	red    = color.New(color.FgRed).SprintFunc()
+	yellow = color.New(color.FgYellow).SprintFunc()
+	green  = color.New(color.FgGreen).SprintFunc()
 )
 
 // Get retrieves JSON for a dashboard from Grafana, using the dashboard's UID
@@ -27,7 +34,12 @@ func List(jsonnetFile string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(strings.Join(keys, "\n"))
+	if len(keys) > 0 {
+		fmt.Println(yellow("Dashboards found in jsonnet:"))
+	}
+	for _, key := range keys {
+		fmt.Println(key)
+	}
 	return nil
 }
 
@@ -39,7 +51,7 @@ func Show(config Config, jsonnetFile string, targets *[]string) error {
 	}
 
 	for name, board := range boards {
-		fmt.Printf("== %s ==\n", name)
+		fmt.Println(name, yellow("found"))
 		j, err := board.GetDashboardJSON()
 		if err != nil {
 			return err
@@ -62,12 +74,11 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 	}
 
 	for name, board := range boards {
-		fmt.Printf("== %s ==\n", name)
 		normalize(board)
 
 		existingBoard, err := getDashboard(config, board.UID)
 		if err == ErrNotFound {
-			fmt.Println("Dashboard not present in Grafana")
+			fmt.Println(name, yellow("not present in Grafana"))
 			continue
 		}
 		if err != nil {
@@ -79,8 +90,9 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 		existingBoardJSON, _ := existingBoard.GetDashboardJSON()
 
 		if boardJSON == existingBoardJSON {
-			fmt.Println("No differences")
+			fmt.Println(name, yellow("no differences"))
 		} else {
+			fmt.Println(name, red("changes detected:"))
 			difference := diff.Diff(existingBoardJSON, boardJSON)
 			fmt.Println(difference)
 		}
@@ -101,11 +113,31 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 		return err
 	}
 	for name, board := range boards {
-		fmt.Printf("== %s ==\n", name)
+		normalize(board)
+		existingBoard, err := getDashboard(config, board.UID)
+		if err == ErrNotFound {
+			fmt.Println(name, yellow("added"))
+			err = postDashboard(config, board)
+			if err != nil {
+				return err
+			}
+		} else if err != nil {
+			return fmt.Errorf("Error retrieving dashboard %s: %v", name, err)
+		} else {
+			normalize(*existingBoard)
 
-		err = postDashboard(config, board)
-		if err != nil {
-			return err
+			boardJSON, _ := board.GetDashboardJSON()
+			existingBoardJSON, _ := existingBoard.GetDashboardJSON()
+
+			if boardJSON == existingBoardJSON {
+				fmt.Println(name, yellow("unchanged"))
+			} else {
+				fmt.Println(name, green("updated"))
+				err = postDashboard(config, board)
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 	return nil
