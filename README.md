@@ -65,9 +65,13 @@ dashboards from `some-mixin.libsonnet`.
 
 ### grr export
 Renders dashboards to JSON in a directory, either specified with `GRAFANA_DIR`
-or with a `-d` argument. This can be used with
+or with a second argument. This can be used with
 [Grafana Provisioning](https://grafana.com/docs/grafana/latest/administration/provisioning/)
 to provision dashboards that can be picked up immediately by Grafana.
+
+```sh
+$ grr export some-mixin.libsonnet my-provisioning-dir
+```
 
 ## Flags
 
