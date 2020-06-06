@@ -209,6 +209,9 @@ func Export(config Config, jsonnetFile, dashboardDir string, targets *[]string) 
 			return err
 		}
 		boardPath := path.Join(dashboardDir, board.Name)
+		if !strings.HasSuffix(board.Name, ".json") {
+			boardPath += ".json"
+		}
 		existingBoardJSONBytes, err := ioutil.ReadFile(boardPath)
 		existingBoardJSON := string(existingBoardJSONBytes)
 
