@@ -94,6 +94,9 @@ func watchCmd() *cli.Command {
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		if len(args) != 2 {
+			return fmt.Errorf("Expected two arguments, <dir-to-watch> <jsonnet-file>")
+		}
 		watchDir := args[0]
 		jsonnetFile := args[1]
 		config, err := dash.ParseEnvironment()
@@ -109,32 +112,32 @@ func watchCmd() *cli.Command {
 
 func exportCmd() *cli.Command {
 	cmd := &cli.Command{
-		Use:   "export <jsonnet-file> [-d <dashboard-dir>]",
+		Use:   "export <jsonnet-file> <dashboard-dir>",
 		Short: "render Jsonnet and save to a directory",
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
-	dashboardDir := cmd.Flags().StringSliceP("destination", "d", nil, "destination folder")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		if len(args) == 0 || len(args) > 2 {
+			return fmt.Errorf("Incorrect arguments, expected: <jsonnet-file> [<dashboard-dir>]")
+		}
 		jsonnetFile := args[0]
+		dashboardDir := ""
+		if len(args) == 2 {
+			dashboardDir = args[1]
+		}
 		config, err := dash.ParseEnvironment()
 		if err != nil {
 			return err
 		}
-		var boardDir string
-		boardDirCount := len(*dashboardDir)
-		if boardDirCount == 0 {
+		if dashboardDir == "" {
 			if config.GrafanaDir != "" {
-				boardDir = config.GrafanaDir
+				dashboardDir = config.GrafanaDir
 			} else {
-				return fmt.Errorf("Directory required via -d or GRAFANA_DIR")
+				return fmt.Errorf("Directory required via arg or GRAFANA_DIR")
 			}
-		} else if boardDirCount == 1 {
-			boardDir = (*dashboardDir)[0]
-		} else if boardDirCount > 1 {
-			return fmt.Errorf("Directory required via -d or GRAFANA_DIR")
 		}
 
-		return dash.Export(*config, jsonnetFile, boardDir, targets)
+		return dash.Export(*config, jsonnetFile, dashboardDir, targets)
 	}
 	return cmd
 }
