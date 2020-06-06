@@ -13,6 +13,9 @@ func getCmd() *cli.Command {
 		Short: "retrieve dashboard json",
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		if len(args) != 1 {
+			return fmt.Errorf("Expected argument: <dashboard-uid>")
+		}
 		uid := args[0]
 		config, err := dash.ParseEnvironment()
 		if err != nil {
@@ -29,6 +32,9 @@ func listCmd() *cli.Command {
 		Short: "list dashboard keys from file",
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		if len(args) != 1 {
+			return fmt.Errorf("Expected argument: <jsonnet-file>")
+		}
 		jsonnetFile := args[0]
 
 		return dash.List(jsonnetFile)
@@ -43,6 +49,9 @@ func showCmd() *cli.Command {
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		if len(args) != 1 {
+			return fmt.Errorf("Expected argument: <jsonnet-file>")
+		}
 		jsonnetFile := args[0]
 		config, err := dash.ParseEnvironment()
 		if err != nil {
@@ -60,6 +69,9 @@ func diffCmd() *cli.Command {
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		if len(args) != 1 {
+			return fmt.Errorf("Expected argument: <jsonnet-file>")
+		}
 		jsonnetFile := args[0]
 		config, err := dash.ParseEnvironment()
 		if err != nil {
@@ -77,6 +89,9 @@ func applyCmd() *cli.Command {
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		if len(args) != 1 {
+			return fmt.Errorf("Expected argument: <jsonnet-file>")
+		}
 		jsonnetFile := args[0]
 		config, err := dash.ParseEnvironment()
 		if err != nil {
