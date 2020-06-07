@@ -192,13 +192,7 @@ func Watch(config Config, watchDir, jsonnetFile string, targets *[]string) error
 
 // Export renders Jsonnet dashboards then saves them to a directory
 func Export(config Config, jsonnetFile, dashboardDir string, targets *[]string) error {
-	folderID, err := folderId(config, jsonnetFile)
-	if err != nil {
-		var fID int64 = 0
-		folderID = &fID
-		fmt.Println("Folder not found and/or configured. Applying to \"General\" folder.")
-	}
-	boards, err := renderDashboards(jsonnetFile, targets, *folderID)
+	boards, err := renderDashboards(jsonnetFile, targets, 0)
 	if err != nil {
 		return err
 	}
@@ -213,8 +207,8 @@ func Export(config Config, jsonnetFile, dashboardDir string, targets *[]string) 
 			boardPath += ".json"
 		}
 		existingBoardJSONBytes, err := ioutil.ReadFile(boardPath)
-		if err != nil && !os.IsNotExist(err) {
-			fmt.Println(err)
+		isNotExist := os.IsNotExist(err)
+		if err != nil && !isNotExist {
 			return err
 		}
 		existingBoardJSON := string(existingBoardJSONBytes)
@@ -224,7 +218,7 @@ func Export(config Config, jsonnetFile, dashboardDir string, targets *[]string) 
 			return err
 		}
 
-		if os.IsNotExist(err) {
+		if isNotExist {
 			fmt.Println(name, green("added"))
 		} else if boardJSON == existingBoardJSON {
 			fmt.Println(name, yellow("unchanged"))
