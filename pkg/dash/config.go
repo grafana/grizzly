@@ -7,7 +7,6 @@ import (
 
 // Config provides configuration to `grafana-dash`
 type Config struct {
-	GrafanaDir  string
 	GrafanaURL  string
 	JsonnetPath string
 }
@@ -15,9 +14,6 @@ type Config struct {
 // ParseEnvironment parses necessary environment variables
 func ParseEnvironment() (*Config, error) {
 	var config Config
-	if grafanaDir, exists := os.LookupEnv("GRAFANA_DIR"); exists {
-		config.GrafanaDir = grafanaDir
-	}
 	if grafanaURL, exists := os.LookupEnv("GRAFANA_URL"); exists {
 		u, err := url.Parse(grafanaURL)
 		if err != nil {
