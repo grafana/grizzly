@@ -213,10 +213,14 @@ func Export(config Config, jsonnetFile, dashboardDir string, targets *[]string) 
 			boardPath += ".json"
 		}
 		existingBoardJSONBytes, err := ioutil.ReadFile(boardPath)
-		existingBoardJSON := string(existingBoardJSONBytes)
-
 		if err != nil && !os.IsNotExist(err) {
 			fmt.Println(err)
+			return err
+		}
+		existingBoardJSON := string(existingBoardJSONBytes)
+
+		err = ioutil.WriteFile(boardPath, []byte(boardJSON), 0644)
+		if err != nil {
 			return err
 		}
 
@@ -226,10 +230,6 @@ func Export(config Config, jsonnetFile, dashboardDir string, targets *[]string) 
 			fmt.Println(name, yellow("unchanged"))
 		} else {
 			fmt.Println(name, green("updated"))
-		}
-		err = ioutil.WriteFile(boardPath, []byte(boardJSON), 0644)
-		if err != nil {
-			return err
 		}
 	}
 	return nil
