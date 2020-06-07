@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/go-clix/cli"
 	"github.com/malcolmholmes/grafana-dash/pkg/dash"
 )
@@ -11,11 +9,9 @@ func getCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "get <dashboard-uid>",
 		Short: "retrieve dashboard json",
+		Args:  cli.ArgsExact(1),
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		if len(args) != 1 {
-			return fmt.Errorf("Expected argument: <dashboard-uid>")
-		}
 		uid := args[0]
 		config, err := dash.ParseEnvironment()
 		if err != nil {
@@ -30,11 +26,9 @@ func listCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "list <jsonnet-file>",
 		Short: "list dashboard keys from file",
+		Args:  cli.ArgsExact(1),
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		if len(args) != 1 {
-			return fmt.Errorf("Expected argument: <jsonnet-file>")
-		}
 		jsonnetFile := args[0]
 
 		return dash.List(jsonnetFile)
