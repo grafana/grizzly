@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/go-clix/cli"
-	"github.com/malcolmholmes/grafana-dash/pkg/dash"
+	"github.com/malcolmholmes/grizzly/pkg/grizzly"
 )
 
 func getCmd() *cli.Command {
@@ -13,11 +13,11 @@ func getCmd() *cli.Command {
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		uid := args[0]
-		config, err := dash.ParseEnvironment()
+		config, err := grizzly.ParseEnvironment()
 		if err != nil {
 			return err
 		}
-		return dash.Get(*config, uid)
+		return grizzly.Get(*config, uid)
 	}
 	return cmd
 }
@@ -31,7 +31,7 @@ func listCmd() *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 
-		return dash.List(jsonnetFile)
+		return grizzly.List(jsonnetFile)
 	}
 	return cmd
 }
@@ -45,11 +45,11 @@ func showCmd() *cli.Command {
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		config, err := dash.ParseEnvironment()
+		config, err := grizzly.ParseEnvironment()
 		if err != nil {
 			return err
 		}
-		return dash.Show(*config, jsonnetFile, targets)
+		return grizzly.Show(*config, jsonnetFile, targets)
 	}
 	return cmd
 }
@@ -63,11 +63,11 @@ func diffCmd() *cli.Command {
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		config, err := dash.ParseEnvironment()
+		config, err := grizzly.ParseEnvironment()
 		if err != nil {
 			return err
 		}
-		return dash.Diff(*config, jsonnetFile, targets)
+		return grizzly.Diff(*config, jsonnetFile, targets)
 	}
 	return cmd
 }
@@ -81,11 +81,11 @@ func applyCmd() *cli.Command {
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		config, err := dash.ParseEnvironment()
+		config, err := grizzly.ParseEnvironment()
 		if err != nil {
 			return err
 		}
-		return dash.Apply(*config, jsonnetFile, targets)
+		return grizzly.Apply(*config, jsonnetFile, targets)
 	}
 	return cmd
 }
@@ -100,12 +100,12 @@ func watchCmd() *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		watchDir := args[0]
 		jsonnetFile := args[1]
-		config, err := dash.ParseEnvironment()
+		config, err := grizzly.ParseEnvironment()
 		if err != nil {
 			return err
 		}
 
-		return dash.Watch(*config, watchDir, jsonnetFile, targets)
+		return grizzly.Watch(*config, watchDir, jsonnetFile, targets)
 
 	}
 	return cmd
@@ -121,11 +121,11 @@ func exportCmd() *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		dashboardDir := args[1]
-		config, err := dash.ParseEnvironment()
+		config, err := grizzly.ParseEnvironment()
 		if err != nil {
 			return err
 		}
-		return dash.Export(*config, jsonnetFile, dashboardDir, targets)
+		return grizzly.Export(*config, jsonnetFile, dashboardDir, targets)
 	}
 	return cmd
 }

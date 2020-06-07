@@ -1,4 +1,4 @@
-package dash
+package grizzly
 
 import (
 	"encoding/json"
