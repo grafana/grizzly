@@ -135,11 +135,11 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 			if boardJSON == existingBoardJSON {
 				fmt.Println(name, yellow("unchanged"))
 			} else {
-				fmt.Println(name, green("updated"))
 				err = postDashboard(config, board)
 				if err != nil {
 					return err
 				}
+				fmt.Println(name, green("updated"))
 			}
 		}
 	}
