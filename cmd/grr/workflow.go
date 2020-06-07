@@ -121,11 +121,11 @@ func exportCmd() *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		dashboardDir := args[1]
-		config, err := dash.ParseEnvironment()
+		config, err := grizzly.ParseEnvironment()
 		if err != nil {
 			return err
 		}
-		return dash.Export(*config, jsonnetFile, dashboardDir, targets)
+		return grizzly.Export(*config, jsonnetFile, dashboardDir, targets)
 	}
 	return cmd
 }
