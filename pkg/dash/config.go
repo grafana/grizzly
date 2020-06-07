@@ -1,7 +1,6 @@
 package dash
 
 import (
-	"errors"
 	"net/url"
 	"os"
 )
@@ -29,8 +28,6 @@ func ParseEnvironment() (*Config, error) {
 			u.User = url.UserPassword(user, token)
 			config.GrafanaURL = u.String()
 		}
-	} else {
-		return nil, errors.New("Must set GRAFANA_URL environment variable")
 	}
 	return &config, nil
 }

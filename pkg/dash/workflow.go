@@ -3,7 +3,10 @@ package dash
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"path"
 	"strings"
 
 	"github.com/fatih/color"
@@ -100,7 +103,7 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 	return nil
 }
 
-// Apply renders a Jsonnet dashboard then pushes it to Grafana via the API
+// Apply renders Jsonnet dashboards then pushes them to Grafana via the API
 func Apply(config Config, jsonnetFile string, targets *[]string) error {
 	folderID, err := folderId(config, jsonnetFile)
 	if err != nil {
@@ -116,7 +119,7 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 		normalize(board)
 		existingBoard, err := getDashboard(config, board.UID)
 		if err == ErrNotFound {
-			fmt.Println(name, yellow("added"))
+			fmt.Println(name, green("added"))
 			err = postDashboard(config, board)
 			if err != nil {
 				return err
@@ -132,11 +135,11 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 			if boardJSON == existingBoardJSON {
 				fmt.Println(name, yellow("unchanged"))
 			} else {
-				fmt.Println(name, green("updated"))
 				err = postDashboard(config, board)
 				if err != nil {
 					return err
 				}
+				fmt.Println(name, green("updated"))
 			}
 		}
 	}
@@ -186,6 +189,46 @@ func Watch(config Config, watchDir, jsonnetFile string, targets *[]string) error
 	<-done
 	return nil
 }
+
+// Export renders Jsonnet dashboards then saves them to a directory
+func Export(config Config, jsonnetFile, dashboardDir string, targets *[]string) error {
+	boards, err := renderDashboards(jsonnetFile, targets, 0)
+	if err != nil {
+		return err
+	}
+
+	for name, board := range boards {
+		boardJSON, err := board.GetDashboardJSON()
+		if err != nil {
+			return err
+		}
+		boardPath := path.Join(dashboardDir, board.Name)
+		if !strings.HasSuffix(board.Name, ".json") {
+			boardPath += ".json"
+		}
+		existingBoardJSONBytes, err := ioutil.ReadFile(boardPath)
+		isNotExist := os.IsNotExist(err)
+		if err != nil && !isNotExist {
+			return err
+		}
+		existingBoardJSON := string(existingBoardJSONBytes)
+
+		err = ioutil.WriteFile(boardPath, []byte(boardJSON), 0644)
+		if err != nil {
+			return err
+		}
+
+		if isNotExist {
+			fmt.Println(name, green("added"))
+		} else if boardJSON == existingBoardJSON {
+			fmt.Println(name, yellow("unchanged"))
+		} else {
+			fmt.Println(name, green("updated"))
+		}
+	}
+	return nil
+}
+
 func dashboardKeys(jsonnetFile string) ([]string, error) {
 	jsonnet := fmt.Sprintf(`
 local f = import "%s";
