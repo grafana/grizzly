@@ -146,6 +146,30 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 	return nil
 }
 
+// Preview renders Jsonnet dashboards then pushes them to Grafana via the Snapshot API
+func Preview(config Config, jsonnetFile string, targets *[]string, opts *PreviewOpts) error {
+	//folderID is not used in snapshots
+	folderID := int64(0)
+	boards, err := renderDashboards(jsonnetFile, targets, folderID)
+	if err != nil {
+		return err
+	}
+	for name, board := range boards {
+		normalize(board)
+
+		s, err := postSnapshot(config, board, opts)
+		if err != nil {
+			return err
+		}
+		fmt.Println("View", name, green(s.URL))
+		fmt.Println("Delete", name, yellow(s.DeleteURL))
+	}
+	if opts.ExpiresSeconds > 0 {
+		fmt.Print(yellow(fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds)))
+	}
+	return nil
+}
+
 // Watch watches a directory for changes then pushes Jsonnet dashboards to Grafana
 // when changes are noticed
 func Watch(config Config, watchDir, jsonnetFile string, targets *[]string) error {

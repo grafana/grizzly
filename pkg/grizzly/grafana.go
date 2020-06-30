@@ -162,3 +162,65 @@ func postDashboard(config Config, board Board) error {
 	}
 	return nil
 }
+
+type SnapshotResp struct {
+	DeleteKey string `json:"deleteKey"`
+	DeleteURL string `json:"deleteUrl"`
+	Key       string `json:"key"`
+	URL       string `json:"url"`
+}
+
+type SnapshotReq struct {
+	Dashboard map[string]interface{} `json:"dashboard"`
+	Expires   int                    `json:"expires,omitempty"`
+}
+
+type PreviewOpts struct {
+	ExpiresSeconds int
+	// Other properties not yet implemented
+	// https://grafana.com/docs/grafana/latest/http_api/snapshot/#create-new-snapshot
+}
+
+func postSnapshot(config Config, board Board, opts *PreviewOpts) (*SnapshotResp, error) {
+	if config.GrafanaURL == "" {
+		return nil, errors.New("Must set GRAFANA_URL environment variable")
+	}
+
+	u, err := url.Parse(config.GrafanaURL)
+	if err != nil {
+		return nil, err
+	}
+	u.Path = path.Join(u.Path, "api/snapshots")
+
+	sr := &SnapshotReq{
+		Dashboard: board.Dashboard,
+	}
+
+	if opts.ExpiresSeconds > 0 {
+		sr.Expires = opts.ExpiresSeconds
+	}
+
+	bs, err := json.Marshal(&sr)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.Post(u.String(), "application/json", bytes.NewBuffer(bs))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response from Grafana: %s", resp.Status)
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to read response body: %w", err)
+	}
+	s := &SnapshotResp{}
+	err = json.Unmarshal(b, s)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to unmarshal response body into SnapshotResp: %w", err)
+	}
+	return s, nil
+}
