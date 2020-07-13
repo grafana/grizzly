@@ -73,6 +73,13 @@ to provision dashboards that can be picked up immediately by Grafana.
 $ grr export some-mixin.libsonnet my-provisioning-dir
 ```
 
+### grr preview
+Renders a mixin and uploads each dashboard produced as snapshots to Grafana. Prints out links for each dashboard that was uploaded.
+```sh
+$ grr preview some-mixin.libsonnet
+```
+Snapshots by default do not expire. Expiration can be set via the `-e, --expires` flag which takes a number of seconds as an argument.
+
 ## Flags
 
 ### `-t, --target strings`
