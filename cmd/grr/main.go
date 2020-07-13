@@ -27,6 +27,7 @@ func main() {
 		applyCmd(),
 		watchCmd(),
 		exportCmd(),
+		previewCmd(),
 	)
 
 	// Run!
