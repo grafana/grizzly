@@ -29,3 +29,6 @@ $(GOX):
 cross: $(GOX)
 	CGO_ENABLED=0 gox -output="dist/{{.Dir}}-{{.OS}}-{{.Arch}}" -ldflags=${LDFLAGS} -arch="amd64 arm64 arm" -os="linux" -osarch="darwin/amd64" ./cmd/g
 
+# Docker container
+container: static
+	docker build -t grafana/grizzly .

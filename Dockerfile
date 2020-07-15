@@ -1,5 +1,8 @@
-FROM golang:latest
+FROM golang
 WORKDIR /app
 COPY . .
 RUN make install
-ENTRYPOINT ["./grr"]
+
+FROM alpine
+COPY --from=0 /go/bin/grr /usr/local/bin/grr
+ENTRYPOINT ["/usr/local/bin/grr"]
