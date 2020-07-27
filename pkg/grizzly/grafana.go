@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+    "context"
+	"golang.org/x/oauth2"
 	"net/http"
 	"net/url"
 	"path"
@@ -29,6 +31,16 @@ type Board struct {
 
 // Boards encasulates a set of dashboards ready for upload
 type Boards map[string]Board
+
+// http encapsulates the HTTP Client that uses our GrafanaToken
+func grafanaHttpClient(config Config) (*http.Client) {
+    ctx := context.Background()
+    client := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{
+                AccessToken: config.GrafanaToken,
+                TokenType:   "Bearer",
+    }))
+    return client
+}
 
 // GetAPIJSON returns JSON expected by Grafana API
 func (b Board) GetAPIJSON() (string, error) {
@@ -72,6 +84,9 @@ func parseDashboard(raw string) (*Board, error) {
 }
 
 func searchFolder(config Config, name string) (*Folder, error) {
+    http := grafanaHttpClient(config)
+
+
 	if config.GrafanaURL == "" {
 		return nil, errors.New("Must set GRAFANA_URL environment variable")
 	}
@@ -111,6 +126,9 @@ func getDashboard(config Config, uid string) (*Board, error) {
 		return nil, errors.New("Must set GRAFANA_URL environment variable")
 	}
 
+
+    http := grafanaHttpClient(config)
+
 	u, err := url.Parse(config.GrafanaURL)
 	if err != nil {
 		return nil, err
@@ -143,6 +161,9 @@ func postDashboard(config Config, board Board) error {
 	if config.GrafanaURL == "" {
 		return errors.New("Must set GRAFANA_URL environment variable")
 	}
+
+
+    http := grafanaHttpClient(config)
 
 	u, err := url.Parse(config.GrafanaURL)
 	if err != nil {
@@ -204,6 +225,9 @@ func postSnapshot(config Config, board Board, opts *PreviewOpts) (*SnapshotResp,
 	if err != nil {
 		return nil, err
 	}
+
+
+    http := grafanaHttpClient(config)
 
 	resp, err := http.Post(u.String(), "application/json", bytes.NewBuffer(bs))
 	if err != nil {
