@@ -32,3 +32,7 @@ cross: $(GOX)
 # Docker container
 container: static
 	docker build -t grafana/grizzly .
+
+# CI
+drone:
+	drone jsonnet --source .drone/drone.jsonnet --target .drone/drone.yml --stream --format
