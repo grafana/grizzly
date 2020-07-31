@@ -12,9 +12,3 @@ $ chmod a+x "/usr/local/bin/grr"
 # have fun :)
 $ grr --help
 ```
-
-#### Docker container:
-https://hub.docker.com/r/grafana/grizzly
-```bash
-$ docker pull grafana/grizzly:${DRONE_TAG#v}
-```
