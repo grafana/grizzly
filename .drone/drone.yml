@@ -1,0 +1,246 @@
+---
+kind: pipeline
+name: check
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: download
+  image: golang:1.13
+  commands:
+  - go mod download
+  volumes:
+  - name: gopath
+    path: /go
+
+- name: lint
+  image: golang:1.13
+  commands:
+  - make lint
+  volumes:
+  - name: gopath
+    path: /go
+  depends_on:
+  - download
+
+- name: test
+  image: golang:1.13
+  commands:
+  - make test
+  volumes:
+  - name: gopath
+    path: /go
+  depends_on:
+  - download
+
+volumes:
+- name: gopath
+  temp: {}
+
+---
+kind: pipeline
+name: release
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: fetch-tags
+  image: golang:1.13
+  commands:
+  - git fetch origin --tags
+  volumes:
+  - name: gopath
+    path: /go
+
+- name: cross
+  image: golang:1.13
+  commands:
+  - make cross
+  volumes:
+  - name: gopath
+    path: /go
+
+- name: publish
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: GITHUB_TOKEN
+    draft: true
+    files: dist/*
+    note: "This is release ${DRONE_TAG} of Grizzly (`grr`). Check out the [CHANGELOG](CHANGELOG.md) for detailed release notes.\n## Install instructions\n\n#### Binary:\n```bash\n# download the binary (adapt os and arch as needed)\n$ curl -fSL -o \"/usr/local/bin/grr\" \"https://github.com/grafana/grizzly/releases/download/${DRONE_TAG}/grr-linux-amd64\"\n\n# make it executable\n$ chmod a+x \"/usr/local/bin/grr\"\n\n# have fun :)\n$ grr --help\n```\n\n#### Docker container:\nhttps://hub.docker.com/r/grafana/grizzly\n```bash\n$ docker pull grafana/grizzly:${DRONE_TAG#v}\n```\n"
+    title: ${DRONE_TAG}
+
+volumes:
+- name: gopath
+  temp: {}
+
+trigger:
+  event:
+  - tag
+
+depends_on:
+- check
+
+---
+kind: pipeline
+name: docker-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: static
+  image: golang:1.13
+  commands:
+  - make static
+  volumes:
+  - name: gopath
+    path: /go
+
+- name: container
+  image: plugins/docker
+  settings:
+    auto_tag: true
+    auto_tag_suffix: amd64
+    password:
+      from_secret: docker_password
+    repo: grafana/grizzly
+    username:
+      from_secret: docker_username
+
+volumes:
+- name: gopath
+  temp: {}
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/heads/docker
+  - refs/tags/v*
+
+depends_on:
+- check
+
+---
+kind: pipeline
+name: docker-arm
+
+platform:
+  os: linux
+  arch: arm
+
+steps:
+- name: static
+  image: golang:1.13
+  commands:
+  - make static
+  volumes:
+  - name: gopath
+    path: /go
+
+- name: container
+  image: plugins/docker
+  settings:
+    auto_tag: true
+    auto_tag_suffix: arm
+    password:
+      from_secret: docker_password
+    repo: grafana/grizzly
+    username:
+      from_secret: docker_username
+
+volumes:
+- name: gopath
+  temp: {}
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/heads/docker
+  - refs/tags/v*
+
+depends_on:
+- check
+
+---
+kind: pipeline
+name: docker-arm64
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+- name: static
+  image: golang:1.13
+  commands:
+  - make static
+  volumes:
+  - name: gopath
+    path: /go
+
+- name: container
+  image: plugins/docker
+  settings:
+    auto_tag: true
+    auto_tag_suffix: arm64
+    password:
+      from_secret: docker_password
+    repo: grafana/grizzly
+    username:
+      from_secret: docker_username
+
+volumes:
+- name: gopath
+  temp: {}
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/heads/docker
+  - refs/tags/v*
+
+depends_on:
+- check
+
+---
+kind: pipeline
+name: manifest
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: manifest
+  image: plugins/manifest
+  settings:
+    auto_tag: true
+    ignore_missing: true
+    password:
+      from_secret: docker_password
+    spec: .drone/docker-manifest.tmpl
+    username:
+      from_secret: docker_username
+
+volumes:
+- name: gopath
+  temp: {}
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/heads/docker
+  - refs/tags/v*
+
+depends_on:
+- docker-amd64
+- docker-arm
+- docker-arm64
+
+...
