@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/go-clix/cli"
-	"github.com/malcolmholmes/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
 func getCmd() *cli.Command {
