@@ -1,4 +1,4 @@
-module github.com/malcolmholmes/grizzly
+module github.com/grafana/grizzly
 
 go 1.13
 
