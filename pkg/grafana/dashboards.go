@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"gopkg.in/yaml.v2"
@@ -105,7 +106,11 @@ type SnapshotResp struct {
 
 func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, error) {
 
-	url, err := getGrafanaURL("api/snapshots")
+	urlSnapshot, err := getGrafanaURL("api/snapshots")
+	if err != nil {
+		return nil, err
+	}
+	grafanaURL, err := getGrafanaHost()
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +132,7 @@ func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, er
 		return nil, err
 	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(bs))
+	resp, err := http.Post(urlSnapshot, "application/json", bytes.NewBuffer(bs))
 	if err != nil {
 		return nil, err
 	}
@@ -144,6 +149,22 @@ func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, er
 	err = json.Unmarshal(b, s)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to unmarshal response body into SnapshotResp: %w", err)
+	}
+	urlResponse, err := url.Parse(s.URL)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to parse grafana snapshot url: %w", err)
+	}
+	if urlResponse.Hostname() != grafanaURL.Hostname() {
+		urlResponse.Host = grafanaURL.Hostname()
+		s.URL = urlResponse.String()
+	}
+	urlDelete, err := url.Parse(s.DeleteURL)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to parse grafana snapshot url: %w", err)
+	}
+	if urlDelete.Hostname() != grafanaURL.Hostname() {
+		urlDelete.Host = grafanaURL.Hostname()
+		s.DeleteURL = urlDelete.String()
 	}
 	return s, nil
 }
