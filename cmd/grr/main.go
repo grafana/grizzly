@@ -11,6 +11,7 @@ import (
 var Version = "dev"
 
 func main() {
+	log.SetFlags(0)
 
 	rootCmd := &cli.Command{
 		Use:     "grr",

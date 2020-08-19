@@ -49,7 +49,7 @@ func showCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Show(*config, jsonnetFile, targets)
+		return grizzly.Show(*config, jsonnetFile, *targets)
 	}
 	return cmd
 }
@@ -67,7 +67,7 @@ func diffCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Diff(*config, jsonnetFile, targets)
+		return grizzly.Diff(*config, jsonnetFile, *targets)
 	}
 	return cmd
 }
@@ -85,7 +85,7 @@ func applyCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Apply(*config, jsonnetFile, targets)
+		return grizzly.Apply(*config, jsonnetFile, *targets)
 	}
 	return cmd
 }
@@ -105,7 +105,7 @@ func watchCmd() *cli.Command {
 			return err
 		}
 
-		return grizzly.Watch(*config, watchDir, jsonnetFile, targets)
+		return grizzly.Watch(*config, watchDir, jsonnetFile, *targets)
 
 	}
 	return cmd
@@ -133,7 +133,7 @@ func previewCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Preview(*config, jsonnetFile, targets, opts)
+		return grizzly.Preview(*config, jsonnetFile, *targets, opts)
 	}
 	return cmd
 }
@@ -152,7 +152,7 @@ func exportCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Export(*config, jsonnetFile, dashboardDir, targets)
+		return grizzly.Export(*config, jsonnetFile, dashboardDir, *targets)
 	}
 	return cmd
 }

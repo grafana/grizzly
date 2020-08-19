@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/fatih/color"
@@ -47,14 +48,14 @@ func List(jsonnetFile string) error {
 }
 
 // Show renders a Jsonnet dashboard as JSON, consuming a jsonnet filename
-func Show(config Config, jsonnetFile string, targets *[]string) error {
+func Show(config Config, jsonnetFile string, targets []string) error {
 	boards, err := renderDashboards(jsonnetFile, targets, 0)
 	if err != nil {
 		return err
 	}
 
-	for name, board := range boards {
-		fmt.Println(name, yellow("found"))
+	for _, board := range boards {
+		log.Printf(yellow("found %s"), board.UID())
 		j, err := board.GetDashboardJSON()
 		if err != nil {
 			return err
@@ -64,38 +65,31 @@ func Show(config Config, jsonnetFile string, targets *[]string) error {
 	return nil
 }
 
-func normalize(board Board) {
-	board.Dashboard["version"] = nil
-	board.Dashboard["id"] = nil
-}
-
 // Diff renders a Jsonnet dashboard and compares it with what is found in Grafana
-func Diff(config Config, jsonnetFile string, targets *[]string) error {
+func Diff(config Config, jsonnetFile string, targets []string) error {
 	boards, err := renderDashboards(jsonnetFile, targets, 0)
 	if err != nil {
 		return err
 	}
 
-	for name, board := range boards {
-		normalize(board)
-
-		existingBoard, err := getDashboard(config, board.UID)
+	for _, board := range boards {
+		uid := board.UID()
+		existingBoard, err := getDashboard(config, board.UID())
 		if err == ErrNotFound {
-			fmt.Println(name, yellow("not present in Grafana"))
+			log.Println(uid, yellow("not present in Grafana"))
 			continue
 		}
 		if err != nil {
-			return fmt.Errorf("Error retrieving dashboard %s: %v", name, err)
+			return fmt.Errorf("Error retrieving dashboard %s: %v", uid, err)
 		}
-		normalize(*existingBoard)
 
 		boardJSON, _ := board.GetDashboardJSON()
 		existingBoardJSON, _ := existingBoard.GetDashboardJSON()
 
 		if boardJSON == existingBoardJSON {
-			fmt.Println(name, yellow("no differences"))
+			fmt.Println(uid, yellow("no differences"))
 		} else {
-			fmt.Println(name, red("changes detected:"))
+			fmt.Println(uid, red("changes detected:"))
 			difference := diff.Diff(existingBoardJSON, boardJSON)
 			fmt.Println(difference)
 		}
@@ -104,7 +98,7 @@ func Diff(config Config, jsonnetFile string, targets *[]string) error {
 }
 
 // Apply renders Jsonnet dashboards then pushes them to Grafana via the API
-func Apply(config Config, jsonnetFile string, targets *[]string) error {
+func Apply(config Config, jsonnetFile string, targets []string) error {
 	folderID, err := folderId(config, jsonnetFile)
 	if err != nil {
 		var fID int64 = 0
@@ -115,54 +109,63 @@ func Apply(config Config, jsonnetFile string, targets *[]string) error {
 	if err != nil {
 		return err
 	}
-	for name, board := range boards {
-		normalize(board)
-		existingBoard, err := getDashboard(config, board.UID)
-		if err == ErrNotFound {
-			fmt.Println(name, green("added"))
-			err = postDashboard(config, board)
-			if err != nil {
+	for _, k := range boardKeys(boards) {
+		board := boards[k]
+
+		uid := board.UID()
+		existingBoard, err := getDashboard(config, uid)
+
+		switch err {
+		case ErrNotFound: // create new
+			fmt.Println(uid, green("added"))
+			if err := postDashboard(config, board); err != nil {
 				return err
 			}
-		} else if err != nil {
-			return fmt.Errorf("Error retrieving dashboard %s: %v", name, err)
-		} else {
-			normalize(*existingBoard)
-
+		case nil: // update
 			boardJSON, _ := board.GetDashboardJSON()
 			existingBoardJSON, _ := existingBoard.GetDashboardJSON()
 
 			if boardJSON == existingBoardJSON {
-				fmt.Println(name, yellow("unchanged"))
-			} else {
-				err = postDashboard(config, board)
-				if err != nil {
-					return err
-				}
-				fmt.Println(name, green("updated"))
+				fmt.Println(uid, yellow("unchanged"))
+				continue
 			}
+
+			if err = postDashboard(config, board); err != nil {
+				return err
+			}
+			log.Println(uid, green("updated"))
+
+		default: // failed
+			return fmt.Errorf("Error retrieving dashboard %s: %v", uid, err)
 		}
 	}
 	return nil
 }
 
+func boardKeys(b Boards) (keys []string) {
+	for k := range b {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 // Preview renders Jsonnet dashboards then pushes them to Grafana via the Snapshot API
-func Preview(config Config, jsonnetFile string, targets *[]string, opts *PreviewOpts) error {
+func Preview(config Config, jsonnetFile string, targets []string, opts *PreviewOpts) error {
 	//folderID is not used in snapshots
 	folderID := int64(0)
 	boards, err := renderDashboards(jsonnetFile, targets, folderID)
 	if err != nil {
 		return err
 	}
-	for name, board := range boards {
-		normalize(board)
-
+	for _, board := range boards {
+		uid := board.UID()
 		s, err := postSnapshot(config, board, opts)
 		if err != nil {
 			return err
 		}
-		fmt.Println("View", name, green(s.URL))
-		fmt.Println("Delete", name, yellow(s.DeleteURL))
+		fmt.Println("View", uid, green(s.URL))
+		fmt.Println("Delete", uid, yellow(s.DeleteURL))
 	}
 	if opts.ExpiresSeconds > 0 {
 		fmt.Print(yellow(fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds)))
@@ -172,7 +175,7 @@ func Preview(config Config, jsonnetFile string, targets *[]string, opts *Preview
 
 // Watch watches a directory for changes then pushes Jsonnet dashboards to Grafana
 // when changes are noticed
-func Watch(config Config, watchDir, jsonnetFile string, targets *[]string) error {
+func Watch(config Config, watchDir, jsonnetFile string, targets []string) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -215,19 +218,20 @@ func Watch(config Config, watchDir, jsonnetFile string, targets *[]string) error
 }
 
 // Export renders Jsonnet dashboards then saves them to a directory
-func Export(config Config, jsonnetFile, dashboardDir string, targets *[]string) error {
+func Export(config Config, jsonnetFile, dashboardDir string, targets []string) error {
 	boards, err := renderDashboards(jsonnetFile, targets, 0)
 	if err != nil {
 		return err
 	}
 
-	for name, board := range boards {
+	for _, board := range boards {
+		uid := board.UID()
 		boardJSON, err := board.GetDashboardJSON()
 		if err != nil {
 			return err
 		}
-		boardPath := path.Join(dashboardDir, board.Name)
-		if !strings.HasSuffix(board.Name, ".json") {
+		boardPath := path.Join(dashboardDir, uid)
+		if !strings.HasSuffix(uid, ".json") {
 			boardPath += ".json"
 		}
 		existingBoardJSONBytes, err := ioutil.ReadFile(boardPath)
@@ -243,11 +247,11 @@ func Export(config Config, jsonnetFile, dashboardDir string, targets *[]string) 
 		}
 
 		if isNotExist {
-			fmt.Println(name, green("added"))
+			fmt.Println(uid, green("added"))
 		} else if boardJSON == existingBoardJSON {
-			fmt.Println(name, yellow("unchanged"))
+			fmt.Println(uid, yellow("unchanged"))
 		} else {
-			fmt.Println(name, green("updated"))
+			fmt.Println(uid, green("updated"))
 		}
 	}
 	return nil
@@ -289,28 +293,33 @@ f.grafanaDashboardFolder`, jsonnetFile)
 	return &folder.Id, nil
 }
 
-func renderDashboards(jsonnetFile string, targets *[]string, folderId int64) (Boards, error) {
-	t := []byte("[]")
-	if len(*targets) > 0 {
-		t, _ = json.Marshal(targets)
-	}
-	jsonnet := fmt.Sprintf(`
-local f = import "%s";
-local t = %s;
-{
-  [k]: { dashboard: f.grafanaDashboards[k], folderId: %d, overwrite: true}
-  for k in std.filter(
-    function(n) if std.length(t) > 0 then std.member(t, n) else true,
-    std.objectFields(f.grafanaDashboards)
-  )
-}`, jsonnetFile, t, folderId)
-	output, err := evalToString(jsonnet)
+func renderDashboards(jsonnetFile string, targets []string, folderId int64) (Boards, error) {
+	jsonnet := fmt.Sprintf(`(import "%s").grafanaDashboards`, jsonnetFile)
+	data, err := evalToString(jsonnet)
 	if err != nil {
 		return nil, err
 	}
-	boards, err := parseDashboards(output)
-	if err != nil {
+
+	var boards Boards
+	if err := json.Unmarshal([]byte(data), &boards); err != nil {
 		return nil, err
 	}
+
+	if len(targets) == 0 {
+		return boards, nil
+	}
+
+	// TODO(sh0rez): use process.Matcher of Tanka instead
+Outer:
+	for key, b := range boards {
+		uid := b.UID()
+		for _, t := range targets {
+			if t == uid {
+				continue Outer
+			}
+		}
+		delete(boards, key)
+	}
+
 	return boards, nil
 }
