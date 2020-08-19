@@ -39,10 +39,7 @@ func (b *Board) UnmarshalJSON(data []byte) error {
 }
 
 func (b Board) UID() string {
-	if s, ok := b.Dashboard["uid"]; ok {
-		return s.(string)
-	}
-	panic("no uid")
+	return b.Dashboard["uid"].(string)
 }
 
 // Boards encasulates a set of dashboards ready for upload
