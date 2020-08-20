@@ -9,6 +9,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"text/tabwriter"
 
 	rulefmt "github.com/cortexproject/cortex/pkg/ruler/legacy_rulefmt"
 	"github.com/fatih/color"
@@ -37,43 +38,46 @@ func Get(config Config, dashboardUID string) error {
 
 // List outputs the keys of the grafanaDashboards object.
 func List(jsonnetFile string) error {
-	keys, err := dashboardKeys(jsonnetFile)
+	res, err := parse(jsonnetFile)
 	if err != nil {
 		return err
 	}
-	if len(keys) > 0 {
-		fmt.Println(yellow("Dashboards found in jsonnet:"))
+
+	f := "%s\t%s\n"
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+
+	fmt.Fprintf(w, f, "KIND", "NAME")
+	for _, r := range res {
+		fmt.Fprintf(w, f, r.Kind(), r.UID())
 	}
-	for _, key := range keys {
-		fmt.Println(key)
-	}
-	return nil
+
+	return w.Flush()
+}
+
+type Group rulefmt.RuleGroup
+
+func (g Group) Kind() string {
+	return "Group"
+}
+
+func (g Group) UID() string {
+	return g.Name
+}
+
+// UnmarshalJSON uses the YAML parser for this specific type, because the
+// embedded prometheus types require this.
+func (g *Group) UnmarshalJSON(data []byte) error {
+	return yaml.Unmarshal(data, g)
 }
 
 type Rules struct {
-	Groups []rulefmt.RuleGroup `json:"groups"`
-}
-
-func (r Rules) String() string {
-	s := ""
-	for _, g := range r.Groups {
-		data, err := yaml.Marshal(g)
-		if err != nil {
-			panic(err)
-		}
-
-		s += "---\n"
-		s += "# kind: Rule\n"
-		s += "# name: " + g.Name + "\n"
-		s += string(data)
-	}
-
-	return s
+	Groups []Group `json:"groups"`
 }
 
 type Mixin struct {
 	Dashboards Boards `json:"grafanaDashboards"`
 	Rules      Rules  `json:"prometheusRules"`
+	Alerts     Rules  `json:"prometheusAlerts"`
 }
 
 func eval(jsonnetFile string) ([]byte, error) {
@@ -93,7 +97,7 @@ func eval(jsonnetFile string) ([]byte, error) {
 	return []byte(result), nil
 }
 
-func parse(jsonnetFile string) (*Mixin, error) {
+func parse(jsonnetFile string) (Resources, error) {
 	data, err := eval(jsonnetFile)
 	if err != nil {
 		return nil, err
@@ -104,18 +108,31 @@ func parse(jsonnetFile string) (*Mixin, error) {
 		return nil, err
 	}
 
-	return &m, nil
+	// Destructure Mixin into Resources slice
+	var r Resources
+	for _, b := range m.Dashboards {
+		r = append(r, b)
+	}
+
+	for _, g := range m.Rules.Groups {
+		r = append(r, g)
+	}
+
+	for _, g := range m.Alerts.Groups {
+		r = append(r, g)
+	}
+
+	return r, nil
 }
 
 // Show renders a Jsonnet dashboard as JSON, consuming a jsonnet filename
 func Show(config Config, jsonnetFile string, targets []string) error {
-	m, err := parse(jsonnetFile)
+	r, err := parse(jsonnetFile)
 	if err != nil {
 		return err
 	}
 
-	fmt.Print(m.Dashboards.String())
-	fmt.Print(m.Rules.String())
+	fmt.Print(r.String())
 	return nil
 }
 

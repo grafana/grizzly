@@ -53,19 +53,12 @@ func (b Board) UID() string {
 	return b.Dashboard["uid"].(string)
 }
 
+func (b Board) Kind() string {
+	return "Dashboard"
+}
+
 // Boards encasulates a set of dashboards ready for upload
 type Boards map[string]Board
-
-func (b Boards) String() string {
-	s := ""
-	for _, board := range b {
-		s += "---\n"
-		s += "# kind: Dashboard\n"
-		s += "# name: " + board.UID() + "\n"
-		s += board.String()
-	}
-	return s
-}
 
 func (bPtr *Boards) UnmarshalJSON(data []byte) error {
 	if *bPtr == nil {
