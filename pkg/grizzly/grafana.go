@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"path"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Folder encapsulates a folder object from the Grafana API
@@ -23,6 +25,15 @@ type Folder struct {
 type Board struct {
 	Dashboard map[string]interface{} `json:"dashboard"`
 	Overwrite bool                   `json:"overwrite"`
+}
+
+func (b Board) String() string {
+	data, err := yaml.Marshal(b)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(data)
 }
 
 func (b *Board) UnmarshalJSON(data []byte) error {
@@ -44,6 +55,17 @@ func (b Board) UID() string {
 
 // Boards encasulates a set of dashboards ready for upload
 type Boards map[string]Board
+
+func (b Boards) String() string {
+	s := ""
+	for _, board := range b {
+		s += "---\n"
+		s += "# kind: Dashboard\n"
+		s += "# name: " + board.UID() + "\n"
+		s += board.String()
+	}
+	return s
+}
 
 func (bPtr *Boards) UnmarshalJSON(data []byte) error {
 	if *bPtr == nil {

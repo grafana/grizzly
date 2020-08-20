@@ -10,9 +10,12 @@ import (
 	"sort"
 	"strings"
 
+	rulefmt "github.com/cortexproject/cortex/pkg/ruler/legacy_rulefmt"
 	"github.com/fatih/color"
+	"github.com/google/go-jsonnet"
 	"github.com/kylelemons/godebug/diff"
 	"gopkg.in/fsnotify.v1"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -47,21 +50,72 @@ func List(jsonnetFile string) error {
 	return nil
 }
 
+type Rules struct {
+	Groups []rulefmt.RuleGroup `json:"groups"`
+}
+
+func (r Rules) String() string {
+	s := ""
+	for _, g := range r.Groups {
+		data, err := yaml.Marshal(g)
+		if err != nil {
+			panic(err)
+		}
+
+		s += "---\n"
+		s += "# kind: Rule\n"
+		s += "# name: " + g.Name + "\n"
+		s += string(data)
+	}
+
+	return s
+}
+
+type Mixin struct {
+	Dashboards Boards `json:"grafanaDashboards"`
+	Rules      Rules  `json:"prometheusRules"`
+}
+
+func eval(jsonnetFile string) ([]byte, error) {
+	data, err := ioutil.ReadFile(jsonnetFile)
+	if err != nil {
+		return nil, err
+	}
+
+	vm := jsonnet.MakeVM()
+	vm.Importer(newExtendedImporter([]string{"vendor", "lib", "."}))
+
+	result, err := vm.EvaluateSnippet(jsonnetFile, string(data))
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(result), nil
+}
+
+func parse(jsonnetFile string) (*Mixin, error) {
+	data, err := eval(jsonnetFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var m Mixin
+	if err := json.Unmarshal([]byte(data), &m); err != nil {
+		return nil, err
+	}
+
+	return &m, nil
+}
+
 // Show renders a Jsonnet dashboard as JSON, consuming a jsonnet filename
 func Show(config Config, jsonnetFile string, targets []string) error {
-	boards, err := renderDashboards(jsonnetFile, targets, 0)
+	m, err := parse(jsonnetFile)
 	if err != nil {
 		return err
 	}
 
-	for _, board := range boards {
-		log.Printf(yellow("found %s"), board.UID())
-		j, err := board.GetDashboardJSON()
-		if err != nil {
-			return err
-		}
-		fmt.Println(j)
-	}
+	fmt.Print(m.Dashboards.String())
+	fmt.Print(m.Rules.String())
 	return nil
 }
 
