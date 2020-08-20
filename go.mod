@@ -11,3 +11,5 @@ require (
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/yaml.v2 v2.3.0
 )
+
+replace k8s.io/client-go => k8s.io/client-go v0.18.3
