@@ -9,10 +9,14 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"text/tabwriter"
 
+	rulefmt "github.com/cortexproject/cortex/pkg/ruler/legacy_rulefmt"
 	"github.com/fatih/color"
+	"github.com/google/go-jsonnet"
 	"github.com/kylelemons/godebug/diff"
 	"gopkg.in/fsnotify.v1"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -34,34 +38,101 @@ func Get(config Config, dashboardUID string) error {
 
 // List outputs the keys of the grafanaDashboards object.
 func List(jsonnetFile string) error {
-	keys, err := dashboardKeys(jsonnetFile)
+	res, err := parse(jsonnetFile)
 	if err != nil {
 		return err
 	}
-	if len(keys) > 0 {
-		fmt.Println(yellow("Dashboards found in jsonnet:"))
+
+	f := "%s\t%s\n"
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+
+	fmt.Fprintf(w, f, "KIND", "NAME")
+	for _, r := range res {
+		fmt.Fprintf(w, f, r.Kind(), r.UID())
 	}
-	for _, key := range keys {
-		fmt.Println(key)
+
+	return w.Flush()
+}
+
+type Group rulefmt.RuleGroup
+
+func (g Group) Kind() string {
+	return "Group"
+}
+
+func (g Group) UID() string {
+	return g.Name
+}
+
+// UnmarshalJSON uses the YAML parser for this specific type, because the
+// embedded prometheus types require this.
+func (g *Group) UnmarshalJSON(data []byte) error {
+	return yaml.Unmarshal(data, g)
+}
+
+type Rules struct {
+	Groups []Group `json:"groups"`
+}
+
+type Mixin struct {
+	Dashboards Boards `json:"grafanaDashboards"`
+	Rules      Rules  `json:"prometheusRules"`
+	Alerts     Rules  `json:"prometheusAlerts"`
+}
+
+func eval(jsonnetFile string) ([]byte, error) {
+	data, err := ioutil.ReadFile(jsonnetFile)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+
+	vm := jsonnet.MakeVM()
+	vm.Importer(newExtendedImporter([]string{"vendor", "lib", "."}))
+
+	result, err := vm.EvaluateSnippet(jsonnetFile, string(data))
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(result), nil
+}
+
+func parse(jsonnetFile string) (Resources, error) {
+	data, err := eval(jsonnetFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var m Mixin
+	if err := json.Unmarshal([]byte(data), &m); err != nil {
+		return nil, err
+	}
+
+	// Destructure Mixin into Resources slice
+	var r Resources
+	for _, b := range m.Dashboards {
+		r = append(r, b)
+	}
+
+	for _, g := range m.Rules.Groups {
+		r = append(r, g)
+	}
+
+	for _, g := range m.Alerts.Groups {
+		r = append(r, g)
+	}
+
+	return r, nil
 }
 
 // Show renders a Jsonnet dashboard as JSON, consuming a jsonnet filename
 func Show(config Config, jsonnetFile string, targets []string) error {
-	boards, err := renderDashboards(jsonnetFile, targets, 0)
+	r, err := parse(jsonnetFile)
 	if err != nil {
 		return err
 	}
 
-	for _, board := range boards {
-		log.Printf(yellow("found %s"), board.UID())
-		j, err := board.GetDashboardJSON()
-		if err != nil {
-			return err
-		}
-		fmt.Println(j)
-	}
+	fmt.Print(r.String())
 	return nil
 }
 
