@@ -117,25 +117,6 @@ func (e ErrUidsMissing) Error() string {
 	return fmt.Sprintf("One or more dashboards have no UID set. UIDs are required for Grizzly to operate properly:\n - %s", strings.Join(e, "\n - "))
 }
 
-// // GetAPIJSON returns JSON expected by Grafana API
-// func (b Board) GetAPIJSON() (string, error) {
-// 	b.Overwrite = true
-// 	j, err := json.MarshalIndent(b, "", "  ")
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return string(j), nil
-// }
-
-// // GetDashboardJSON returns JSON representation of a dashboard
-// func (b Board) GetDashboardJSON() (string, error) {
-// 	j, err := json.MarshalIndent(b.Dashboard, "", "  ")
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return string(j), nil
-// }
-
 func searchFolder(config Config, name string) (*Folder, error) {
 	if config.GrafanaURL == "" {
 		return nil, errors.New("Must set GRAFANA_URL environment variable")
