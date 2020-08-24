@@ -14,10 +14,14 @@ import (
 	rulefmt "github.com/cortexproject/cortex/pkg/ruler/legacy_rulefmt"
 	"github.com/fatih/color"
 	"github.com/google/go-jsonnet"
+	"github.com/grafana/grizzly/pkg/term"
 	"github.com/kylelemons/godebug/diff"
+	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
 	"gopkg.in/yaml.v2"
 )
+
+var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 var (
 	red    = color.New(color.FgRed).SprintFunc()
@@ -127,13 +131,32 @@ func parse(jsonnetFile string) (Resources, error) {
 
 // Show renders a Jsonnet dashboard as JSON, consuming a jsonnet filename
 func Show(config Config, jsonnetFile string, targets []string) error {
-	r, err := parse(jsonnetFile)
+	res, err := parse(jsonnetFile)
 	if err != nil {
 		return err
 	}
 
-	fmt.Print(r.String())
+	if interactive && len(res) >= 2 {
+		var items []term.PageItem
+		for _, r := range res {
+			items = append(items, term.PageItem{
+				Name:    fmt.Sprintf("%s/%s", r.Kind(), r.UID()),
+				Content: mustYAML(r),
+			})
+		}
+		return term.Page(items)
+	}
+
+	fmt.Print(res.String())
 	return nil
+}
+
+func mustYAML(i interface{}) string {
+	data, err := yaml.Marshal(i)
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
 }
 
 // Diff renders a Jsonnet dashboard and compares it with what is found in Grafana
