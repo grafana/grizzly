@@ -22,12 +22,22 @@ type Folder struct {
 }
 
 // Board enscapsulates a dashboard for upload to Grafana API
-type Board struct {
-	Dashboard map[string]interface{} `json:"dashboard"`
-	Overwrite bool                   `json:"overwrite"`
+type APIBoard struct {
+	Dashboard Dashboard `json:"dashboard"`
+	Overwrite bool      `json:"overwrite"`
 }
 
-func (b Board) String() string {
+func (a APIBoard) String() string {
+	data, err := json.Marshal(a)
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
+}
+
+type Dashboard map[string]interface{}
+
+func (b Dashboard) String() string {
 	data, err := yaml.Marshal(b)
 	if err != nil {
 		panic(err)
@@ -36,7 +46,7 @@ func (b Board) String() string {
 	return string(data)
 }
 
-func (b *Board) UnmarshalJSON(data []byte) error {
+func (b *Dashboard) UnmarshalJSON(data []byte) error {
 	var m map[string]interface{}
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
@@ -45,27 +55,29 @@ func (b *Board) UnmarshalJSON(data []byte) error {
 	delete(m, "version")
 	delete(m, "id")
 
-	b.Dashboard = m
+	*b = m
 	return nil
 }
 
-func (b Board) UID() string {
-	return b.Dashboard["uid"].(string)
+func (b Dashboard) UID() string {
+	return b["uid"].(string)
 }
 
-func (b Board) Kind() string {
-	return "Dashboard"
+const KindDashboard = "Dashboard"
+
+func (b Dashboard) Kind() string {
+	return KindDashboard
 }
 
 // Boards encasulates a set of dashboards ready for upload
-type Boards map[string]Board
+type Boards map[string]Dashboard
 
 func (bPtr *Boards) UnmarshalJSON(data []byte) error {
 	if *bPtr == nil {
 		*bPtr = make(Boards)
 	}
 
-	var m map[string]Board
+	var m map[string]Dashboard
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
@@ -73,7 +85,7 @@ func (bPtr *Boards) UnmarshalJSON(data []byte) error {
 	// check uids missing
 	var missing ErrUidsMissing
 	for key, board := range m {
-		if _, ok := board.Dashboard["uid"]; !ok {
+		if _, ok := board["uid"]; !ok {
 			missing = append(missing, key)
 		}
 	}
@@ -105,24 +117,24 @@ func (e ErrUidsMissing) Error() string {
 	return fmt.Sprintf("One or more dashboards have no UID set. UIDs are required for Grizzly to operate properly:\n - %s", strings.Join(e, "\n - "))
 }
 
-// GetAPIJSON returns JSON expected by Grafana API
-func (b Board) GetAPIJSON() (string, error) {
-	b.Overwrite = true
-	j, err := json.MarshalIndent(b, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
-}
+// // GetAPIJSON returns JSON expected by Grafana API
+// func (b Board) GetAPIJSON() (string, error) {
+// 	b.Overwrite = true
+// 	j, err := json.MarshalIndent(b, "", "  ")
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return string(j), nil
+// }
 
-// GetDashboardJSON returns JSON representation of a dashboard
-func (b Board) GetDashboardJSON() (string, error) {
-	j, err := json.MarshalIndent(b.Dashboard, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
-}
+// // GetDashboardJSON returns JSON representation of a dashboard
+// func (b Board) GetDashboardJSON() (string, error) {
+// 	j, err := json.MarshalIndent(b.Dashboard, "", "  ")
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return string(j), nil
+// }
 
 func searchFolder(config Config, name string) (*Folder, error) {
 	if config.GrafanaURL == "" {
@@ -158,7 +170,7 @@ func searchFolder(config Config, name string) (*Folder, error) {
 	return &folder, nil
 }
 
-func getDashboard(config Config, uid string) (*Board, error) {
+func getDashboard(config Config, uid string) (Dashboard, error) {
 	if config.GrafanaURL == "" {
 		return nil, errors.New("Must set GRAFANA_URL environment variable")
 	}
@@ -189,12 +201,12 @@ func getDashboard(config Config, uid string) (*Board, error) {
 		return nil, err
 	}
 
-	var board Board
+	var board APIBoard
 	if err := json.Unmarshal(data, &board); err != nil {
 		return nil, APIErr{err, data}
 	}
 
-	return &board, nil
+	return board.Dashboard, nil
 }
 
 type APIErr struct {
@@ -206,7 +218,7 @@ func (e APIErr) Error() string {
 	return fmt.Sprintf("Failed to parse response: %s.\n\nResponse:\n%s", e.err, string(e.body))
 }
 
-func postDashboard(config Config, board Board) error {
+func postDashboard(config Config, board Dashboard) error {
 	if config.GrafanaURL == "" {
 		return errors.New("Must set GRAFANA_URL environment variable")
 	}
@@ -216,10 +228,8 @@ func postDashboard(config Config, board Board) error {
 		return err
 	}
 	u.Path = path.Join(u.Path, "api/dashboards/db")
-	boardJSON, err := board.GetAPIJSON()
-	if err != nil {
-		return err
-	}
+
+	boardJSON := APIBoard{Dashboard: board, Overwrite: true}.String()
 
 	resp, err := http.Post(u.String(), "application/json", bytes.NewBufferString(boardJSON))
 	if err != nil {
@@ -264,7 +274,7 @@ type PreviewOpts struct {
 	// https://grafana.com/docs/grafana/latest/http_api/snapshot/#create-new-snapshot
 }
 
-func postSnapshot(config Config, board Board, opts *PreviewOpts) (*SnapshotResp, error) {
+func postSnapshot(config Config, board Dashboard, opts *PreviewOpts) (*SnapshotResp, error) {
 	if config.GrafanaURL == "" {
 		return nil, errors.New("Must set GRAFANA_URL environment variable")
 	}
@@ -276,7 +286,7 @@ func postSnapshot(config Config, board Board, opts *PreviewOpts) (*SnapshotResp,
 	u.Path = path.Join(u.Path, "api/snapshots")
 
 	sr := &SnapshotReq{
-		Dashboard: board.Dashboard,
+		Dashboard: board,
 	}
 
 	if opts.ExpiresSeconds > 0 {

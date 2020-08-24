@@ -15,7 +15,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/term"
-	"github.com/kylelemons/godebug/diff"
+	"github.com/grafana/tanka/pkg/kubernetes/util"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
 	"gopkg.in/yaml.v2"
@@ -35,8 +35,8 @@ func Get(config Config, dashboardUID string) error {
 	if err != nil {
 		return fmt.Errorf("Error retrieving dashboard %s: %v", dashboardUID, err)
 	}
-	dashboardJSON, _ := board.GetDashboardJSON()
-	fmt.Println(dashboardJSON)
+
+	fmt.Print(board.String())
 	return nil
 }
 
@@ -161,33 +161,47 @@ func mustYAML(i interface{}) string {
 
 // Diff renders a Jsonnet dashboard and compares it with what is found in Grafana
 func Diff(config Config, jsonnetFile string, targets []string) error {
-	boards, err := renderDashboards(jsonnetFile, targets, 0)
+	res, err := parse(jsonnetFile)
 	if err != nil {
 		return err
 	}
 
-	for _, board := range boards {
-		uid := board.UID()
-		existingBoard, err := getDashboard(config, board.UID())
-		if err == ErrNotFound {
-			log.Println(uid, yellow("not present in Grafana"))
+	s := ""
+
+	for _, r := range res {
+		if r.Kind() != KindDashboard {
+			log.Printf("Skipping %s/%s, not yet supported", r.Kind(), r.UID())
 			continue
 		}
-		if err != nil {
-			return fmt.Errorf("Error retrieving dashboard %s: %v", uid, err)
+
+		localBoard := r.(Dashboard)
+		uid := localBoard.UID()
+
+		liveBoard, err := getDashboard(config, uid)
+		if err == ErrNotFound {
+			liveBoard = make(Dashboard)
+		} else if err != nil {
+			return err
 		}
 
-		boardJSON, _ := board.GetDashboardJSON()
-		existingBoardJSON, _ := existingBoard.GetDashboardJSON()
+		local := localBoard.String()
+		live := liveBoard.String()
 
-		if boardJSON == existingBoardJSON {
-			fmt.Println(uid, yellow("no differences"))
-		} else {
-			fmt.Println(uid, red("changes detected:"))
-			difference := diff.Diff(existingBoardJSON, boardJSON)
-			fmt.Println(difference)
+		d, err := util.DiffStr(uid, live, local)
+		if err != nil {
+			return err
+		}
+
+		if d != "" {
+			s += d
 		}
 	}
+
+	if s == "" {
+		log.Println(color.GreenString("No differences."))
+	}
+	fmt.Print(s)
+
 	return nil
 }
 
@@ -216,8 +230,8 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 				return err
 			}
 		case nil: // update
-			boardJSON, _ := board.GetDashboardJSON()
-			existingBoardJSON, _ := existingBoard.GetDashboardJSON()
+			boardJSON := board.String()
+			existingBoardJSON := existingBoard.String()
 
 			if boardJSON == existingBoardJSON {
 				fmt.Println(uid, yellow("unchanged"))
@@ -320,7 +334,7 @@ func Export(config Config, jsonnetFile, dashboardDir string, targets []string) e
 
 	for _, board := range boards {
 		uid := board.UID()
-		boardJSON, err := board.GetDashboardJSON()
+		boardJSON, err := json.Marshal(board)
 		if err != nil {
 			return err
 		}
@@ -342,7 +356,7 @@ func Export(config Config, jsonnetFile, dashboardDir string, targets []string) e
 
 		if isNotExist {
 			fmt.Println(uid, green("added"))
-		} else if boardJSON == existingBoardJSON {
+		} else if string(boardJSON) == existingBoardJSON {
 			fmt.Println(uid, yellow("unchanged"))
 		} else {
 			fmt.Println(uid, green("updated"))
