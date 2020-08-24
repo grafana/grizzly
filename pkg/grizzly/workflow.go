@@ -166,7 +166,7 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 		return err
 	}
 
-	s := ""
+	diffs := make(map[string]string)
 
 	for _, r := range res {
 		if r.Kind() != KindDashboard {
@@ -193,15 +193,31 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 		}
 
 		if d != "" {
-			s += d
+			diffs[r.Kind()+"/"+r.UID()] = d
 		}
 	}
 
-	if s == "" {
-		log.Println(color.GreenString("No differences."))
+	// interactive: use 2-pane pager
+	if interactive && len(diffs) >= 2 {
+		var items []term.PageItem
+		for name, d := range diffs {
+			items = append(items, term.PageItem{
+				Name:    name,
+				Content: d,
+			})
+		}
+		return term.Page(items)
 	}
-	fmt.Print(s)
 
+	if len(diffs) == 0 {
+		log.Println(color.GreenString("No Differences."))
+		return nil
+	}
+
+	// non-interactive: print to stderr
+	for _, d := range diffs {
+		fmt.Print(d)
+	}
 	return nil
 }
 
