@@ -189,10 +189,15 @@ func getDashboard(config Config, uid string) (*Board, error) {
 		return nil, err
 	}
 
-	var board Board
-	if err := json.Unmarshal(data, &board); err != nil {
+	type nestedBoard struct {
+		Dashboard Board `json:"dashboard"`
+	}
+	var b nestedBoard
+	if err := json.Unmarshal(data, &b); err != nil {
 		return nil, APIErr{err, data}
 	}
+
+	board := Board{Dashboard: b.Dashboard.Dashboard}
 
 	return &board, nil
 }
