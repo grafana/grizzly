@@ -394,9 +394,16 @@ func renderDashboards(jsonnetFile string, targets []string, folderId int64) (Boa
 		return nil, err
 	}
 
-	var boards Boards
-	if err := json.Unmarshal([]byte(data), &boards); err != nil {
+	var _boards Boards
+	if err := json.Unmarshal([]byte(data), &_boards); err != nil {
 		return nil, err
+	}
+
+	boards := make(map[string]Board)
+
+	for k, b := range _boards {
+		b.FolderID = folderId
+		boards[k] = b
 	}
 
 	if len(targets) == 0 {

@@ -24,6 +24,7 @@ type Folder struct {
 // Board enscapsulates a dashboard for upload to Grafana API
 type Board struct {
 	Dashboard map[string]interface{} `json:"dashboard"`
+	FolderID  int64                  `json:"folderId"`
 	Overwrite bool                   `json:"overwrite"`
 }
 
