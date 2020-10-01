@@ -1,33 +1,25 @@
 package grizzly
 
 import (
-	"net/url"
-	"os"
+	"github.com/fatih/color"
 )
 
 // Config provides configuration to `grafana-dash`
 type Config struct {
-	GrafanaURL  string
+	Registry    Registry
 	JsonnetPath string
 }
 
-// ParseEnvironment parses necessary environment variables
-func ParseEnvironment() (*Config, error) {
-	var config Config
-	if grafanaURL, exists := os.LookupEnv("GRAFANA_URL"); exists {
-		u, err := url.Parse(grafanaURL)
-		if err != nil {
-			return nil, err
-		}
-		config.GrafanaURL = u.String()
-		if token, exists := os.LookupEnv("GRAFANA_TOKEN"); exists {
-			user, exists := os.LookupEnv("GRAFANA_USER")
-			if !exists {
-				user = "api_key"
-			}
-			u.User = url.UserPassword(user, token)
-			config.GrafanaURL = u.String()
-		}
-	}
-	return &config, nil
+var (
+	// Red makes terminal output red
+	Red = color.New(color.FgRed).SprintFunc()
+	// Yellow makes terminal output red
+	Yellow = color.New(color.FgYellow).SprintFunc()
+	// Green makes terminal output red
+	Green = color.New(color.FgGreen).SprintFunc()
+)
+
+// PreviewOpts Options to Configure a Preview
+type PreviewOpts struct {
+	ExpiresSeconds int
 }

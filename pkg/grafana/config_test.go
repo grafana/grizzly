@@ -1,4 +1,4 @@
-package grizzly
+package grafana
 
 import (
 	"os"
@@ -8,6 +8,7 @@ import (
 func TestParseEnvironment(t *testing.T) {
 	tests := map[string]struct {
 		url    string
+		path   string
 		user   string
 		token  string
 		expect string
@@ -15,26 +16,30 @@ func TestParseEnvironment(t *testing.T) {
 	}{
 		"GRAFANA_URL only": {
 			"https://my.grafana.net",
+			"/this",
 			"",
 			"",
-			"https://my.grafana.net",
+			"https://my.grafana.net/this",
 			false,
 		},
 		"w/ token": {
 			"https://my.grafana.net",
+			"/that",
 			"",
 			"token",
-			"https://api_key:token@my.grafana.net",
+			"https://api_key:token@my.grafana.net/that",
 			false,
 		},
 		"Basic auth": {
 			"https://my.grafana.net",
+			"/secure",
 			"user",
 			"pass",
-			"https://user:pass@my.grafana.net",
+			"https://user:pass@my.grafana.net/secure",
 			false,
 		},
 		"GRAFANA_URL blank": {
+			"",
 			"",
 			"",
 			"",
@@ -59,12 +64,12 @@ func TestParseEnvironment(t *testing.T) {
 			os.Unsetenv("GRAFANA_TOKEN")
 		}
 		t.Logf("Running test case, %q...", testName)
-		cfg, err := ParseEnvironment()
+		url, err := getGrafanaURL(test.path)
 		if err != nil && !test.err {
 			t.Errorf("Unexpected error getting Jsonnet files: %s", err)
 		}
-		if cfg != nil && cfg.GrafanaURL != test.expect {
-			t.Errorf("Expected GrafanaURL %s, got: %s", test.expect, cfg.GrafanaURL)
+		if url != test.expect {
+			t.Errorf("Expected GrafanaURL %s, got: %s", test.expect, url)
 		}
 	}
 }

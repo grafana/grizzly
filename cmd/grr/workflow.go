@@ -5,7 +5,7 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
-func getCmd() *cli.Command {
+func getCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "get <dashboard-uid>",
 		Short: "retrieve dashboard json",
@@ -13,16 +13,12 @@ func getCmd() *cli.Command {
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		uid := args[0]
-		config, err := grizzly.ParseEnvironment()
-		if err != nil {
-			return err
-		}
-		return grizzly.Get(*config, uid)
+		return grizzly.Get(config, uid)
 	}
 	return cmd
 }
 
-func listCmd() *cli.Command {
+func listCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "list <jsonnet-file>",
 		Short: "list dashboard keys from file",
@@ -31,12 +27,12 @@ func listCmd() *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 
-		return grizzly.List(jsonnetFile)
+		return grizzly.List(config, jsonnetFile)
 	}
 	return cmd
 }
 
-func showCmd() *cli.Command {
+func showCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "show <jsonnet-file>",
 		Short: "render Jsonnet dashboard as json",
@@ -45,16 +41,12 @@ func showCmd() *cli.Command {
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		config, err := grizzly.ParseEnvironment()
-		if err != nil {
-			return err
-		}
-		return grizzly.Show(*config, jsonnetFile, *targets)
+		return grizzly.Show(config, jsonnetFile, *targets)
 	}
 	return cmd
 }
 
-func diffCmd() *cli.Command {
+func diffCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "diff <jsonnet-file>",
 		Short: "compare Jsonnet with dashboard(s) in Grafana",
@@ -63,16 +55,12 @@ func diffCmd() *cli.Command {
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		config, err := grizzly.ParseEnvironment()
-		if err != nil {
-			return err
-		}
-		return grizzly.Diff(*config, jsonnetFile, *targets)
+		return grizzly.Diff(config, jsonnetFile, *targets)
 	}
 	return cmd
 }
 
-func applyCmd() *cli.Command {
+func applyCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "apply <jsonnet-file>",
 		Short: "render Jsonnet and push dashboard(s) to Grafana",
@@ -81,16 +69,12 @@ func applyCmd() *cli.Command {
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		config, err := grizzly.ParseEnvironment()
-		if err != nil {
-			return err
-		}
-		return grizzly.Apply(*config, jsonnetFile, *targets)
+		return grizzly.Apply(config, jsonnetFile, *targets)
 	}
 	return cmd
 }
 
-func watchCmd() *cli.Command {
+func watchCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "watch <dir-to-watch> <jsonnet-file>",
 		Short: "watch for file changes and apply",
@@ -100,18 +84,13 @@ func watchCmd() *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		watchDir := args[0]
 		jsonnetFile := args[1]
-		config, err := grizzly.ParseEnvironment()
-		if err != nil {
-			return err
-		}
-
-		return grizzly.Watch(*config, watchDir, jsonnetFile, *targets)
+		return grizzly.Watch(config, watchDir, jsonnetFile, *targets)
 
 	}
 	return cmd
 }
 
-func previewCmd() *cli.Command {
+func previewCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "preview <jsonnet-file>",
 		Short: "upload a snapshot to preview the rendered file",
@@ -129,16 +108,12 @@ func previewCmd() *cli.Command {
 			ExpiresSeconds: e,
 		}
 
-		config, err := grizzly.ParseEnvironment()
-		if err != nil {
-			return err
-		}
-		return grizzly.Preview(*config, jsonnetFile, *targets, opts)
+		return grizzly.Preview(config, jsonnetFile, *targets, opts)
 	}
 	return cmd
 }
 
-func exportCmd() *cli.Command {
+func exportCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "export <jsonnet-file> <dashboard-dir>",
 		Short: "render Jsonnet and save to a directory",
@@ -148,11 +123,7 @@ func exportCmd() *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		dashboardDir := args[1]
-		config, err := grizzly.ParseEnvironment()
-		if err != nil {
-			return err
-		}
-		return grizzly.Export(*config, jsonnetFile, dashboardDir, *targets)
+		return grizzly.Export(config, jsonnetFile, dashboardDir, *targets)
 	}
 	return cmd
 }

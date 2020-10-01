@@ -10,6 +10,8 @@ require (
 	github.com/google/go-jsonnet v0.15.1-0.20200331184325-4f4aa80dd785
 	github.com/kr/pretty v0.2.0
 	github.com/kylelemons/godebug v1.1.0
+	github.com/mitchellh/mapstructure v1.3.3
+	github.com/prometheus/prometheus v1.8.2-0.20200622142935-153f859b7499
 	github.com/rivo/tview v0.0.0-20200818120338-53d50e499bf9
 	golang.org/x/crypto v0.0.0-20200422194213-44a606286825
 	gopkg.in/fsnotify.v1 v1.4.7
