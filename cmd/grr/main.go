@@ -62,5 +62,6 @@ func GetProviderRegistry() (grizzly.Registry, error) {
 	registry.RegisterProvider(grafana.NewDatasourceProvider())
 	//registry.RegisterProvider(grafana.NewPluginProvider())
 	//registry.RegisterProvider(grafana.NewMixinProvider())
+	registry.RegisterProvider(grafana.NewSyntheticMonitoringProvider())
 	return registry, nil
 }
