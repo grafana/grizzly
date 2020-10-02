@@ -11,7 +11,6 @@ import (
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/mitchellh/mapstructure"
-	"gopkg.in/yaml.v2"
 )
 
 // DatasourceProvider is a Grizzly Provider for Grafana datasources
@@ -221,46 +220,6 @@ func (d *Datasource) UID() string {
 
 // toJSON returns JSON for a datasource
 func (d *Datasource) toJSON() (string, error) {
-	j, err := json.MarshalIndent(d, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
-}
-
-// DatasourceWrapper adds wrapper required by Grafana API
-type DatasourceWrapper struct {
-	Datasource Datasource `json:"datasource"`
-	FolderID   int        `json:"folderId"`
-	Overwrite  bool       `json:"overwrite"`
-}
-
-func wrapDatasource(folderID int, datasource Datasource) DatasourceWrapper {
-	wrapper := DatasourceWrapper{
-		Datasource: datasource,
-		FolderID:   folderID,
-		Overwrite:  true,
-	}
-	return wrapper
-}
-
-func (d DatasourceWrapper) String() string {
-	data, err := yaml.Marshal(d)
-	if err != nil {
-		panic(err)
-	}
-
-	return string(data)
-}
-
-// UID retrieves the UID from a datasource wrapper
-func (d *DatasourceWrapper) UID() string {
-	return d.Datasource.UID()
-}
-
-// toJSON returns JSON expected by Grafana API
-func (d *DatasourceWrapper) toJSON() (string, error) {
-	d.Overwrite = true
 	j, err := json.MarshalIndent(d, "", "  ")
 	if err != nil {
 		return "", err
