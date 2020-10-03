@@ -84,12 +84,13 @@ func (p *DatasourceProvider) GetRepresentation(uid string, detail map[string]int
 
 // GetRemoteRepresentation retrieves a datasource as JSON
 func (p *DatasourceProvider) GetRemoteRepresentation(uid string) (string, error) {
-	board, err := getRemoteDatasource(uid)
-
+	source, err := getRemoteDatasource(uid)
 	if err != nil {
 		return "", err
 	}
-	return board.toJSON()
+	delete(*source, "version")
+	delete(*source, "id")
+	return source.toJSON()
 }
 
 // GetRemote retrieves a datasource as a Resource
@@ -109,7 +110,8 @@ func (p *DatasourceProvider) Add(detail map[string]interface{}) error {
 
 // Update pushes a datasource to Grafana via the API
 func (p *DatasourceProvider) Update(existing, detail map[string]interface{}) error {
-	return postDatasource(Datasource(detail))
+	detail["id"] = existing["id"]
+	return putDatasource(Datasource(detail))
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
@@ -188,8 +190,12 @@ func postDatasource(source Datasource) error {
 	return nil
 }
 
-func putDatasource(url string, source Datasource) error {
-	grafanaURL, err := getGrafanaURL("api/datasources")
+func putDatasource(source Datasource) error {
+	id, err := source.getID()
+	if err != nil {
+		return err
+	}
+	grafanaURL, err := getGrafanaURL(fmt.Sprintf("api/datasources/%d", id))
 	if err != nil {
 		return err
 	}
@@ -199,7 +205,11 @@ func putDatasource(url string, source Datasource) error {
 		return err
 	}
 
-	resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(sourceJSON))
+	client := &http.Client{}
+	req, err := http.NewRequest("PUT", grafanaURL, bytes.NewBufferString(sourceJSON))
+	req.Header.Add("Content-type", "application/json")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -242,4 +252,13 @@ func (d *Datasource) toJSON() (string, error) {
 		return "", err
 	}
 	return string(j), nil
+}
+
+func (d *Datasource) getID() (int, error) {
+	v, ok := (*d)["id"]
+	if !ok {
+		return 0, fmt.Errorf("Datasource %s requires an ID to update", d.UID())
+	}
+	id := int(v.(float64))
+	return id, nil
 }
