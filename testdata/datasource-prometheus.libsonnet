@@ -10,7 +10,6 @@
       name: 'prometheus',
       type: 'prometheus',
       url: 'http://localhost/prometheus/',
-      version: 1,
     },
   },
 }
