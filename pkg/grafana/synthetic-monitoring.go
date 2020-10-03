@@ -37,7 +37,7 @@ func NewSyntheticMonitoringProvider() *SyntheticMonitoringProvider {
 
 // GetName returns the name for this provider
 func (p *SyntheticMonitoringProvider) GetName() string {
-	return "grafana"
+	return "grafana-synthetic-monitoring-check"
 }
 
 // GetJSONPath returns a paths within Jsonnet output that this provider will consume

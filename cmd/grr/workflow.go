@@ -1,6 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"text/tabwriter"
+
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -124,6 +128,26 @@ func exportCmd(config grizzly.Config) *cli.Command {
 		jsonnetFile := args[0]
 		dashboardDir := args[1]
 		return grizzly.Export(config, jsonnetFile, dashboardDir, *targets)
+	}
+	return cmd
+}
+
+func providersCmd(config grizzly.Config) *cli.Command {
+	cmd := &cli.Command{
+		Use:   "providers",
+		Short: "Lists all providers registered with Grizzly",
+		Args:  cli.ArgsExact(0),
+	}
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		f := "%s\t%s\n"
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+
+		fmt.Fprintf(w, f, "PROVIDER", "JSON PATH")
+		for _, provider := range config.Registry.GetProviders() {
+			path := provider.GetJSONPath()
+			fmt.Fprintf(w, f, provider.GetName(), "/"+path)
+		}
+		return w.Flush()
 	}
 	return cmd
 }

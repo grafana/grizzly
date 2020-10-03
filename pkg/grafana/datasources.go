@@ -22,7 +22,7 @@ func NewDatasourceProvider() *DatasourceProvider {
 
 // GetName returns the name for this provider
 func (p *DatasourceProvider) GetName() string {
-	return "grafana"
+	return "grafana-datasource"
 }
 
 // GetJSONPath returns a paths within Jsonnet output that this provider will consume
@@ -35,12 +35,12 @@ func (p *DatasourceProvider) GetExtension() string {
 	return "json"
 }
 
-func (p *DatasourceProvider) newDatasourceResource(uid, filename string, board Datasource) grizzly.Resource {
+func (p *DatasourceProvider) newDatasourceResource(uid, filename string, source Datasource) grizzly.Resource {
 	resource := grizzly.Resource{
 		UID:      uid,
 		Filename: filename,
 		Provider: p,
-		Detail:   board,
+		Detail:   source,
 		Path:     p.GetJSONPath(),
 	}
 	return resource
@@ -51,12 +51,12 @@ func (p *DatasourceProvider) Parse(i interface{}) (grizzly.Resources, error) {
 	resources := grizzly.Resources{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
-		board := Datasource{}
-		err := mapstructure.Decode(v, &board)
+		source := Datasource{}
+		err := mapstructure.Decode(v, &source)
 		if err != nil {
 			return nil, err
 		}
-		resource := p.newDatasourceResource(board.UID(), k, board)
+		resource := p.newDatasourceResource(source.UID(), k, source)
 		key := resource.Key()
 		resources[key] = resource
 	}
@@ -65,11 +65,11 @@ func (p *DatasourceProvider) Parse(i interface{}) (grizzly.Resources, error) {
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (p *DatasourceProvider) GetByUID(UID string) (*grizzly.Resource, error) {
-	board, err := getRemoteDatasource(UID)
+	source, err := getRemoteDatasource(UID)
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving datasource %s: %v", UID, err)
 	}
-	resource := p.newDatasourceResource(UID, "", *board)
+	resource := p.newDatasourceResource(UID, "", *source)
 	return &resource, nil
 }
 
@@ -150,7 +150,6 @@ func getRemoteDatasource(uid string) (*Datasource, error) {
 	if err := json.Unmarshal(data, &d); err != nil {
 		return nil, APIErr{err, data}
 	}
-	//	delete(d, "version")
 	return &d, nil
 }
 

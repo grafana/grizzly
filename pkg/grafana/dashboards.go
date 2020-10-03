@@ -23,7 +23,7 @@ func NewDashboardProvider() *DashboardProvider {
 
 // GetName returns the name for this provider
 func (p *DashboardProvider) GetName() string {
-	return "grafana"
+	return "grafana-dashboard"
 }
 
 // GetJSONPath returns a paths within Jsonnet output that this provider will consume

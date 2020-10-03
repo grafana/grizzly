@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/go-clix/cli"
@@ -27,13 +26,6 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	fmt.Println("Provider count", len(registry.GetProviders()))
-
-	for i, provider := range registry.GetProviders() {
-		path := provider.GetJSONPath()
-		fmt.Printf("%02d: %s/%s\n", i+1, provider.GetName(), path)
-	}
-
 	config := grizzly.Config{
 		Registry: registry,
 	}
@@ -47,6 +39,7 @@ func main() {
 		watchCmd(config),
 		exportCmd(config),
 		previewCmd(config),
+		providersCmd(config),
 	)
 
 	// Run!
