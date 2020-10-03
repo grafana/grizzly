@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -94,70 +93,53 @@ func (p *DashboardProvider) GetRemoteRepresentation(uid string) (string, error) 
 	return board.toJSON()
 }
 
-// Apply pushes a dashboard to Grafana via the API
-func (p *DashboardProvider) Apply(detail map[string]interface{}) error {
+// GetRemote retrieves a dashboard as a resource
+func (p *DashboardProvider) GetRemote(uid string) (*grizzly.Resource, error) {
+	board, err := getRemoteDashboard(uid)
+	if err != nil {
+		return nil, err
+	}
+	resource := p.newDashboardResource(uid, "", *board)
+	return &resource, nil
+}
+
+// Add pushes a new dashboard to Grafana via the API
+func (p *DashboardProvider) Add(detail map[string]interface{}) error {
 	board := Dashboard(detail)
 
 	// @TODO SUPPORT FOLDERS!!
 
-	uid := board.UID()
-	existingBoard, err := getRemoteDashboard(uid)
-
-	switch err {
-	case grizzly.ErrNotFound: // create new
-		fmt.Println(uid, grizzly.Green("added"))
-		if err := postDashboard(board); err != nil {
-			return err
-		}
-	case nil: // update
-		boardJSON, _ := board.toJSON()
-		existingBoardJSON, _ := existingBoard.toJSON()
-
-		if boardJSON == existingBoardJSON {
-			fmt.Println(uid, grizzly.Yellow("unchanged"))
-			return nil
-		}
-
-		if err = postDashboard(board); err != nil {
-			return err
-		}
-		log.Println(uid, grizzly.Green("updated"))
-
-	default: // failed
-		return fmt.Errorf("Error retrieving dashboard %s: %v", uid, err)
+	if err := postDashboard(board); err != nil {
+		return err
 	}
 	return nil
 }
 
-// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (p *DashboardProvider) Preview(detail map[string]interface{}) error {
-	return nil
+// Update pushes a dashboard to Grafana via the API
+func (p *DashboardProvider) Update(existing, detail map[string]interface{}) error {
+	board := Dashboard(detail)
+
+	// @TODO SUPPORT FOLDERS!!
+
+	return postDashboard(board)
 }
 
-/*
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (p *DashboardProvider) Preview(resource grizzly.Resource, opts *PreviewOpts) error {
-	//folderID is not used in snapshots
-	folderID := int64(0)
-	boards, err := renderDashboards(jsonnetFile, targets, folderID)
+func (p *DashboardProvider) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
+	board := Dashboard(detail)
+	uid := board.UID()
+	s, err := postSnapshot(board, opts)
 	if err != nil {
 		return err
 	}
-	for _, board := range boards {
-		uid := board.UID()
-		s, err := postSnapshot(config, board, opts)
-		if err != nil {
-			return err
-		}
-		fmt.Println("View", uid, green(s.URL))
-		fmt.Println("Delete", uid, yellow(s.DeleteURL))
-	}
+	fmt.Println("View", uid, grizzly.Green(s.URL))
+	fmt.Println("Delete", uid, grizzly.Yellow(s.DeleteURL))
 	if opts.ExpiresSeconds > 0 {
-		fmt.Print(yellow(fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds)))
+		fmt.Print(grizzly.Yellow(fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds)))
 	}
 	return nil
 }
-*/
+
 ///////////////////////////////////////////////////////////////////////////
 
 /*
@@ -268,7 +250,7 @@ func postDashboard(board Dashboard) error {
 	return nil
 }
 
-/*
+// SnapshotResp encapsulates the response to a snapshot request
 type SnapshotResp struct {
 	DeleteKey string `json:"deleteKey"`
 	DeleteURL string `json:"deleteUrl"`
@@ -276,24 +258,19 @@ type SnapshotResp struct {
 	URL       string `json:"url"`
 }
 
-type SnapshotReq struct {
-	Dashboard map[string]interface{} `json:"dashboard"`
-	Expires   int                    `json:"expires,omitempty"`
-}
+func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, error) {
 
-func postSnapshot(config Config, board Board, opts *PreviewOpts) (*SnapshotResp, error) {
-	if config.GrafanaURL == "" {
-		return nil, errors.New("Must set GRAFANA_URL environment variable")
-	}
-
-	u, err := url.Parse(config.GrafanaURL)
+	url, err := getGrafanaURL("api/snapshots")
 	if err != nil {
 		return nil, err
 	}
-	u.Path = path.Join(u.Path, "api/snapshots")
+	type SnapshotReq struct {
+		Dashboard map[string]interface{} `json:"dashboard"`
+		Expires   int                    `json:"expires,omitempty"`
+	}
 
 	sr := &SnapshotReq{
-		Dashboard: board.Dashboard,
+		Dashboard: board,
 	}
 
 	if opts.ExpiresSeconds > 0 {
@@ -305,7 +282,7 @@ func postSnapshot(config Config, board Board, opts *PreviewOpts) (*SnapshotResp,
 		return nil, err
 	}
 
-	resp, err := http.Post(u.String(), "application/json", bytes.NewBuffer(bs))
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(bs))
 	if err != nil {
 		return nil, err
 	}
@@ -317,6 +294,7 @@ func postSnapshot(config Config, board Board, opts *PreviewOpts) (*SnapshotResp,
 	if err != nil {
 		return nil, fmt.Errorf("Unable to read response body: %w", err)
 	}
+
 	s := &SnapshotResp{}
 	err = json.Unmarshal(b, s)
 	if err != nil {
@@ -325,6 +303,7 @@ func postSnapshot(config Config, board Board, opts *PreviewOpts) (*SnapshotResp,
 	return s, nil
 }
 
+/*
 func folderId(config Config, jsonnetFile string) (*int64, error) {
 	jsonnet := fmt.Sprintf(`
 local f = import "%s";
@@ -344,7 +323,6 @@ f.grafanaDashboardFolder`, jsonnetFile)
 	}
 	return &folder.Id, nil
 }
-*/
 
 // Folder encapsulates a folder object from the Grafana API
 type Folder struct {
@@ -352,7 +330,7 @@ type Folder struct {
 	UID   string
 	Title string
 }
-
+*/
 // Dashboard encapsulates a dashboard
 type Dashboard map[string]interface{}
 

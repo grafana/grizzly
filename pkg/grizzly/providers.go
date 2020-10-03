@@ -4,11 +4,11 @@ import "fmt"
 
 // Resource represents a single Resource destined for a single endpoint
 type Resource struct {
-	UID      string
-	Filename string
-	Provider Provider
-	Detail   map[string]interface{}
-	Path     string
+	UID      string                 `json:"uid"`
+	Filename string                 `json:"filename"`
+	Provider Provider               `json:"provider"`
+	Detail   map[string]interface{} `json:"detail"`
+	Path     string                 `json:"path"`
 }
 
 // Kind returns the 'kind' of the resource, i.e. the type of the provider
@@ -66,11 +66,17 @@ type Provider interface {
 	// GetRemoteRepresentation retrieves a resource from the endpoint and renders to a string
 	GetRemoteRepresentation(uid string) (string, error)
 
-	// Apply renders Jsonnet dashboards then pushes them to Grafana via the API
-	Apply(detail map[string]interface{}) error
+	// GetRemote retrieves a resource as a datastructure
+	GetRemote(uid string) (*Resource, error)
+
+	// Add pushes a new resource to the endpoint
+	Add(detail map[string]interface{}) error
+
+	// Update pushes an existing resource to the endpoint
+	Update(current, detail map[string]interface{}) error
 
 	// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-	Preview(detail map[string]interface{}) error
+	Preview(detail map[string]interface{}, opts *PreviewOpts) error
 }
 
 // Registry records providers

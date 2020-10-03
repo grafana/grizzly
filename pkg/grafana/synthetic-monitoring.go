@@ -108,43 +108,37 @@ func (p *SyntheticMonitoringProvider) GetRemoteRepresentation(uid string) (strin
 	return check.toJSON()
 }
 
-// Apply pushes a datasource to Grafana via the API
-func (p *SyntheticMonitoringProvider) Apply(detail map[string]interface{}) error {
-	check := Check(detail)
-
-	uid := check.UID()
-	existingCheck, err := getRemoteCheck(uid)
-
-	switch err {
-	case grizzly.ErrNotFound: // create new
-		if err := addCheck(check); err != nil {
-			return err
-		}
-		fmt.Println(uid, grizzly.Green("added"))
-
-	case nil: // update
-		checkJSON, _ := check.toJSON()
-		existingCheckJSON, _ := existingCheck.toJSON()
-
-		if checkJSON == existingCheckJSON {
-			fmt.Println(uid, grizzly.Yellow("unchanged"))
-			return nil
-		}
-
-		if err = updateCheck(check); err != nil {
-			return err
-		}
-		fmt.Println(uid, grizzly.Green("updated"))
-
-	default: // failed
-		return fmt.Errorf("Error retrieving check %s: %v", uid, err)
+// GetRemote retrieves a datasource as a Resource
+func (p *SyntheticMonitoringProvider) GetRemote(uid string) (*grizzly.Resource, error) {
+	check, err := getRemoteCheck(uid)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	delete(*check, "tenantId")
+	delete(*check, "id")
+	resource := p.newCheckResource("", *check)
+	return &resource, nil
+}
+
+// Add adds a new check to the SyntheticMonitoring endpoint
+func (p *SyntheticMonitoringProvider) Add(detail map[string]interface{}) error {
+	url := getURL("api/v1/check/add")
+	return postCheck(url, Check(detail))
+}
+
+// Update pushes an updated check to the SyntheticMonitoring endpoing
+func (p *SyntheticMonitoringProvider) Update(existing, detail map[string]interface{}) error {
+	existingCheck := Check(existing)
+	check := Check(detail)
+	url := getURL("api/v1/check/update")
+	check["tenantId"] = existingCheck["tenantId"]
+	check["id"] = existingCheck["id"]
+	return postCheck(url, check)
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (p *SyntheticMonitoringProvider) Preview(detail map[string]interface{}) error {
-	return nil
+func (p *SyntheticMonitoringProvider) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
+	return grizzly.ErrNotImplemented
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -193,22 +187,6 @@ func getRemoteCheck(uid string) (*Check, error) {
 		}
 	}
 	return nil, grizzly.ErrNotFound
-}
-
-func addCheck(check Check) error {
-	url := getURL("api/v1/check/add")
-	return postCheck(url, check)
-}
-
-func updateCheck(check Check) error {
-	existingCheck, err := getRemoteCheck(check.UID())
-	if err != nil {
-		return err
-	}
-	url := getURL("api/v1/check/update")
-	check["tenantId"] = (*existingCheck)["tenantId"]
-	check["id"] = (*existingCheck)["id"]
-	return postCheck(url, check)
 }
 
 func postCheck(url string, check Check) error {

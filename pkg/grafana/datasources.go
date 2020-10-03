@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -93,44 +92,29 @@ func (p *DatasourceProvider) GetRemoteRepresentation(uid string) (string, error)
 	return board.toJSON()
 }
 
-// Apply pushes a datasource to Grafana via the API
-func (p *DatasourceProvider) Apply(detail map[string]interface{}) error {
-	board := Datasource(detail)
-
-	// @TODO SUPPORT FOLDERS!!
-
-	uid := board.UID()
-	existingBoard, err := getRemoteDatasource(uid)
-
-	switch err {
-	case grizzly.ErrNotFound: // create new
-		fmt.Println(uid, grizzly.Green("added"))
-		if err := postDatasource(board); err != nil {
-			return err
-		}
-	case nil: // update
-		boardJSON, _ := board.toJSON()
-		existingBoardJSON, _ := existingBoard.toJSON()
-
-		if boardJSON == existingBoardJSON {
-			fmt.Println(uid, grizzly.Yellow("unchanged"))
-			return nil
-		}
-
-		if err = postDatasource(board); err != nil {
-			return err
-		}
-		log.Println(uid, grizzly.Green("updated"))
-
-	default: // failed
-		return fmt.Errorf("Error retrieving datasource %s: %v", uid, err)
+// GetRemote retrieves a datasource as a Resource
+func (p *DatasourceProvider) GetRemote(uid string) (*grizzly.Resource, error) {
+	source, err := getRemoteDatasource(uid)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	resource := p.newDatasourceResource(uid, "", *source)
+	return &resource, nil
+}
+
+// Add pushes a datasource to Grafana via the API
+func (p *DatasourceProvider) Add(detail map[string]interface{}) error {
+	return postDatasource(Datasource(detail))
+}
+
+// Update pushes a datasource to Grafana via the API
+func (p *DatasourceProvider) Update(existing, detail map[string]interface{}) error {
+	return postDatasource(Datasource(detail))
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (p *DatasourceProvider) Preview(detail map[string]interface{}) error {
-	return nil
+func (p *DatasourceProvider) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
+	return grizzly.ErrNotImplemented
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -202,7 +186,41 @@ func postDatasource(source Datasource) error {
 	default:
 		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s", resp.Status, source.UID())
 	}
-	log.Println("POST DONE")
+	return nil
+}
+
+func putDatasource(url string, source Datasource) error {
+	grafanaURL, err := getGrafanaURL("api/datasources")
+	if err != nil {
+		return err
+	}
+
+	sourceJSON, err := source.toJSON()
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(sourceJSON))
+	if err != nil {
+		return err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		break
+	case http.StatusPreconditionFailed:
+		d := json.NewDecoder(resp.Body)
+		var r struct {
+			Message string `json:"message"`
+		}
+		if err := d.Decode(&r); err != nil {
+			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
+		}
+		fmt.Println(sourceJSON)
+		return fmt.Errorf("Error while applying '%s' to Grafana: %s", source.UID(), r.Message)
+	default:
+		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s", resp.Status, source.UID())
+	}
 	return nil
 }
 

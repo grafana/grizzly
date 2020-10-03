@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/term"
 	"github.com/kylelemons/godebug/diff"
+	"github.com/malcolmholmes/grizzly/pkg/grizzly"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
 )
@@ -97,7 +98,6 @@ func parse(config Config, jsonnetFile string) (Resources, error) {
 
 	r := Resources{}
 	for k, v := range msi {
-		log.Printf("Checking path %s", k)
 		provider, err := config.Registry.GetProvider(k)
 		if err != nil {
 			fmt.Println("Skipping unregistered path", k)
@@ -152,6 +152,7 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 	}
 
 	for _, resource := range resources {
+		//log.Println("RESOURCE", resource.UID)
 		local, err := resource.GetRepresentation()
 		if err != nil {
 			return nil
@@ -159,7 +160,7 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 		uid := resource.UID
 		remote, err := resource.GetRemoteRepresentation()
 		if err == ErrNotFound {
-			log.Println(uid, Yellow("not present in "+resource.Kind()))
+			log.Printf("%s/%s %s\n", resource.Path, uid, Yellow("not present in "+resource.Kind()))
 			continue
 		}
 		if err != nil {
@@ -167,9 +168,9 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 		}
 
 		if local == remote {
-			fmt.Println(uid, Yellow("no differences"))
+			fmt.Printf("%s/%s %s\n", resource.Path, uid, Yellow("no differences"))
 		} else {
-			fmt.Println(uid, Red("changes detected:"))
+			fmt.Printf("%s/%s %s\n", resource.Path, uid, Red("changes detected:"))
 			difference := diff.Diff(remote, local)
 			fmt.Println(difference)
 		}
@@ -184,10 +185,31 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 		return err
 	}
 	for _, resource := range resources {
+		log.Println(resource.UID)
+
 		if resource.MatchesTarget(targets) {
-			err := resource.Provider.Apply(resource.Detail)
+			provider := resource.Provider
+			existingResource, err := provider.GetRemote(resource.UID)
 			if err != nil {
 				return err
+			} else if err == grizzly.ErrNotFound {
+				err := provider.Add(resource.Detail)
+				if err != nil {
+					return err
+				}
+				fmt.Println(resource.UID, Green("added"))
+				continue
+			}
+			resourceRepresentation, err := resource.GetRepresentation()
+			existingResourceRepresentation, err := existingResource.GetRepresentation()
+			if resourceRepresentation == existingResourceRepresentation {
+				fmt.Println(resource.UID, Yellow("unchanged"))
+			} else {
+				err = provider.Update(existingResource.Detail, resource.Detail)
+				if err != nil {
+					return err
+				}
+				log.Println(resource.UID, Green("updated"))
 			}
 		}
 	}
@@ -202,7 +224,10 @@ func Preview(config Config, jsonnetFile string, targets []string, opts *PreviewO
 	}
 	for _, resource := range resources {
 		if resource.MatchesTarget(targets) {
-			err := resource.Provider.Preview(resource.Detail)
+			err := resource.Provider.Preview(resource.Detail, opts)
+			if err == ErrNotImplemented {
+				log.Println(resource.Provider.GetName()+" provider", Red("does not support preview"))
+			}
 			if err != nil {
 				return err
 			}
@@ -237,10 +262,18 @@ func Watch(config Config, watchDir, jsonnetFile string, targets []string) error 
 					}
 					for _, resource := range resources {
 						if resource.MatchesTarget(targets) {
-							err := resource.Provider.Apply(resource.Detail)
-							if err != nil {
-								log.Println("error:", err)
-								continue
+							provider := resource.Provider
+							existingResource, err := provider.GetRemote(resource.UID)
+							if err == grizzly.ErrNotFound {
+								err := resource.Provider.Add(resource.Detail)
+								if err != nil {
+									log.Println("Error:", err)
+								}
+							} else {
+								err := resource.Provider.Update(existingResource.Detail, resource.Detail)
+								if err != nil {
+									log.Println("Error:", err)
+								}
 							}
 						}
 					}
