@@ -184,21 +184,21 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 	if err != nil {
 		return err
 	}
-	for _, resource := range resources {
-		log.Println(resource.UID)
 
+	for _, resource := range resources {
 		if resource.MatchesTarget(targets) {
 			provider := resource.Provider
 			existingResource, err := provider.GetRemote(resource.UID)
-			if err != nil {
-				return err
-			} else if err == grizzly.ErrNotFound {
+			if err == ErrNotFound {
+
 				err := provider.Add(resource.Detail)
 				if err != nil {
 					return err
 				}
 				fmt.Println(resource.UID, Green("added"))
 				continue
+			} else if err != nil {
+				return err
 			}
 			resourceRepresentation, err := resource.GetRepresentation()
 			existingResourceRepresentation, err := existingResource.GetRepresentation()
