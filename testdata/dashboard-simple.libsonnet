@@ -6,7 +6,7 @@
       title: 'Production Overview',
       tags: ['templated'],
       timezone: 'browser',
-      schemaVersion: 16,
+      schemaVersion: 17,
     },
   },
 }
