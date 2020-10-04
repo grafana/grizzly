@@ -78,6 +78,22 @@ func (p *SyntheticMonitoringProvider) Parse(i interface{}) (grizzly.Resources, e
 	return resources, nil
 }
 
+// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
+func (p *SyntheticMonitoringProvider) Unprepare(detail map[string]interface{}) map[string]interface{} {
+	delete(detail, "tenantId")
+	delete(detail, "id")
+	delete(detail, "modified")
+	delete(detail, "created")
+	return detail
+}
+
+// Prepare gets a resource ready for dispatch to the remote endpoint
+func (p *SyntheticMonitoringProvider) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
+	detail["tenantId"] = existing["tenantId"]
+	detail["id"] = existing["id"]
+	return detail
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (p *SyntheticMonitoringProvider) GetByUID(UID string) (*grizzly.Resource, error) {
 	check, err := getRemoteCheck(UID)
@@ -103,8 +119,6 @@ func (p *SyntheticMonitoringProvider) GetRemoteRepresentation(uid string) (strin
 	if err != nil {
 		return "", err
 	}
-	delete(*check, "tenantId")
-	delete(*check, "id")
 	return check.toJSON()
 }
 
@@ -114,8 +128,6 @@ func (p *SyntheticMonitoringProvider) GetRemote(uid string) (*grizzly.Resource, 
 	if err != nil {
 		return nil, err
 	}
-	delete(*check, "tenantId")
-	delete(*check, "id")
 	resource := p.newCheckResource("", *check)
 	return &resource, nil
 }
@@ -179,10 +191,19 @@ func getRemoteCheck(uid string) (*Check, error) {
 	if err := json.Unmarshal(data, &checks); err != nil {
 		return nil, APIErr{err, data}
 	}
+	probes, err := getProbeList()
+	if err != nil {
+		return nil, err
+	}
 	for _, check := range checks {
 		if check.UID() == uid {
-			delete(check, "modified")
-			delete(check, "created")
+			probeNames := []string{}
+			for _, probe := range check["probes"].([]interface{}) {
+				probeID := int(probe.(float64))
+				name := probes.ByID[probeID].Name
+				probeNames = append(probeNames, name)
+			}
+			check["probes"] = probeNames
 			return &check, nil
 		}
 	}
@@ -220,6 +241,70 @@ func postCheck(url string, check Check) error {
 	return nil
 }
 
+// Probe defines the properties of a single SM Probe
+type Probe struct {
+	ID       int    `json:"id"`
+	TenantID int    `json:"tenantId"`
+	Name     string `json:"name"`
+	Region   string `json:"region"`
+	Public   bool   `json:"public"`
+	Online   bool   `json:"online"`
+}
+
+// Probes allows accessing Probe objects by ID and by name
+type Probes struct {
+	ByID   map[int]Probe
+	ByName map[string]Probe
+}
+
+// getRemoteCheck retrieves a check object from SM
+func getProbeList() (*Probes, error) {
+	url := getURL("api/v1/probe/list")
+	authToken, err := getAuthToken()
+	if err != nil {
+		return nil, err
+	}
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", "Bearer "+authToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusNotFound:
+		return nil, grizzly.ErrNotFound
+	default:
+		if resp.StatusCode >= 400 {
+			return nil, errors.New(resp.Status)
+		}
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	probeList := []Probe{}
+	if err := json.Unmarshal(data, &probeList); err != nil {
+		return nil, APIErr{err, data}
+	}
+	probes := Probes{
+		ByID:   map[int]Probe{},
+		ByName: map[string]Probe{},
+	}
+	for _, probe := range probeList {
+		if probe.Online && probe.Public {
+			probes.ByID[probe.ID] = probe
+			probes.ByName[probe.Name] = probe
+		}
+	}
+	return &probes, nil
+}
+
 // Check encapsulates a check
 type Check map[string]interface{}
 
@@ -241,6 +326,18 @@ func (c *Check) UID() string {
 
 // toJSON returns JSON for a datasource
 func (c *Check) toJSON() (string, error) {
+	probes, err := getProbeList()
+	if err != nil {
+		return "", err
+	}
+	probeIDs := []int{}
+	for _, probe := range (*c)["probes"].([]interface{}) {
+		probeName := probe.(string)
+		id := probes.ByName[probeName].ID
+		probeIDs = append(probeIDs, id)
+	}
+	(*c)["probes"] = probeIDs
+
 	j, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return "", err

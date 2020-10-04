@@ -57,6 +57,12 @@ type Provider interface {
 	// Parse parses an interface{} object into a struct for this resource type
 	Parse(i interface{}) (Resources, error)
 
+	// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
+	Unprepare(detail map[string]interface{}) map[string]interface{}
+
+	// Prepare gets a resource ready for dispatch to the remote endpoint
+	Prepare(existing, detail map[string]interface{}) map[string]interface{}
+
 	// Get retrieves JSON for a resource from an endpoint, by UID
 	GetByUID(UID string) (*Resource, error)
 
@@ -81,14 +87,16 @@ type Provider interface {
 
 // Registry records providers
 type Registry struct {
-	ProviderMap  map[string]Provider
-	ProviderList []Provider
+	ProviderMapByPath map[string]Provider
+	ProviderMapByName map[string]Provider
+	ProviderList      []Provider
 }
 
 // NewProviderRegistry returns a new registry instance
 func NewProviderRegistry() Registry {
 	registry := Registry{}
-	registry.ProviderMap = map[string]Provider{}
+	registry.ProviderMapByPath = map[string]Provider{}
+	registry.ProviderMapByName = map[string]Provider{}
 	registry.ProviderList = []Provider{}
 	return registry
 }
@@ -96,7 +104,8 @@ func NewProviderRegistry() Registry {
 // RegisterProvider will register a new provider
 func (r *Registry) RegisterProvider(provider Provider) error {
 	path := provider.GetJSONPath()
-	r.ProviderMap[path] = provider
+	r.ProviderMapByPath[path] = provider
+	r.ProviderMapByName[provider.GetName()] = provider
 	r.ProviderList = append(r.ProviderList, provider)
 	return nil
 }
@@ -107,10 +116,14 @@ func (r *Registry) GetProviders() []Provider {
 }
 
 // GetProvider returns a single provider based upon a JSON path
-func (r *Registry) GetProvider(jsonPath string) (Provider, error) {
-	provider, exists := r.ProviderMap[jsonPath]
+func (r *Registry) GetProvider(path string) (Provider, error) {
+	provider, exists := r.ProviderMapByPath[path]
 	if !exists {
-		return nil, fmt.Errorf("No provider registered to path %s", jsonPath)
+		provider, exists = r.ProviderMapByName[path]
+		if !exists {
+			return nil, fmt.Errorf("No provider registered to  %s", path)
+		}
+		return provider, nil
 	}
 	return provider, nil
 }

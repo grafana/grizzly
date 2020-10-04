@@ -38,6 +38,7 @@ func Get(config Config, UID string) error {
 		return err
 	}
 
+	resource.Detail = provider.Unprepare(resource.Detail)
 	rep, err := resource.GetRepresentation()
 	if err != nil {
 		return err
@@ -123,6 +124,7 @@ func Show(config Config, jsonnetFile string, targets []string) error {
 
 	var items []term.PageItem
 	for _, resource := range resources {
+		resource.Detail = resource.Provider.Unprepare(resource.Detail)
 
 		rep, err := resource.GetRepresentation()
 		if err != nil {
@@ -152,13 +154,14 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 	}
 
 	for _, resource := range resources {
-		//log.Println("RESOURCE", resource.UID)
+		provider := resource.Provider
 		local, err := resource.GetRepresentation()
 		if err != nil {
 			return nil
 		}
+		resource.Detail = provider.Unprepare(resource.Detail)
 		uid := resource.UID
-		remote, err := resource.GetRemoteRepresentation()
+		remote, err := provider.GetRemote(resource.UID)
 		if err == ErrNotFound {
 			log.Printf("%s/%s %s\n", resource.Path, uid, Yellow("not present in "+resource.Kind()))
 			continue
@@ -166,12 +169,17 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 		if err != nil {
 			return fmt.Errorf("Error retrieving resource from %s %s: %v", resource.Kind(), uid, err)
 		}
+		remote.Detail = provider.Unprepare(remote.Detail)
+		remoteRepresentation, err := (*remote).GetRepresentation()
+		if err != nil {
+			return err
+		}
 
-		if local == remote {
+		if local == remoteRepresentation {
 			fmt.Printf("%s/%s %s\n", resource.Path, uid, Yellow("no differences"))
 		} else {
 			fmt.Printf("%s/%s %s\n", resource.Path, uid, Red("changes detected:"))
-			difference := diff.Diff(remote, local)
+			difference := diff.Diff(remoteRepresentation, local)
 			fmt.Println(difference)
 		}
 	}
@@ -200,6 +208,7 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 			} else if err != nil {
 				return err
 			}
+			resource.Detail = provider.Prepare(existingResource.Detail, resource.Detail)
 			resourceRepresentation, err := resource.GetRepresentation()
 			existingResourceRepresentation, err := existingResource.GetRepresentation()
 			if resourceRepresentation == existingResourceRepresentation {

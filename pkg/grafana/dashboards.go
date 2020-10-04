@@ -64,6 +64,16 @@ func (p *DashboardProvider) Parse(i interface{}) (grizzly.Resources, error) {
 	return resources, nil
 }
 
+// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
+func (p *DashboardProvider) Unprepare(detail map[string]interface{}) map[string]interface{} {
+	return detail
+}
+
+// Prepare gets a resource ready for dispatch to the remote endpoint
+func (p *DashboardProvider) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
+	return detail
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (p *DashboardProvider) GetByUID(UID string) (*grizzly.Resource, error) {
 	board, err := getRemoteDashboard(UID)

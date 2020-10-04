@@ -63,6 +63,19 @@ func (p *DatasourceProvider) Parse(i interface{}) (grizzly.Resources, error) {
 	return resources, nil
 }
 
+// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
+func (p *DatasourceProvider) Unprepare(detail map[string]interface{}) map[string]interface{} {
+	delete(detail, "version")
+	delete(detail, "id")
+	return detail
+}
+
+// Prepare gets a resource ready for dispatch to the remote endpoint
+func (p *DatasourceProvider) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
+	detail["id"] = existing["id"]
+	return detail
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (p *DatasourceProvider) GetByUID(UID string) (*grizzly.Resource, error) {
 	source, err := getRemoteDatasource(UID)
@@ -88,8 +101,6 @@ func (p *DatasourceProvider) GetRemoteRepresentation(uid string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	delete(*source, "version")
-	delete(*source, "id")
 	return source.toJSON()
 }
 
