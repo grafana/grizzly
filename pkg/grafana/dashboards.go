@@ -153,42 +153,6 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.Prev
 
 ///////////////////////////////////////////////////////////////////////////
 
-/*
-func searchFolder(config Config, name string) (*Folder, error) {
-	if config.GrafanaURL == "" {
-		return nil, errors.New("Must set GRAFANA_URL environment variable")
-	}
-
-	u, err := url.Parse(config.GrafanaURL)
-	if err != nil {
-		return nil, err
-	}
-	u.Path = path.Join(u.Path, "api/search")
-	u.Query().Add("query", name)
-	resp, err := http.Get(u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	var folders []Folder
-	if err := json.Unmarshal([]byte(string(body)), &folders); err != nil {
-		return nil, err
-	}
-	var folder Folder
-	for _, f := range folders {
-		if f.Title == name {
-			folder = f
-			break
-		}
-	}
-	return &folder, nil
-}
-*/
-
 // getRemoteDashboard retrieves a dashboard object from Grafana
 func getRemoteDashboard(uid string) (*Dashboard, error) {
 	grafanaURL, err := getGrafanaURL("api/dashboards/uid/" + uid)
@@ -231,8 +195,11 @@ func postDashboard(board Dashboard) error {
 		return err
 	}
 
-	// @TODO support folders:
-	folderID := 0
+	folderUID := board.folderUID()
+	folderID, err := findOrCreateFolder(folderUID)
+	if err != nil {
+		return err
+	}
 	wrappedBoard := wrapDashboard(folderID, board)
 	wrappedJSON, err := wrappedBoard.toJSON()
 
@@ -314,34 +281,6 @@ func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, er
 	return s, nil
 }
 
-/*
-func folderId(config Config, jsonnetFile string) (*int64, error) {
-	jsonnet := fmt.Sprintf(`
-local f = import "%s";
-f.grafanaDashboardFolder`, jsonnetFile)
-	output, err := evalToString(jsonnet)
-	if err != nil {
-		return nil, err
-	}
-	var name string
-	err = json.Unmarshal([]byte(output), &name)
-	if err != nil {
-		return nil, err
-	}
-	folder, err := searchFolder(config, strings.TrimSpace(name))
-	if err != nil {
-		return nil, err
-	}
-	return &folder.Id, nil
-}
-
-// Folder encapsulates a folder object from the Grafana API
-type Folder struct {
-	ID    int64
-	UID   string
-	Title string
-}
-*/
 // Dashboard encapsulates a dashboard
 type Dashboard map[string]interface{}
 
@@ -363,14 +302,23 @@ func (d *Dashboard) toJSON() (string, error) {
 	return string(j), nil
 }
 
+// folderUID retrieves the folder UID for a dashboard
+func (d *Dashboard) folderUID() string {
+	folderUID, ok := (*d)["folderName"]
+	if ok {
+		return folderUID.(string)
+	}
+	return ""
+}
+
 // DashboardWrapper adds wrapper required by Grafana API
 type DashboardWrapper struct {
 	Dashboard Dashboard `json:"dashboard"`
-	FolderID  int       `json:"folderId"`
+	FolderID  int64     `json:"folderId"`
 	Overwrite bool      `json:"overwrite"`
 }
 
-func wrapDashboard(folderID int, dashboard Dashboard) DashboardWrapper {
+func wrapDashboard(folderID int64, dashboard Dashboard) DashboardWrapper {
 	wrapper := DashboardWrapper{
 		Dashboard: dashboard,
 		FolderID:  folderID,
@@ -401,4 +349,80 @@ func (d *DashboardWrapper) toJSON() (string, error) {
 		return "", err
 	}
 	return string(j), nil
+}
+
+// Folder encapsulates a dashboard folder object from the Grafana API
+type Folder struct {
+	ID    int64  `json:"id"`
+	UID   string `json:"uid"`
+	Title string `json:"title"`
+}
+
+// toJSON returns JSON expected by Grafana API
+func (f *Folder) toJSON() (string, error) {
+	j, err := json.MarshalIndent(f, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(j), nil
+}
+
+func findOrCreateFolder(UID string) (int64, error) {
+	if UID == "0" {
+		return 0, nil
+	}
+	grafanaURL, err := getGrafanaURL("api/folders/" + UID)
+	if err != nil {
+		return 0, err
+	}
+	resp, err := http.Get(grafanaURL)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return 0, err
+		}
+		var folder Folder
+		if err := json.Unmarshal([]byte(string(body)), &folder); err != nil {
+			return 0, err
+		}
+		return folder.ID, nil
+
+	} else if resp.StatusCode == 404 {
+		return createFolder(UID)
+
+	} else {
+		return 0, fmt.Errorf("Getting folder %s returned error %d", UID, resp.StatusCode)
+	}
+}
+
+func createFolder(UID string) (int64, error) {
+	grafanaURL, err := getGrafanaURL("api/folders")
+	if err != nil {
+		return 0, err
+	}
+	folder := Folder{
+		UID:   UID,
+		Title: UID,
+	}
+
+	folderJSON, err := folder.toJSON()
+	if err != nil {
+		return 0, err
+	}
+	resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(folderJSON))
+	if err != nil {
+		return 0, err
+	} else if resp.StatusCode >= 400 {
+		return 0, fmt.Errorf("Non-200 response from Grafana while applying folder %s: %s", UID, resp.Status)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err := json.Unmarshal([]byte(string(body)), &folder); err != nil {
+		return 0, err
+	}
+
+	return folder.ID, nil
 }
