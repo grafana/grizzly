@@ -12,42 +12,47 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// DatasourceProvider is a Grizzly Provider for Grafana datasources
-type DatasourceProvider struct{}
+// DatasourceHandler is a Grizzly Provider for Grafana datasources
+type DatasourceHandler struct{}
 
-// NewDatasourceProvider returns configuration defining a new Grafana Provider
-func NewDatasourceProvider() *DatasourceProvider {
-	return &DatasourceProvider{}
+// NewDatasourceHandler returns configuration defining a new Grafana Provider
+func NewDatasourceHandler() *DatasourceHandler {
+	return &DatasourceHandler{}
 }
 
 // GetName returns the name for this provider
-func (p *DatasourceProvider) GetName() string {
-	return "grafana-datasource"
+func (h *DatasourceHandler) GetName() string {
+	return "datasource"
+}
+
+// GetFullName returns the name for this provider
+func (h *DatasourceHandler) GetFullName() string {
+	return "grafana.datasource"
 }
 
 // GetJSONPath returns a paths within Jsonnet output that this provider will consume
-func (p *DatasourceProvider) GetJSONPath() string {
+func (h *DatasourceHandler) GetJSONPath() string {
 	return "grafanaDatasources"
 }
 
 // GetExtension returns the file name extension for a datasource
-func (p *DatasourceProvider) GetExtension() string {
+func (h *DatasourceHandler) GetExtension() string {
 	return "json"
 }
 
-func (p *DatasourceProvider) newDatasourceResource(uid, filename string, source Datasource) grizzly.Resource {
+func (h *DatasourceHandler) newDatasourceResource(uid, filename string, source Datasource) grizzly.Resource {
 	resource := grizzly.Resource{
 		UID:      uid,
 		Filename: filename,
-		Provider: p,
+		Handler:  h,
 		Detail:   source,
-		Path:     p.GetJSONPath(),
+		Path:     h.GetJSONPath(),
 	}
 	return resource
 }
 
 // Parse parses an interface{} object into a struct for this resource type
-func (p *DatasourceProvider) Parse(i interface{}) (grizzly.Resources, error) {
+func (h *DatasourceHandler) Parse(i interface{}) (grizzly.Resources, error) {
 	resources := grizzly.Resources{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
@@ -56,7 +61,7 @@ func (p *DatasourceProvider) Parse(i interface{}) (grizzly.Resources, error) {
 		if err != nil {
 			return nil, err
 		}
-		resource := p.newDatasourceResource(source.UID(), k, source)
+		resource := h.newDatasourceResource(source.UID(), k, source)
 		key := resource.Key()
 		resources[key] = resource
 	}
@@ -64,30 +69,30 @@ func (p *DatasourceProvider) Parse(i interface{}) (grizzly.Resources, error) {
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (p *DatasourceProvider) Unprepare(detail map[string]interface{}) map[string]interface{} {
+func (h *DatasourceHandler) Unprepare(detail map[string]interface{}) map[string]interface{} {
 	delete(detail, "version")
 	delete(detail, "id")
 	return detail
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (p *DatasourceProvider) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
+func (h *DatasourceHandler) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
 	detail["id"] = existing["id"]
 	return detail
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (p *DatasourceProvider) GetByUID(UID string) (*grizzly.Resource, error) {
+func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	source, err := getRemoteDatasource(UID)
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving datasource %s: %v", UID, err)
 	}
-	resource := p.newDatasourceResource(UID, "", *source)
+	resource := h.newDatasourceResource(UID, "", *source)
 	return &resource, nil
 }
 
 // GetRepresentation renders a resource as JSON or YAML as appropriate
-func (p *DatasourceProvider) GetRepresentation(uid string, detail map[string]interface{}) (string, error) {
+func (h *DatasourceHandler) GetRepresentation(uid string, detail map[string]interface{}) (string, error) {
 	j, err := json.MarshalIndent(detail, "", "  ")
 	if err != nil {
 		return "", err
@@ -96,7 +101,7 @@ func (p *DatasourceProvider) GetRepresentation(uid string, detail map[string]int
 }
 
 // GetRemoteRepresentation retrieves a datasource as JSON
-func (p *DatasourceProvider) GetRemoteRepresentation(uid string) (string, error) {
+func (h *DatasourceHandler) GetRemoteRepresentation(uid string) (string, error) {
 	source, err := getRemoteDatasource(uid)
 	if err != nil {
 		return "", err
@@ -105,28 +110,28 @@ func (p *DatasourceProvider) GetRemoteRepresentation(uid string) (string, error)
 }
 
 // GetRemote retrieves a datasource as a Resource
-func (p *DatasourceProvider) GetRemote(uid string) (*grizzly.Resource, error) {
+func (h *DatasourceHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 	source, err := getRemoteDatasource(uid)
 	if err != nil {
 		return nil, err
 	}
-	resource := p.newDatasourceResource(uid, "", *source)
+	resource := h.newDatasourceResource(uid, "", *source)
 	return &resource, nil
 }
 
 // Add pushes a datasource to Grafana via the API
-func (p *DatasourceProvider) Add(detail map[string]interface{}) error {
+func (h *DatasourceHandler) Add(detail map[string]interface{}) error {
 	return postDatasource(Datasource(detail))
 }
 
 // Update pushes a datasource to Grafana via the API
-func (p *DatasourceProvider) Update(existing, detail map[string]interface{}) error {
+func (h *DatasourceHandler) Update(existing, detail map[string]interface{}) error {
 	detail["id"] = existing["id"]
 	return putDatasource(Datasource(detail))
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (p *DatasourceProvider) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
+func (h *DatasourceHandler) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
 	return grizzly.ErrNotImplemented
 }
 

@@ -6,14 +6,14 @@ import "fmt"
 type Resource struct {
 	UID      string                 `json:"uid"`
 	Filename string                 `json:"filename"`
-	Provider Provider               `json:"provider"`
+	Handler  Handler                `json:"handler"`
 	Detail   map[string]interface{} `json:"detail"`
 	Path     string                 `json:"path"`
 }
 
 // Kind returns the 'kind' of the resource, i.e. the type of the provider
 func (r *Resource) Kind() string {
-	return r.Provider.GetName()
+	return r.Handler.GetName()
 }
 
 // Key returns a key that combines kind and uid
@@ -23,12 +23,12 @@ func (r *Resource) Key() string {
 
 // GetRepresentation Gets the string representation for this resource
 func (r *Resource) GetRepresentation() (string, error) {
-	return r.Provider.GetRepresentation(r.UID, r.Detail)
+	return r.Handler.GetRepresentation(r.UID, r.Detail)
 }
 
 // GetRemoteRepresentation Gets the string representation for this resource
 func (r *Resource) GetRemoteRepresentation() (string, error) {
-	return r.Provider.GetRemoteRepresentation(r.UID)
+	return r.Handler.GetRemoteRepresentation(r.UID)
 }
 
 // MatchesTarget identifies whether a resource is in a target list
@@ -48,9 +48,10 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 // Resources represents a set of resources, by path
 type Resources map[string]Resource
 
-// Provider describes a single Endpoint Provider
-type Provider interface {
+// Handler describes a handler for a single API resource handled by a single provider
+type Handler interface {
 	GetName() string
+	GetFullName() string
 	GetJSONPath() string
 	GetExtension() string
 
@@ -85,45 +86,61 @@ type Provider interface {
 	Preview(detail map[string]interface{}, opts *PreviewOpts) error
 }
 
+// Provider describes a single Endpoint Provider
+type Provider interface {
+	GetName() string
+	GetHandlers() []Handler
+}
+
 // Registry records providers
 type Registry struct {
-	ProviderMapByPath map[string]Provider
-	ProviderMapByName map[string]Provider
-	ProviderList      []Provider
+	Providers     []Provider
+	Handlers      []Handler
+	HandlerByName map[string]Handler
+	HandlerByPath map[string]Handler
 }
 
 // NewProviderRegistry returns a new registry instance
 func NewProviderRegistry() Registry {
 	registry := Registry{}
-	registry.ProviderMapByPath = map[string]Provider{}
-	registry.ProviderMapByName = map[string]Provider{}
-	registry.ProviderList = []Provider{}
+	registry.Providers = []Provider{}
+	registry.Handlers = []Handler{}
+	registry.HandlerByName = map[string]Handler{}
+	registry.HandlerByPath = map[string]Handler{}
 	return registry
 }
 
 // RegisterProvider will register a new provider
 func (r *Registry) RegisterProvider(provider Provider) error {
-	path := provider.GetJSONPath()
-	r.ProviderMapByPath[path] = provider
-	r.ProviderMapByName[provider.GetName()] = provider
-	r.ProviderList = append(r.ProviderList, provider)
+	r.Providers = append(r.Providers, provider)
+	for _, handler := range provider.GetHandlers() {
+		r.Handlers = append(r.Handlers, handler)
+		r.HandlerByPath[handler.GetJSONPath()] = handler
+		r.HandlerByName[handler.GetName()] = handler
+		r.HandlerByName[handler.GetFullName()] = handler
+	}
 	return nil
 }
 
 // GetProviders will retrieve all registered providers
 func (r *Registry) GetProviders() []Provider {
-	return r.ProviderList
+	return r.Providers
 }
 
-// GetProvider returns a single provider based upon a JSON path
-func (r *Registry) GetProvider(path string) (Provider, error) {
-	provider, exists := r.ProviderMapByPath[path]
+// GetHandlers will retrieve all handlers from registered providers
+func (r *Registry) GetHandlers() []Handler {
+	return r.Handlers
+}
+
+// GetHandler returns a single provider based upon a JSON path
+func (r *Registry) GetHandler(path string) (Handler, error) {
+	handler, exists := r.HandlerByPath[path]
 	if !exists {
-		provider, exists = r.ProviderMapByName[path]
+		handler, exists = r.HandlerByName[path]
 		if !exists {
-			return nil, fmt.Errorf("No provider registered to  %s", path)
+			return nil, fmt.Errorf("No handler registered to %s", path)
 		}
-		return provider, nil
+		return handler, nil
 	}
-	return provider, nil
+	return handler, nil
 }

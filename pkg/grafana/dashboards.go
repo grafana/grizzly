@@ -13,42 +13,47 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// DashboardProvider is a Grizzly Provider for Grafana dashboards
-type DashboardProvider struct{}
+// DashboardHandler is a Grizzly Provider for Grafana dashboards
+type DashboardHandler struct{}
 
-// NewDashboardProvider returns configuration defining a new Grafana Provider
-func NewDashboardProvider() *DashboardProvider {
-	return &DashboardProvider{}
+// NewDashboardHandler returns configuration defining a new Grafana Provider
+func NewDashboardHandler() *DashboardHandler {
+	return &DashboardHandler{}
 }
 
 // GetName returns the name for this provider
-func (p *DashboardProvider) GetName() string {
-	return "grafana-dashboard"
+func (h *DashboardHandler) GetName() string {
+	return "dashboard"
+}
+
+// GetFullName returns the name for this provider
+func (h *DashboardHandler) GetFullName() string {
+	return "grafana.dashboard"
 }
 
 // GetJSONPath returns a paths within Jsonnet output that this provider will consume
-func (p *DashboardProvider) GetJSONPath() string {
+func (h *DashboardHandler) GetJSONPath() string {
 	return "grafanaDashboards"
 }
 
 // GetExtension returns the file name extension for a dashboard
-func (p *DashboardProvider) GetExtension() string {
+func (h *DashboardHandler) GetExtension() string {
 	return "json"
 }
 
-func (p *DashboardProvider) newDashboardResource(uid, filename string, board Dashboard) grizzly.Resource {
+func (h *DashboardHandler) newDashboardResource(uid, filename string, board Dashboard) grizzly.Resource {
 	resource := grizzly.Resource{
 		UID:      uid,
 		Filename: filename,
-		Provider: p,
+		Handler:  h,
 		Detail:   board,
-		Path:     p.GetJSONPath(),
+		Path:     h.GetJSONPath(),
 	}
 	return resource
 }
 
 // Parse parses an interface{} object into a struct for this resource type
-func (p *DashboardProvider) Parse(i interface{}) (grizzly.Resources, error) {
+func (h *DashboardHandler) Parse(i interface{}) (grizzly.Resources, error) {
 	resources := grizzly.Resources{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
@@ -57,7 +62,7 @@ func (p *DashboardProvider) Parse(i interface{}) (grizzly.Resources, error) {
 		if err != nil {
 			return nil, err
 		}
-		resource := p.newDashboardResource(board.UID(), k, board)
+		resource := h.newDashboardResource(board.UID(), k, board)
 		key := resource.Key()
 		resources[key] = resource
 	}
@@ -65,27 +70,27 @@ func (p *DashboardProvider) Parse(i interface{}) (grizzly.Resources, error) {
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (p *DashboardProvider) Unprepare(detail map[string]interface{}) map[string]interface{} {
+func (h *DashboardHandler) Unprepare(detail map[string]interface{}) map[string]interface{} {
 	return detail
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (p *DashboardProvider) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
+func (h *DashboardHandler) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
 	return detail
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (p *DashboardProvider) GetByUID(UID string) (*grizzly.Resource, error) {
+func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	board, err := getRemoteDashboard(UID)
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving dashboard %s: %v", UID, err)
 	}
-	resource := p.newDashboardResource(UID, "", *board)
+	resource := h.newDashboardResource(UID, "", *board)
 	return &resource, nil
 }
 
 // GetRepresentation renders a resource as JSON or YAML as appropriate
-func (p *DashboardProvider) GetRepresentation(uid string, detail map[string]interface{}) (string, error) {
+func (h *DashboardHandler) GetRepresentation(uid string, detail map[string]interface{}) (string, error) {
 	j, err := json.MarshalIndent(detail, "", "  ")
 	if err != nil {
 		return "", err
@@ -94,7 +99,7 @@ func (p *DashboardProvider) GetRepresentation(uid string, detail map[string]inte
 }
 
 // GetRemoteRepresentation retrieves a dashboard as JSON
-func (p *DashboardProvider) GetRemoteRepresentation(uid string) (string, error) {
+func (h *DashboardHandler) GetRemoteRepresentation(uid string) (string, error) {
 	board, err := getRemoteDashboard(uid)
 
 	if err != nil {
@@ -104,17 +109,17 @@ func (p *DashboardProvider) GetRemoteRepresentation(uid string) (string, error) 
 }
 
 // GetRemote retrieves a dashboard as a resource
-func (p *DashboardProvider) GetRemote(uid string) (*grizzly.Resource, error) {
+func (h *DashboardHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 	board, err := getRemoteDashboard(uid)
 	if err != nil {
 		return nil, err
 	}
-	resource := p.newDashboardResource(uid, "", *board)
+	resource := h.newDashboardResource(uid, "", *board)
 	return &resource, nil
 }
 
 // Add pushes a new dashboard to Grafana via the API
-func (p *DashboardProvider) Add(detail map[string]interface{}) error {
+func (h *DashboardHandler) Add(detail map[string]interface{}) error {
 	board := Dashboard(detail)
 
 	// @TODO SUPPORT FOLDERS!!
@@ -126,7 +131,7 @@ func (p *DashboardProvider) Add(detail map[string]interface{}) error {
 }
 
 // Update pushes a dashboard to Grafana via the API
-func (p *DashboardProvider) Update(existing, detail map[string]interface{}) error {
+func (h *DashboardHandler) Update(existing, detail map[string]interface{}) error {
 	board := Dashboard(detail)
 
 	// @TODO SUPPORT FOLDERS!!
@@ -135,7 +140,7 @@ func (p *DashboardProvider) Update(existing, detail map[string]interface{}) erro
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (p *DashboardProvider) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
+func (h *DashboardHandler) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
 	board := Dashboard(detail)
 	uid := board.UID()
 	s, err := postSnapshot(board, opts)

@@ -27,42 +27,47 @@ import (
 
 const smURL = "https://synthetic-monitoring-api.grafana.net/%s"
 
-// SyntheticMonitoringProvider is a Grizzly Provider for Grafana Synthetic Monitoring
-type SyntheticMonitoringProvider struct{}
+// SyntheticMonitoringHandler is a Grizzly Provider for Grafana Synthetic Monitoring
+type SyntheticMonitoringHandler struct{}
 
-// NewSyntheticMonitoringProvider returns configuration defining a new Grafana Provider
-func NewSyntheticMonitoringProvider() *SyntheticMonitoringProvider {
-	return &SyntheticMonitoringProvider{}
+// NewSyntheticMonitoringHandler returns configuration defining a new Grafana Provider
+func NewSyntheticMonitoringHandler() *SyntheticMonitoringHandler {
+	return &SyntheticMonitoringHandler{}
 }
 
 // GetName returns the name for this provider
-func (p *SyntheticMonitoringProvider) GetName() string {
-	return "grafana-synthetic-monitoring-check"
+func (h *SyntheticMonitoringHandler) GetName() string {
+	return "synthetic-monitor"
+}
+
+// GetFullName returns the name for this provider
+func (h *SyntheticMonitoringHandler) GetFullName() string {
+	return "grafana.synthetic-monitor"
 }
 
 // GetJSONPath returns a paths within Jsonnet output that this provider will consume
-func (p *SyntheticMonitoringProvider) GetJSONPath() string {
+func (h *SyntheticMonitoringHandler) GetJSONPath() string {
 	return "syntheticMonitoring"
 }
 
 // GetExtension returns the file name extension for a check
-func (p *SyntheticMonitoringProvider) GetExtension() string {
+func (h *SyntheticMonitoringHandler) GetExtension() string {
 	return "json"
 }
 
-func (p *SyntheticMonitoringProvider) newCheckResource(filename string, check Check) grizzly.Resource {
+func (h *SyntheticMonitoringHandler) newCheckResource(filename string, check Check) grizzly.Resource {
 	resource := grizzly.Resource{
 		UID:      check.UID(),
 		Filename: filename,
-		Provider: p,
+		Handler:  h,
 		Detail:   check,
-		Path:     p.GetJSONPath(),
+		Path:     h.GetJSONPath(),
 	}
 	return resource
 }
 
 // Parse parses an interface{} object into a struct for this resource type
-func (p *SyntheticMonitoringProvider) Parse(i interface{}) (grizzly.Resources, error) {
+func (h *SyntheticMonitoringHandler) Parse(i interface{}) (grizzly.Resources, error) {
 	resources := grizzly.Resources{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
@@ -71,7 +76,7 @@ func (p *SyntheticMonitoringProvider) Parse(i interface{}) (grizzly.Resources, e
 		if err != nil {
 			return nil, err
 		}
-		resource := p.newCheckResource(k, check)
+		resource := h.newCheckResource(k, check)
 		key := resource.Key()
 		resources[key] = resource
 	}
@@ -79,7 +84,7 @@ func (p *SyntheticMonitoringProvider) Parse(i interface{}) (grizzly.Resources, e
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (p *SyntheticMonitoringProvider) Unprepare(detail map[string]interface{}) map[string]interface{} {
+func (h *SyntheticMonitoringHandler) Unprepare(detail map[string]interface{}) map[string]interface{} {
 	delete(detail, "tenantId")
 	delete(detail, "id")
 	delete(detail, "modified")
@@ -88,24 +93,24 @@ func (p *SyntheticMonitoringProvider) Unprepare(detail map[string]interface{}) m
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (p *SyntheticMonitoringProvider) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
+func (h *SyntheticMonitoringHandler) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
 	detail["tenantId"] = existing["tenantId"]
 	detail["id"] = existing["id"]
 	return detail
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (p *SyntheticMonitoringProvider) GetByUID(UID string) (*grizzly.Resource, error) {
+func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	check, err := getRemoteCheck(UID)
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving check %s: %v", UID, err)
 	}
-	resource := p.newCheckResource("", *check)
+	resource := h.newCheckResource("", *check)
 	return &resource, nil
 }
 
 // GetRepresentation renders a resource as JSON or YAML as appropriate
-func (p *SyntheticMonitoringProvider) GetRepresentation(uid string, detail map[string]interface{}) (string, error) {
+func (h *SyntheticMonitoringHandler) GetRepresentation(uid string, detail map[string]interface{}) (string, error) {
 	j, err := json.MarshalIndent(detail, "", "  ")
 	if err != nil {
 		return "", err
@@ -114,7 +119,7 @@ func (p *SyntheticMonitoringProvider) GetRepresentation(uid string, detail map[s
 }
 
 // GetRemoteRepresentation retrieves a datasource as JSON
-func (p *SyntheticMonitoringProvider) GetRemoteRepresentation(uid string) (string, error) {
+func (h *SyntheticMonitoringHandler) GetRemoteRepresentation(uid string) (string, error) {
 	check, err := getRemoteCheck(uid)
 	if err != nil {
 		return "", err
@@ -123,23 +128,23 @@ func (p *SyntheticMonitoringProvider) GetRemoteRepresentation(uid string) (strin
 }
 
 // GetRemote retrieves a datasource as a Resource
-func (p *SyntheticMonitoringProvider) GetRemote(uid string) (*grizzly.Resource, error) {
+func (h *SyntheticMonitoringHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 	check, err := getRemoteCheck(uid)
 	if err != nil {
 		return nil, err
 	}
-	resource := p.newCheckResource("", *check)
+	resource := h.newCheckResource("", *check)
 	return &resource, nil
 }
 
 // Add adds a new check to the SyntheticMonitoring endpoint
-func (p *SyntheticMonitoringProvider) Add(detail map[string]interface{}) error {
+func (h *SyntheticMonitoringHandler) Add(detail map[string]interface{}) error {
 	url := getURL("api/v1/check/add")
 	return postCheck(url, Check(detail))
 }
 
 // Update pushes an updated check to the SyntheticMonitoring endpoing
-func (p *SyntheticMonitoringProvider) Update(existing, detail map[string]interface{}) error {
+func (h *SyntheticMonitoringHandler) Update(existing, detail map[string]interface{}) error {
 	existingCheck := Check(existing)
 	check := Check(detail)
 	url := getURL("api/v1/check/update")
@@ -149,7 +154,7 @@ func (p *SyntheticMonitoringProvider) Update(existing, detail map[string]interfa
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (p *SyntheticMonitoringProvider) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
+func (h *SyntheticMonitoringHandler) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
 	return grizzly.ErrNotImplemented
 }
 

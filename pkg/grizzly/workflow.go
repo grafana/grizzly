@@ -21,24 +21,32 @@ var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 // Get retrieves JSON for a dashboard from Grafana, using the dashboard's UID
 func Get(config Config, UID string) error {
-	if !strings.Contains(UID, ".") {
+	count := strings.Count(UID, ".")
+	var handlerName, resourceID string
+	if count == 1 {
+		parts := strings.SplitN(UID, ".", 2)
+		handlerName = parts[0]
+		resourceID = parts[1]
+	} else if count == 2 {
+		parts := strings.SplitN(UID, ".", 3)
+		handlerName = parts[0] + "." + parts[1]
+		resourceID = parts[2]
+
+	} else {
 		return fmt.Errorf("UID must be <provider>.<uid>: %s", UID)
 	}
-	parts := strings.SplitN(UID, ".", 2)
-	path := parts[0]
-	id := parts[1]
 
-	provider, err := config.Registry.GetProvider(path)
+	handler, err := config.Registry.GetHandler(handlerName)
 	if err != nil {
 		return err
 	}
 
-	resource, err := provider.GetByUID(id)
+	resource, err := handler.GetByUID(resourceID)
 	if err != nil {
 		return err
 	}
 
-	resource.Detail = provider.Unprepare(resource.Detail)
+	resource.Detail = handler.Unprepare(resource.Detail)
 	rep, err := resource.GetRepresentation()
 	if err != nil {
 		return err
@@ -66,24 +74,24 @@ func List(config Config, jsonnetFile string) error {
 	return w.Flush()
 }
 
-func getPrivateElementsScript(jsonnetFile string, providers []Provider) string {
+func getPrivateElementsScript(jsonnetFile string, handlers []Handler) string {
 	const script = `
     local src = import '%s';
     src + {
     %s
     }
 	`
-	providerStrings := []string{}
-	for _, provider := range providers {
-		jsonPath := provider.GetJSONPath()
-		providerStrings = append(providerStrings, fmt.Sprintf("  %s+::: {},", jsonPath))
+	handlerStrings := []string{}
+	for _, handler := range handlers {
+		jsonPath := handler.GetJSONPath()
+		handlerStrings = append(handlerStrings, fmt.Sprintf("  %s+::: {},", jsonPath))
 	}
-	return fmt.Sprintf(script, jsonnetFile, strings.Join(providerStrings, "\n"))
+	return fmt.Sprintf(script, jsonnetFile, strings.Join(handlerStrings, "\n"))
 }
 
 func parse(config Config, jsonnetFile string) (Resources, error) {
 
-	script := getPrivateElementsScript(jsonnetFile, config.Registry.ProviderList)
+	script := getPrivateElementsScript(jsonnetFile, config.Registry.GetHandlers())
 	vm := jsonnet.MakeVM()
 	vm.Importer(newExtendedImporter([]string{"vendor", "lib", "."}))
 
@@ -99,12 +107,12 @@ func parse(config Config, jsonnetFile string) (Resources, error) {
 
 	r := Resources{}
 	for k, v := range msi {
-		provider, err := config.Registry.GetProvider(k)
+		handler, err := config.Registry.GetHandler(k)
 		if err != nil {
 			fmt.Println("Skipping unregistered path", k)
 			continue
 		}
-		resources, err := provider.Parse(v)
+		resources, err := handler.Parse(v)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +132,7 @@ func Show(config Config, jsonnetFile string, targets []string) error {
 
 	var items []term.PageItem
 	for _, resource := range resources {
-		resource.Detail = resource.Provider.Unprepare(resource.Detail)
+		resource.Detail = resource.Handler.Unprepare(resource.Detail)
 
 		rep, err := resource.GetRepresentation()
 		if err != nil {
@@ -154,14 +162,14 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 	}
 
 	for _, resource := range resources {
-		provider := resource.Provider
+		handler := resource.Handler
 		local, err := resource.GetRepresentation()
 		if err != nil {
 			return nil
 		}
-		resource.Detail = provider.Unprepare(resource.Detail)
+		resource.Detail = handler.Unprepare(resource.Detail)
 		uid := resource.UID
-		remote, err := provider.GetRemote(resource.UID)
+		remote, err := handler.GetRemote(resource.UID)
 		if err == ErrNotFound {
 			log.Printf("%s/%s %s\n", resource.Path, uid, Yellow("not present in "+resource.Kind()))
 			continue
@@ -169,7 +177,7 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 		if err != nil {
 			return fmt.Errorf("Error retrieving resource from %s %s: %v", resource.Kind(), uid, err)
 		}
-		remote.Detail = provider.Unprepare(remote.Detail)
+		remote.Detail = handler.Unprepare(remote.Detail)
 		remoteRepresentation, err := (*remote).GetRepresentation()
 		if err != nil {
 			return err
@@ -195,7 +203,7 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 
 	for _, resource := range resources {
 		if resource.MatchesTarget(targets) {
-			provider := resource.Provider
+			provider := resource.Handler
 			existingResource, err := provider.GetRemote(resource.UID)
 			if err == ErrNotFound {
 
@@ -233,9 +241,9 @@ func Preview(config Config, jsonnetFile string, targets []string, opts *PreviewO
 	}
 	for _, resource := range resources {
 		if resource.MatchesTarget(targets) {
-			err := resource.Provider.Preview(resource.Detail, opts)
+			err := resource.Handler.Preview(resource.Detail, opts)
 			if err == ErrNotImplemented {
-				log.Println(resource.Provider.GetName()+" provider", Red("does not support preview"))
+				log.Println(resource.Handler.GetName()+" provider", Red("does not support preview"))
 			}
 			if err != nil {
 				return err
@@ -271,15 +279,15 @@ func Watch(config Config, watchDir, jsonnetFile string, targets []string) error 
 					}
 					for _, resource := range resources {
 						if resource.MatchesTarget(targets) {
-							provider := resource.Provider
-							existingResource, err := provider.GetRemote(resource.UID)
+							handler := resource.Handler
+							existingResource, err := handler.GetRemote(resource.UID)
 							if err == grizzly.ErrNotFound {
-								err := resource.Provider.Add(resource.Detail)
+								err := handler.Add(resource.Detail)
 								if err != nil {
 									log.Println("Error:", err)
 								}
 							} else {
-								err := resource.Provider.Update(existingResource.Detail, resource.Detail)
+								err := handler.Update(existingResource.Detail, resource.Detail)
 								if err != nil {
 									log.Println("Error:", err)
 								}
@@ -323,7 +331,7 @@ func Export(config Config, jsonnetFile, dashboardDir string, targets []string) e
 				return err
 			}
 			uid := resource.UID
-			extension := resource.Provider.GetExtension()
+			extension := resource.Handler.GetExtension()
 			dir := fmt.Sprintf("%s/%s", dashboardDir, resource.Kind())
 			if _, err := os.Stat(dir); os.IsNotExist(err) {
 				err = os.Mkdir(dir, 0755)
