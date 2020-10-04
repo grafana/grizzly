@@ -2,7 +2,6 @@
   grafanaDatasources+:: {
     'prometheus.yml': {
       access: 'proxy',
-      editable: false,
       isDefault: true,
       jsonData: {
         httpMethod: 'GET',

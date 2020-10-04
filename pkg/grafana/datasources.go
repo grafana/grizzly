@@ -57,6 +57,18 @@ func (h *DatasourceHandler) Parse(i interface{}) (grizzly.Resources, error) {
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
 		source := Datasource{}
+		source["basicAuth"] = false
+		source["basicAuthPassword"] = ""
+		source["basicAuthUser"] = ""
+		source["database"] = ""
+		source["orgId"] = 1
+		source["password"] = ""
+		source["secureJsonFields"] = map[string]interface{}{}
+		source["typeLogoUrl"] = ""
+		source["user"] = ""
+		source["withCredentials"] = false
+		source["readOnly"] = false
+
 		err := mapstructure.Decode(v, &source)
 		if err != nil {
 			return nil, err

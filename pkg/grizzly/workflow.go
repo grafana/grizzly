@@ -217,8 +217,9 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 			} else if err != nil {
 				return err
 			}
-			resource = *provider.Prepare(*existingResource, resource)
 			resourceRepresentation, err := resource.GetRepresentation()
+			resource = *provider.Prepare(*existingResource, resource)
+			existingResource = provider.Unprepare(resource)
 			existingResourceRepresentation, err := existingResource.GetRepresentation()
 			if resourceRepresentation == existingResourceRepresentation {
 				fmt.Println(resource.UID, Yellow("unchanged"))
