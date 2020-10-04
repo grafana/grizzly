@@ -13,6 +13,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+/*
+ * This DashboardHandler supports folders. Add a `folderName` to your dashboard JSON.
+ * This will be removed from the JSON, and if no folder exists, a dashboard folder
+ * will be created with UID and title matching your `folderName`.
+ *
+ */
+
 // DashboardHandler is a Grizzly Provider for Grafana dashboards
 type DashboardHandler struct{}
 
@@ -200,6 +207,7 @@ func postDashboard(board Dashboard) error {
 	if err != nil {
 		return err
 	}
+	delete(board, "folderName")
 	wrappedBoard := wrapDashboard(folderID, board)
 	wrappedJSON, err := wrappedBoard.toJSON()
 
