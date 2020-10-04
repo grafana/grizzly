@@ -84,19 +84,19 @@ func (h *SyntheticMonitoringHandler) Parse(i interface{}) (grizzly.Resources, er
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *SyntheticMonitoringHandler) Unprepare(detail map[string]interface{}) map[string]interface{} {
-	delete(detail, "tenantId")
-	delete(detail, "id")
-	delete(detail, "modified")
-	delete(detail, "created")
-	return detail
+func (h *SyntheticMonitoringHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
+	delete(resource.Detail, "tenantId")
+	delete(resource.Detail, "id")
+	delete(resource.Detail, "modified")
+	delete(resource.Detail, "created")
+	return &resource
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *SyntheticMonitoringHandler) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
-	detail["tenantId"] = existing["tenantId"]
-	detail["id"] = existing["id"]
-	return detail
+func (h *SyntheticMonitoringHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
+	resource.Detail["tenantId"] = existing.Detail["tenantId"]
+	resource.Detail["id"] = existing.Detail["id"]
+	return &resource
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
@@ -110,8 +110,8 @@ func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, er
 }
 
 // GetRepresentation renders a resource as JSON or YAML as appropriate
-func (h *SyntheticMonitoringHandler) GetRepresentation(uid string, detail map[string]interface{}) (string, error) {
-	j, err := json.MarshalIndent(detail, "", "  ")
+func (h *SyntheticMonitoringHandler) GetRepresentation(uid string, resource grizzly.Resource) (string, error) {
+	j, err := json.MarshalIndent(resource.Detail, "", "  ")
 	if err != nil {
 		return "", err
 	}
@@ -138,23 +138,20 @@ func (h *SyntheticMonitoringHandler) GetRemote(uid string) (*grizzly.Resource, e
 }
 
 // Add adds a new check to the SyntheticMonitoring endpoint
-func (h *SyntheticMonitoringHandler) Add(detail map[string]interface{}) error {
+func (h *SyntheticMonitoringHandler) Add(resource grizzly.Resource) error {
 	url := getURL("api/v1/check/add")
-	return postCheck(url, Check(detail))
+	return postCheck(url, Check(resource.Detail))
 }
 
 // Update pushes an updated check to the SyntheticMonitoring endpoing
-func (h *SyntheticMonitoringHandler) Update(existing, detail map[string]interface{}) error {
-	existingCheck := Check(existing)
-	check := Check(detail)
+func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource) error {
+	check := Check(resource.Detail)
 	url := getURL("api/v1/check/update")
-	check["tenantId"] = existingCheck["tenantId"]
-	check["id"] = existingCheck["id"]
 	return postCheck(url, check)
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (h *SyntheticMonitoringHandler) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
+func (h *SyntheticMonitoringHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
 	return grizzly.ErrNotImplemented
 }
 

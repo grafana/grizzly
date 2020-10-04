@@ -70,13 +70,13 @@ func (h *DashboardHandler) Parse(i interface{}) (grizzly.Resources, error) {
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *DashboardHandler) Unprepare(detail map[string]interface{}) map[string]interface{} {
-	return detail
+func (h *DashboardHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
+	return &resource
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *DashboardHandler) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
-	return detail
+func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
+	return &resource
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
@@ -90,8 +90,8 @@ func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 }
 
 // GetRepresentation renders a resource as JSON or YAML as appropriate
-func (h *DashboardHandler) GetRepresentation(uid string, detail map[string]interface{}) (string, error) {
-	j, err := json.MarshalIndent(detail, "", "  ")
+func (h *DashboardHandler) GetRepresentation(uid string, resource grizzly.Resource) (string, error) {
+	j, err := json.MarshalIndent(resource.Detail, "", "  ")
 	if err != nil {
 		return "", err
 	}
@@ -119,10 +119,8 @@ func (h *DashboardHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 }
 
 // Add pushes a new dashboard to Grafana via the API
-func (h *DashboardHandler) Add(detail map[string]interface{}) error {
-	board := Dashboard(detail)
-
-	// @TODO SUPPORT FOLDERS!!
+func (h *DashboardHandler) Add(resource grizzly.Resource) error {
+	board := Dashboard(resource.Detail)
 
 	if err := postDashboard(board); err != nil {
 		return err
@@ -131,17 +129,15 @@ func (h *DashboardHandler) Add(detail map[string]interface{}) error {
 }
 
 // Update pushes a dashboard to Grafana via the API
-func (h *DashboardHandler) Update(existing, detail map[string]interface{}) error {
-	board := Dashboard(detail)
-
-	// @TODO SUPPORT FOLDERS!!
+func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
+	board := Dashboard(resource.Detail)
 
 	return postDashboard(board)
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (h *DashboardHandler) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
-	board := Dashboard(detail)
+func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
+	board := Dashboard(resource.Detail)
 	uid := board.UID()
 	s, err := postSnapshot(board, opts)
 	if err != nil {

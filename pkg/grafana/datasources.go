@@ -69,16 +69,16 @@ func (h *DatasourceHandler) Parse(i interface{}) (grizzly.Resources, error) {
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *DatasourceHandler) Unprepare(detail map[string]interface{}) map[string]interface{} {
-	delete(detail, "version")
-	delete(detail, "id")
-	return detail
+func (h *DatasourceHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
+	delete(resource.Detail, "version")
+	delete(resource.Detail, "id")
+	return &resource
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *DatasourceHandler) Prepare(existing, detail map[string]interface{}) map[string]interface{} {
-	detail["id"] = existing["id"]
-	return detail
+func (h *DatasourceHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
+	resource.Detail["id"] = existing.Detail["id"]
+	return &resource
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
@@ -92,8 +92,8 @@ func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 }
 
 // GetRepresentation renders a resource as JSON or YAML as appropriate
-func (h *DatasourceHandler) GetRepresentation(uid string, detail map[string]interface{}) (string, error) {
-	j, err := json.MarshalIndent(detail, "", "  ")
+func (h *DatasourceHandler) GetRepresentation(uid string, resource grizzly.Resource) (string, error) {
+	j, err := json.MarshalIndent(resource.Detail, "", "  ")
 	if err != nil {
 		return "", err
 	}
@@ -120,18 +120,17 @@ func (h *DatasourceHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 }
 
 // Add pushes a datasource to Grafana via the API
-func (h *DatasourceHandler) Add(detail map[string]interface{}) error {
-	return postDatasource(Datasource(detail))
+func (h *DatasourceHandler) Add(resource grizzly.Resource) error {
+	return postDatasource(Datasource(resource.Detail))
 }
 
 // Update pushes a datasource to Grafana via the API
-func (h *DatasourceHandler) Update(existing, detail map[string]interface{}) error {
-	detail["id"] = existing["id"]
-	return putDatasource(Datasource(detail))
+func (h *DatasourceHandler) Update(existing, resource grizzly.Resource) error {
+	return putDatasource(Datasource(resource.Detail))
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (h *DatasourceHandler) Preview(detail map[string]interface{}, opts *grizzly.PreviewOpts) error {
+func (h *DatasourceHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
 	return grizzly.ErrNotImplemented
 }
 

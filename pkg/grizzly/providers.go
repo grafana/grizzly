@@ -23,7 +23,7 @@ func (r *Resource) Key() string {
 
 // GetRepresentation Gets the string representation for this resource
 func (r *Resource) GetRepresentation() (string, error) {
-	return r.Handler.GetRepresentation(r.UID, r.Detail)
+	return r.Handler.GetRepresentation(r.UID, *r)
 }
 
 // GetRemoteRepresentation Gets the string representation for this resource
@@ -59,16 +59,16 @@ type Handler interface {
 	Parse(i interface{}) (Resources, error)
 
 	// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-	Unprepare(detail map[string]interface{}) map[string]interface{}
+	Unprepare(resource Resource) *Resource
 
 	// Prepare gets a resource ready for dispatch to the remote endpoint
-	Prepare(existing, detail map[string]interface{}) map[string]interface{}
+	Prepare(existing, resource Resource) *Resource
 
 	// Get retrieves JSON for a resource from an endpoint, by UID
 	GetByUID(UID string) (*Resource, error)
 
 	// GetRepresentation renders Jsonnet to Grizzly resources, rendering as a string
-	GetRepresentation(uid string, detail map[string]interface{}) (string, error)
+	GetRepresentation(uid string, resource Resource) (string, error)
 
 	// GetRemoteRepresentation retrieves a resource from the endpoint and renders to a string
 	GetRemoteRepresentation(uid string) (string, error)
@@ -77,13 +77,13 @@ type Handler interface {
 	GetRemote(uid string) (*Resource, error)
 
 	// Add pushes a new resource to the endpoint
-	Add(detail map[string]interface{}) error
+	Add(resource Resource) error
 
 	// Update pushes an existing resource to the endpoint
-	Update(current, detail map[string]interface{}) error
+	Update(existing, resource Resource) error
 
 	// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-	Preview(detail map[string]interface{}, opts *PreviewOpts) error
+	Preview(resource Resource, opts *PreviewOpts) error
 }
 
 // Provider describes a single Endpoint Provider

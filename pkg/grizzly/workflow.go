@@ -46,7 +46,7 @@ func Get(config Config, UID string) error {
 		return err
 	}
 
-	resource.Detail = handler.Unprepare(resource.Detail)
+	resource = handler.Unprepare(*resource)
 	rep, err := resource.GetRepresentation()
 	if err != nil {
 		return err
@@ -132,7 +132,8 @@ func Show(config Config, jsonnetFile string, targets []string) error {
 
 	var items []term.PageItem
 	for _, resource := range resources {
-		resource.Detail = resource.Handler.Unprepare(resource.Detail)
+		handler := resource.Handler
+		resource = *handler.Unprepare(resource)
 
 		rep, err := resource.GetRepresentation()
 		if err != nil {
@@ -167,7 +168,7 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 		if err != nil {
 			return nil
 		}
-		resource.Detail = handler.Unprepare(resource.Detail)
+		resource = *handler.Unprepare(resource)
 		uid := resource.UID
 		remote, err := handler.GetRemote(resource.UID)
 		if err == ErrNotFound {
@@ -177,7 +178,7 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 		if err != nil {
 			return fmt.Errorf("Error retrieving resource from %s %s: %v", resource.Kind(), uid, err)
 		}
-		remote.Detail = handler.Unprepare(remote.Detail)
+		remote = handler.Unprepare(*remote)
 		remoteRepresentation, err := (*remote).GetRepresentation()
 		if err != nil {
 			return err
@@ -207,7 +208,7 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 			existingResource, err := provider.GetRemote(resource.UID)
 			if err == ErrNotFound {
 
-				err := provider.Add(resource.Detail)
+				err := provider.Add(resource)
 				if err != nil {
 					return err
 				}
@@ -216,13 +217,13 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 			} else if err != nil {
 				return err
 			}
-			resource.Detail = provider.Prepare(existingResource.Detail, resource.Detail)
+			resource = *provider.Prepare(*existingResource, resource)
 			resourceRepresentation, err := resource.GetRepresentation()
 			existingResourceRepresentation, err := existingResource.GetRepresentation()
 			if resourceRepresentation == existingResourceRepresentation {
 				fmt.Println(resource.UID, Yellow("unchanged"))
 			} else {
-				err = provider.Update(existingResource.Detail, resource.Detail)
+				err = provider.Update(*existingResource, resource)
 				if err != nil {
 					return err
 				}
@@ -241,7 +242,7 @@ func Preview(config Config, jsonnetFile string, targets []string, opts *PreviewO
 	}
 	for _, resource := range resources {
 		if resource.MatchesTarget(targets) {
-			err := resource.Handler.Preview(resource.Detail, opts)
+			err := resource.Handler.Preview(resource, opts)
 			if err == ErrNotImplemented {
 				log.Println(resource.Handler.GetName()+" provider", Red("does not support preview"))
 			}
@@ -282,12 +283,12 @@ func Watch(config Config, watchDir, jsonnetFile string, targets []string) error 
 							handler := resource.Handler
 							existingResource, err := handler.GetRemote(resource.UID)
 							if err == grizzly.ErrNotFound {
-								err := handler.Add(resource.Detail)
+								err := handler.Add(resource)
 								if err != nil {
 									log.Println("Error:", err)
 								}
 							} else {
-								err := handler.Update(existingResource.Detail, resource.Detail)
+								err := handler.Update(*existingResource, resource)
 								if err != nil {
 									log.Println("Error:", err)
 								}
