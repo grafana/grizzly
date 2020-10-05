@@ -82,14 +82,14 @@ func (h *DatasourceHandler) Parse(i interface{}) (grizzly.Resources, error) {
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *DatasourceHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	delete(resource.Detail, "version")
-	delete(resource.Detail, "id")
+	h.delete(resource, "version")
+	h.delete(resource, "id")
 	return &resource
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *DatasourceHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	resource.Detail["id"] = existing.Detail["id"]
+	resource.Detail.(Datasource)["id"] = existing.Detail.(Datasource)["id"]
 	return &resource
 }
 
@@ -133,17 +133,21 @@ func (h *DatasourceHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 
 // Add pushes a datasource to Grafana via the API
 func (h *DatasourceHandler) Add(resource grizzly.Resource) error {
-	return postDatasource(Datasource(resource.Detail))
+	return postDatasource(newDatasource(resource))
 }
 
 // Update pushes a datasource to Grafana via the API
 func (h *DatasourceHandler) Update(existing, resource grizzly.Resource) error {
-	return putDatasource(Datasource(resource.Detail))
+	return putDatasource(newDatasource(resource))
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
 func (h *DatasourceHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
 	return grizzly.ErrNotImplemented
+}
+
+func (h *DatasourceHandler) delete(resource grizzly.Resource, key string) {
+	delete(resource.Detail.(Datasource), key)
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -262,6 +266,10 @@ func putDatasource(source Datasource) error {
 
 // Datasource encapsulates a datasource
 type Datasource map[string]interface{}
+
+func newDatasource(resource grizzly.Resource) Datasource {
+	return resource.Detail.(Datasource)
+}
 
 // UID retrieves the UID from a datasource
 func (d *Datasource) UID() string {

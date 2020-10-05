@@ -127,7 +127,7 @@ func (h *DashboardHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 
 // Add pushes a new dashboard to Grafana via the API
 func (h *DashboardHandler) Add(resource grizzly.Resource) error {
-	board := Dashboard(resource.Detail)
+	board := newDashboard(resource)
 
 	if err := postDashboard(board); err != nil {
 		return err
@@ -137,14 +137,14 @@ func (h *DashboardHandler) Add(resource grizzly.Resource) error {
 
 // Update pushes a dashboard to Grafana via the API
 func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
-	board := Dashboard(resource.Detail)
+	board := newDashboard(resource)
 
 	return postDashboard(board)
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
 func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
-	board := Dashboard(resource.Detail)
+	board := newDashboard(resource)
 	uid := board.UID()
 	s, err := postSnapshot(board, opts)
 	if err != nil {
@@ -291,6 +291,10 @@ func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, er
 
 // Dashboard encapsulates a dashboard
 type Dashboard map[string]interface{}
+
+func newDashboard(resource grizzly.Resource) Dashboard {
+	return resource.Detail.(Dashboard)
+}
 
 // UID retrieves the UID from a dashboard
 func (d *Dashboard) UID() string {

@@ -4,11 +4,11 @@ import "fmt"
 
 // Resource represents a single Resource destined for a single endpoint
 type Resource struct {
-	UID      string                 `json:"uid"`
-	Filename string                 `json:"filename"`
-	Handler  Handler                `json:"handler"`
-	Detail   map[string]interface{} `json:"detail"`
-	Path     string                 `json:"path"`
+	UID      string      `json:"uid"`
+	Filename string      `json:"filename"`
+	Handler  Handler     `json:"handler"`
+	Detail   interface{} `json:"detail"`
+	Path     string      `json:"path"`
 }
 
 // Kind returns the 'kind' of the resource, i.e. the type of the provider

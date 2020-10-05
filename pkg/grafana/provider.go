@@ -20,7 +20,6 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 	return []grizzly.Handler{
 		&DashboardHandler{},
 		&DatasourceHandler{},
-		//PluginHandler{},
 		&SyntheticMonitoringHandler{},
 		//MixinHandler{},
 	}

@@ -85,17 +85,17 @@ func (h *SyntheticMonitoringHandler) Parse(i interface{}) (grizzly.Resources, er
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *SyntheticMonitoringHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	delete(resource.Detail, "tenantId")
-	delete(resource.Detail, "id")
-	delete(resource.Detail, "modified")
-	delete(resource.Detail, "created")
+	delete(resource.Detail.(Check), "tenantId")
+	delete(resource.Detail.(Check), "id")
+	delete(resource.Detail.(Check), "modified")
+	delete(resource.Detail.(Check), "created")
 	return &resource
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *SyntheticMonitoringHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	resource.Detail["tenantId"] = existing.Detail["tenantId"]
-	resource.Detail["id"] = existing.Detail["id"]
+	resource.Detail.(Check)["tenantId"] = existing.Detail.(Check)["tenantId"]
+	resource.Detail.(Check)["id"] = existing.Detail.(Check)["id"]
 	return &resource
 }
 
@@ -140,12 +140,12 @@ func (h *SyntheticMonitoringHandler) GetRemote(uid string) (*grizzly.Resource, e
 // Add adds a new check to the SyntheticMonitoring endpoint
 func (h *SyntheticMonitoringHandler) Add(resource grizzly.Resource) error {
 	url := getURL("api/v1/check/add")
-	return postCheck(url, Check(resource.Detail))
+	return postCheck(url, newCheck(resource))
 }
 
 // Update pushes an updated check to the SyntheticMonitoring endpoing
 func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource) error {
-	check := Check(resource.Detail)
+	check := newCheck(resource)
 	url := getURL("api/v1/check/update")
 	return postCheck(url, check)
 }
@@ -309,6 +309,10 @@ func getProbeList() (*Probes, error) {
 
 // Check encapsulates a check
 type Check map[string]interface{}
+
+func newCheck(resource grizzly.Resource) Check {
+	return resource.Detail.(Check)
+}
 
 // UID retrieves the UID from a check
 func (c *Check) UID() string {
