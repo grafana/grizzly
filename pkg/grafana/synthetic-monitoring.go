@@ -191,7 +191,7 @@ func getRemoteCheck(uid string) (*Check, error) {
 
 	var checks []Check
 	if err := json.Unmarshal(data, &checks); err != nil {
-		return nil, APIErr{err, data}
+		return nil, grizzly.APIErr{Err: err, Body: data}
 	}
 	probes, err := getProbeList()
 	if err != nil {
@@ -292,7 +292,7 @@ func getProbeList() (*Probes, error) {
 
 	probeList := []Probe{}
 	if err := json.Unmarshal(data, &probeList); err != nil {
-		return nil, APIErr{err, data}
+		return nil, grizzly.APIErr{Err: err, Body: data}
 	}
 	probes := Probes{
 		ByID:   map[int]Probe{},
@@ -375,7 +375,7 @@ func getAuthToken() (string, error) {
 	}
 	authResponse := AuthResponse{}
 	if err := json.Unmarshal(data, &authResponse); err != nil {
-		return "", APIErr{err, data}
+		return "", grizzly.APIErr{Err: err, Body: data}
 
 	}
 	return authResponse.AccessToken, nil

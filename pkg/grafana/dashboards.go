@@ -189,7 +189,7 @@ func getRemoteDashboard(uid string) (*Dashboard, error) {
 
 	var d DashboardWrapper
 	if err := json.Unmarshal(data, &d); err != nil {
-		return nil, APIErr{err, data}
+		return nil, grizzly.APIErr{err, data}
 	}
 	delete(d.Dashboard, "id")
 	delete(d.Dashboard, "version")
