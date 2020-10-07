@@ -85,15 +85,13 @@ type Mixin struct {
 }
 
 func eval(jsonnetFile string) ([]byte, error) {
-	data, err := ioutil.ReadFile(jsonnetFile)
-	if err != nil {
-		return nil, err
-	}
-
+	const template = "(import '%s') + { grafanaDashboards+:::{} }"
+	script := fmt.Sprintf(template, jsonnetFile)
+	fmt.Println("SCRIPT", script)
 	vm := jsonnet.MakeVM()
 	vm.Importer(newExtendedImporter([]string{"vendor", "lib", "."}))
 
-	result, err := vm.EvaluateSnippet(jsonnetFile, string(data))
+	result, err := vm.EvaluateSnippet(jsonnetFile, script)
 	if err != nil {
 		return nil, err
 	}
