@@ -1,4 +1,5 @@
 {
+  grafanaDashboardFolder: 'grizzly',
   grafanaDashboards+:: {
     'my-dash.json': {
       uid: 'prod-overview',

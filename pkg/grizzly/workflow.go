@@ -195,9 +195,7 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 func Apply(config Config, jsonnetFile string, targets []string) error {
 	folderID, err := folderId(config, jsonnetFile)
 	if err != nil {
-		var fID int64 = 0
-		folderID = &fID
-		fmt.Println("Folder not found and/or configured. Applying to \"General\" folder.")
+		return err
 	}
 	boards, err := renderDashboards(jsonnetFile, targets, *folderID)
 	if err != nil {
@@ -216,8 +214,8 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 				return err
 			}
 		case nil: // update
-			boardJSON, _ := board.GetDashboardJSON()
-			existingBoardJSON, _ := existingBoard.GetDashboardJSON()
+			boardJSON, _ := board.GetAPIJSON()
+			existingBoardJSON, _ := existingBoard.GetAPIJSON()
 
 			if boardJSON == existingBoardJSON {
 				fmt.Println(uid, yellow("unchanged"))
@@ -371,20 +369,16 @@ func folderId(config Config, jsonnetFile string) (*int64, error) {
 	jsonnet := fmt.Sprintf(`
 local f = import "%s";
 f.grafanaDashboardFolder`, jsonnetFile)
-	output, err := evalToString(jsonnet)
+	name, err := evalToString(jsonnet)
 	if err != nil {
 		return nil, err
 	}
-	var name string
-	err = json.Unmarshal([]byte(output), &name)
+	name = strings.TrimSpace(strings.ReplaceAll(name, "\"", ""))
+	folder, err := getFolder(config, name)
 	if err != nil {
 		return nil, err
 	}
-	folder, err := searchFolder(config, strings.TrimSpace(name))
-	if err != nil {
-		return nil, err
-	}
-	return &folder.Id, nil
+	return &folder, nil
 }
 
 func renderDashboards(jsonnetFile string, targets []string, folderId int64) (Boards, error) {
@@ -394,9 +388,16 @@ func renderDashboards(jsonnetFile string, targets []string, folderId int64) (Boa
 		return nil, err
 	}
 
-	var boards Boards
-	if err := json.Unmarshal([]byte(data), &boards); err != nil {
+	var _boards Boards
+	if err := json.Unmarshal([]byte(data), &_boards); err != nil {
 		return nil, err
+	}
+
+	boards := make(map[string]Board)
+
+	for k, b := range _boards {
+		b.FolderID = folderId
+		boards[k] = b
 	}
 
 	if len(targets) == 0 {
