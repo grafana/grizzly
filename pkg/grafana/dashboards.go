@@ -193,6 +193,7 @@ func getRemoteDashboard(uid string) (*Dashboard, error) {
 	}
 	delete(d.Dashboard, "id")
 	delete(d.Dashboard, "version")
+	d.Dashboard["folderName"] = d.Meta.FolderTitle
 	return &d.Dashboard, nil
 }
 
@@ -208,7 +209,11 @@ func postDashboard(board Dashboard) error {
 		return err
 	}
 	delete(board, "folderName")
-	wrappedBoard := wrapDashboard(folderID, board)
+	wrappedBoard := DashboardWrapper{
+		Dashboard: board,
+		FolderID:  folderID,
+		Overwrite: true,
+	}
 	wrappedJSON, err := wrappedBoard.toJSON()
 
 	resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(wrappedJSON))
@@ -323,20 +328,16 @@ func (d *Dashboard) folderUID() string {
 	return ""
 }
 
-// DashboardWrapper adds wrapper required by Grafana API
+// DashboardWrapper adds wrapper to a dashboard JSON. Caters both for Grafana's POST
+// API as well as GET which require different JSON.
 type DashboardWrapper struct {
 	Dashboard Dashboard `json:"dashboard"`
 	FolderID  int64     `json:"folderId"`
 	Overwrite bool      `json:"overwrite"`
-}
-
-func wrapDashboard(folderID int64, dashboard Dashboard) DashboardWrapper {
-	wrapper := DashboardWrapper{
-		Dashboard: dashboard,
-		FolderID:  folderID,
-		Overwrite: true,
-	}
-	return wrapper
+	Meta      struct {
+		FolderID    int64  `json:"folderId"`
+		FolderTitle string `json:"folderTitle"`
+	} `json:"meta"`
 }
 
 func (d DashboardWrapper) String() string {
