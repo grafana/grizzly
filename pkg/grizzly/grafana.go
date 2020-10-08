@@ -228,6 +228,7 @@ func getDashboard(config Config, uid string) (*Board, error) {
 		return nil, err
 	}
 
+	// nestedBoard matches the JSON response from the API
 	type nestedBoard struct {
 		Dashboard Board `json:"dashboard"`
 		Meta      struct {
