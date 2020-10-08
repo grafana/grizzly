@@ -16,14 +16,15 @@ import (
 
 // Folder encapsulates a folder object from the Grafana API
 type Folder struct {
-	Id    int64
-	Uid   string
-	Title string
+	ID    int64  `json:"id"`
+	UID   string `json:"uid"`
+	Title string `json:"title"`
 }
 
 // Board enscapsulates a dashboard for upload to Grafana API
 type Board struct {
 	Dashboard map[string]interface{} `json:"dashboard"`
+	FolderID  int64                  `json:"folderId"`
 	Overwrite bool                   `json:"overwrite"`
 }
 
@@ -124,38 +125,76 @@ func (b Board) GetDashboardJSON() (string, error) {
 	return string(j), nil
 }
 
-func searchFolder(config Config, name string) (*Folder, error) {
+// toJSON returns JSON expected by Grafana API
+func (f *Folder) toJSON() (string, error) {
+	j, err := json.MarshalIndent(f, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(j), nil
+}
+
+func getFolder(config Config, UID string) (int64, error) {
+	if UID == "0" {
+		return 0, nil
+	}
 	if config.GrafanaURL == "" {
-		return nil, errors.New("Must set GRAFANA_URL environment variable")
+		return 0, errors.New("Must set GRAFANA_URL environment variable")
 	}
 
 	u, err := url.Parse(config.GrafanaURL)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	u.Path = path.Join(u.Path, "api/search")
-	u.Query().Add("query", name)
+	u.Path = path.Join(u.Path, "api/folders", UID)
+
 	resp, err := http.Get(u.String())
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	var folders []Folder
-	if err := json.Unmarshal([]byte(string(body)), &folders); err != nil {
-		return nil, err
-	}
-	var folder Folder
-	for _, f := range folders {
-		if f.Title == name {
-			folder = f
-			break
+	if resp.StatusCode == 200 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return 0, err
 		}
+		var folder Folder
+		if err := json.Unmarshal([]byte(string(body)), &folder); err != nil {
+			return 0, err
+		}
+		return folder.ID, nil
+
+	} else if resp.StatusCode == 404 {
+
+		folder := Folder{
+			UID:   UID,
+			Title: UID,
+		}
+
+		folderJSON, err := folder.toJSON()
+		if err != nil {
+			return 0, err
+		}
+		u, err := url.Parse(config.GrafanaURL)
+		if err != nil {
+			return 0, err
+		}
+		u.Path = path.Join(u.Path, "api/folders")
+		resp, err := http.Post(u.String(), "application/json", bytes.NewBufferString(folderJSON))
+		if err != nil {
+			return 0, err
+		} else if resp.StatusCode >= 400 {
+			return 0, fmt.Errorf("Non-200 response from Grafana while applying folder %s: %s", UID, resp.Status)
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err := json.Unmarshal([]byte(string(body)), &folder); err != nil {
+			return 0, err
+		}
+		return folder.ID, nil
+
+	} else {
+		return 0, fmt.Errorf("Getting folder %s returned error %d", UID, resp.StatusCode)
 	}
-	return &folder, nil
 }
 
 func getDashboard(config Config, uid string) (*Board, error) {
@@ -189,15 +228,21 @@ func getDashboard(config Config, uid string) (*Board, error) {
 		return nil, err
 	}
 
+	// nestedBoard matches the JSON response from the API
 	type nestedBoard struct {
 		Dashboard Board `json:"dashboard"`
+		Meta      struct {
+			FolderID    int64  `json:"folderId"`
+			FolderTitle string `json:"folderTitle"`
+		} `json:"meta"`
 	}
+
 	var b nestedBoard
 	if err := json.Unmarshal(data, &b); err != nil {
 		return nil, APIErr{err, data}
 	}
 
-	board := Board{Dashboard: b.Dashboard.Dashboard}
+	board := Board{Dashboard: b.Dashboard.Dashboard, FolderID: b.Meta.FolderID}
 
 	return &board, nil
 }
