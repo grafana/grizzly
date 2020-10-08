@@ -219,7 +219,7 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 			}
 			resourceRepresentation, err := resource.GetRepresentation()
 			resource = *provider.Prepare(*existingResource, resource)
-			existingResource = provider.Unprepare(resource)
+			existingResource = provider.Unprepare(*existingResource)
 			existingResourceRepresentation, err := existingResource.GetRepresentation()
 			if resourceRepresentation == existingResourceRepresentation {
 				fmt.Println(resource.UID, Yellow("unchanged"))
