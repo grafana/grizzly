@@ -91,7 +91,7 @@ func getPrivateElementsScript(jsonnetFile string, handlers []Handler) string {
 
 func parse(config Config, jsonnetFile string) (Resources, error) {
 
-	script := getPrivateElementsScript(jsonnetFile, config.Registry.GetHandlers())
+	script := getPrivateElementsScript(jsonnetFile, config.Registry.Handlers)
 	vm := jsonnet.MakeVM()
 	vm.Importer(newExtendedImporter([]string{"vendor", "lib", "."}))
 

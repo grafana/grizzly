@@ -122,16 +122,6 @@ func (r *Registry) RegisterProvider(provider Provider) error {
 	return nil
 }
 
-// GetProviders will retrieve all registered providers
-func (r *Registry) GetProviders() []Provider {
-	return r.Providers
-}
-
-// GetHandlers will retrieve all handlers from registered providers
-func (r *Registry) GetHandlers() []Handler {
-	return r.Handlers
-}
-
 // GetHandler returns a single provider based upon a JSON path
 func (r *Registry) GetHandler(path string) (Handler, error) {
 	handler, exists := r.HandlerByPath[path]
