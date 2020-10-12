@@ -19,7 +19,7 @@ import (
 
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
-// Get retrieves JSON for a dashboard from Grafana, using the dashboard's UID
+// Get retrieves a resource from a remote endpoint using its UID
 func Get(config Config, UID string) error {
 	count := strings.Count(UID, ".")
 	var handlerName, resourceID string
@@ -56,7 +56,7 @@ func Get(config Config, UID string) error {
 	return nil
 }
 
-// List outputs the keys of the grafanaDashboards object.
+// List outputs the keys resources found in resulting json.
 func List(config Config, jsonnetFile string) error {
 	resources, err := parse(config, jsonnetFile)
 	if err != nil {
@@ -123,7 +123,7 @@ func parse(config Config, jsonnetFile string) (Resources, error) {
 	return r, nil
 }
 
-// Show renders a Jsonnet dashboard as JSON, consuming a jsonnet filename
+// Show renders a Jsonnet and displays the resources found
 func Show(config Config, jsonnetFile string, targets []string) error {
 	resources, err := parse(config, jsonnetFile)
 	if err != nil {
@@ -195,7 +195,7 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 	return nil
 }
 
-// Apply renders Jsonnet dashboards then pushes them to Grafana via the API
+// Apply renders Jsonnet then pushes resources to endpoints
 func Apply(config Config, jsonnetFile string, targets []string) error {
 	resources, err := parse(config, jsonnetFile)
 	if err != nil {
@@ -241,7 +241,7 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 	return nil
 }
 
-// Preview renders Jsonnet dashboards then pushes them to Grafana via the Snapshot API
+// Preview renders Jsonnet then pushes resources to endpoints as previews, if supported
 func Preview(config Config, jsonnetFile string, targets []string, opts *PreviewOpts) error {
 	resources, err := parse(config, jsonnetFile)
 	if err != nil {
@@ -261,7 +261,7 @@ func Preview(config Config, jsonnetFile string, targets []string, opts *PreviewO
 	return nil
 }
 
-// Watch watches a directory for changes then pushes Jsonnet dashboards to Grafana
+// Watch watches a directory for changes then pushes Jsonnet resource to endpoints
 // when changes are noticed
 func Watch(config Config, watchDir, jsonnetFile string, targets []string) error {
 	watcher, err := fsnotify.NewWatcher()
@@ -320,14 +320,14 @@ func Watch(config Config, watchDir, jsonnetFile string, targets []string) error 
 	return nil
 }
 
-// Export renders Jsonnet dashboards then saves them to a directory
-func Export(config Config, jsonnetFile, dashboardDir string, targets []string) error {
+// Export renders Jsonnet resources then saves them to a directory
+func Export(config Config, jsonnetFile, exportDir string, targets []string) error {
 	resources, err := parse(config, jsonnetFile)
 	if err != nil {
 		return err
 	}
-	if _, err := os.Stat(dashboardDir); os.IsNotExist(err) {
-		err = os.Mkdir(dashboardDir, 0755)
+	if _, err := os.Stat(exportDir); os.IsNotExist(err) {
+		err = os.Mkdir(exportDir, 0755)
 		if err != nil {
 			return err
 		}
@@ -340,7 +340,7 @@ func Export(config Config, jsonnetFile, dashboardDir string, targets []string) e
 			}
 			uid := resource.UID
 			extension := resource.Handler.GetExtension()
-			dir := fmt.Sprintf("%s/%s", dashboardDir, resource.Kind())
+			dir := fmt.Sprintf("%s/%s", exportDir, resource.Kind())
 			if _, err := os.Stat(dir); os.IsNotExist(err) {
 				err = os.Mkdir(dir, 0755)
 				if err != nil {
