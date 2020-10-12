@@ -10,7 +10,6 @@ import (
 	"os"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"github.com/mitchellh/mapstructure"
 )
 
 /*
@@ -23,139 +22,12 @@ import (
  * 3. This means pre-retrieving the check *twice*, once to establish
  *    whether this resource has changed or not (within Grizzly ifself)
  *    and again within this provider to retrieve IDs. Not ideal.
+ * 4. The API expects probes to be specified by ID. This is not
+ *    user-friendly. This code therefore takes in strings, and converts
+ *    them to IDs, having requested an ID<->string mapping from the API.
  */
 
 const smURL = "https://synthetic-monitoring-api.grafana.net/%s"
-
-// SyntheticMonitoringHandler is a Grizzly Provider for Grafana Synthetic Monitoring
-type SyntheticMonitoringHandler struct{}
-
-// NewSyntheticMonitoringHandler returns configuration defining a new Grafana Provider
-func NewSyntheticMonitoringHandler() *SyntheticMonitoringHandler {
-	return &SyntheticMonitoringHandler{}
-}
-
-// GetName returns the name for this provider
-func (h *SyntheticMonitoringHandler) GetName() string {
-	return "synthetic-monitor"
-}
-
-// GetFullName returns the name for this provider
-func (h *SyntheticMonitoringHandler) GetFullName() string {
-	return "grafana.synthetic-monitor"
-}
-
-// GetJSONPath returns a paths within Jsonnet output that this provider will consume
-func (h *SyntheticMonitoringHandler) GetJSONPath() string {
-	return "syntheticMonitoring"
-}
-
-// GetExtension returns the file name extension for a check
-func (h *SyntheticMonitoringHandler) GetExtension() string {
-	return "json"
-}
-
-func (h *SyntheticMonitoringHandler) newCheckResource(filename string, check Check) grizzly.Resource {
-	resource := grizzly.Resource{
-		UID:      check.UID(),
-		Filename: filename,
-		Handler:  h,
-		Detail:   check,
-		Path:     h.GetJSONPath(),
-	}
-	return resource
-}
-
-// Parse parses an interface{} object into a struct for this resource type
-func (h *SyntheticMonitoringHandler) Parse(i interface{}) (grizzly.Resources, error) {
-	resources := grizzly.Resources{}
-	msi := i.(map[string]interface{})
-	for k, v := range msi {
-		check := Check{}
-		err := mapstructure.Decode(v, &check)
-		if err != nil {
-			return nil, err
-		}
-		resource := h.newCheckResource(k, check)
-		key := resource.Key()
-		resources[key] = resource
-	}
-	return resources, nil
-}
-
-// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *SyntheticMonitoringHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	delete(resource.Detail.(Check), "tenantId")
-	delete(resource.Detail.(Check), "id")
-	delete(resource.Detail.(Check), "modified")
-	delete(resource.Detail.(Check), "created")
-	return &resource
-}
-
-// Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *SyntheticMonitoringHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	resource.Detail.(Check)["tenantId"] = existing.Detail.(Check)["tenantId"]
-	resource.Detail.(Check)["id"] = existing.Detail.(Check)["id"]
-	return &resource
-}
-
-// GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	check, err := getRemoteCheck(UID)
-	if err != nil {
-		return nil, fmt.Errorf("Error retrieving check %s: %v", UID, err)
-	}
-	resource := h.newCheckResource("", *check)
-	return &resource, nil
-}
-
-// GetRepresentation renders a resource as JSON or YAML as appropriate
-func (h *SyntheticMonitoringHandler) GetRepresentation(uid string, resource grizzly.Resource) (string, error) {
-	j, err := json.MarshalIndent(resource.Detail, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
-}
-
-// GetRemoteRepresentation retrieves a datasource as JSON
-func (h *SyntheticMonitoringHandler) GetRemoteRepresentation(uid string) (string, error) {
-	check, err := getRemoteCheck(uid)
-	if err != nil {
-		return "", err
-	}
-	return check.toJSON()
-}
-
-// GetRemote retrieves a datasource as a Resource
-func (h *SyntheticMonitoringHandler) GetRemote(uid string) (*grizzly.Resource, error) {
-	check, err := getRemoteCheck(uid)
-	if err != nil {
-		return nil, err
-	}
-	resource := h.newCheckResource("", *check)
-	return &resource, nil
-}
-
-// Add adds a new check to the SyntheticMonitoring endpoint
-func (h *SyntheticMonitoringHandler) Add(resource grizzly.Resource) error {
-	url := getURL("api/v1/check/add")
-	return postCheck(url, newCheck(resource))
-}
-
-// Update pushes an updated check to the SyntheticMonitoring endpoing
-func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource) error {
-	check := newCheck(resource)
-	url := getURL("api/v1/check/update")
-	return postCheck(url, check)
-}
-
-// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (h *SyntheticMonitoringHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
-	return grizzly.ErrNotImplemented
-}
-
-///////////////////////////////////////////////////////////////////////////
 
 // getRemoteCheck retrieves a check object from SM
 func getRemoteCheck(uid string) (*Check, error) {
