@@ -51,6 +51,6 @@ func main() {
 // GetProviderRegistry registers all known providers
 func GetProviderRegistry() (grizzly.Registry, error) {
 	registry := grizzly.NewProviderRegistry()
-	registry.RegisterProvider(grafana.NewProvider())
+	registry.RegisterProvider(&grafana.Provider{})
 	return registry, nil
 }

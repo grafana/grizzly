@@ -181,7 +181,7 @@ func getRemoteDatasource(uid string) (*Datasource, error) {
 
 	var d Datasource
 	if err := json.Unmarshal(data, &d); err != nil {
-		return nil, grizzly.APIErr{err, data}
+		return nil, grizzly.APIErr{Err: err, Body: data}
 	}
 	return &d, nil
 }
