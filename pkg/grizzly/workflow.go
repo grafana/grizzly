@@ -222,7 +222,7 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 				return err
 			}
 			resource = *provider.Prepare(*existingResource, resource)
-			existingResource = provider.Unprepare(resource)
+			existingResource = provider.Unprepare(*existingResource)
 			existingResourceRepresentation, err := existingResource.GetRepresentation()
 			if err != nil {
 				return nil
