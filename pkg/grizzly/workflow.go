@@ -162,6 +162,8 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 		return err
 	}
 
+	notifier := Notifier{}
+
 	for _, resource := range resources {
 		handler := resource.Handler
 		local, err := resource.GetRepresentation()
@@ -172,7 +174,8 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 		uid := resource.UID
 		remote, err := handler.GetRemote(resource.UID)
 		if err == ErrNotFound {
-			log.Printf("%s/%s %s\n", resource.Path, uid, Yellow("not present in "+resource.Kind()))
+
+			notifier.NotFound(resource)
 			continue
 		}
 		if err != nil {
@@ -185,11 +188,10 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 		}
 
 		if local == remoteRepresentation {
-			fmt.Printf("%s/%s %s\n", resource.Path, uid, Yellow("no differences"))
+			notifier.NoChanges(resource)
 		} else {
-			fmt.Printf("%s/%s %s\n", resource.Path, uid, Red("changes detected:"))
 			difference := diff.Diff(remoteRepresentation, local)
-			fmt.Println(difference)
+			notifier.HasChanges(resource, difference)
 		}
 	}
 	return nil
@@ -202,6 +204,8 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 		return err
 	}
 
+	notifier := Notifier{}
+
 	for _, resource := range resources {
 		if resource.MatchesTarget(targets) {
 			provider := resource.Handler
@@ -212,7 +216,8 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 				if err != nil {
 					return err
 				}
-				fmt.Println(resource.UID, Green("added"))
+
+				notifier.Added(resource)
 				continue
 			} else if err != nil {
 				return err
@@ -228,13 +233,13 @@ func Apply(config Config, jsonnetFile string, targets []string) error {
 				return nil
 			}
 			if resourceRepresentation == existingResourceRepresentation {
-				fmt.Println(resource.UID, Yellow("unchanged"))
+				notifier.NoChanges(resource)
 			} else {
 				err = provider.Update(*existingResource, resource)
 				if err != nil {
 					return err
 				}
-				log.Println(resource.UID, Green("updated"))
+				notifier.Updated(resource)
 			}
 		}
 	}
@@ -247,13 +252,16 @@ func Preview(config Config, jsonnetFile string, targets []string, opts *PreviewO
 	if err != nil {
 		return err
 	}
+
+	notifier := Notifier{}
+
 	for _, resource := range resources {
 		if resource.MatchesTarget(targets) {
 			err := resource.Handler.Preview(resource, opts)
 			if err == ErrNotImplemented {
-				log.Println(resource.Handler.GetName()+" provider", Red("does not support preview"))
-			}
-			if err != nil {
+				notifier.NotSupported(resource, "preview")
+			} else if err != nil {
+				fmt.Println("ERROR", err)
 				return err
 			}
 		}
@@ -332,13 +340,15 @@ func Export(config Config, jsonnetFile, exportDir string, targets []string) erro
 			return err
 		}
 	}
+
+	notifier := Notifier{}
+
 	for _, resource := range resources {
 		if resource.MatchesTarget(targets) {
 			updatedResource, err := resource.GetRepresentation()
 			if err != nil {
 				return err
 			}
-			uid := resource.UID
 			extension := resource.Handler.GetExtension()
 			dir := fmt.Sprintf("%s/%s", exportDir, resource.Kind())
 			if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -356,16 +366,16 @@ func Export(config Config, jsonnetFile, exportDir string, targets []string) erro
 			}
 			existingResource := string(existingResourceBytes)
 			if existingResource == updatedResource {
-				fmt.Println(uid, Yellow("unchanged"))
+				notifier.NoChanges(resource)
 			} else {
 				err = ioutil.WriteFile(path, []byte(updatedResource), 0644)
 				if err != nil {
 					return err
 				}
 				if isNotExist {
-					fmt.Println(uid, Green("added"))
+					notifier.Added(resource)
 				} else {
-					fmt.Println(uid, Green("updated"))
+					notifier.Updated(resource)
 				}
 			}
 		}

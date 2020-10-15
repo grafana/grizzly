@@ -145,10 +145,11 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.Prev
 	if err != nil {
 		return err
 	}
-	fmt.Println("View", uid, grizzly.Green(s.URL))
-	fmt.Println("Delete", uid, grizzly.Yellow(s.DeleteURL))
+	notifier := grizzly.Notifier{}
+	notifier.Green(fmt.Sprintf("%s %s %s", "View", uid, s.URL))
+	notifier.Yellow(fmt.Sprintf("%s %s %s", "Delete", uid, s.DeleteURL))
 	if opts.ExpiresSeconds > 0 {
-		fmt.Print(grizzly.Yellow(fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds)))
+		notifier.Yellow(fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds))
 	}
 	return nil
 }
