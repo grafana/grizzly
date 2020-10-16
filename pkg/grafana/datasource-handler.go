@@ -48,8 +48,8 @@ func (h *DatasourceHandler) newDatasourceResource(uid, filename string, source D
 }
 
 // Parse parses an interface{} object into a struct for this resource type
-func (h *DatasourceHandler) Parse(i interface{}) (grizzly.Resources, error) {
-	resources := grizzly.Resources{}
+func (h *DatasourceHandler) Parse(i interface{}) (grizzly.ResourceList, error) {
+	resources := grizzly.ResourceList{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
 		source := Datasource{}

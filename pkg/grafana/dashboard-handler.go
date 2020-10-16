@@ -55,8 +55,8 @@ func (h *DashboardHandler) newDashboardResource(uid, filename string, board Dash
 }
 
 // Parse parses an interface{} object into a struct for this resource type
-func (h *DashboardHandler) Parse(i interface{}) (grizzly.Resources, error) {
-	resources := grizzly.Resources{}
+func (h *DashboardHandler) Parse(i interface{}) (grizzly.ResourceList, error) {
+	resources := grizzly.ResourceList{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
 		board := Dashboard{}
