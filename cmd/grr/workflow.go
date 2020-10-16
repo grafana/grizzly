@@ -11,8 +11,8 @@ import (
 
 func getCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
-		Use:   "get <dashboard-uid>",
-		Short: "retrieve dashboard json",
+		Use:   "get <resource-type>.<resource-uid>",
+		Short: "retrieve resource",
 		Args:  cli.ArgsExact(1),
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
@@ -25,13 +25,18 @@ func getCmd(config grizzly.Config) *cli.Command {
 func listCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "list <jsonnet-file>",
-		Short: "list dashboard keys from file",
+		Short: "list resource keys from file",
 		Args:  cli.ArgsExact(1),
 	}
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		if err != nil {
+			return err
+		}
 
-		return grizzly.List(config, jsonnetFile)
+		return grizzly.List(config, resources)
 	}
 	return cmd
 }
@@ -39,13 +44,17 @@ func listCmd(config grizzly.Config) *cli.Command {
 func showCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "show <jsonnet-file>",
-		Short: "render Jsonnet dashboard as json",
+		Short: "render Jsonnet as json",
 		Args:  cli.ArgsExact(1),
 	}
-	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		return grizzly.Show(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		if err != nil {
+			return err
+		}
+		return grizzly.Show(config, resources)
 	}
 	return cmd
 }
@@ -53,13 +62,17 @@ func showCmd(config grizzly.Config) *cli.Command {
 func diffCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "diff <jsonnet-file>",
-		Short: "compare Jsonnet with dashboard(s) in Grafana",
+		Short: "compare Jsonnet resources with endpoint(s)",
 		Args:  cli.ArgsExact(1),
 	}
-	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		return grizzly.Diff(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		if err != nil {
+			return err
+		}
+		return grizzly.Diff(config, resources)
 	}
 	return cmd
 }
@@ -70,25 +83,46 @@ func applyCmd(config grizzly.Config) *cli.Command {
 		Short: "render Jsonnet and push dashboard(s) to Grafana",
 		Args:  cli.ArgsExact(1),
 	}
-	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		return grizzly.Apply(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		if err != nil {
+			return err
+		}
+		return grizzly.Apply(config, resources)
 	}
 	return cmd
 }
 
+type jsonnetWatchParser struct {
+	jsonnetFile string
+	targets     []string
+}
+
+func (p *jsonnetWatchParser) Name() string {
+	return p.jsonnetFile
+}
+
+func (p *jsonnetWatchParser) Parse(config grizzly.Config) (grizzly.Resources, error) {
+	return grizzly.Parse(config, p.jsonnetFile, p.targets)
+
+}
 func watchCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "watch <dir-to-watch> <jsonnet-file>",
 		Short: "watch for file changes and apply",
 		Args:  cli.ArgsExact(2),
 	}
-	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		parser := &jsonnetWatchParser{
+			jsonnetFile: args[1],
+			targets:     *targets,
+		}
 		watchDir := args[0]
-		jsonnetFile := args[1]
-		return grizzly.Watch(config, watchDir, jsonnetFile, *targets)
+
+		return grizzly.Watch(config, watchDir, parser)
 
 	}
 	return cmd
@@ -100,10 +134,14 @@ func previewCmd(config grizzly.Config) *cli.Command {
 		Short: "upload a snapshot to preview the rendered file",
 		Args:  cli.ArgsAny(),
 	}
-	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
 	cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		if err != nil {
+			return err
+		}
 		e, err := cmd.Flags().GetInt("expires")
 		if err != nil {
 			return err
@@ -112,7 +150,7 @@ func previewCmd(config grizzly.Config) *cli.Command {
 			ExpiresSeconds: e,
 		}
 
-		return grizzly.Preview(config, jsonnetFile, *targets, opts)
+		return grizzly.Preview(config, resources, opts)
 	}
 	return cmd
 }
@@ -123,11 +161,15 @@ func exportCmd(config grizzly.Config) *cli.Command {
 		Short: "render Jsonnet and save to a directory",
 		Args:  cli.ArgsExact(2),
 	}
-	targets := cmd.Flags().StringSliceP("target", "t", nil, "dashboards to target")
+	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		dashboardDir := args[1]
-		return grizzly.Export(config, jsonnetFile, dashboardDir, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		if err != nil {
+			return err
+		}
+		return grizzly.Export(config, dashboardDir, resources)
 	}
 	return cmd
 }
