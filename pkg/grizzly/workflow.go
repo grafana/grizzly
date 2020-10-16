@@ -12,7 +12,6 @@ import (
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/term"
 	"github.com/kylelemons/godebug/diff"
-	"github.com/malcolmholmes/grizzly/pkg/grizzly"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
 )
@@ -57,12 +56,7 @@ func Get(config Config, UID string) error {
 }
 
 // List outputs the keys resources found in resulting json.
-func List(config Config, jsonnetFile string) error {
-	resources, err := parse(config, jsonnetFile)
-	if err != nil {
-		return err
-	}
-
+func List(config Config, resources Resources) error {
 	f := "%s\t%s\n"
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
@@ -89,7 +83,8 @@ func getPrivateElementsScript(jsonnetFile string, handlers []Handler) string {
 	return fmt.Sprintf(script, jsonnetFile, strings.Join(handlerStrings, "\n"))
 }
 
-func parse(config Config, jsonnetFile string) (Resources, error) {
+// Parse evaluates a jsonnet file and parses it into an object tree
+func Parse(config Config, jsonnetFile string, targets []string) (Resources, error) {
 
 	script := getPrivateElementsScript(jsonnetFile, config.Registry.Handlers)
 	vm := jsonnet.MakeVM()
@@ -116,19 +111,17 @@ func parse(config Config, jsonnetFile string) (Resources, error) {
 		if err != nil {
 			return nil, err
 		}
-		for kk, vv := range resources {
-			r[kk] = vv
+		for kk, resource := range resources {
+			if resource.MatchesTarget(targets) {
+				r[kk] = resource
+			}
 		}
 	}
 	return r, nil
 }
 
-// Show renders a Jsonnet and displays the resources found
-func Show(config Config, jsonnetFile string, targets []string) error {
-	resources, err := parse(config, jsonnetFile)
-	if err != nil {
-		return err
-	}
+// Show displays resources
+func Show(config Config, resources Resources) error {
 
 	var items []term.PageItem
 	for _, resource := range resources {
@@ -155,12 +148,8 @@ func Show(config Config, jsonnetFile string, targets []string) error {
 	return nil
 }
 
-// Diff renders Jsonnet resources and compares them to those at the endpoints
-func Diff(config Config, jsonnetFile string, targets []string) error {
-	resources, err := parse(config, jsonnetFile)
-	if err != nil {
-		return err
-	}
+// Diff compares resources to those at the endpoints
+func Diff(config Config, resources Resources) error {
 
 	for _, resource := range resources {
 		handler := resource.Handler
@@ -195,75 +184,68 @@ func Diff(config Config, jsonnetFile string, targets []string) error {
 	return nil
 }
 
-// Apply renders Jsonnet then pushes resources to endpoints
-func Apply(config Config, jsonnetFile string, targets []string) error {
-	resources, err := parse(config, jsonnetFile)
-	if err != nil {
-		return err
-	}
-
+// Apply pushes resources to endpoints
+func Apply(config Config, resources Resources) error {
 	for _, resource := range resources {
-		if resource.MatchesTarget(targets) {
-			provider := resource.Handler
-			existingResource, err := provider.GetRemote(resource.UID)
-			if err == ErrNotFound {
+		provider := resource.Handler
+		existingResource, err := provider.GetRemote(resource.UID)
+		if err == ErrNotFound {
 
-				err := provider.Add(resource)
-				if err != nil {
-					return err
-				}
-				fmt.Println(resource.UID, Green("added"))
-				continue
-			} else if err != nil {
-				return err
-			}
-			resourceRepresentation, err := resource.GetRepresentation()
+			err := provider.Add(resource)
 			if err != nil {
 				return err
 			}
-			resource = *provider.Prepare(*existingResource, resource)
-			existingResource = provider.Unprepare(*existingResource)
-			existingResourceRepresentation, err := existingResource.GetRepresentation()
+			fmt.Println(resource.UID, Green("added"))
+			continue
+		} else if err != nil {
+			return err
+		}
+		resourceRepresentation, err := resource.GetRepresentation()
+		if err != nil {
+			return err
+		}
+		resource = *provider.Prepare(*existingResource, resource)
+		existingResource = provider.Unprepare(*existingResource)
+		existingResourceRepresentation, err := existingResource.GetRepresentation()
+		if err != nil {
+			return nil
+		}
+		if resourceRepresentation == existingResourceRepresentation {
+			fmt.Println(resource.UID, Yellow("unchanged"))
+		} else {
+			err = provider.Update(*existingResource, resource)
 			if err != nil {
-				return nil
+				return err
 			}
-			if resourceRepresentation == existingResourceRepresentation {
-				fmt.Println(resource.UID, Yellow("unchanged"))
-			} else {
-				err = provider.Update(*existingResource, resource)
-				if err != nil {
-					return err
-				}
-				log.Println(resource.UID, Green("updated"))
-			}
+			log.Println(resource.UID, Green("updated"))
 		}
 	}
 	return nil
 }
 
-// Preview renders Jsonnet then pushes resources to endpoints as previews, if supported
-func Preview(config Config, jsonnetFile string, targets []string, opts *PreviewOpts) error {
-	resources, err := parse(config, jsonnetFile)
-	if err != nil {
-		return err
-	}
+// Preview pushes resources to endpoints as previews, if supported
+func Preview(config Config, resources Resources, opts *PreviewOpts) error {
 	for _, resource := range resources {
-		if resource.MatchesTarget(targets) {
-			err := resource.Handler.Preview(resource, opts)
-			if err == ErrNotImplemented {
-				log.Println(resource.Handler.GetName()+" provider", Red("does not support preview"))
-			}
-			if err != nil {
-				return err
-			}
+		err := resource.Handler.Preview(resource, opts)
+		if err == ErrNotImplemented {
+			log.Println(resource.Handler.GetName()+" provider", Red("does not support preview"))
+		}
+		if err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+// Parser encapsulates the action of parsing a resource (jsonnet or otherwise)
+type Parser interface {
+	Name() string
+	Parse(config Config) (Resources, error)
 }
 
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
 // when changes are noticed
-func Watch(config Config, watchDir, jsonnetFile string, targets []string) error {
+func Watch(config Config, watchDir string, parser Parser) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -272,6 +254,7 @@ func Watch(config Config, watchDir, jsonnetFile string, targets []string) error 
 
 	done := make(chan bool)
 	go func() {
+		log.Println("Watching for changes")
 		for {
 			select {
 			case event, ok := <-watcher.Events:
@@ -279,28 +262,14 @@ func Watch(config Config, watchDir, jsonnetFile string, targets []string) error 
 					return
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Println("Changes detected. Applying", jsonnetFile)
-					resources, err := parse(config, jsonnetFile)
+					log.Println("Changes detected. Applying", parser.Name())
+					resources, err := parser.Parse(config)
 					if err != nil {
-						log.Println("error:", err)
-						continue
+						log.Println("Error: ", err)
 					}
-					for _, resource := range resources {
-						if resource.MatchesTarget(targets) {
-							handler := resource.Handler
-							existingResource, err := handler.GetRemote(resource.UID)
-							if err == grizzly.ErrNotFound {
-								err := handler.Add(resource)
-								if err != nil {
-									log.Println("Error:", err)
-								}
-							} else {
-								err := handler.Update(*existingResource, resource)
-								if err != nil {
-									log.Println("Error:", err)
-								}
-							}
-						}
+					err = Apply(config, resources)
+					if err != nil {
+						log.Println("Error: ", err)
 					}
 				}
 			case err, ok := <-watcher.Errors:
@@ -321,11 +290,7 @@ func Watch(config Config, watchDir, jsonnetFile string, targets []string) error 
 }
 
 // Export renders Jsonnet resources then saves them to a directory
-func Export(config Config, jsonnetFile, exportDir string, targets []string) error {
-	resources, err := parse(config, jsonnetFile)
-	if err != nil {
-		return err
-	}
+func Export(config Config, exportDir string, resources Resources) error {
 	if _, err := os.Stat(exportDir); os.IsNotExist(err) {
 		err = os.Mkdir(exportDir, 0755)
 		if err != nil {
@@ -333,40 +298,38 @@ func Export(config Config, jsonnetFile, exportDir string, targets []string) erro
 		}
 	}
 	for _, resource := range resources {
-		if resource.MatchesTarget(targets) {
-			updatedResource, err := resource.GetRepresentation()
+		updatedResource, err := resource.GetRepresentation()
+		if err != nil {
+			return err
+		}
+		uid := resource.UID
+		extension := resource.Handler.GetExtension()
+		dir := fmt.Sprintf("%s/%s", exportDir, resource.Kind())
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			err = os.Mkdir(dir, 0755)
 			if err != nil {
 				return err
 			}
-			uid := resource.UID
-			extension := resource.Handler.GetExtension()
-			dir := fmt.Sprintf("%s/%s", exportDir, resource.Kind())
-			if _, err := os.Stat(dir); os.IsNotExist(err) {
-				err = os.Mkdir(dir, 0755)
-				if err != nil {
-					return err
-				}
-			}
-			path := fmt.Sprintf("%s/%s.%s", dir, resource.UID, extension)
+		}
+		path := fmt.Sprintf("%s/%s.%s", dir, resource.UID, extension)
 
-			existingResourceBytes, err := ioutil.ReadFile(path)
-			isNotExist := os.IsNotExist(err)
-			if err != nil && !isNotExist {
+		existingResourceBytes, err := ioutil.ReadFile(path)
+		isNotExist := os.IsNotExist(err)
+		if err != nil && !isNotExist {
+			return err
+		}
+		existingResource := string(existingResourceBytes)
+		if existingResource == updatedResource {
+			fmt.Println(uid, Yellow("unchanged"))
+		} else {
+			err = ioutil.WriteFile(path, []byte(updatedResource), 0644)
+			if err != nil {
 				return err
 			}
-			existingResource := string(existingResourceBytes)
-			if existingResource == updatedResource {
-				fmt.Println(uid, Yellow("unchanged"))
+			if isNotExist {
+				fmt.Println(uid, Green("added"))
 			} else {
-				err = ioutil.WriteFile(path, []byte(updatedResource), 0644)
-				if err != nil {
-					return err
-				}
-				if isNotExist {
-					fmt.Println(uid, Green("added"))
-				} else {
-					fmt.Println(uid, Green("updated"))
-				}
+				fmt.Println(uid, Green("updated"))
 			}
 		}
 	}
