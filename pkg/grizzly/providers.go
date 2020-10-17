@@ -55,11 +55,11 @@ type Resources map[Handler]ResourceList
 type Handler interface {
 	GetName() string
 	GetFullName() string
-	GetJSONPath() string
+	GetJSONPaths() []string
 	GetExtension() string
 
 	// Parse parses an interface{} object into a struct for this resource type
-	Parse(i interface{}) (ResourceList, error)
+	Parse(path string, i interface{}) (ResourceList, error)
 
 	// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 	Unprepare(resource Resource) *Resource
@@ -129,7 +129,9 @@ func (r *Registry) RegisterProvider(provider Provider) error {
 	r.Providers = append(r.Providers, provider)
 	for _, handler := range provider.GetHandlers() {
 		r.Handlers = append(r.Handlers, handler)
-		r.HandlerByPath[handler.GetJSONPath()] = handler
+		for _, path := range handler.GetJSONPaths() {
+			r.HandlerByPath[path] = handler
+		}
 		r.HandlerByName[handler.GetName()] = handler
 		r.HandlerByName[handler.GetFullName()] = handler
 	}

@@ -187,8 +187,9 @@ func providersCmd(config grizzly.Config) *cli.Command {
 		fmt.Fprintf(w, f, "PROVIDER", "HANDLER", "JSON PATH")
 		for _, provider := range config.Registry.Providers {
 			for _, handler := range provider.GetHandlers() {
-				path := handler.GetJSONPath()
-				fmt.Fprintf(w, f, provider.GetName(), handler.GetName(), "/"+path)
+				for _, path := range handler.GetJSONPaths() {
+					fmt.Fprintf(w, f, provider.GetName(), handler.GetName(), "/"+path)
+				}
 			}
 		}
 		return w.Flush()

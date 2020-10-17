@@ -83,8 +83,9 @@ func getPrivateElementsScript(jsonnetFile string, handlers []Handler) string {
 	`
 	handlerStrings := []string{}
 	for _, handler := range handlers {
-		jsonPath := handler.GetJSONPath()
-		handlerStrings = append(handlerStrings, fmt.Sprintf("  %s+::: {},", jsonPath))
+		for _, jsonPath := range handler.GetJSONPaths() {
+			handlerStrings = append(handlerStrings, fmt.Sprintf("  %s+::: {},", jsonPath))
+		}
 	}
 	return fmt.Sprintf(script, jsonnetFile, strings.Join(handlerStrings, "\n"))
 }
@@ -114,7 +115,7 @@ func Parse(config Config, jsonnetFile string, targets []string) (Resources, erro
 			fmt.Println("Skipping unregistered path", k)
 			continue
 		}
-		handlerResources, err := handler.Parse(v)
+		handlerResources, err := handler.Parse(k, v)
 		if err != nil {
 			return nil, err
 		}

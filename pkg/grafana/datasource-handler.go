@@ -26,9 +26,13 @@ func (h *DatasourceHandler) GetFullName() string {
 	return "grafana.datasource"
 }
 
-// GetJSONPath returns a paths within Jsonnet output that this provider will consume
-func (h *DatasourceHandler) GetJSONPath() string {
-	return "grafanaDatasources"
+const datasourcesPath = "grafanaDatasources"
+
+// GetJSONPaths returns paths within Jsonnet output that this provider will consume
+func (h *DatasourceHandler) GetJSONPaths() []string {
+	return []string{
+		datasourcesPath,
+	}
 }
 
 // GetExtension returns the file name extension for a datasource
@@ -36,19 +40,19 @@ func (h *DatasourceHandler) GetExtension() string {
 	return "json"
 }
 
-func (h *DatasourceHandler) newDatasourceResource(uid, filename string, source Datasource) grizzly.Resource {
+func (h *DatasourceHandler) newDatasourceResource(path, uid, filename string, source Datasource) grizzly.Resource {
 	resource := grizzly.Resource{
 		UID:      uid,
 		Filename: filename,
 		Handler:  h,
 		Detail:   source,
-		Path:     h.GetJSONPath(),
+		Path:     path,
 	}
 	return resource
 }
 
 // Parse parses an interface{} object into a struct for this resource type
-func (h *DatasourceHandler) Parse(i interface{}) (grizzly.ResourceList, error) {
+func (h *DatasourceHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
@@ -69,7 +73,7 @@ func (h *DatasourceHandler) Parse(i interface{}) (grizzly.ResourceList, error) {
 		if err != nil {
 			return nil, err
 		}
-		resource := h.newDatasourceResource(source.UID(), k, source)
+		resource := h.newDatasourceResource(path, source.UID(), k, source)
 		key := resource.Key()
 		resources[key] = resource
 	}
@@ -95,7 +99,7 @@ func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving datasource %s: %v", UID, err)
 	}
-	resource := h.newDatasourceResource(UID, "", *source)
+	resource := h.newDatasourceResource(datasourcesPath, UID, "", *source)
 	return &resource, nil
 }
 
@@ -123,7 +127,7 @@ func (h *DatasourceHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, err
 	}
-	resource := h.newDatasourceResource(uid, "", *source)
+	resource := h.newDatasourceResource(datasourcesPath, uid, "", *source)
 	return &resource, nil
 }
 

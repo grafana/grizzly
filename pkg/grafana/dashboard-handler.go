@@ -34,9 +34,17 @@ func (h *DashboardHandler) GetFullName() string {
 	return "grafana.dashboard"
 }
 
-// GetJSONPath returns a paths within Jsonnet output that this provider will consume
-func (h *DashboardHandler) GetJSONPath() string {
-	return "grafanaDashboards"
+const (
+	dashboardsPath      = "grafanaDashboards"
+	dashboardFolderPath = "grafanaDashboardFolder"
+)
+
+// GetJSONPaths returns paths within Jsonnet output that this provider will consume
+func (h *DashboardHandler) GetJSONPaths() []string {
+	return []string{
+		dashboardsPath,
+		dashboardFolderPath,
+	}
 }
 
 // GetExtension returns the file name extension for a dashboard
@@ -44,19 +52,19 @@ func (h *DashboardHandler) GetExtension() string {
 	return "json"
 }
 
-func (h *DashboardHandler) newDashboardResource(uid, filename string, board Dashboard) grizzly.Resource {
+func (h *DashboardHandler) newDashboardResource(path, uid, filename string, board Dashboard) grizzly.Resource {
 	resource := grizzly.Resource{
 		UID:      uid,
 		Filename: filename,
 		Handler:  h,
 		Detail:   board,
-		Path:     h.GetJSONPath(),
+		Path:     path,
 	}
 	return resource
 }
 
 // Parse parses an interface{} object into a struct for this resource type
-func (h *DashboardHandler) Parse(i interface{}) (grizzly.ResourceList, error) {
+func (h *DashboardHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
@@ -65,7 +73,7 @@ func (h *DashboardHandler) Parse(i interface{}) (grizzly.ResourceList, error) {
 		if err != nil {
 			return nil, err
 		}
-		resource := h.newDashboardResource(board.UID(), k, board)
+		resource := h.newDashboardResource(path, board.UID(), k, board)
 		key := resource.Key()
 		resources[key] = resource
 	}
@@ -159,7 +167,7 @@ func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving dashboard %s: %v", UID, err)
 	}
-	resource := h.newDashboardResource(UID, "", *board)
+	resource := h.newDashboardResource(dashboardsPath, UID, "", *board)
 	return &resource, nil
 }
 
@@ -188,7 +196,7 @@ func (h *DashboardHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, err
 	}
-	resource := h.newDashboardResource(uid, "", *board)
+	resource := h.newDashboardResource(dashboardsPath, uid, "", *board)
 	return &resource, nil
 }
 
