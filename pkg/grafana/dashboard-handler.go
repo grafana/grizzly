@@ -61,6 +61,7 @@ func (h *DashboardHandler) newDashboardResource(path, uid, filename string, boar
 		Filename: filename,
 		Handler:  h,
 		Detail:   board,
+<<<<<<< HEAD
 		JSONPath: path,
 	}
 	return resource
@@ -73,6 +74,9 @@ func (h *DashboardHandler) newDashboardFolderResource(path, folderName string) g
 		Handler:  h,
 		Detail:   "",
 		JSONPath: path,
+=======
+		Path:     path,
+>>>>>>> JsonPath->JsonPaths
 	}
 	return resource
 }
