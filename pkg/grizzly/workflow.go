@@ -255,8 +255,7 @@ func Preview(config Config, resources Resources, opts *PreviewOpts) error {
 			err := handler.Preview(resource, config.Notifier, opts)
 			if err == ErrNotImplemented {
 				config.Notifier.NotSupported(resource, "preview")
-			}
-			if err != nil {
+			} else if err != nil {
 				return err
 			}
 		}
