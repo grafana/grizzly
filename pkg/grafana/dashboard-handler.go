@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/kylelemons/godebug/diff"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -69,6 +70,77 @@ func (h *DashboardHandler) Parse(i interface{}) (grizzly.ResourceList, error) {
 		resources[key] = resource
 	}
 	return resources, nil
+}
+
+// Diff compares local resources with remote equivalents and output result
+func (h *DashboardHandler) Diff(notifier grizzly.Notifier, resources grizzly.ResourceList) error {
+	for _, resource := range resources {
+		local, err := resource.GetRepresentation()
+		if err != nil {
+			return nil
+		}
+		resource = *h.Unprepare(resource)
+		uid := resource.UID
+		remote, err := h.GetRemote(resource.UID)
+		if err == grizzly.ErrNotFound {
+			notifier.NotFound(resource)
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("Error retrieving resource from %s %s: %v", resource.Kind(), uid, err)
+		}
+		remote = h.Unprepare(*remote)
+		remoteRepresentation, err := (*remote).GetRepresentation()
+		if err != nil {
+			return err
+		}
+
+		if local == remoteRepresentation {
+			notifier.NoChanges(resource)
+		} else {
+			difference := diff.Diff(remoteRepresentation, local)
+			notifier.HasChanges(resource, difference)
+		}
+	}
+	return nil
+}
+
+// Apply local resources to remote endpoint
+func (h *DashboardHandler) Apply(notifier grizzly.Notifier, resources grizzly.ResourceList) error {
+	for _, resource := range resources {
+		existingResource, err := h.GetRemote(resource.UID)
+		if err == grizzly.ErrNotFound {
+
+			err := h.Add(resource)
+			if err != nil {
+				return err
+			}
+			notifier.Added(resource)
+			continue
+		} else if err != nil {
+			return err
+		}
+		resourceRepresentation, err := resource.GetRepresentation()
+		if err != nil {
+			return err
+		}
+		resource = *h.Prepare(*existingResource, resource)
+		existingResource = h.Unprepare(*existingResource)
+		existingResourceRepresentation, err := existingResource.GetRepresentation()
+		if err != nil {
+			return nil
+		}
+		if resourceRepresentation == existingResourceRepresentation {
+			notifier.NoChanges(resource)
+		} else {
+			err = h.Update(*existingResource, resource)
+			if err != nil {
+				return err
+			}
+			notifier.Updated(resource)
+		}
+	}
+	return nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
@@ -138,17 +210,16 @@ func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
+func (h *DashboardHandler) Preview(resource grizzly.Resource, notifier grizzly.Notifier, opts *grizzly.PreviewOpts) error {
 	board := newDashboard(resource)
-	_, err := postSnapshot(board, opts)
+	s, err := postSnapshot(board, opts)
 	if err != nil {
 		return err
 	}
-	//uid := board.UID()
-	//fmt.Println("View", uid, grizzly.Green(s.URL))
-	//fmt.Println("Delete", uid, grizzly.Yellow(s.DeleteURL))
-	//if opts.ExpiresSeconds > 0 {
-	//	fmt.Print(grizzly.Yellow(fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds)))
-	//}
+	notifier.Info(resource, "view: "+s.URL)
+	notifier.Error(resource, "delete: "+s.DeleteURL)
+	if opts.ExpiresSeconds > 0 {
+		notifier.Warn(resource, fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds))
+	}
 	return nil
 }

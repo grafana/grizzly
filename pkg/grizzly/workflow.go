@@ -18,6 +18,11 @@ import (
 
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
+func isMultiResource(handler Handler) bool {
+	_, ok := handler.(MultiResourceHandler)
+	return ok
+}
+
 // Get retrieves a resource from a remote endpoint using its UID
 func Get(config Config, UID string) error {
 	count := strings.Count(UID, ".")
@@ -160,6 +165,12 @@ func Show(config Config, resources Resources) error {
 func Diff(config Config, resources Resources) error {
 
 	for handler, resourceList := range resources {
+		if isMultiResource(handler) {
+			multiHandler := handler.(MultiResourceHandler)
+			multiHandler.Diff(config.Notifier, resourceList)
+			continue
+		}
+
 		for _, resource := range resourceList {
 			local, err := resource.GetRepresentation()
 			if err != nil {
@@ -195,6 +206,11 @@ func Diff(config Config, resources Resources) error {
 // Apply pushes resources to endpoints
 func Apply(config Config, resources Resources) error {
 	for handler, resourceList := range resources {
+		if isMultiResource(handler) {
+			multiHandler := handler.(MultiResourceHandler)
+			multiHandler.Apply(config.Notifier, resourceList)
+			continue
+		}
 		for _, resource := range resourceList {
 			existingResource, err := handler.GetRemote(resource.UID)
 			if err == ErrNotFound {
@@ -236,7 +252,7 @@ func Apply(config Config, resources Resources) error {
 func Preview(config Config, resources Resources, opts *PreviewOpts) error {
 	for handler, resourceList := range resources {
 		for _, resource := range resourceList {
-			err := handler.Preview(resource, opts)
+			err := handler.Preview(resource, config.Notifier, opts)
 			if err == ErrNotImplemented {
 				config.Notifier.NotSupported(resource, "preview")
 			}

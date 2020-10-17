@@ -86,7 +86,18 @@ type Handler interface {
 	Update(existing, resource Resource) error
 
 	// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-	Preview(resource Resource, opts *PreviewOpts) error
+	Preview(resource Resource, notifier Notifier, opts *PreviewOpts) error
+}
+
+// MultiResourceHandler describes a handler that can handle multiple resources in one go.
+// This could be because it needs to see all resources before sending, or because the
+// endpoint API supports batching of resources.
+type MultiResourceHandler interface {
+	// Diff compares local resources with remote equivalents and output result
+	Diff(notifier Notifier, resources ResourceList) error
+
+	// Apply local resources to remote endpoint
+	Apply(notifier Notifier, resources ResourceList) error
 }
 
 // Provider describes a single Endpoint Provider

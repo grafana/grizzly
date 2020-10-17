@@ -138,7 +138,7 @@ func (h *DatasourceHandler) Update(existing, resource grizzly.Resource) error {
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (h *DatasourceHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
+func (h *DatasourceHandler) Preview(resource grizzly.Resource, notifier grizzly.Notifier, opts *grizzly.PreviewOpts) error {
 	return grizzly.ErrNotImplemented
 }
 

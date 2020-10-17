@@ -28,6 +28,7 @@ func main() {
 
 	config := grizzly.Config{
 		Registry: registry,
+		Notifier: grizzly.Notifier{},
 	}
 	// workflow commands
 	rootCmd.AddCommand(

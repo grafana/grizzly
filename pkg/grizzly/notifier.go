@@ -47,16 +47,16 @@ func (n *Notifier) NotSupported(resource Resource, behaviour string) {
 }
 
 // Info announces a message in green
-func (n *Notifier) Info(msg string) {
-	fmt.Println(green(msg))
+func (n *Notifier) Info(resource Resource, msg string) {
+	fmt.Printf("%s/%s %s\n", resource.Path, resource.UID, green(msg))
 }
 
-// Warning announces a message in yellow
-func (n *Notifier) Warning(resource Resource, msg string) {
+// Warn announces a message in yellow
+func (n *Notifier) Warn(resource Resource, msg string) {
 	fmt.Printf("%s/%s %s\n", resource.Path, resource.UID, yellow(msg))
 }
 
 // Error announces a message in yellow
-func (n *Notifier) Error(msg string) {
-	fmt.Println(red(msg))
+func (n *Notifier) Error(resource Resource, msg string) {
+	fmt.Printf("%s/%s %s\n", resource.Path, resource.UID, red(msg))
 }
