@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/go-clix/cli"
+	"github.com/grafana/grizzly/pkg/cortex"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -53,5 +54,6 @@ func main() {
 func GetProviderRegistry() (grizzly.Registry, error) {
 	registry := grizzly.NewProviderRegistry()
 	registry.RegisterProvider(&grafana.Provider{})
+	registry.RegisterProvider(&cortex.Provider{})
 	return registry, nil
 }
