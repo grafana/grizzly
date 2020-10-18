@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"gopkg.in/yaml.v2"
 )
 
 const folderNameField = "folderName"
@@ -202,15 +201,6 @@ type DashboardWrapper struct {
 		FolderID    int64  `json:"folderId"`
 		FolderTitle string `json:"folderTitle"`
 	} `json:"meta"`
-}
-
-func (d DashboardWrapper) String() string {
-	data, err := yaml.Marshal(d)
-	if err != nil {
-		panic(err)
-	}
-
-	return string(data)
 }
 
 // UID retrieves the UID from a dashboard wrapper
