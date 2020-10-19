@@ -60,8 +60,8 @@ func (h *SyntheticMonitoringHandler) newCheckResource(filename string, check Che
 }
 
 // Parse parses an interface{} object into a struct for this resource type
-func (h *SyntheticMonitoringHandler) Parse(i interface{}) (grizzly.Resources, error) {
-	resources := grizzly.Resources{}
+func (h *SyntheticMonitoringHandler) Parse(i interface{}) (grizzly.ResourceList, error) {
+	resources := grizzly.ResourceList{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
 		check := Check{}

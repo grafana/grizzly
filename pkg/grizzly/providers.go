@@ -45,8 +45,11 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 	return false
 }
 
-// Resources represents a set of resources, by path
-type Resources map[string]Resource
+// ResourceList represents a set of named resources
+type ResourceList map[string]Resource
+
+// Resources represents a set of resources by handler
+type Resources map[Handler]ResourceList
 
 // Handler describes a handler for a single API resource handled by a single provider
 type Handler interface {
@@ -56,7 +59,7 @@ type Handler interface {
 	GetExtension() string
 
 	// Parse parses an interface{} object into a struct for this resource type
-	Parse(i interface{}) (Resources, error)
+	Parse(i interface{}) (ResourceList, error)
 
 	// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 	Unprepare(resource Resource) *Resource
