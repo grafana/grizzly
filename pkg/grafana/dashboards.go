@@ -12,6 +12,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const folderNameField = "folderName"
+
 // getRemoteDashboard retrieves a dashboard object from Grafana
 func getRemoteDashboard(uid string) (*Dashboard, error) {
 	grafanaURL, err := getGrafanaURL("api/dashboards/uid/" + uid)
@@ -45,7 +47,7 @@ func getRemoteDashboard(uid string) (*Dashboard, error) {
 	}
 	delete(d.Dashboard, "id")
 	delete(d.Dashboard, "version")
-	d.Dashboard["folderName"] = d.Meta.FolderTitle
+	d.Dashboard[folderNameField] = d.Meta.FolderTitle
 	return &d.Dashboard, nil
 }
 
@@ -60,7 +62,7 @@ func postDashboard(board Dashboard) error {
 	if err != nil {
 		return err
 	}
-	delete(board, "folderName")
+	delete(board, folderNameField)
 	wrappedBoard := DashboardWrapper{
 		Dashboard: board,
 		FolderID:  folderID,
@@ -180,6 +182,16 @@ func (d *Dashboard) folderUID() string {
 	return ""
 }
 
+func dashboardWithFolderSet(resource grizzly.Resource, dashboardFolder string) grizzly.Resource {
+	board := newDashboard(resource)
+	_, ok := board[folderNameField]
+	if !ok {
+		board[folderNameField] = dashboardFolder
+	}
+	resource.Detail = board
+	return resource
+}
+
 // DashboardWrapper adds wrapper to a dashboard JSON. Caters both for Grafana's POST
 // API as well as GET which require different JSON.
 type DashboardWrapper struct {
@@ -233,7 +245,7 @@ func (f *Folder) toJSON() (string, error) {
 }
 
 func findOrCreateFolder(UID string) (int64, error) {
-	if UID == "0" {
+	if UID == "0" || UID == "" {
 		return 0, nil
 	}
 	grafanaURL, err := getGrafanaURL("api/folders/" + UID)

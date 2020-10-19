@@ -3,6 +3,7 @@ package grafana
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/kylelemons/godebug/diff"
@@ -14,6 +15,8 @@ import (
  * This will be removed from the JSON, and if no folder exists, a dashboard folder
  * will be created with UID and title matching your `folderName`.
  *
+ * Alternatively, create a `grafanaDashboardFolder` root element in your Jsonnet. This
+ * value will be used as a folder name for all of your dashboards.
  */
 
 // DashboardHandler is a Grizzly Provider for Grafana dashboards
@@ -63,9 +66,26 @@ func (h *DashboardHandler) newDashboardResource(path, uid, filename string, boar
 	return resource
 }
 
+func (h *DashboardHandler) newDashboardFolderResource(path, folderName string) grizzly.Resource {
+	resource := grizzly.Resource{
+		UID:      folderName,
+		Filename: folderName,
+		Handler:  h,
+		Detail:   "",
+		JSONPath: path,
+	}
+	return resource
+}
+
 // Parse parses an interface{} object into a struct for this resource type
 func (h *DashboardHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
+	if path == dashboardFolderPath {
+		folderName := strings.ReplaceAll(i.(string), "{ }", "") // No idea why json parsing adds { } to the end of the parsed string :-(
+		resource := h.newDashboardFolderResource(path, folderName)
+		resources[dashboardFolderPath] = resource
+		return resources, nil
+	}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
 		board := Dashboard{}
@@ -82,7 +102,16 @@ func (h *DashboardHandler) Parse(path string, i interface{}) (grizzly.ResourceLi
 
 // Diff compares local resources with remote equivalents and output result
 func (h *DashboardHandler) Diff(notifier grizzly.Notifier, resources grizzly.ResourceList) error {
+	dashboardFolder := "general"
+	dashboardFolderResource, ok := resources[dashboardFolderPath]
+	if ok {
+		dashboardFolder = dashboardFolderResource.Filename
+	}
 	for _, resource := range resources {
+		if resource.JSONPath == dashboardFolderPath {
+			continue
+		}
+		resource = dashboardWithFolderSet(resource, dashboardFolder)
 		local, err := resource.GetRepresentation()
 		if err != nil {
 			return nil
@@ -115,10 +144,17 @@ func (h *DashboardHandler) Diff(notifier grizzly.Notifier, resources grizzly.Res
 
 // Apply local resources to remote endpoint
 func (h *DashboardHandler) Apply(notifier grizzly.Notifier, resources grizzly.ResourceList) error {
+	dashboardFolder := "general"
+	dashboardFolderResource, ok := resources[dashboardFolderPath]
+	if ok {
+		dashboardFolder = dashboardFolderResource.Filename
+	}
 	for _, resource := range resources {
+		if resource.JSONPath == dashboardFolderPath {
+			continue
+		}
 		existingResource, err := h.GetRemote(resource.UID)
 		if err == grizzly.ErrNotFound {
-
 			err := h.Add(resource)
 			if err != nil {
 				return err
@@ -128,6 +164,7 @@ func (h *DashboardHandler) Apply(notifier grizzly.Notifier, resources grizzly.Re
 		} else if err != nil {
 			return err
 		}
+		resource = dashboardWithFolderSet(resource, dashboardFolder)
 		resourceRepresentation, err := resource.GetRepresentation()
 		if err != nil {
 			return err
