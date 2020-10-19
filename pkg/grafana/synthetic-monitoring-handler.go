@@ -38,9 +38,13 @@ func (h *SyntheticMonitoringHandler) GetFullName() string {
 	return "grafana.synthetic-monitor"
 }
 
-// GetJSONPath returns a paths within Jsonnet output that this provider will consume
-func (h *SyntheticMonitoringHandler) GetJSONPath() string {
-	return "syntheticMonitoring"
+const syntheticMonitoringChecksPath = "syntheticMonitoring"
+
+// GetJSONPaths returns paths within Jsonnet output that this provider will consume
+func (h *SyntheticMonitoringHandler) GetJSONPaths() []string {
+	return []string{
+		syntheticMonitoringChecksPath,
+	}
 }
 
 // GetExtension returns the file name extension for a check
@@ -48,19 +52,19 @@ func (h *SyntheticMonitoringHandler) GetExtension() string {
 	return "json"
 }
 
-func (h *SyntheticMonitoringHandler) newCheckResource(filename string, check Check) grizzly.Resource {
+func (h *SyntheticMonitoringHandler) newCheckResource(path string, filename string, check Check) grizzly.Resource {
 	resource := grizzly.Resource{
 		UID:      check.UID(),
 		Filename: filename,
 		Handler:  h,
 		Detail:   check,
-		Path:     h.GetJSONPath(),
+		JSONPath: path,
 	}
 	return resource
 }
 
 // Parse parses an interface{} object into a struct for this resource type
-func (h *SyntheticMonitoringHandler) Parse(i interface{}) (grizzly.ResourceList, error) {
+func (h *SyntheticMonitoringHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
@@ -69,7 +73,7 @@ func (h *SyntheticMonitoringHandler) Parse(i interface{}) (grizzly.ResourceList,
 		if err != nil {
 			return nil, err
 		}
-		resource := h.newCheckResource(k, check)
+		resource := h.newCheckResource(path, k, check)
 		key := resource.Key()
 		resources[key] = resource
 	}
@@ -98,7 +102,7 @@ func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, er
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving check %s: %v", UID, err)
 	}
-	resource := h.newCheckResource("", *check)
+	resource := h.newCheckResource(syntheticMonitoringChecksPath, "", *check)
 	return &resource, nil
 }
 
@@ -126,7 +130,7 @@ func (h *SyntheticMonitoringHandler) GetRemote(uid string) (*grizzly.Resource, e
 	if err != nil {
 		return nil, err
 	}
-	resource := h.newCheckResource("", *check)
+	resource := h.newCheckResource(syntheticMonitoringChecksPath, "", *check)
 	return &resource, nil
 }
 
@@ -144,6 +148,6 @@ func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource)
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (h *SyntheticMonitoringHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
+func (h *SyntheticMonitoringHandler) Preview(resource grizzly.Resource, notifier grizzly.Notifier, opts *grizzly.PreviewOpts) error {
 	return grizzly.ErrNotImplemented
 }

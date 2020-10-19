@@ -8,7 +8,7 @@ type Resource struct {
 	Filename string      `json:"filename"`
 	Handler  Handler     `json:"handler"`
 	Detail   interface{} `json:"detail"`
-	Path     string      `json:"path"`
+	JSONPath string      `json:"path"`
 }
 
 // Kind returns the 'kind' of the resource, i.e. the type of the provider
@@ -55,11 +55,11 @@ type Resources map[Handler]ResourceList
 type Handler interface {
 	GetName() string
 	GetFullName() string
-	GetJSONPath() string
+	GetJSONPaths() []string
 	GetExtension() string
 
 	// Parse parses an interface{} object into a struct for this resource type
-	Parse(i interface{}) (ResourceList, error)
+	Parse(path string, i interface{}) (ResourceList, error)
 
 	// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 	Unprepare(resource Resource) *Resource
@@ -86,7 +86,18 @@ type Handler interface {
 	Update(existing, resource Resource) error
 
 	// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-	Preview(resource Resource, opts *PreviewOpts) error
+	Preview(resource Resource, notifier Notifier, opts *PreviewOpts) error
+}
+
+// MultiResourceHandler describes a handler that can handle multiple resources in one go.
+// This could be because it needs to see all resources before sending, or because the
+// endpoint API supports batching of resources.
+type MultiResourceHandler interface {
+	// Diff compares local resources with remote equivalents and output result
+	Diff(notifier Notifier, resources ResourceList) error
+
+	// Apply local resources to remote endpoint
+	Apply(notifier Notifier, resources ResourceList) error
 }
 
 // Provider describes a single Endpoint Provider
@@ -118,7 +129,9 @@ func (r *Registry) RegisterProvider(provider Provider) error {
 	r.Providers = append(r.Providers, provider)
 	for _, handler := range provider.GetHandlers() {
 		r.Handlers = append(r.Handlers, handler)
-		r.HandlerByPath[handler.GetJSONPath()] = handler
+		for _, path := range handler.GetJSONPaths() {
+			r.HandlerByPath[path] = handler
+		}
 		r.HandlerByName[handler.GetName()] = handler
 		r.HandlerByName[handler.GetFullName()] = handler
 	}
