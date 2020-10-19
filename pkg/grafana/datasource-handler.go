@@ -46,7 +46,7 @@ func (h *DatasourceHandler) newDatasourceResource(path, uid, filename string, so
 		Filename: filename,
 		Handler:  h,
 		Detail:   source,
-		Path:     path,
+		JSONPath: path,
 	}
 	return resource
 }

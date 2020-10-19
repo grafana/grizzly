@@ -58,7 +58,7 @@ func (h *SyntheticMonitoringHandler) newCheckResource(path string, filename stri
 		Filename: filename,
 		Handler:  h,
 		Detail:   check,
-		Path:     path,
+		JSONPath: path,
 	}
 	return resource
 }

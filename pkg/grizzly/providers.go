@@ -8,7 +8,7 @@ type Resource struct {
 	Filename string      `json:"filename"`
 	Handler  Handler     `json:"handler"`
 	Detail   interface{} `json:"detail"`
-	Path     string      `json:"path"`
+	JSONPath string      `json:"path"`
 }
 
 // Kind returns the 'kind' of the resource, i.e. the type of the provider
