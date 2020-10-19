@@ -53,8 +53,7 @@ func (n *Notifier) Info(msg string) {
 
 // Warning announces a message in yellow
 func (n *Notifier) Warning(resource Resource, msg string) {
-	fmt.Printf("%s/%s %s provider %s\n", resource.Path, resource.UID, yellow(msg))
-	fmt.Println(yellow(msg))
+	fmt.Printf("%s/%s %s\n", resource.Path, resource.UID, yellow(msg))
 }
 
 // Error announces a message in yellow
