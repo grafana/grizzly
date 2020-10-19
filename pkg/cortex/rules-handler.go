@@ -43,7 +43,7 @@ func (h *RuleHandler) newRuleGroupingResource(path string, group RuleGroup) griz
 		Filename: group.UID(),
 		Handler:  h,
 		Detail:   group,
-		Path:     path,
+		JSONPath: path,
 	}
 	return resource
 }
