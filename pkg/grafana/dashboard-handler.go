@@ -140,15 +140,15 @@ func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
 func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
 	board := newDashboard(resource)
-	uid := board.UID()
-	s, err := postSnapshot(board, opts)
+	_, err := postSnapshot(board, opts)
 	if err != nil {
 		return err
 	}
-	fmt.Println("View", uid, grizzly.Green(s.URL))
-	fmt.Println("Delete", uid, grizzly.Yellow(s.DeleteURL))
-	if opts.ExpiresSeconds > 0 {
-		fmt.Print(grizzly.Yellow(fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds)))
-	}
+	//uid := board.UID()
+	//fmt.Println("View", uid, grizzly.Green(s.URL))
+	//fmt.Println("Delete", uid, grizzly.Yellow(s.DeleteURL))
+	//if opts.ExpiresSeconds > 0 {
+	//	fmt.Print(grizzly.Yellow(fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds)))
+	//}
 	return nil
 }

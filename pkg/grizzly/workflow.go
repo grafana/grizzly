@@ -169,7 +169,7 @@ func Diff(config Config, resources Resources) error {
 			uid := resource.UID
 			remote, err := handler.GetRemote(resource.UID)
 			if err == ErrNotFound {
-				log.Printf("%s/%s %s\n", resource.Path, uid, Yellow("not present in "+resource.Kind()))
+				config.Notifier.NotFound(resource)
 				continue
 			}
 			if err != nil {
@@ -182,11 +182,10 @@ func Diff(config Config, resources Resources) error {
 			}
 
 			if local == remoteRepresentation {
-				fmt.Printf("%s/%s %s\n", resource.Path, uid, Yellow("no differences"))
+				config.Notifier.NoChanges(resource)
 			} else {
-				fmt.Printf("%s/%s %s\n", resource.Path, uid, Red("changes detected:"))
 				difference := diff.Diff(remoteRepresentation, local)
-				fmt.Println(difference)
+				config.Notifier.HasChanges(resource, difference)
 			}
 		}
 	}
@@ -204,7 +203,7 @@ func Apply(config Config, resources Resources) error {
 				if err != nil {
 					return err
 				}
-				fmt.Println(resource.UID, Green("added"))
+				config.Notifier.Added(resource)
 				continue
 			} else if err != nil {
 				return err
@@ -220,13 +219,13 @@ func Apply(config Config, resources Resources) error {
 				return nil
 			}
 			if resourceRepresentation == existingResourceRepresentation {
-				fmt.Println(resource.UID, Yellow("unchanged"))
+				config.Notifier.NoChanges(resource)
 			} else {
 				err = handler.Update(*existingResource, resource)
 				if err != nil {
 					return err
 				}
-				log.Println(resource.UID, Green("updated"))
+				config.Notifier.Updated(resource)
 			}
 		}
 	}
@@ -239,7 +238,7 @@ func Preview(config Config, resources Resources, opts *PreviewOpts) error {
 		for _, resource := range resourceList {
 			err := handler.Preview(resource, opts)
 			if err == ErrNotImplemented {
-				log.Println(resource.Handler.GetName()+" provider", Red("does not support preview"))
+				config.Notifier.NotSupported(resource, "preview")
 			}
 			if err != nil {
 				return err
@@ -309,13 +308,13 @@ func Export(config Config, exportDir string, resources Resources) error {
 			return err
 		}
 	}
+
 	for handler, resourceList := range resources {
 		for _, resource := range resourceList {
 			updatedResource, err := resource.GetRepresentation()
 			if err != nil {
 				return err
 			}
-			uid := resource.UID
 			extension := handler.GetExtension()
 			dir := fmt.Sprintf("%s/%s", exportDir, resource.Kind())
 			if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -333,16 +332,16 @@ func Export(config Config, exportDir string, resources Resources) error {
 			}
 			existingResource := string(existingResourceBytes)
 			if existingResource == updatedResource {
-				fmt.Println(uid, Yellow("unchanged"))
+				config.Notifier.NoChanges(resource)
 			} else {
 				err = ioutil.WriteFile(path, []byte(updatedResource), 0644)
 				if err != nil {
 					return err
 				}
 				if isNotExist {
-					fmt.Println(uid, Green("added"))
+					config.Notifier.Added(resource)
 				} else {
-					fmt.Println(uid, Green("updated"))
+					config.Notifier.Updated(resource)
 				}
 			}
 		}
