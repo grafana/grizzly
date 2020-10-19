@@ -245,7 +245,7 @@ func (f *Folder) toJSON() (string, error) {
 }
 
 func findOrCreateFolder(UID string) (int64, error) {
-	if UID == "0" {
+	if UID == "0" || UID == "" {
 		return 0, nil
 	}
 	grafanaURL, err := getGrafanaURL("api/folders/" + UID)

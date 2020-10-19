@@ -72,7 +72,7 @@ func (h *DashboardHandler) newDashboardFolderResource(path, folderName string) g
 		Filename: folderName,
 		Handler:  h,
 		Detail:   "",
-		Path:     path,
+		JSONPath: path,
 	}
 	return resource
 }
@@ -108,7 +108,7 @@ func (h *DashboardHandler) Diff(notifier grizzly.Notifier, resources grizzly.Res
 		dashboardFolder = dashboardFolderResource.Filename
 	}
 	for _, resource := range resources {
-		if resource.Path == dashboardFolderPath {
+		if resource.JSONPath == dashboardFolderPath {
 			continue
 		}
 		resource = dashboardWithFolderSet(resource, dashboardFolder)
@@ -150,12 +150,11 @@ func (h *DashboardHandler) Apply(notifier grizzly.Notifier, resources grizzly.Re
 		dashboardFolder = dashboardFolderResource.Filename
 	}
 	for _, resource := range resources {
-		if resource.Path == dashboardFolderPath {
+		if resource.JSONPath == dashboardFolderPath {
 			continue
 		}
 		existingResource, err := h.GetRemote(resource.UID)
 		if err == grizzly.ErrNotFound {
-
 			err := h.Add(resource)
 			if err != nil {
 				return err
