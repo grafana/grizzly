@@ -38,6 +38,7 @@ func main() {
 		diffCmd(config),
 		applyCmd(config),
 		watchCmd(config),
+		watchResourceCmd(config),
 		exportCmd(config),
 		previewCmd(config),
 		providersCmd(config),

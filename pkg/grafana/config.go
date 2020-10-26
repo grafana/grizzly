@@ -14,7 +14,6 @@ func getGrafanaURL(urlPath string) (string, error) {
 			return "", err
 		}
 		u.Path = path.Join(u.Path, urlPath)
-		grafanaURL = u.String()
 		if token, exists := os.LookupEnv("GRAFANA_TOKEN"); exists {
 			user, exists := os.LookupEnv("GRAFANA_USER")
 			if !exists {
@@ -25,4 +24,33 @@ func getGrafanaURL(urlPath string) (string, error) {
 		return u.String(), nil
 	}
 	return "", fmt.Errorf("Require GRAFANA_URL (optionally GRAFANA_TOKEN & GRAFANA_USER")
+}
+
+func getWSGrafanaURL(urlPath string) (string, string, error) {
+	if grafanaURL, exists := os.LookupEnv("GRAFANA_URL"); exists {
+		u, err := url.Parse(grafanaURL)
+		if err != nil {
+			return "", "", err
+		}
+		if u.Scheme == "https" {
+			u.Scheme = "wss"
+		} else {
+			u.Scheme = "ws"
+		}
+		u.Path = path.Join(u.Path, urlPath)
+		grafanaURL = u.String()
+		if token, exists := os.LookupEnv("GRAFANA_TOKEN"); exists {
+			u.User = nil
+			return u.String(), token, nil
+		} else if u.User != nil {
+			token, ok := u.User.Password()
+			if ok {
+				u.User = nil
+				return u.String(), token, nil
+			}
+			return u.String(), "", nil
+		}
+		return u.String(), "", nil
+	}
+	return "", "", fmt.Errorf("Require GRAFANA_URL (optionally GRAFANA_TOKEN if auth required) for websocket actions")
 }
