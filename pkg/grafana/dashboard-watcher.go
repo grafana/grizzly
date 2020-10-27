@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/centrifugal/centrifuge-go"
@@ -16,30 +16,31 @@ type eventHandler struct {
 	filename string
 	url      string
 	stop     bool
+	notifier grizzly.Notifier
 }
 
 func (h *eventHandler) OnConnect(c *centrifuge.Client, e centrifuge.ConnectEvent) {
-	log.Println("Connected to", h.url)
+	h.notifier.Info(nil, fmt.Sprintf("Connected to %s", h.url))
 }
 
 func (h *eventHandler) OnError(c *centrifuge.Client, e centrifuge.ErrorEvent) {
-	log.Printf("Error: %s", e.Message)
+	h.notifier.Error(nil, fmt.Sprintf("Error: %s", e.Message))
 }
 
 func (h *eventHandler) OnDisconnect(c *centrifuge.Client, e centrifuge.DisconnectEvent) {
-	log.Println("Disconnected from", h.url)
+	h.notifier.Error(nil, fmt.Sprintf("Disconnected from %s", h.url))
 	h.stop = true
 }
 func (h *eventHandler) OnSubscribeSuccess(sub *centrifuge.Subscription, e centrifuge.SubscribeSuccessEvent) {
-	log.Printf("Subscribed to channel %s, resubscribed: %v, recovered: %v", sub.Channel(), e.Resubscribed, e.Recovered)
+	h.notifier.Info(nil, fmt.Sprintf("Subscribed to channel %s", sub.Channel()))
 }
 
 func (h *eventHandler) OnSubscribeError(sub *centrifuge.Subscription, e centrifuge.SubscribeErrorEvent) {
-	log.Printf("Failed to subscribe to channel %s, error: %s", sub.Channel(), e.Error)
+	h.notifier.Error(nil, fmt.Sprintf("Failed to subscribe to channel %s, error: %s", sub.Channel(), e.Error))
 }
 
 func (h *eventHandler) OnUnsubscribe(sub *centrifuge.Subscription, e centrifuge.UnsubscribeEvent) {
-	log.Printf("Unsubscribed from channel %s", sub.Channel())
+	h.notifier.Info(nil, fmt.Sprintf("Unsubscribed from channel %s", sub.Channel()))
 }
 
 func (h *eventHandler) OnPublish(sub *centrifuge.Subscription, e centrifuge.PublishEvent) {
@@ -50,31 +51,33 @@ func (h *eventHandler) OnPublish(sub *centrifuge.Subscription, e centrifuge.Publ
 	}{}
 	err := json.Unmarshal(e.Data, &response)
 	if err != nil {
-		log.Println(err)
+		h.notifier.Error(nil, fmt.Sprintf("Error: %s", err))
 		return
 	}
 	if response.Action != "saved" {
-		log.Println("Unknown action received", string(e.Data))
+		h.notifier.Warn(nil, fmt.Sprintf("Unknown action received: %s", string(e.Data)))
 	}
 	dashboard, err := getRemoteDashboard(response.UID)
 	if err != nil {
-		log.Println(err)
+		h.notifier.Error(nil, fmt.Sprintf("Error: %s", err))
 		return
 	}
 	dashboardJSON, err := dashboard.toJSON()
 	if err != nil {
-		log.Println(err)
+		h.notifier.Error(nil, fmt.Sprintf("Error: %s", err))
 		return
 	}
 	ioutil.WriteFile(h.filename, []byte(dashboardJSON), 0644)
-	log.Printf("%s updated from dashboard %s", h.filename, response.UID)
+	t := time.Now()
+	now := fmt.Sprintf(t.Format("2006-01-02-15:04:05"))
+	h.notifier.Info(nil, fmt.Sprintf("%s: %s updated from dashboard %s", now, h.filename, response.UID))
 }
 
 func (h *eventHandler) WaitForStop() {
 	for {
 		time.Sleep(time.Second)
 		if h.stop {
-			log.Println("Stopping.")
+			h.notifier.Warn(nil, "Stopping.")
 			os.Exit(1)
 		}
 	}
@@ -89,6 +92,7 @@ func watchDashboard(notifier grizzly.Notifier, UID, filename string) error {
 	handler := &eventHandler{
 		filename: filename,
 		url:      wsURL,
+		notifier: notifier,
 	}
 	c.OnConnect(handler)
 	c.OnError(handler)
@@ -113,6 +117,14 @@ func watchDashboard(notifier grizzly.Notifier, UID, filename string) error {
 
 	err = c.Connect()
 	if err != nil {
+		msg := err.Error()
+		if strings.Contains(msg, "bad handshake") {
+			notifier.Error(nil, "Your Grafana Version does not support listening for dashboard changes.")
+			notifier.Warn(nil, "The feature is available in Grafana 7.3 when the 'live' feature flag is enabled.")
+			notifier.Warn(nil, "If running Grafana in Docker, set envvar GF_FEATURE_TOGGLES_ENABLE=live")
+			notifier.Warn(nil, "Otherwise, add 'enable = live' to your [feature_toggles] section in grafana.ini.")
+			return nil
+		}
 		return err
 	}
 

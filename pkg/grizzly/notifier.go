@@ -47,16 +47,28 @@ func (n *Notifier) NotSupported(resource Resource, behaviour string) {
 }
 
 // Info announces a message in green
-func (n *Notifier) Info(resource Resource, msg string) {
-	fmt.Printf("%s/%s %s\n", resource.JSONPath, resource.UID, green(msg))
+func (n *Notifier) Info(resource *Resource, msg string) {
+	if resource == nil {
+		fmt.Println(green(msg))
+	} else {
+		fmt.Printf("%s/%s %s\n", resource.JSONPath, resource.UID, green(msg))
+	}
 }
 
 // Warn announces a message in yellow
-func (n *Notifier) Warn(resource Resource, msg string) {
-	fmt.Printf("%s/%s %s\n", resource.JSONPath, resource.UID, yellow(msg))
+func (n *Notifier) Warn(resource *Resource, msg string) {
+	if resource == nil {
+		fmt.Println(yellow(msg))
+	} else {
+		fmt.Printf("%s/%s %s\n", resource.JSONPath, resource.UID, yellow(msg))
+	}
 }
 
 // Error announces a message in yellow
-func (n *Notifier) Error(resource Resource, msg string) {
-	fmt.Printf("%s/%s %s\n", resource.JSONPath, resource.UID, red(msg))
+func (n *Notifier) Error(resource *Resource, msg string) {
+	if resource == nil {
+		fmt.Println(red(msg))
+	} else {
+		fmt.Printf("%s/%s %s\n", resource.JSONPath, resource.UID, red(msg))
+	}
 }
