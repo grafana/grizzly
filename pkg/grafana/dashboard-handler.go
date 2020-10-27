@@ -264,10 +264,15 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, notifier grizzly.N
 	if err != nil {
 		return err
 	}
-	notifier.Info(resource, "view: "+s.URL)
-	notifier.Error(resource, "delete: "+s.DeleteURL)
+	notifier.Info(&resource, "view: "+s.URL)
+	notifier.Error(&resource, "delete: "+s.DeleteURL)
 	if opts.ExpiresSeconds > 0 {
-		notifier.Warn(resource, fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds))
+		notifier.Warn(&resource, fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds))
 	}
 	return nil
+}
+
+// Listen watches a resource and updates local file on changes
+func (h *DashboardHandler) Listen(notifier grizzly.Notifier, UID, filename string) error {
+	return watchDashboard(notifier, UID, filename)
 }

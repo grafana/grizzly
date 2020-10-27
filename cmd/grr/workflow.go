@@ -128,6 +128,20 @@ func watchCmd(config grizzly.Config) *cli.Command {
 	return cmd
 }
 
+func listenCmd(config grizzly.Config) *cli.Command {
+	cmd := &cli.Command{
+		Use:   "listen <uid-to-watch> <output-file>",
+		Short: "listen for file changes on remote and save locally",
+		Args:  cli.ArgsExact(2),
+	}
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		uid := args[0]
+		filename := args[1]
+		return grizzly.Listen(config, uid, filename)
+	}
+	return cmd
+}
+
 func previewCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "preview <jsonnet-file>",

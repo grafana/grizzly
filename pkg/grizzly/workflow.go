@@ -316,6 +316,40 @@ func Watch(config Config, watchDir string, parser Parser) error {
 	return nil
 }
 
+// Listen waits for remote changes to a resource and saves them to disk
+func Listen(config Config, UID, filename string) error {
+	count := strings.Count(UID, ".")
+	var handlerName, resourceID string
+	if count == 1 {
+		parts := strings.SplitN(UID, ".", 2)
+		handlerName = parts[0]
+		resourceID = parts[1]
+	} else if count == 2 {
+		parts := strings.SplitN(UID, ".", 3)
+		handlerName = parts[0] + "." + parts[1]
+		resourceID = parts[2]
+
+	} else {
+		return fmt.Errorf("UID must be <provider>.<uid>: %s", UID)
+	}
+
+	handler, err := config.Registry.GetHandler(handlerName)
+	if err != nil {
+		return err
+	}
+	listenHandler, ok := handler.(ListenHandler)
+	if !ok {
+		tmpResource := Resource{
+			JSONPath: "",
+			UID:      resourceID,
+			Handler:  handler,
+		}
+		config.Notifier.NotSupported(tmpResource, "watch-resource")
+		return nil
+	}
+	return listenHandler.Listen(config.Notifier, resourceID, filename)
+}
+
 // Export renders Jsonnet resources then saves them to a directory
 func Export(config Config, exportDir string, resources Resources) error {
 	if _, err := os.Stat(exportDir); os.IsNotExist(err) {

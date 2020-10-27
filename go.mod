@@ -3,6 +3,7 @@ module github.com/grafana/grizzly
 go 1.13
 
 require (
+	github.com/centrifugal/centrifuge-go v0.6.2
 	github.com/cortexproject/cortex v1.2.0
 	github.com/fatih/color v1.9.0
 	github.com/gdamore/tcell v1.3.0

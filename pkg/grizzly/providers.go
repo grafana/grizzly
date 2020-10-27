@@ -100,6 +100,13 @@ type MultiResourceHandler interface {
 	Apply(notifier Notifier, resources ResourceList) error
 }
 
+// ListenHandler describes a handler that has the ability to watch a single
+// resource for changes, and write changes to that resource to a local file
+type ListenHandler interface {
+	// Listen watches a resource and update local file on changes
+	Listen(notifier Notifier, UID, filename string) error
+}
+
 // Provider describes a single Endpoint Provider
 type Provider interface {
 	GetName() string
