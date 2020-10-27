@@ -1,4 +1,4 @@
-package cortex
+package prometheus
 
 import (
 	"fmt"
@@ -17,19 +17,23 @@ func NewRuleHandler() *RuleHandler {
 
 // GetName returns the name for this provider
 func (h *RuleHandler) GetName() string {
-	return "cortex"
+	return "prometheus"
 }
 
 // GetFullName returns the name for this provider
 func (h *RuleHandler) GetFullName() string {
-	return "cortex.rulegroup"
+	return "prometheus.rulegroup"
 }
 
 const prometheusAlertsPath = "prometheusAlerts"
+const prometheusRulesPath = "prometheusRules"
 
 // GetJSONPaths returns paths within Jsonnet output that this provider will consume
 func (h *RuleHandler) GetJSONPaths() []string {
-	return []string{prometheusAlertsPath}
+	return []string{
+		prometheusAlertsPath,
+		prometheusRulesPath,
+	}
 }
 
 // GetExtension returns the file name extension for a rule grouping

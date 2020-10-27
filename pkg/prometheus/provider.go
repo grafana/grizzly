@@ -1,4 +1,4 @@
-package cortex
+package prometheus
 
 import "github.com/grafana/grizzly/pkg/grizzly"
 
@@ -12,7 +12,7 @@ func NewProvider() *Provider {
 
 // GetName returns the name of the Cortex provider
 func (p *Provider) GetName() string {
-	return "cortex"
+	return "prometheus"
 }
 
 // GetHandlers identifies the handlers for the Cortex provider
