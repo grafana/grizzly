@@ -272,7 +272,7 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, notifier grizzly.N
 	return nil
 }
 
-// WatchResource watches a resource and update local file on changes
-func (h *DashboardHandler) WatchResource(notifier grizzly.Notifier, UID, filename string) error {
+// Listen watches a resource and updates local file on changes
+func (h *DashboardHandler) Listen(notifier grizzly.Notifier, UID, filename string) error {
 	return watchDashboard(notifier, UID, filename)
 }

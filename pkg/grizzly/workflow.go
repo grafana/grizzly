@@ -316,8 +316,8 @@ func Watch(config Config, watchDir string, parser Parser) error {
 	return nil
 }
 
-// WatchResource waits for remote changes to a resource and saves them to disk
-func WatchResource(config Config, UID, filename string) error {
+// Listen waits for remote changes to a resource and saves them to disk
+func Listen(config Config, UID, filename string) error {
 	count := strings.Count(UID, ".")
 	var handlerName, resourceID string
 	if count == 1 {
@@ -337,7 +337,7 @@ func WatchResource(config Config, UID, filename string) error {
 	if err != nil {
 		return err
 	}
-	watchResourceHandler, ok := handler.(WatchResourceHandler)
+	listenHandler, ok := handler.(ListenHandler)
 	if !ok {
 		tmpResource := Resource{
 			JSONPath: "",
@@ -347,7 +347,7 @@ func WatchResource(config Config, UID, filename string) error {
 		config.Notifier.NotSupported(tmpResource, "watch-resource")
 		return nil
 	}
-	return watchResourceHandler.WatchResource(config.Notifier, resourceID, filename)
+	return listenHandler.Listen(config.Notifier, resourceID, filename)
 }
 
 // Export renders Jsonnet resources then saves them to a directory

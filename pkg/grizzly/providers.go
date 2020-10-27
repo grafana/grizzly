@@ -100,11 +100,11 @@ type MultiResourceHandler interface {
 	Apply(notifier Notifier, resources ResourceList) error
 }
 
-// WatchResourceHandler describes a handler that has the ability to watch a single
+// ListenHandler describes a handler that has the ability to watch a single
 // resource for changes, and write changes to that resource to a local file
-type WatchResourceHandler interface {
-	// WatchResource watches a resource and update local file on changes
-	WatchResource(notifier Notifier, UID, filename string) error
+type ListenHandler interface {
+	// Listen watches a resource and update local file on changes
+	Listen(notifier Notifier, UID, filename string) error
 }
 
 // Provider describes a single Endpoint Provider
