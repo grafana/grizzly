@@ -20,18 +20,15 @@ type eventHandler struct {
 
 func (h *eventHandler) OnConnect(c *centrifuge.Client, e centrifuge.ConnectEvent) {
 	log.Println("Connected to", h.url)
-	return
 }
 
 func (h *eventHandler) OnError(c *centrifuge.Client, e centrifuge.ErrorEvent) {
 	log.Printf("Error: %s", e.Message)
-	return
 }
 
 func (h *eventHandler) OnDisconnect(c *centrifuge.Client, e centrifuge.DisconnectEvent) {
 	log.Println("Disconnected from", h.url)
 	h.stop = true
-	return
 }
 func (h *eventHandler) OnSubscribeSuccess(sub *centrifuge.Subscription, e centrifuge.SubscribeSuccessEvent) {
 	log.Printf("Subscribed to channel %s, resubscribed: %v, recovered: %v", sub.Channel(), e.Resubscribed, e.Recovered)

@@ -131,7 +131,7 @@ func watchCmd(config grizzly.Config) *cli.Command {
 func listenCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "listen <uid-to-watch> <output-file>",
-		Short: "listen for file changes on remove and save locally",
+		Short: "listen for file changes on remote and save locally",
 		Args:  cli.ArgsExact(2),
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
