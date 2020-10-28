@@ -3,7 +3,7 @@ local promRuleGroupSet = prom.v1.ruleGroupSet;
 local promRuleGroup = prom.v1.ruleGroup;
 {
   prometheus_metamon::
-    promRuleGroup.new('malcolm_alerts')
+    promRuleGroup.new('grizzly_alerts')
     + promRuleGroup.rule.newAlert(
       'PromScrapeFailed', {
         expr: 'up != 1',
