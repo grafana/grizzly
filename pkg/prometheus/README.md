@@ -1,12 +1,12 @@
 # Prometheus Provider for Grizzly
 
-This provider offers a handler for Prometheus Alerts and Recording Rules, when
-the Prometheus server has an API for upload, such as that provided by the
-Cortex Ruler.
+This provider offers a handler for Prometheus Alerts and Recording Rules.
 
-The default Prometheus install does not have this API, meaning Grizzly cannot
-be used with it.
+For pure Prometheus, `grr export` can be used to convert Jsonnet based rules
+into YAML files that can be loaded into Prometheus. In this context,
+`grr apply` will not work, as Prometheus itself does not have an API for
+the delivery of rules.
 
-(Having said that, `grr export` very much could be used to generate files
-that a default Prometheus install could consume - it just wouldn't be able to
-be used with `grr apply`.)
+When Grafana Cloud Metrics, Grafana Metrics Enterprise or Cortex are used,
+the full suite of Grizzly actions is available, e.g. `grr diff`, `grr apply`
+and `grr watch`.
