@@ -23,9 +23,9 @@ environment variables.
 
 | Name | Description | Required | Default |
 | --- | --- | --- | --- |
-| GRAFANA\_URL | Fully qualified domain name of your Grafana instance. | true | - |
-| GRAFANA\_USER | Basic auth username if applicable. | false | `api_key` |
-| GRAFANA\_TOKEN | Basic auth password or API token. | false | - |
+| `GRAFANA_URL` | Fully qualified domain name of your Grafana instance. | true | - |
+| `GRAFANA_USER` | Basic auth username if applicable. | false | `api_key` |
+| `GRAFANA_TOKEN` | Basic auth password or API token. | false | - |
 
 See Grafana's [Authentication API
 docs](https://grafana.com/docs/grafana/latest/http_api/auth/) for more info.
@@ -37,16 +37,16 @@ and must have these environment variables set:
 
 | Name | Description | Required |
 | --- | --- | --- |
-| PROMETHEUS\_ADDRESS | URL for Grafana Cloud Prometheus instance | true |
-| PROMETHEUS\_TENANT\_ID | Tenant ID for your Grafana Cloud Prometheus account | true |
-| PROMETHEUS\_TOKEN | Authentication token/api key | true |
+| `PROMETHEUS_ADDRESS` | URL for Grafana Cloud Prometheus instance | true |
+| `PROMETHEUS_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true |
+| `PROMETHEUS_TOKEN` | Authentication token/api key | true |
 
 ### Grafana Synthetic Monitoring
 To interact with Grafana Synthetic Monitoring, you must have these environment variable set:
 
 | Name | Description | Required |
 | --- | --- | --- |
-| GRAFANA_SM_TOKEN | Authentication token/api key | true |
+| `GRAFANA_SM_TOKEN` | Authentication token/api key | true |
 
 ## Commands
 
