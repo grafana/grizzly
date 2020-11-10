@@ -81,10 +81,12 @@ func (h *DashboardHandler) newDashboardFolderResource(path, folderName string) g
 func (h *DashboardHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
 	if path == dashboardFolderPath {
-		folderName := strings.ReplaceAll(i.(string), "{ }", "") // No idea why json parsing adds { } to the end of the parsed string :-(
-		resource := h.newDashboardFolderResource(path, folderName)
-		resources[dashboardFolderPath] = resource
-		return resources, nil
+		if _, ok := i.(string); ok {
+			folderName := strings.ReplaceAll(i.(string), "{ }", "") // No idea why json parsing adds { } to the end of the parsed string :-(
+			resource := h.newDashboardFolderResource(path, folderName)
+			resources[dashboardFolderPath] = resource
+			return resources, nil
+		}
 	}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
