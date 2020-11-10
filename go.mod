@@ -18,6 +18,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200422194213-44a606286825
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v3 v3.0.0-20200603094226-e3079894b1e8
 )
 
 replace k8s.io/client-go => k8s.io/client-go v0.18.3
