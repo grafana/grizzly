@@ -81,16 +81,18 @@ func applyCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "apply <jsonnet-file>",
 		Short: "render Jsonnet and push dashboard(s) to Grafana",
-		Args:  cli.ArgsExact(1),
+		Args:  cli.ArgsAny(),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
-		if err != nil {
-			return err
+		for _, jsonnetFile := range args {
+			resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+			if err != nil {
+				return err
+			}
+			grizzly.Apply(config, resources)
 		}
-		return grizzly.Apply(config, resources)
+		return nil
 	}
 	return cmd
 }
