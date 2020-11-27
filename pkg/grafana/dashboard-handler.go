@@ -99,6 +99,16 @@ func (h *DashboardHandler) Parse(path string, i interface{}) (grizzly.ResourceLi
 		key := resource.Key()
 		resources[key] = resource
 	}
+	// check uids missing
+	var missing ErrUidsMissing
+	for _, resource := range resources {
+		if resource.UID == "" {
+			missing = append(missing, resource.Filename)
+		}
+	}
+	if len(missing) > 0 {
+		return nil, missing
+	}
 	return resources, nil
 }
 
