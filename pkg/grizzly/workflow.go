@@ -209,7 +209,10 @@ func Apply(config Config, resources Resources) error {
 	for handler, resourceList := range resources {
 		if isMultiResource(handler) {
 			multiHandler := handler.(MultiResourceHandler)
-			multiHandler.Apply(config.Notifier, resourceList)
+			err := multiHandler.Apply(config.Notifier, resourceList)
+			if err != nil {
+				return err
+			}
 			continue
 		}
 		for _, resource := range resourceList {

@@ -38,8 +38,9 @@ func (h *DashboardHandler) GetFullName() string {
 }
 
 const (
-	dashboardsPath      = "grafanaDashboards"
-	dashboardFolderPath = "grafanaDashboardFolder"
+	dashboardsPath         = "grafanaDashboards"
+	dashboardFolderPath    = "grafanaDashboardFolder"
+	dashboardFolderDefault = "General"
 )
 
 // GetJSONPaths returns paths within Jsonnet output that this provider will consume
@@ -104,7 +105,7 @@ func (h *DashboardHandler) Parse(path string, i interface{}) (grizzly.ResourceLi
 
 // Diff compares local resources with remote equivalents and output result
 func (h *DashboardHandler) Diff(notifier grizzly.Notifier, resources grizzly.ResourceList) error {
-	dashboardFolder := "general"
+	dashboardFolder := dashboardFolderDefault
 	dashboardFolderResource, ok := resources[dashboardFolderPath]
 	if ok {
 		dashboardFolder = dashboardFolderResource.Filename
@@ -146,7 +147,7 @@ func (h *DashboardHandler) Diff(notifier grizzly.Notifier, resources grizzly.Res
 
 // Apply local resources to remote endpoint
 func (h *DashboardHandler) Apply(notifier grizzly.Notifier, resources grizzly.ResourceList) error {
-	dashboardFolder := "general"
+	dashboardFolder := dashboardFolderDefault
 	dashboardFolderResource, ok := resources[dashboardFolderPath]
 	if ok {
 		dashboardFolder = dashboardFolderResource.Filename
