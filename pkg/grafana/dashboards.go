@@ -235,7 +235,7 @@ func (f *Folder) toJSON() (string, error) {
 }
 
 func findOrCreateFolder(UID string) (int64, error) {
-	if UID == "0" || UID == "" {
+	if UID == "0" || UID == "" || UID == dashboardFolderDefault {
 		return 0, nil
 	}
 	grafanaURL, err := getGrafanaURL("api/folders/" + UID)
