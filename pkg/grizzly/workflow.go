@@ -62,7 +62,7 @@ func Get(config Config, UID string) error {
 
 // List outputs the keys resources found in resulting json.
 func List(config Config, resources Resources) error {
-	f := "%s\t%s\n"
+	f := "%s\t%s\t%s\n"
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
 	fmt.Fprintf(w, f, "HANDLER", "KIND", "NAME")
