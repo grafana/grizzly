@@ -243,4 +243,20 @@ depends_on:
 - docker-arm
 - docker-arm64
 
+---
+kind: secret
+name: docker_username
+
+get:
+  path: infra/data/ci/docker_hub
+  name: username
+
+---
+kind: secret
+name: docker_password
+
+get:
+  path: infra/data/ci/docker_hub
+  name: password
+
 ...
