@@ -54,6 +54,15 @@ local docker(arch) = pipeline('docker-' + arch) {
   ],
 };
 
+local vault_secret(name, vault_path, key) = {
+  kind: 'secret',
+  name: name,
+  get: {
+    path: vault_path,
+    name: key,
+  },
+};
+
 [
   pipeline('check') {
     steps: [
@@ -104,4 +113,8 @@ local docker(arch) = pipeline('docker-' + arch) {
       'docker-arm64',
     ],
   } + constraints.onlyTagOrMaster,
+]
++ [
+  vault_secret('docker_username', 'infra/data/ci/docker_hub', 'username'),
+  vault_secret('docker_password', 'infra/data/ci/docker_hub', 'password'),
 ]

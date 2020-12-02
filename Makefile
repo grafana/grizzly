@@ -35,4 +35,7 @@ container: static
 
 # CI
 drone:
+	# Render the YAML from the jsonnet
 	drone jsonnet --source .drone/drone.jsonnet --target .drone/drone.yml --stream --format
+	# Sign the config
+	drone --server https://drone.grafana.net sign --save grafana/grizzly .drone/drone.yml
