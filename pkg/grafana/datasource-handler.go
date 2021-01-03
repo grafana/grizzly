@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -40,44 +41,65 @@ func (h *DatasourceHandler) GetExtension() string {
 	return "json"
 }
 
-func (h *DatasourceHandler) newDatasourceResource(path, uid, filename string, source Datasource) grizzly.Resource {
+// APIVersion returns the api version for this resource
+func (h *DatasourceHandler) APIVersion() string {
+	return "grafana.com/v1"
+}
+
+// Kind returns the resource kind for this type of resource
+func (h *DatasourceHandler) Kind() string {
+	return "Datasource"
+}
+func (h *DatasourceHandler) newDatasourceResource(uid, filename string, source Datasource) grizzly.Resource {
 	resource := grizzly.Resource{
 		UID:      uid,
 		Filename: filename,
 		Handler:  h,
 		Detail:   source,
-		JSONPath: path,
+		JSONPath: datasourcesPath,
 	}
 	return resource
 }
 
-// Parse parses an interface{} object into a struct for this resource type
-func (h *DatasourceHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
+// ParseHiddenElements parses an interface{} object into a struct for this resource type
+func (h *DatasourceHandler) ParseHiddenElements(path string, i interface{}) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
-		source := Datasource{}
-		source["basicAuth"] = false
-		source["basicAuthPassword"] = ""
-		source["basicAuthUser"] = ""
-		source["database"] = ""
-		source["orgId"] = 1
-		source["password"] = ""
-		source["secureJsonFields"] = map[string]interface{}{}
-		source["typeLogoUrl"] = ""
-		source["user"] = ""
-		source["withCredentials"] = false
-		source["readOnly"] = false
-
-		err := mapstructure.Decode(v, &source)
+		m, err := grizzly.NewManifest(h, k, v)
 		if err != nil {
 			return nil, err
 		}
-		resource := h.newDatasourceResource(path, source.UID(), k, source)
-		key := resource.Key()
-		resources[key] = resource
+		resource, err := h.Parse(m)
+		if err != nil {
+			return nil, err
+		}
+		resources[resource.Key()] = *resource
 	}
 	return resources, nil
+}
+
+// Parse parses a single resource from an interface{} object
+func (h *DatasourceHandler) Parse(m manifest.Manifest) (*grizzly.Resource, error) {
+	source := Datasource{}
+	source["basicAuth"] = false
+	source["basicAuthPassword"] = ""
+	source["basicAuthUser"] = ""
+	source["database"] = ""
+	source["orgId"] = 1
+	source["password"] = ""
+	source["secureJsonFields"] = map[string]interface{}{}
+	source["typeLogoUrl"] = ""
+	source["user"] = ""
+	source["withCredentials"] = false
+	source["readOnly"] = false
+
+	err := mapstructure.Decode(m["spec"], &source)
+	if err != nil {
+		return nil, err
+	}
+	resource := h.newDatasourceResource(source.UID(), m.Metadata().Name(), source)
+	return &resource, nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
@@ -99,7 +121,7 @@ func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving datasource %s: %v", UID, err)
 	}
-	resource := h.newDatasourceResource(datasourcesPath, UID, "", *source)
+	resource := h.newDatasourceResource(UID, "", *source)
 	return &resource, nil
 }
 
@@ -127,7 +149,7 @@ func (h *DatasourceHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, err
 	}
-	resource := h.newDatasourceResource(datasourcesPath, uid, "", *source)
+	resource := h.newDatasourceResource(uid, "", *source)
 	return &resource, nil
 }
 

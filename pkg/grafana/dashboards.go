@@ -62,6 +62,8 @@ func postDashboard(board Dashboard) error {
 		return err
 	}
 	delete(board, folderNameField)
+	delete(board, "id")
+	delete(board, "version")
 	wrappedBoard := DashboardWrapper{
 		Dashboard: board,
 		FolderID:  folderID,
@@ -85,7 +87,6 @@ func postDashboard(board Dashboard) error {
 		if err := d.Decode(&r); err != nil {
 			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
 		}
-		fmt.Println(wrappedJSON)
 		return fmt.Errorf("Error while applying '%s' to Grafana: %s", board.UID(), r.Message)
 	default:
 		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s", resp.Status, board.UID())
@@ -182,12 +183,12 @@ func (d *Dashboard) folderUID() string {
 }
 
 func dashboardWithFolderSet(resource grizzly.Resource, dashboardFolder string) grizzly.Resource {
-	board := newDashboard(resource)
-	_, ok := board[folderNameField]
-	if !ok {
+	board := resource.Detail.(Dashboard)
+	existingFolder, ok := board[folderNameField]
+	if !ok || existingFolder == nil {
 		board[folderNameField] = dashboardFolder
+		resource.Detail = board
 	}
-	resource.Detail = board
 	return resource
 }
 

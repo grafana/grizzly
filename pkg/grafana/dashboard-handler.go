@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/kylelemons/godebug/diff"
 	"github.com/mitchellh/mapstructure"
 )
@@ -56,13 +57,23 @@ func (h *DashboardHandler) GetExtension() string {
 	return "json"
 }
 
-func (h *DashboardHandler) newDashboardResource(path, uid, filename string, board Dashboard) grizzly.Resource {
+// APIVersion returns the api version for this resource
+func (h *DashboardHandler) APIVersion() string {
+	return "grafana.com/v1"
+}
+
+// Kind returns the resource kind for this type of resource
+func (h *DashboardHandler) Kind() string {
+	return "Dashboard"
+}
+
+func (h *DashboardHandler) newDashboardResource(uid, filename string, board Dashboard) grizzly.Resource {
 	resource := grizzly.Resource{
 		UID:      uid,
 		Filename: filename,
 		Handler:  h,
 		Detail:   board,
-		JSONPath: path,
+		JSONPath: dashboardsPath,
 	}
 	return resource
 }
@@ -78,8 +89,8 @@ func (h *DashboardHandler) newDashboardFolderResource(path, folderName string) g
 	return resource
 }
 
-// Parse parses an interface{} object into a struct for this resource type
-func (h *DashboardHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
+// ParseHiddenElements parses an interface{} object into a struct for this resource type
+func (h *DashboardHandler) ParseHiddenElements(path string, i interface{}) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
 	if path == dashboardFolderPath {
 		if _, ok := i.(string); ok {
@@ -90,27 +101,49 @@ func (h *DashboardHandler) Parse(path string, i interface{}) (grizzly.ResourceLi
 		}
 	}
 	msi := i.(map[string]interface{})
+	var missingUIDs ErrUidsMissing
 	for k, v := range msi {
-		board := Dashboard{}
-		err := mapstructure.Decode(v, &board)
+		m, err := grizzly.NewManifest(h, k, v)
 		if err != nil {
 			return nil, err
 		}
-		resource := h.newDashboardResource(path, board.UID(), k, board)
-		key := resource.Key()
-		resources[key] = resource
-	}
-	// check uids missing
-	var missing ErrUidsMissing
-	for _, resource := range resources {
-		if resource.UID == "" {
-			missing = append(missing, resource.Filename)
+		resource, err := h.Parse(m)
+		if err != nil {
+			return nil, err
 		}
+		if resource.UID == "" {
+			missingUIDs = append(missingUIDs, resource.Filename)
+		}
+		resources[resource.Key()] = *resource
 	}
-	if len(missing) > 0 {
-		return nil, missing
+	if len(missingUIDs) > 0 {
+		return nil, missingUIDs
 	}
 	return resources, nil
+}
+
+// Parse parses a single resource from an interface{} object
+func (h *DashboardHandler) Parse(m manifest.Manifest) (*grizzly.Resource, error) {
+	board := Dashboard{}
+	err := mapstructure.Decode(m["spec"], &board)
+	if err != nil {
+		return nil, err
+	}
+	folder := m.Metadata()["folder"]
+	if folder != "" {
+		board["folderName"] = folder
+	}
+
+	resource := h.newDashboardResource(board.UID(), m.Metadata().Name(), board)
+	if resource.UID == "" {
+		title, ok := board["title"].(string)
+		if ok {
+			return nil, ErrUidsMissing{title}
+		}
+		return nil, ErrUidsMissing{"Unidentifiable dashboard without title nor UID"}
+	}
+
+	return &resource, nil
 }
 
 // Diff compares local resources with remote equivalents and output result
@@ -166,6 +199,7 @@ func (h *DashboardHandler) Apply(notifier grizzly.Notifier, resources grizzly.Re
 		if resource.JSONPath == dashboardFolderPath {
 			continue
 		}
+		resource = dashboardWithFolderSet(resource, dashboardFolder)
 		existingResource, err := h.GetRemote(resource.UID)
 		if err == grizzly.ErrNotFound {
 			err := h.Add(resource)
@@ -177,7 +211,6 @@ func (h *DashboardHandler) Apply(notifier grizzly.Notifier, resources grizzly.Re
 		} else if err != nil {
 			return err
 		}
-		resource = dashboardWithFolderSet(resource, dashboardFolder)
 		resourceRepresentation, err := resource.GetRepresentation()
 		if err != nil {
 			return err
@@ -217,7 +250,7 @@ func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving dashboard %s: %v", UID, err)
 	}
-	resource := h.newDashboardResource(dashboardsPath, UID, "", *board)
+	resource := h.newDashboardResource(UID, "", *board)
 	return &resource, nil
 }
 
@@ -246,7 +279,7 @@ func (h *DashboardHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, err
 	}
-	resource := h.newDashboardResource(dashboardsPath, uid, "", *board)
+	resource := h.newDashboardResource(uid, "", *board)
 	return &resource, nil
 }
 

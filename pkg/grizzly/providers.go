@@ -1,6 +1,11 @@
 package grizzly
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/gobwas/glob"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
+)
 
 // Resource represents a single Resource destined for a single endpoint
 type Resource struct {
@@ -38,7 +43,8 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 	}
 	key := r.Key()
 	for _, target := range targets {
-		if target == key {
+		g := glob.MustCompile(target)
+		if g.Match(key) {
 			return true
 		}
 	}
@@ -57,9 +63,14 @@ type Handler interface {
 	GetFullName() string
 	GetJSONPaths() []string
 	GetExtension() string
+	APIVersion() string
+	Kind() string
 
-	// Parse parses an interface{} object into a struct for this resource type
-	Parse(path string, i interface{}) (ResourceList, error)
+	// ParseHiddenElements parses an interface{} object into a struct for this resource type
+	ParseHiddenElements(path string, i interface{}) (ResourceList, error)
+
+	// Parse parses an interface{} object into a single resource
+	Parse(m manifest.Manifest) (*Resource, error)
 
 	// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 	Unprepare(resource Resource) *Resource
@@ -100,6 +111,13 @@ type MultiResourceHandler interface {
 	Apply(notifier Notifier, resources ResourceList) error
 }
 
+// TargetedResourceHandler is a handler that requires access to the targets provided on the
+// command line, e.g. for filtering sub-resources.
+type TargetedResourceHandler interface {
+	// ParseWithTargets parses an interface{} object into a struct for this resource type
+	ParseWithTargets(path string, targets []string, i interface{}) (ResourceList, error)
+}
+
 // ListenHandler describes a handler that has the ability to watch a single
 // resource for changes, and write changes to that resource to a local file
 type ListenHandler interface {
@@ -115,10 +133,11 @@ type Provider interface {
 
 // Registry records providers
 type Registry struct {
-	Providers     []Provider
-	Handlers      []Handler
-	HandlerByName map[string]Handler
-	HandlerByPath map[string]Handler
+	Providers               []Provider
+	Handlers                []Handler
+	HandlerByName           map[string]Handler
+	HandlerByPath           map[string]Handler
+	HandlerByAPIVersionKind map[string]Handler
 }
 
 // NewProviderRegistry returns a new registry instance
@@ -128,7 +147,12 @@ func NewProviderRegistry() Registry {
 	registry.Handlers = []Handler{}
 	registry.HandlerByName = map[string]Handler{}
 	registry.HandlerByPath = map[string]Handler{}
+	registry.HandlerByAPIVersionKind = map[string]Handler{}
 	return registry
+}
+
+func (r *Registry) getKey(apiVersion, kind string) string {
+	return apiVersion + "-" + kind
 }
 
 // RegisterProvider will register a new provider
@@ -141,6 +165,8 @@ func (r *Registry) RegisterProvider(provider Provider) error {
 		}
 		r.HandlerByName[handler.GetName()] = handler
 		r.HandlerByName[handler.GetFullName()] = handler
+		key := r.getKey(handler.APIVersion(), handler.Kind())
+		r.HandlerByAPIVersionKind[key] = handler
 	}
 	return nil
 }
@@ -154,6 +180,16 @@ func (r *Registry) GetHandler(path string) (Handler, error) {
 			return nil, fmt.Errorf("No handler registered to %s", path)
 		}
 		return handler, nil
+	}
+	return handler, nil
+}
+
+// GetHandlerFor returns a single provider based upon a apiVersion and kind
+func (r *Registry) GetHandlerFor(apiVersion, kind string) (Handler, error) {
+	key := r.getKey(apiVersion, kind)
+	handler, exists := r.HandlerByAPIVersionKind[key]
+	if !exists {
+		return nil, fmt.Errorf("No handler registered to %s / %s", apiVersion, kind)
 	}
 	return handler, nil
 }

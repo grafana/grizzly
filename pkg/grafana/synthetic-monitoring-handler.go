@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -52,32 +53,53 @@ func (h *SyntheticMonitoringHandler) GetExtension() string {
 	return "json"
 }
 
-func (h *SyntheticMonitoringHandler) newCheckResource(path string, filename string, check Check) grizzly.Resource {
+// APIVersion returns the api version for this resource
+func (h *SyntheticMonitoringHandler) APIVersion() string {
+	return "grafana.com/v1"
+}
+
+// Kind returns the resource kind for this type of resource
+func (h *SyntheticMonitoringHandler) Kind() string {
+	return "SyntheticMonitoringCheck"
+}
+func (h *SyntheticMonitoringHandler) newCheckResource(filename string, check Check) grizzly.Resource {
 	resource := grizzly.Resource{
 		UID:      check.UID(),
 		Filename: filename,
 		Handler:  h,
 		Detail:   check,
-		JSONPath: path,
+		JSONPath: syntheticMonitoringChecksPath,
 	}
 	return resource
 }
 
-// Parse parses an interface{} object into a struct for this resource type
-func (h *SyntheticMonitoringHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
+// ParseHiddenElements parses an interface{} object into a struct for this resource type
+func (h *SyntheticMonitoringHandler) ParseHiddenElements(path string, i interface{}) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
-		check := Check{}
-		err := mapstructure.Decode(v, &check)
+		m, err := grizzly.NewManifest(h, k, v)
 		if err != nil {
 			return nil, err
 		}
-		resource := h.newCheckResource(path, k, check)
-		key := resource.Key()
-		resources[key] = resource
+		resource, err := h.Parse(m)
+		if err != nil {
+			return nil, err
+		}
+		resources[resource.Key()] = *resource
 	}
 	return resources, nil
+}
+
+// Parse parses a single resource from an interface{} object
+func (h *SyntheticMonitoringHandler) Parse(m manifest.Manifest) (*grizzly.Resource, error) {
+	check := Check{}
+	err := mapstructure.Decode(m["spec"], &check)
+	if err != nil {
+		return nil, err
+	}
+	resource := h.newCheckResource(m.Metadata().Name(), check)
+	return &resource, nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
@@ -102,7 +124,7 @@ func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, er
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving check %s: %v", UID, err)
 	}
-	resource := h.newCheckResource(syntheticMonitoringChecksPath, "", *check)
+	resource := h.newCheckResource("", *check)
 	return &resource, nil
 }
 
@@ -130,7 +152,7 @@ func (h *SyntheticMonitoringHandler) GetRemote(uid string) (*grizzly.Resource, e
 	if err != nil {
 		return nil, err
 	}
-	resource := h.newCheckResource(syntheticMonitoringChecksPath, "", *check)
+	resource := h.newCheckResource("", *check)
 	return &resource, nil
 }
 

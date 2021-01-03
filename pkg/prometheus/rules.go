@@ -6,59 +6,37 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"gopkg.in/yaml.v3"
 )
 
 // getRemoteRuleGrouping retrieves a datasource object from Grafana
-func getRemoteRuleGroup(uid string) (*RuleGroup, error) {
-	parts := strings.SplitN(uid, "-", 2)
-	namespace := parts[0]
-	name := parts[1]
-
+func getRemoteRuleGrouping(namespace string) (*RuleGrouping, error) {
 	out, err := cortexTool("rules", "print", "--disable-color")
 	if err != nil {
 		return nil, err
 	}
+
 	groupings := map[string][]RuleGroup{}
 	err = yaml.Unmarshal(out, &groupings)
 	if err != nil {
 		return nil, err
 	}
-	for key, grouping := range groupings {
+	grouping := RuleGrouping{
+		Namespace: namespace,
+	}
+	for key, groups := range groupings {
 		if key == namespace {
-			for _, group := range grouping {
-				if group.Name == name {
-					group.Namespace = namespace
-					return &group, nil
-				}
+			for _, group := range groups {
+				grouping.Groups = append(grouping.Groups, group)
 			}
 		}
 	}
-	return nil, grizzly.ErrNotFound
-}
-
-// RuleGroup encapsulates a list of rules
-type RuleGroup struct {
-	Namespace string                   `yaml:"-"`
-	Name      string                   `yaml:"name"`
-	Rules     []map[string]interface{} `yaml:"rules"`
-}
-
-// UID retrieves the UID from a rule group
-func (g *RuleGroup) UID() string {
-	return fmt.Sprintf("%s-%s", g.Namespace, g.Name)
-}
-
-// toYAML returns YAML for a rule group
-func (g *RuleGroup) toYAML() (string, error) {
-	y, err := yaml.Marshal(g)
-	if err != nil {
-		return "", err
+	if len(grouping.Groups) == 0 {
+		return nil, grizzly.ErrNotFound
 	}
-	return string(y), nil
+	return &grouping, nil
 }
 
 // RuleGrouping encapsulates a set of named rule groups
@@ -67,16 +45,23 @@ type RuleGrouping struct {
 	Groups    []RuleGroup `json:"groups"`
 }
 
-func writeRuleGroup(group RuleGroup) error {
+// RuleGroup encapsulates a list of rules
+type RuleGroup struct {
+	Name  string                   `yaml:"name"`
+	Rules []map[string]interface{} `yaml:"rules"`
+}
+
+// toYAML returns YAML for a rule group
+func (g *RuleGrouping) toYAML() (string, error) {
+	y, err := yaml.Marshal(g)
+	if err != nil {
+		return "", err
+	}
+	return string(y), nil
+}
+
+func writeRuleGrouping(grouping RuleGrouping) error {
 	tmpfile, err := ioutil.TempFile("", "cortextool-*")
-	newGroup := RuleGroup{
-		Name:  group.Name,
-		Rules: group.Rules,
-	}
-	grouping := RuleGrouping{
-		Namespace: group.Namespace,
-		Groups:    []RuleGroup{newGroup},
-	}
 	out, err := yaml.Marshal(grouping)
 	if err != nil {
 		return err

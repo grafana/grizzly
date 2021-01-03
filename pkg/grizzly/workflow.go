@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/term"
+	"github.com/grafana/tanka/pkg/jsonnet/native"
+	"github.com/grafana/tanka/pkg/process"
 	"github.com/kylelemons/godebug/diff"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
@@ -62,13 +64,13 @@ func Get(config Config, UID string) error {
 
 // List outputs the keys resources found in resulting json.
 func List(config Config, resources Resources) error {
-	f := "%s\t%s\n"
+	f := "%s\t%s\t%s\n"
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
-	fmt.Fprintf(w, f, "HANDLER", "KIND", "NAME")
+	fmt.Fprintf(w, f, "APIVERSION", "KIND", "NAME")
 	for handler, resourceList := range resources {
 		for _, r := range resourceList {
-			fmt.Fprintf(w, f, handler.GetName(), r.Kind(), r.UID)
+			fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), r.UID)
 		}
 	}
 	return w.Flush()
@@ -90,11 +92,14 @@ func getPrivateElementsScript(jsonnetFile string, handlers []Handler) string {
 	return fmt.Sprintf(script, jsonnetFile, strings.Join(handlerStrings, "\n"))
 }
 
-// Parse evaluates a jsonnet file and parses it into an object tree
-func Parse(config Config, jsonnetFile string, targets []string) (Resources, error) {
+// ParseWithHiddenElements evaluates a jsonnet file and parses it into an object tree
+func ParseWithHiddenElements(config Config, jsonnetFile string, targets []string) (Resources, error) {
 
 	script := getPrivateElementsScript(jsonnetFile, config.Registry.Handlers)
 	vm := jsonnet.MakeVM()
+	for _, nf := range native.Funcs() {
+		vm.NativeFunction(nf)
+	}
 	vm.Importer(newExtendedImporter([]string{"vendor", "lib", "."}))
 
 	result, err := vm.EvaluateSnippet(jsonnetFile, script)
@@ -115,19 +120,85 @@ func Parse(config Config, jsonnetFile string, targets []string) (Resources, erro
 			fmt.Println("Skipping unregistered path", k)
 			continue
 		}
-		handlerResources, err := handler.Parse(k, v)
+
+		handlerResources, err := handler.ParseHiddenElements(k, v)
 		if err != nil {
 			return nil, err
 		}
-		resourceList, ok := resources[handler]
+		for kk, resource := range handlerResources {
+			if !resource.MatchesTarget(targets) {
+				continue
+			}
+			resourceList, ok := resources[resource.Handler]
+			if !ok {
+				resourceList = ResourceList{}
+			}
+			resourceList[kk] = resource
+			resources[handler] = resourceList
+		}
+
+	}
+	return resources, nil
+}
+
+// Parse evaluates a jsonnet file expecting Kubernetes style objects and parses
+// it into an object tree
+func Parse(config Config, jsonnetFile string, targets []string, isResourceMode bool) (Resources, error) {
+
+	if !isResourceMode {
+		return ParseWithHiddenElements(config, jsonnetFile, targets)
+	}
+	vm := jsonnet.MakeVM()
+	for _, nf := range native.Funcs() {
+		vm.NativeFunction(nf)
+	}
+	vm.Importer(newExtendedImporter([]string{"vendor", "lib", "."}))
+
+	bytes, err := ioutil.ReadFile(jsonnetFile)
+	if err != nil {
+		return nil, err
+	}
+	result, err := vm.EvaluateSnippet(jsonnetFile, string(bytes))
+	if err != nil {
+		return nil, err
+	}
+	var data interface{}
+	if err := json.Unmarshal([]byte(result), &data); err != nil {
+		return nil, err
+	}
+
+	extracted, err := process.Extract(data)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unwrap *List types
+	if err := process.Unwrap(extracted); err != nil {
+		return nil, err
+	}
+
+	resources := Resources{}
+	for _, m := range extracted {
+		handler, err := config.Registry.GetHandlerFor(m.APIVersion(), m.Kind())
+		if err != nil {
+			fmt.Println("Skipping unregistered resource", m.APIVersion(), m.Kind())
+			continue
+		}
+		resource, err := handler.Parse(m)
+		if err != nil {
+			return nil, err
+		}
+		if resource == nil {
+			continue // TEMPORARY
+		}
+		if !resource.MatchesTarget(targets) {
+			continue
+		}
+		resourceList, ok := resources[resource.Handler]
 		if !ok {
 			resourceList = ResourceList{}
 		}
-		for kk, resource := range handlerResources {
-			if resource.MatchesTarget(targets) {
-				resourceList[kk] = resource
-			}
-		}
+		resourceList[m.Metadata().Name()] = *resource
 		resources[handler] = resourceList
 	}
 	return resources, nil

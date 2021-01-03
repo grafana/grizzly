@@ -29,9 +29,10 @@ func listCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	resourceMode := cmd.Flags().BoolP("resource-mode", "r", false, "consume resources as kubernetes style objects")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets, *resourceMode)
 		if err != nil {
 			return err
 		}
@@ -48,9 +49,10 @@ func showCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	resourceMode := cmd.Flags().BoolP("resource-mode", "r", false, "consume resources as kubernetes style objects")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets, *resourceMode)
 		if err != nil {
 			return err
 		}
@@ -66,9 +68,10 @@ func diffCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	resourceMode := cmd.Flags().BoolP("resource-mode", "r", false, "consume resources as kubernetes style objects")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets, *resourceMode)
 		if err != nil {
 			return err
 		}
@@ -84,9 +87,10 @@ func applyCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	resourceMode := cmd.Flags().BoolP("resource-mode", "r", false, "consume resources as kubernetes style objects")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets, *resourceMode)
 		if err != nil {
 			return err
 		}
@@ -96,8 +100,9 @@ func applyCmd(config grizzly.Config) *cli.Command {
 }
 
 type jsonnetWatchParser struct {
-	jsonnetFile string
-	targets     []string
+	jsonnetFile  string
+	targets      []string
+	resourceMode bool
 }
 
 func (p *jsonnetWatchParser) Name() string {
@@ -105,7 +110,7 @@ func (p *jsonnetWatchParser) Name() string {
 }
 
 func (p *jsonnetWatchParser) Parse(config grizzly.Config) (grizzly.Resources, error) {
-	return grizzly.Parse(config, p.jsonnetFile, p.targets)
+	return grizzly.Parse(config, p.jsonnetFile, p.targets, p.resourceMode)
 
 }
 func watchCmd(config grizzly.Config) *cli.Command {
@@ -115,10 +120,12 @@ func watchCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(2),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	resourceMode := cmd.Flags().BoolP("resource-mode", "r", false, "consume resources as kubernetes style objects")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		parser := &jsonnetWatchParser{
-			jsonnetFile: args[1],
-			targets:     *targets,
+			jsonnetFile:  args[1],
+			targets:      *targets,
+			resourceMode: *resourceMode,
 		}
 		watchDir := args[0]
 
@@ -150,9 +157,10 @@ func previewCmd(config grizzly.Config) *cli.Command {
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
 	cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
+	resourceMode := cmd.Flags().BoolP("resource-mode", "r", false, "consume resources as kubernetes style objects")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets, *resourceMode)
 		if err != nil {
 			return err
 		}
@@ -176,10 +184,11 @@ func exportCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(2),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	resourceMode := cmd.Flags().BoolP("resource-mode", "r", false, "consume resources as kubernetes style objects")
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		dashboardDir := args[1]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *targets, *resourceMode)
 		if err != nil {
 			return err
 		}
