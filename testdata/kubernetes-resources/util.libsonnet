@@ -1,6 +1,6 @@
 {
-  makeResource(apiVersion, kind, name, spec):: {
-    apiVersion: apiVersion,
+  makeResource(kind, name, spec):: {
+    apiVersion: 'grafana.com/grizzly/v1',
     kind: kind,
     metadata: {
       name: name,

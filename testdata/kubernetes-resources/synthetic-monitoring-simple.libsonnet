@@ -1,7 +1,7 @@
 local util = import 'util.libsonnet';
 
 util.makeResource(
-  'grafana.com/v1', 'SyntheticMonitoringCheck', 'odoko', {
+  'SyntheticMonitoringCheck', 'odoko', {
     frequency: 60000,
     offset: 0,
     timeout: 2500,

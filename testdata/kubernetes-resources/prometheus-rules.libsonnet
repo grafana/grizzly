@@ -23,4 +23,4 @@ local prometheus_metamon =
     },
   );
 
-util.makeResource('prometheus.io/v1', 'RuleGroup', 'first_rules', promRuleGroupSet.new() + promRuleGroupSet.addGroup(prometheus_metamon))
+util.makeResource('PrometheusRuleGroup', 'first_rules', promRuleGroupSet.new() + promRuleGroupSet.addGroup(prometheus_metamon))
