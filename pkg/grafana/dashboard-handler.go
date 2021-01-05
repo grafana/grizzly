@@ -59,7 +59,7 @@ func (h *DashboardHandler) GetExtension() string {
 
 // APIVersion returns the api version for this resource
 func (h *DashboardHandler) APIVersion() string {
-	return "grafana.com/v1"
+	return "grafana.com/grizzy/v1"
 }
 
 // Kind returns the resource kind for this type of resource

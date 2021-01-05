@@ -44,12 +44,12 @@ func (h *RuleHandler) GetExtension() string {
 
 // APIVersion returns the api version for this resource
 func (h *RuleHandler) APIVersion() string {
-	return "prometheus.io/v1"
+	return "grafana.com/grizzly/v1"
 }
 
 // Kind returns the resource kind for this type of resource
 func (h *RuleHandler) Kind() string {
-	return "RuleGroup"
+	return "PrometheusRuleGroup"
 }
 func (h *RuleHandler) newRuleGroupingResource(grouping RuleGrouping) grizzly.Resource {
 	resource := grizzly.Resource{

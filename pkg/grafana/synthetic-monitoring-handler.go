@@ -55,7 +55,7 @@ func (h *SyntheticMonitoringHandler) GetExtension() string {
 
 // APIVersion returns the api version for this resource
 func (h *SyntheticMonitoringHandler) APIVersion() string {
-	return "grafana.com/v1"
+	return "grafana.com/grizzly/v1"
 }
 
 // Kind returns the resource kind for this type of resource
