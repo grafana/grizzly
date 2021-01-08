@@ -17,23 +17,13 @@ func getRemoteRuleGrouping(namespace string) (*RuleGrouping, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	groupings := map[string][]RuleGroup{}
+	groupings := map[string]RuleGrouping{}
 	err = yaml.Unmarshal(out, &groupings)
 	if err != nil {
 		return nil, err
 	}
-	grouping := RuleGrouping{
-		Namespace: namespace,
-	}
-	for key, groups := range groupings {
-		if key == namespace {
-			for _, group := range groups {
-				grouping.Groups = append(grouping.Groups, group)
-			}
-		}
-	}
-	if len(grouping.Groups) == 0 {
+	grouping, ok := groupings[namespace]
+	if !ok {
 		return nil, grizzly.ErrNotFound
 	}
 	return &grouping, nil
