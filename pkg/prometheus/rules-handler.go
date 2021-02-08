@@ -44,7 +44,7 @@ func (h *RuleHandler) GetExtension() string {
 
 // APIVersion returns the api version for this resource
 func (h *RuleHandler) APIVersion() string {
-	return "grafana.com/grizzly/v1"
+	return "grizzly.grafana.com/v1alpha1"
 }
 
 // Kind returns the resource kind for this type of resource
