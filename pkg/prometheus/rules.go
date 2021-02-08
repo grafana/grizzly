@@ -8,7 +8,6 @@ import (
 	"os/exec"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,21 +17,22 @@ func getRemoteRuleGrouping(namespace string) (*RuleGrouping, error) {
 	if err != nil {
 		return nil, err
 	}
-	data := map[string]interface{}{}
-	err = yaml.Unmarshal(out, &data)
-	for ns, groups := range data {
-		if ns == namespace {
-			grouping := RuleGrouping{
-				Namespace: ns,
-			}
-			err := mapstructure.Decode(groups, &grouping.Groups)
-			if err != nil {
-				return nil, err
-			}
-			return &grouping, nil
-		}
+
+	ruleGroups := map[string][]RuleGroup{}
+	err = yaml.Unmarshal(out, &ruleGroups)
+	if err != nil {
+		return nil, err
 	}
-	return nil, grizzly.ErrNotFound
+
+	groups, ok := ruleGroups[namespace]
+	if !ok {
+		return nil, grizzly.ErrNotFound
+	}
+
+	return &RuleGrouping{
+		Namespace: namespace,
+		Groups:    groups,
+	}, nil
 }
 
 // RuleGrouping encapsulates a set of named rule groups
