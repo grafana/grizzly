@@ -103,10 +103,7 @@ func (h *DashboardHandler) ParseHiddenElements(path string, i interface{}) (griz
 	msi := i.(map[string]interface{})
 	var missingUIDs ErrUidsMissing
 	for k, v := range msi {
-		m, err := grizzly.NewManifest(h, k, v)
-		if err != nil {
-			return nil, err
-		}
+		m := grizzly.NewManifest(h.APIVersion(), h.Kind(), k, v)
 		resource, err := h.Parse(m)
 		if err != nil {
 			return nil, err

@@ -73,11 +73,7 @@ func (h *RuleHandler) ParseHiddenElements(path string, i interface{}) (grizzly.R
 	}
 	for k, v := range groupings {
 		v.Namespace = k
-		m, err := grizzly.NewManifest(h, k, v)
-
-		if err != nil {
-			return nil, err
-		}
+		m := grizzly.NewManifest(h.APIVersion(), h.Kind(), k, v)
 		resource, err := h.Parse(m)
 		if err != nil {
 			return nil, err

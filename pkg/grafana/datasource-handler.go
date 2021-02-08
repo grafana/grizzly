@@ -66,10 +66,7 @@ func (h *DatasourceHandler) ParseHiddenElements(path string, i interface{}) (gri
 	resources := grizzly.ResourceList{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
-		m, err := grizzly.NewManifest(h, k, v)
-		if err != nil {
-			return nil, err
-		}
+		m := grizzly.NewManifest(h.APIVersion(), h.Kind(), k, v)
 		resource, err := h.Parse(m)
 		if err != nil {
 			return nil, err
@@ -81,19 +78,19 @@ func (h *DatasourceHandler) ParseHiddenElements(path string, i interface{}) (gri
 
 // Parse parses a single resource from an interface{} object
 func (h *DatasourceHandler) Parse(m manifest.Manifest) (*grizzly.Resource, error) {
-	source := Datasource{}
-	source["basicAuth"] = false
-	source["basicAuthPassword"] = ""
-	source["basicAuthUser"] = ""
-	source["database"] = ""
-	source["orgId"] = 1
-	source["password"] = ""
-	source["secureJsonFields"] = map[string]interface{}{}
-	source["typeLogoUrl"] = ""
-	source["user"] = ""
-	source["withCredentials"] = false
-	source["readOnly"] = false
-
+	source := Datasource{
+		"basicAuth":         false,
+		"basicAuthPassword": "",
+		"basicAuthUser":     "",
+		"database":          "",
+		"orgId":             1,
+		"password":          "",
+		"secureJsonFields":  map[string]interface{}{},
+		"typeLogoUrl":       "",
+		"user":              "",
+		"withCredentials":   false,
+		"readOnly":          false,
+	}
 	err := mapstructure.Decode(m["spec"], &source)
 	if err != nil {
 		return nil, err

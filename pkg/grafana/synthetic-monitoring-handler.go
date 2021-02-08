@@ -78,10 +78,7 @@ func (h *SyntheticMonitoringHandler) ParseHiddenElements(path string, i interfac
 	resources := grizzly.ResourceList{}
 	msi := i.(map[string]interface{})
 	for k, v := range msi {
-		m, err := grizzly.NewManifest(h, k, v)
-		if err != nil {
-			return nil, err
-		}
+		m := grizzly.NewManifest(h.APIVersion(), h.Kind(), k, v)
 		resource, err := h.Parse(m)
 		if err != nil {
 			return nil, err
