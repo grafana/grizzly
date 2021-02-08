@@ -155,11 +155,11 @@ func (h *DashboardHandler) Diff(notifier grizzly.Notifier, resources grizzly.Res
 			continue
 		}
 		resource = dashboardWithFolderSet(resource, dashboardFolder)
+		resource = *h.Unprepare(resource)
 		local, err := resource.GetRepresentation()
 		if err != nil {
 			return nil
 		}
-		resource = *h.Unprepare(resource)
 		uid := resource.UID
 		remote, err := h.GetRemote(resource.UID)
 		if err == grizzly.ErrNotFound {
@@ -240,11 +240,19 @@ func (h *DashboardHandler) Apply(notifier grizzly.Notifier, resources grizzly.Re
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *DashboardHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
+	dashboard := resource.Detail.(Dashboard)
+	delete(dashboard, "id")
+	delete(dashboard, "version")
+	resource.Detail = dashboard
 	return &resource
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
+	dashboard := resource.Detail.(Dashboard)
+	delete(dashboard, "id")
+	delete(dashboard, "version")
+	resource.Detail = dashboard
 	return &resource
 }
 
