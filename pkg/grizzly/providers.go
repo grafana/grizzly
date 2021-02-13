@@ -11,9 +11,9 @@ type Resource struct {
 	JSONPath string      `json:"path"`
 }
 
-// Kind returns the 'kind' of the resource, i.e. the type of the provider
+// Kind returns the 'kind' of the resource, i.e. the type of the handler
 func (r *Resource) Kind() string {
-	return r.Handler.GetName()
+	return r.Handler.GetFullName()
 }
 
 // Key returns a key that combines kind and uid
@@ -55,6 +55,7 @@ type Resources map[Handler]ResourceList
 type Handler interface {
 	GetName() string
 	GetFullName() string
+	GetProvider() string
 	GetJSONPaths() []string
 	GetExtension() string
 

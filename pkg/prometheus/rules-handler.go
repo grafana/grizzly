@@ -7,22 +7,31 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// RuleHandler is a Grizzly Provider for Grafana datasources
-type RuleHandler struct{}
-
-// NewRuleHandler returns configuration defining a new Grafana Provider
-func NewRuleHandler() *RuleHandler {
-	return &RuleHandler{}
+// RuleHandler is a Grizzly Handler for Prometheus Rules
+type RuleHandler struct {
+	Provider Provider
 }
 
-// GetName returns the name for this provider
+// NewRuleHandler returns a new Grizzly Handler for Prometheus Rules
+func NewRuleHandler(provider Provider) *RuleHandler {
+	return &RuleHandler{
+		Provider: provider,
+	}
+}
+
+// GetName returns the name for this handler
 func (h *RuleHandler) GetName() string {
-	return "prometheus"
+	return "rule"
 }
 
-// GetFullName returns the name for this provider
+// GetProvider returns the name for the provider of which this handler is a part
+func (h RuleHandler) GetProvider() string {
+	return h.Provider.GetName()
+}
+
+// GetFullName returns the a name describing both this handler and the provider of which it is a part
 func (h *RuleHandler) GetFullName() string {
-	return "prometheus.rulegroup"
+	return fmt.Sprintf("%s.%s", h.GetProvider(), h.GetName())
 }
 
 const prometheusAlertsPath = "prometheusAlerts"

@@ -13,8 +13,8 @@ func (p *Provider) GetName() string {
 // GetHandlers identifies the handlers for the Grafana provider
 func (p *Provider) GetHandlers() []grizzly.Handler {
 	return []grizzly.Handler{
-		&DashboardHandler{},
-		&DatasourceHandler{},
-		&SyntheticMonitoringHandler{},
+		NewDashboardHandler(*p),
+		NewDatasourceHandler(*p),
+		NewSyntheticMonitoringHandler(*p),
 	}
 }

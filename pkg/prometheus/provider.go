@@ -18,6 +18,6 @@ func (p *Provider) GetName() string {
 // GetHandlers identifies the handlers for the Cortex provider
 func (p *Provider) GetHandlers() []grizzly.Handler {
 	return []grizzly.Handler{
-		&RuleHandler{},
+		NewRuleHandler(*p),
 	}
 }

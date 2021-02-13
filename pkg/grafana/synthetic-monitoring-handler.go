@@ -20,22 +20,31 @@ import (
  *    and again within this provider to retrieve IDs. Not ideal.
  */
 
-// SyntheticMonitoringHandler is a Grizzly Provider for Grafana Synthetic Monitoring
-type SyntheticMonitoringHandler struct{}
-
-// NewSyntheticMonitoringHandler returns configuration defining a new Grafana Provider
-func NewSyntheticMonitoringHandler() *SyntheticMonitoringHandler {
-	return &SyntheticMonitoringHandler{}
+// SyntheticMonitoringHandler is a Grizzly Handler for Grafana Synthetic Monitoring
+type SyntheticMonitoringHandler struct {
+	Provider Provider
 }
 
-// GetName returns the name for this provider
+// NewSyntheticMonitoringHandler returns a Grizzly Handler for Grafana Synthetic Monitoring
+func NewSyntheticMonitoringHandler(provider Provider) *SyntheticMonitoringHandler {
+	return &SyntheticMonitoringHandler{
+		Provider: provider,
+	}
+}
+
+// GetName returns the name for this handler
 func (h *SyntheticMonitoringHandler) GetName() string {
 	return "synthetic-monitor"
 }
 
-// GetFullName returns the name for this provider
+// GetProvider returns the name for the provider of which this handler is a part
+func (h *SyntheticMonitoringHandler) GetProvider() string {
+	return h.Provider.GetName()
+}
+
+// GetFullName returns the a name describing both this handler and the provider of which it is a part
 func (h *SyntheticMonitoringHandler) GetFullName() string {
-	return "grafana.synthetic-monitor"
+	return fmt.Sprintf("%s.%s", h.GetProvider(), h.GetName())
 }
 
 const syntheticMonitoringChecksPath = "syntheticMonitoring"

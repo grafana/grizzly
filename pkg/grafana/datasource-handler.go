@@ -8,22 +8,31 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// DatasourceHandler is a Grizzly Provider for Grafana datasources
-type DatasourceHandler struct{}
-
-// NewDatasourceHandler returns configuration defining a new Grafana Provider
-func NewDatasourceHandler() *DatasourceHandler {
-	return &DatasourceHandler{}
+// DatasourceHandler is a Grizzly Handler for Grafana datasources
+type DatasourceHandler struct {
+	Provider Provider
 }
 
-// GetName returns the name for this provider
+// NewDatasourceHandler returns a new Grizzly Handler for Grafana datasources
+func NewDatasourceHandler(provider Provider) *DatasourceHandler {
+	return &DatasourceHandler{
+		Provider: provider,
+	}
+}
+
+// GetName returns the name for this handler
 func (h *DatasourceHandler) GetName() string {
 	return "datasource"
 }
 
-// GetFullName returns the name for this provider
+// GetProvider returns the name for the provider of which this handler is a part
+func (h *DatasourceHandler) GetProvider() string {
+	return h.Provider.GetName()
+}
+
+// GetFullName returns the a name describing both this handler and the provider of which it is a part
 func (h *DatasourceHandler) GetFullName() string {
-	return "grafana.datasource"
+	return fmt.Sprintf("%s.%s", h.GetProvider(), h.GetName())
 }
 
 const datasourcesPath = "grafanaDatasources"
