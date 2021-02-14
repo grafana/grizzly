@@ -84,9 +84,6 @@ type Handler interface {
 
 	// Update pushes an existing resource to the endpoint
 	Update(existing, resource Resource) error
-
-	// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-	Preview(resource Resource, notifier Notifier, opts *PreviewOpts) error
 }
 
 // MultiResourceHandler describes a handler that can handle multiple resources in one go.
@@ -98,6 +95,13 @@ type MultiResourceHandler interface {
 
 	// Apply local resources to remote endpoint
 	Apply(notifier Notifier, resources ResourceList) error
+}
+
+// PreviewHandler describes a handler that has the ability to render
+// a preview of a resource
+type PreviewHandler interface {
+	// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
+	Preview(resource Resource, notifier Notifier, opts *PreviewOpts) error
 }
 
 // ListenHandler describes a handler that has the ability to watch a single

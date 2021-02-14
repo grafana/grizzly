@@ -256,10 +256,18 @@ func Apply(config Config, resources Resources) error {
 func Preview(config Config, resources Resources, opts *PreviewOpts) error {
 	for handler, resourceList := range resources {
 		for _, resource := range resourceList {
-			err := handler.Preview(resource, config.Notifier, opts)
-			if err == ErrNotImplemented {
-				config.Notifier.NotSupported(resource, "preview")
-			} else if err != nil {
+			previewHandler, ok := handler.(PreviewHandler)
+			if !ok {
+				tmpResource := Resource{
+					JSONPath: "",
+					UID:      resource.UID,
+					Handler:  handler,
+				}
+				config.Notifier.NotSupported(tmpResource, "preview")
+				return nil
+			}
+			err := previewHandler.Preview(resource, config.Notifier, opts)
+			if err != nil {
 				return err
 			}
 		}
@@ -347,7 +355,7 @@ func Listen(config Config, UID, filename string) error {
 			UID:      resourceID,
 			Handler:  handler,
 		}
-		config.Notifier.NotSupported(tmpResource, "watch-resource")
+		config.Notifier.NotSupported(tmpResource, "listen")
 		return nil
 	}
 	return listenHandler.Listen(config.Notifier, resourceID, filename)
