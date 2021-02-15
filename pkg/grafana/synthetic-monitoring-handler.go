@@ -146,8 +146,3 @@ func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource)
 	url := getURL("api/v1/check/update")
 	return postCheck(url, check)
 }
-
-// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (h *SyntheticMonitoringHandler) Preview(resource grizzly.Resource, notifier grizzly.Notifier, opts *grizzly.PreviewOpts) error {
-	return grizzly.ErrNotImplemented
-}
