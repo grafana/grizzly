@@ -267,8 +267,8 @@ func getAuthToken() (string, error) {
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, bytes.NewReader(authRequestJSON))
-	req.Header.Set("Authorization", "Bearer "+apiToken)
-	req.Header.Set("Content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+apiToken)
+	req.Header.Add("Content-type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
