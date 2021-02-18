@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -228,14 +229,54 @@ func getURL(path string) string {
 }
 
 func getAuthToken() (string, error) {
-	url := getURL("api/v1/register/init")
-	apiToken := os.Getenv("GRAFANA_SM_TOKEN")
-	authRequest := fmt.Sprintf(`{"apiToken":"%s"}`, apiToken)
+	url := getURL("api/v1/register/install")
+	apiToken, ok := os.LookupEnv("GRAFANA_SM_TOKEN")
+	if !ok {
+		return "", fmt.Errorf("GRAFANA_SM_TOKEN environment variable must be set.")
+	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBufferString(authRequest))
+	stackID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_STACK_ID"))
+	if err != nil {
+		return "", fmt.Errorf("GRAFANA_SM_STACK_ID environment variable must be set.")
+	}
+	metricsInstanceID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_METRICS_ID"))
+	if err != nil {
+		return "", fmt.Errorf("GRAFANA_SM_METRICS_ID environment variable must be set.")
+	}
+	logsInstanceID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_LOGS_ID"))
+	if err != nil {
+		return "", fmt.Errorf("GRAFANA_SM_LOGS_ID environment variable must be set.")
+	}
+
+	type AuthRequest struct {
+		StackID           int `json:"stackId"`
+		MetricsInstanceID int `json:"metricsInstanceId"`
+		LogsInstanceID    int `json:"logsInstanceId"`
+	}
+
+	authRequest := AuthRequest{
+		StackID:           stackID,
+		MetricsInstanceID: metricsInstanceID,
+		LogsInstanceID:    logsInstanceID,
+	}
+
+	authRequestJSON, err := json.Marshal(authRequest)
 	if err != nil {
 		return "", err
-	} else if resp.StatusCode >= 400 {
+	}
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", url, bytes.NewReader(authRequestJSON))
+	req.Header.Set("Authorization", "Bearer "+apiToken)
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
 		return "", fmt.Errorf("%d response while authenticating", resp.StatusCode)
 	}
 	type AuthResponse struct {
