@@ -6,7 +6,6 @@ import (
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"github.com/grafana/grizzly/pkg/prometheus"
 )
 
 // Version is the current version of the grr command.
@@ -55,6 +54,5 @@ func main() {
 func GetProviderRegistry() (grizzly.Registry, error) {
 	registry := grizzly.NewProviderRegistry()
 	registry.RegisterProvider(&grafana.Provider{})
-	registry.RegisterProvider(&prometheus.Provider{})
 	return registry, nil
 }

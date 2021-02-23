@@ -32,19 +32,14 @@ func NewSyntheticMonitoringHandler(provider Provider) *SyntheticMonitoringHandle
 	}
 }
 
-// GetName returns the name for this handler
-func (h *SyntheticMonitoringHandler) GetName() string {
-	return "synthetic-monitor"
+// Kind returns the name for this handler
+func (h *SyntheticMonitoringHandler) Kind() string {
+	return "SyntheticMonitoringCheck"
 }
 
-// GetProvider returns the name for the provider of which this handler is a part
-func (h *SyntheticMonitoringHandler) GetProvider() string {
-	return h.Provider.GetName()
-}
-
-// GetFullName returns the a name describing both this handler and the provider of which it is a part
-func (h *SyntheticMonitoringHandler) GetFullName() string {
-	return fmt.Sprintf("%s.%s", h.GetProvider(), h.GetName())
+// APIVersion returns the group and version for the provider of which this handler is a part
+func (h *SyntheticMonitoringHandler) APIVersion() string {
+	return h.Provider.APIVersion()
 }
 
 const syntheticMonitoringChecksPath = "syntheticMonitoring"

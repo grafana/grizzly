@@ -31,19 +31,14 @@ func NewDashboardHandler(provider Provider) *DashboardHandler {
 	}
 }
 
-// GetName returns the name for this handler
-func (h *DashboardHandler) GetName() string {
-	return "dashboard"
+// Kind returns the name for this handler
+func (h *DashboardHandler) Kind() string {
+	return "Dashboard"
 }
 
-// GetProvider returns the name for the provider of which this handler is a part
-func (h *DashboardHandler) GetProvider() string {
-	return h.Provider.GetName()
-}
-
-// GetFullName returns the a name describing both this handler and the provider of which it is a part
-func (h *DashboardHandler) GetFullName() string {
-	return fmt.Sprintf("%s.%s", h.GetProvider(), h.GetName())
+// APIVersion returns the group and version for the provider of which this handler is a part
+func (h *DashboardHandler) APIVersion() string {
+	return h.Provider.APIVersion()
 }
 
 const (

@@ -20,19 +20,14 @@ func NewDatasourceHandler(provider Provider) *DatasourceHandler {
 	}
 }
 
-// GetName returns the name for this handler
-func (h *DatasourceHandler) GetName() string {
-	return "datasource"
+// Kind returns the kind for this handler
+func (h *DatasourceHandler) Kind() string {
+	return "Datasource"
 }
 
-// GetProvider returns the name for the provider of which this handler is a part
-func (h *DatasourceHandler) GetProvider() string {
-	return h.Provider.GetName()
-}
-
-// GetFullName returns the a name describing both this handler and the provider of which it is a part
-func (h *DatasourceHandler) GetFullName() string {
-	return fmt.Sprintf("%s.%s", h.GetProvider(), h.GetName())
+// APIVersion returns group and version of the provider of this resource
+func (h *DatasourceHandler) APIVersion() string {
+	return h.Provider.APIVersion()
 }
 
 const datasourcesPath = "grafanaDatasources"

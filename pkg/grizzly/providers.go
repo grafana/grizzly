@@ -11,9 +11,14 @@ type Resource struct {
 	JSONPath string      `json:"path"`
 }
 
+// APIVersion returns the group and version of the provider of the resource
+func (r *Resource) APIVersion() string {
+	return r.Handler.APIVersion()
+}
+
 // Kind returns the 'kind' of the resource, i.e. the type of the handler
 func (r *Resource) Kind() string {
-	return r.Handler.GetFullName()
+	return r.Handler.Kind()
 }
 
 // Key returns a key that combines kind and uid
@@ -53,9 +58,8 @@ type Resources map[Handler]ResourceList
 
 // Handler describes a handler for a single API resource handled by a single provider
 type Handler interface {
-	GetName() string
-	GetFullName() string
-	GetProvider() string
+	APIVersion() string
+	Kind() string
 	GetJSONPaths() []string
 	GetExtension() string
 
@@ -114,7 +118,9 @@ type ListenHandler interface {
 
 // Provider describes a single Endpoint Provider
 type Provider interface {
-	GetName() string
+	Group() string
+	Version() string
+	APIVersion() string
 	GetHandlers() []Handler
 }
 
@@ -144,8 +150,7 @@ func (r *Registry) RegisterProvider(provider Provider) error {
 		for _, path := range handler.GetJSONPaths() {
 			r.HandlerByPath[path] = handler
 		}
-		r.HandlerByName[handler.GetName()] = handler
-		r.HandlerByName[handler.GetFullName()] = handler
+		r.HandlerByName[handler.Kind()] = handler
 	}
 	return nil
 }

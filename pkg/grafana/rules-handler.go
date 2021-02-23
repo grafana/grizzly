@@ -1,4 +1,4 @@
-package prometheus
+package grafana
 
 import (
 	"fmt"
@@ -19,19 +19,14 @@ func NewRuleHandler(provider Provider) *RuleHandler {
 	}
 }
 
-// GetName returns the name for this handler
-func (h *RuleHandler) GetName() string {
-	return "rule"
+// Kind returns the name for this handler
+func (h *RuleHandler) Kind() string {
+	return "PrometheusRules"
 }
 
-// GetProvider returns the name for the provider of which this handler is a part
-func (h RuleHandler) GetProvider() string {
-	return h.Provider.GetName()
-}
-
-// GetFullName returns the a name describing both this handler and the provider of which it is a part
-func (h *RuleHandler) GetFullName() string {
-	return fmt.Sprintf("%s.%s", h.GetProvider(), h.GetName())
+// APIVersion returns the group and version for the provider of which this handler is a part
+func (h *RuleHandler) APIVersion() string {
+	return h.Provider.APIVersion()
 }
 
 const prometheusAlertsPath = "prometheusAlerts"
@@ -136,4 +131,9 @@ func (h *RuleHandler) Add(resource grizzly.Resource) error {
 func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
 	g := resource.Detail.(RuleGroup)
 	return writeRuleGroup(g)
+}
+
+// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
+func (h *RuleHandler) Preview(resource grizzly.Resource, notifier grizzly.Notifier, opts *grizzly.PreviewOpts) error {
+	return grizzly.ErrNotImplemented
 }
