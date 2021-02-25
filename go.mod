@@ -15,6 +15,7 @@ require (
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mitchellh/gox v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.3.3
+	github.com/pmezard/go-difflib v1.0.0
 	github.com/rivo/tview v0.0.0-20200818120338-53d50e499bf9
 	github.com/stretchr/testify v1.5.1 // indirect
 	golang.org/x/crypto v0.0.0-20200422194213-44a606286825
