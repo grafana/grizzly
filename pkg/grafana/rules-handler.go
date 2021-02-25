@@ -132,8 +132,3 @@ func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
 	g := resource.Detail.(RuleGroup)
 	return writeRuleGroup(g)
 }
-
-// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (h *RuleHandler) Preview(resource grizzly.Resource, notifier grizzly.Notifier, opts *grizzly.PreviewOpts) error {
-	return grizzly.ErrNotImplemented
-}
