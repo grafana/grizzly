@@ -1,4 +1,4 @@
-package prometheus
+package grafana
 
 import (
 	"fmt"
@@ -7,22 +7,26 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// RuleHandler is a Grizzly Provider for Grafana datasources
-type RuleHandler struct{}
-
-// NewRuleHandler returns configuration defining a new Grafana Provider
-func NewRuleHandler() *RuleHandler {
-	return &RuleHandler{}
+// RuleHandler is a Grizzly Handler for Prometheus Rules
+type RuleHandler struct {
+	Provider Provider
 }
 
-// GetName returns the name for this provider
-func (h *RuleHandler) GetName() string {
-	return "prometheus"
+// NewRuleHandler returns a new Grizzly Handler for Prometheus Rules
+func NewRuleHandler(provider Provider) *RuleHandler {
+	return &RuleHandler{
+		Provider: provider,
+	}
 }
 
-// GetFullName returns the name for this provider
-func (h *RuleHandler) GetFullName() string {
-	return "prometheus.rulegroup"
+// Kind returns the name for this handler
+func (h *RuleHandler) Kind() string {
+	return "PrometheusRules"
+}
+
+// APIVersion returns the group and version for the provider of which this handler is a part
+func (h *RuleHandler) APIVersion() string {
+	return h.Provider.APIVersion()
 }
 
 const prometheusAlertsPath = "prometheusAlerts"
@@ -127,4 +131,9 @@ func (h *RuleHandler) Add(resource grizzly.Resource) error {
 func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
 	g := resource.Detail.(RuleGroup)
 	return writeRuleGroup(g)
+}
+
+// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
+func (h *RuleHandler) Preview(resource grizzly.Resource, notifier grizzly.Notifier, opts *grizzly.PreviewOpts) error {
+	return grizzly.ErrNotImplemented
 }

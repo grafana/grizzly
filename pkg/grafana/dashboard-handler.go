@@ -19,22 +19,26 @@ import (
  * value will be used as a folder name for all of your dashboards.
  */
 
-// DashboardHandler is a Grizzly Provider for Grafana dashboards
-type DashboardHandler struct{}
-
-// NewDashboardHandler returns configuration defining a new Grafana Provider
-func NewDashboardHandler() *DashboardHandler {
-	return &DashboardHandler{}
+// DashboardHandler is a Grizzly Handler for Grafana dashboards
+type DashboardHandler struct {
+	Provider Provider
 }
 
-// GetName returns the name for this provider
-func (h *DashboardHandler) GetName() string {
-	return "dashboard"
+// NewDashboardHandler returns configuration defining a new Grafana Dashboard Handler
+func NewDashboardHandler(provider Provider) *DashboardHandler {
+	return &DashboardHandler{
+		Provider: provider,
+	}
 }
 
-// GetFullName returns the name for this provider
-func (h *DashboardHandler) GetFullName() string {
-	return "grafana.dashboard"
+// Kind returns the name for this handler
+func (h *DashboardHandler) Kind() string {
+	return "Dashboard"
+}
+
+// APIVersion returns the group and version for the provider of which this handler is a part
+func (h *DashboardHandler) APIVersion() string {
+	return h.Provider.APIVersion()
 }
 
 const (
