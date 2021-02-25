@@ -1,6 +1,10 @@
 package grizzly
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/gobwas/glob"
+)
 
 // Resource represents a single Resource destined for a single endpoint
 type Resource struct {
@@ -43,7 +47,8 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 	}
 	key := r.Key()
 	for _, target := range targets {
-		if target == key {
+		g := glob.MustCompile(target)
+		if g.Match(key) {
 			return true
 		}
 	}
