@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"github.com/kylelemons/godebug/diff"
 	"github.com/mitchellh/mapstructure"
+	"github.com/pmezard/go-difflib/difflib"
 )
 
 /*
@@ -152,7 +152,14 @@ func (h *DashboardHandler) Diff(notifier grizzly.Notifier, resources grizzly.Res
 		if local == remoteRepresentation {
 			notifier.NoChanges(resource)
 		} else {
-			difference := diff.Diff(remoteRepresentation, local)
+			diff := difflib.UnifiedDiff{
+				A:        difflib.SplitLines(remoteRepresentation),
+				B:        difflib.SplitLines(local),
+				FromFile: "Remote",
+				ToFile:   "Local",
+				Context:  3,
+			}
+			difference, _ := difflib.GetUnifiedDiffString(diff)
 			notifier.HasChanges(resource, difference)
 		}
 	}

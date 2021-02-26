@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/term"
-	"github.com/kylelemons/godebug/diff"
+	"github.com/pmezard/go-difflib/difflib"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
 )
@@ -196,7 +196,14 @@ func Diff(config Config, resources Resources) error {
 			if local == remoteRepresentation {
 				config.Notifier.NoChanges(resource)
 			} else {
-				difference := diff.Diff(remoteRepresentation, local)
+				diff := difflib.UnifiedDiff{
+					A:        difflib.SplitLines(remoteRepresentation),
+					B:        difflib.SplitLines(local),
+					FromFile: "Remote",
+					ToFile:   "Local",
+					Context:  3,
+				}
+				difference, _ := difflib.GetUnifiedDiffString(diff)
 				config.Notifier.HasChanges(resource, difference)
 			}
 		}
