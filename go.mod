@@ -8,6 +8,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/gdamore/tcell v1.3.0
 	github.com/go-clix/cli v0.1.0
+	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.17.0
 	github.com/hashicorp/go-version v1.2.1 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
