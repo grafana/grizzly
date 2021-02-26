@@ -17,7 +17,8 @@ Grafana Labs. That is, you can now use Grizzly to manage:
 ### `listen`
 Grafana 7.3 has a feature that informs all browsers that have a dashboard open
 when a user saves that dashboard. All instances of that dashboard are then
-automatically reloaded.
+automatically reloaded. To use this feature, you must enable the `live` feature
+flag on Grafana itself.
 
 Grizzly takes advantage of this feature with its `grr listen` command. Here,
 Grizzly will connect to Grafana, and wait for changes to a specific dashboard.
@@ -38,6 +39,8 @@ group and version (`grizzly.grafana.com/v1alpha1`).
 
 Other improvements:
  * Better `grr show` pager, with more intuitive key bindings
+ * Targets can now include globs, e.g. `-t Dashboard.*`
+ * `diff` has switched to showing the whole resource to a unified diff
 
 ## 0.0.1 (2020-07-31)
 
