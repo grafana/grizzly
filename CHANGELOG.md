@@ -30,7 +30,7 @@ Dashboards.
 ### Jsonnet 0.17
 Grizzly now uses [Jsonnet 0.17](https://github.com/google/jsonnet/releases/tag/v0.17.0) (up from 0.15.1).
 
-###Adopting Kubernetes Style Naming
+### Adopting Kubernetes Style Naming
 Naming of resources has been confusing in Grizzly for some time. Is it a 'dashboard',
 a 'grafana-dashboard', etc. In this release, we have opted for following the Kubernetes
 approach for naming resources, with there being a group, a version and a kind. At
