@@ -65,13 +65,3 @@ func (i *ExtendedImporter) Import(importedFrom, importedPath string) (contents j
 
 	return contents, foundAt, nil
 }
-
-func evalToString(script string) (string, error) {
-	vm := jsonnet.MakeVM()
-	jPath := []string{"vendor", "lib", "."}
-
-	vm.Importer(newExtendedImporter(jPath))
-
-	result, err := vm.EvaluateSnippet("grafana-dash", script)
-	return result, err
-}

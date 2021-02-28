@@ -136,10 +136,15 @@ Grafana snapshots by default do not expire. Expiration can be set via the
 
 ### `-t, --target strings`
 
-The `show`, `diff`, and `apply` commands accept this flag. It allows the
-targeting of resources by key, where key is in the form `<type>.<uid>`.
+It allows the targeting of resources by key, where key is in the form `<type>.<uid>`.
 
 Run `grr list` to get a list of resource keys in your code.
+
+### `-J, --jpath`
+
+It allows the targeting folder containing jsonnet library to include, should be repeated multiple times.
+
+If not specified it include `vendor`, `lib` and local dir (`.`) folders by default.
 
 ## Grafana Dashboard Example
 
