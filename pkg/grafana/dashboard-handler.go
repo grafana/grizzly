@@ -177,6 +177,7 @@ func (h *DashboardHandler) Apply(notifier grizzly.Notifier, resources grizzly.Re
 		if resource.JSONPath == dashboardFolderPath {
 			continue
 		}
+		resource = dashboardWithFolderSet(resource, dashboardFolder)
 		existingResource, err := h.GetRemote(resource.UID)
 		if err == grizzly.ErrNotFound {
 			err := h.Add(resource)
@@ -188,7 +189,6 @@ func (h *DashboardHandler) Apply(notifier grizzly.Notifier, resources grizzly.Re
 		} else if err != nil {
 			return err
 		}
-		resource = dashboardWithFolderSet(resource, dashboardFolder)
 		resourceRepresentation, err := resource.GetRepresentation()
 		if err != nil {
 			return err
@@ -265,10 +265,7 @@ func (h *DashboardHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 func (h *DashboardHandler) Add(resource grizzly.Resource) error {
 	board := newDashboard(resource)
 
-	if err := postDashboard(board); err != nil {
-		return err
-	}
-	return nil
+	return postDashboard(board)
 }
 
 // Update pushes a dashboard to Grafana via the API

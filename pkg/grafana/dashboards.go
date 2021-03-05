@@ -174,7 +174,7 @@ func (d *Dashboard) toJSON() (string, error) {
 
 // folderUID retrieves the folder UID for a dashboard
 func (d *Dashboard) folderUID() string {
-	folderUID, ok := (*d)["folderName"]
+	folderUID, ok := (*d)[folderNameField]
 	if ok {
 		return folderUID.(string)
 	}
