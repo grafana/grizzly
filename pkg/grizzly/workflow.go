@@ -1,6 +1,7 @@
 package grizzly
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -74,20 +75,11 @@ func List(config Config, resources Resources) error {
 	return w.Flush()
 }
 
+//go:embed grizzly.jsonnet
+var script string
+
 func getPrivateElementsScript(jsonnetFile string, handlers []Handler) string {
-	const script = `
-    local src = import '%s';
-    src + {
-    %s
-    }
-	`
-	handlerStrings := []string{}
-	for _, handler := range handlers {
-		for _, jsonPath := range handler.GetJSONPaths() {
-			handlerStrings = append(handlerStrings, fmt.Sprintf("  %s+::: {},", jsonPath))
-		}
-	}
-	return fmt.Sprintf(script, jsonnetFile, strings.Join(handlerStrings, "\n"))
+	return fmt.Sprintf(script, jsonnetFile)
 }
 
 // Parse evaluates a jsonnet file and parses it into an object tree
@@ -101,7 +93,6 @@ func Parse(config Config, jsonnetFile string, targets []string) (Resources, erro
 	if err != nil {
 		return nil, err
 	}
-
 	msi := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(result), &msi); err != nil {
 		return nil, err
