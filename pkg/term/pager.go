@@ -1,6 +1,8 @@
 package term
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 )
@@ -13,6 +15,10 @@ type PageItem struct {
 
 // Page shows an application viewer allowing the review of specific resources
 func Page(items []PageItem) error {
+	if len(items) == 0 {
+		fmt.Println("No resources found")
+		return nil
+	}
 	app := tview.NewApplication()
 
 	// convert color codes
