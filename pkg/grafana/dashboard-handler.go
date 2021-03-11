@@ -3,7 +3,6 @@ package grafana
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/mitchellh/mapstructure"
@@ -86,8 +85,7 @@ func (h *DashboardHandler) newDashboardFolderResource(path, folderName string) g
 func (h *DashboardHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
 	if path == dashboardFolderPath {
-		if _, ok := i.(string); ok {
-			folderName := strings.ReplaceAll(i.(string), "{ }", "") // No idea why json parsing adds { } to the end of the parsed string :-(
+		if folderName, ok := i.(string); ok {
 			resource := h.newDashboardFolderResource(path, folderName)
 			resources[dashboardFolderPath] = resource
 			return resources, nil

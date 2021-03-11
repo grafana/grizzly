@@ -77,14 +77,16 @@ func List(config Config, resources Resources) error {
 func getPrivateElementsScript(jsonnetFile string, handlers []Handler) string {
 	const script = `
     local src = import '%s';
-    src + {
-    %s
-    }
+	local getPrivateElements(x) = {
+	%s
+	};
+    
+	getPrivateElements(src)
 	`
 	handlerStrings := []string{}
 	for _, handler := range handlers {
 		for _, jsonPath := range handler.GetJSONPaths() {
-			handlerStrings = append(handlerStrings, fmt.Sprintf("  %s+::: {},", jsonPath))
+			handlerStrings = append(handlerStrings, fmt.Sprintf("  [if std.objectHasAll(x, '%[1]s') then '%[1]s']: x['%[1]s'],", jsonPath))
 		}
 	}
 	return fmt.Sprintf(script, jsonnetFile, strings.Join(handlerStrings, "\n"))
