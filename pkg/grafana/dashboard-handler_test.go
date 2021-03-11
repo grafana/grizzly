@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/nsf/jsondiff"
 )
 
@@ -46,7 +47,7 @@ func TestDashboardGetRemoteRepresentation(t *testing.T) {
 		{
 			uid:  "dashboard-error",
 			text: `{"status": "error"}`,
-			err:  fmt.Errorf("Error retrieving dashboard"),
+			err:  fmt.Errorf("500 Internal Server Error"),
 		},
 	}
 
@@ -70,6 +71,11 @@ func TestDashboardGetRemoteRepresentation(t *testing.T) {
 			t.Errorf("Retrieving dashboard %s returned unexpected error: %v", test.uid, err)
 		} else if test.err != nil && err == nil {
 			t.Errorf("Retrieving dashboard %s should return error but didn't: %v", test.uid, test.err)
+		} else if err != nil {
+			diff := deep.Equal(err, test.err)
+			if diff != nil {
+				t.Error(diff)
+			}
 		} else {
 			opts := jsondiff.DefaultConsoleOptions()
 			diff, msg := jsondiff.Compare([]byte(resource), []byte(test.resource), &opts)
