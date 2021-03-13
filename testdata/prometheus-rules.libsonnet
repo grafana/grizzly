@@ -22,7 +22,7 @@ local promRuleGroup = prom.v1.ruleGroup;
       },
     ),
 
-  prometheusAlerts+: {
+  prometheusAlerts+:: {
     first_rules: promRuleGroupSet.new() + promRuleGroupSet.addGroup($.prometheus_metamon),
   },
 }
