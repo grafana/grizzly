@@ -9,10 +9,12 @@ import (
 	"net/http"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/manifests"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
 // getRemoteDatasource retrieves a datasource object from Grafana
-func getRemoteDatasource(uid string) (*Datasource, error) {
+func getRemoteDatasource(uid string) (*manifest.Manifest, error) {
 	grafanaURL, err := getGrafanaURL("api/datasources/name/" + uid)
 	if err != nil {
 		return nil, err
@@ -37,21 +39,17 @@ func getRemoteDatasource(uid string) (*Datasource, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	var d Datasource
-	if err := json.Unmarshal(data, &d); err != nil {
-		return nil, grizzly.APIErr{Err: err, Body: data}
-	}
-	return &d, nil
+	return manifests.New("Datasource", uid, nil, data)
 }
 
-func postDatasource(source Datasource) error {
+func postDatasource(m manifest.Manifest) error {
+	name := m.Metadata().Name()
 	grafanaURL, err := getGrafanaURL("api/datasources")
 	if err != nil {
 		return err
 	}
 
-	sourceJSON, err := source.toJSON()
+	sourceJSON, err := manifests.SpecAsJSON(m)
 	if err != nil {
 		return err
 	}
@@ -73,24 +71,21 @@ func postDatasource(source Datasource) error {
 			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
 		}
 		fmt.Println(sourceJSON)
-		return fmt.Errorf("Error while applying '%s' to Grafana: %s", source.UID(), r.Message)
+		return fmt.Errorf("Error while applying '%s' to Grafana: %s", name, r.Message)
 	default:
-		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s", resp.Status, source.UID())
+		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s", resp.Status, name)
 	}
 	return nil
 }
 
-func putDatasource(source Datasource) error {
-	id, err := source.getID()
-	if err != nil {
-		return err
-	}
-	grafanaURL, err := getGrafanaURL(fmt.Sprintf("api/datasources/%d", id))
+func putDatasource(m manifest.Manifest) error {
+	name := m.Metadata().Name()
+	grafanaURL, err := getGrafanaURL(fmt.Sprintf("api/datasources/%s", name))
 	if err != nil {
 		return err
 	}
 
-	sourceJSON, err := source.toJSON()
+	sourceJSON, err := manifests.JSON(m)
 	if err != nil {
 		return err
 	}
@@ -116,43 +111,9 @@ func putDatasource(source Datasource) error {
 			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
 		}
 		fmt.Println(sourceJSON)
-		return fmt.Errorf("Error while applying '%s' to Grafana: %s", source.UID(), r.Message)
+		return fmt.Errorf("Error while applying '%s' to Grafana: %s", name, r.Message)
 	default:
-		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s", resp.Status, source.UID())
+		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s", resp.Status, name)
 	}
 	return nil
-}
-
-// Datasource encapsulates a datasource
-type Datasource map[string]interface{}
-
-func newDatasource(resource grizzly.Resource) Datasource {
-	return resource.Detail.(Datasource)
-}
-
-// UID retrieves the UID from a datasource
-func (d *Datasource) UID() string {
-	uid, ok := (*d)["name"]
-	if !ok {
-		return ""
-	}
-	return uid.(string)
-}
-
-// toJSON returns JSON for a datasource
-func (d *Datasource) toJSON() (string, error) {
-	j, err := json.MarshalIndent(d, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
-}
-
-func (d *Datasource) getID() (int, error) {
-	v, ok := (*d)["id"]
-	if !ok {
-		return 0, fmt.Errorf("Datasource %s requires an ID to update", d.UID())
-	}
-	id := int(v.(float64))
-	return id, nil
 }

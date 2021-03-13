@@ -11,18 +11,15 @@ import (
 	"text/tabwriter"
 
 	"github.com/google/go-jsonnet"
+	"github.com/grafana/grizzly/pkg/manifests"
 	"github.com/grafana/grizzly/pkg/term"
+	"github.com/grafana/tanka/pkg/process"
 	"github.com/pmezard/go-difflib/difflib"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
 )
 
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
-
-func isMultiResource(handler Handler) bool {
-	_, ok := handler.(MultiResourceHandler)
-	return ok
-}
 
 // Get retrieves a resource from a remote endpoint using its UID
 func Get(config Config, UID string) error {
@@ -46,7 +43,7 @@ func Get(config Config, UID string) error {
 		return err
 	}
 
-	resource, err := handler.GetByUID(resourceID)
+	resource, err := handler.GetRemoteByUID(resourceID)
 	if err != nil {
 		return err
 	}
@@ -93,32 +90,51 @@ func Parse(config Config, jsonnetFile string, targets []string) (Resources, erro
 	if err != nil {
 		return nil, err
 	}
-	msi := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(result), &msi); err != nil {
+	var data interface{}
+	if err := json.Unmarshal([]byte(result), &data); err != nil {
+		return nil, err
+	}
+
+	extracted, err := process.Extract(data)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unwrap *List types
+	if err := process.Unwrap(extracted); err != nil {
 		return nil, err
 	}
 
 	resources := Resources{}
-
-	for k, v := range msi {
-		handler, err := config.Registry.GetHandler(k)
+	for _, m := range extracted {
+		if data, ok := m["data"]; ok {
+			m, err = manifests.ParseData(m, data)
+			if err != nil {
+				return nil, err
+			}
+		}
+		handler, err := config.Registry.GetHandler(m.Kind())
 		if err != nil {
-			fmt.Println("Skipping unregistered path", k)
+			log.Println("Error getting handler", err)
 			continue
 		}
-		handlerResources, err := handler.Parse(k, v)
+		resource := Resource{
+			UID:     m.Metadata().Name(),
+			Detail:  m,
+			Handler: handler,
+		}
+
 		if err != nil {
 			return nil, err
 		}
-		resourceList, ok := resources[handler]
+		if !resource.MatchesTarget(targets) {
+			continue
+		}
+		resourceList, ok := resources[resource.Handler]
 		if !ok {
 			resourceList = ResourceList{}
 		}
-		for kk, resource := range handlerResources {
-			if resource.MatchesTarget(targets) {
-				resourceList[kk] = resource
-			}
-		}
+		resourceList[m.Metadata().Name()] = resource
 		resources[handler] = resourceList
 	}
 	return resources, nil
@@ -157,12 +173,6 @@ func Show(config Config, resources Resources) error {
 func Diff(config Config, resources Resources) error {
 
 	for handler, resourceList := range resources {
-		if isMultiResource(handler) {
-			multiHandler := handler.(MultiResourceHandler)
-			multiHandler.Diff(config.Notifier, resourceList)
-			continue
-		}
-
 		for _, resource := range resourceList {
 			local, err := resource.GetRepresentation()
 			if err != nil {
@@ -170,7 +180,7 @@ func Diff(config Config, resources Resources) error {
 			}
 			resource = *handler.Unprepare(resource)
 			uid := resource.UID
-			remote, err := handler.GetRemote(resource.UID)
+			remote, err := handler.GetRemote(resource)
 			if err == ErrNotFound {
 				config.Notifier.NotFound(resource)
 				continue
@@ -178,6 +188,7 @@ func Diff(config Config, resources Resources) error {
 			if err != nil {
 				return fmt.Errorf("Error retrieving resource from %s %s: %v", resource.Kind(), uid, err)
 			}
+
 			remote = handler.Unprepare(*remote)
 			remoteRepresentation, err := (*remote).GetRepresentation()
 			if err != nil {
@@ -205,16 +216,8 @@ func Diff(config Config, resources Resources) error {
 // Apply pushes resources to endpoints
 func Apply(config Config, resources Resources) error {
 	for handler, resourceList := range resources {
-		if isMultiResource(handler) {
-			multiHandler := handler.(MultiResourceHandler)
-			err := multiHandler.Apply(config.Notifier, resourceList)
-			if err != nil {
-				return err
-			}
-			continue
-		}
 		for _, resource := range resourceList {
-			existingResource, err := handler.GetRemote(resource.UID)
+			existingResource, err := handler.GetRemote(resource)
 			if err == ErrNotFound {
 
 				err := handler.Add(resource)
@@ -257,9 +260,8 @@ func Preview(config Config, resources Resources, opts *PreviewOpts) error {
 			previewHandler, ok := handler.(PreviewHandler)
 			if !ok {
 				tmpResource := Resource{
-					JSONPath: "",
-					UID:      resource.UID,
-					Handler:  handler,
+					UID:     resource.UID,
+					Handler: handler,
 				}
 				config.Notifier.NotSupported(tmpResource, "preview")
 				return nil
@@ -349,9 +351,8 @@ func Listen(config Config, UID, filename string) error {
 	listenHandler, ok := handler.(ListenHandler)
 	if !ok {
 		tmpResource := Resource{
-			JSONPath: "",
-			UID:      resourceID,
-			Handler:  handler,
+			UID:     resourceID,
+			Handler: handler,
 		}
 		config.Notifier.NotSupported(tmpResource, "listen")
 		return nil

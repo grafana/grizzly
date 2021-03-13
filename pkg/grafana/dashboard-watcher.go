@@ -10,6 +10,7 @@ import (
 
 	"github.com/centrifugal/centrifuge-go"
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/manifests"
 )
 
 type eventHandler struct {
@@ -57,12 +58,12 @@ func (h *eventHandler) OnPublish(sub *centrifuge.Subscription, e centrifuge.Publ
 	if response.Action != "saved" {
 		h.notifier.Warn(nil, fmt.Sprintf("Unknown action received: %s", string(e.Data)))
 	}
-	dashboard, err := getRemoteDashboard(response.UID)
+	m, err := getRemoteDashboard(response.UID)
 	if err != nil {
 		h.notifier.Error(nil, fmt.Sprintf("Error: %s", err))
 		return
 	}
-	dashboardJSON, err := dashboard.toJSON()
+	dashboardJSON, err := manifests.JSON(*m)
 	if err != nil {
 		h.notifier.Error(nil, fmt.Sprintf("Error: %s", err))
 		return

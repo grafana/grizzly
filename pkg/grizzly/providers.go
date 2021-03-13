@@ -4,15 +4,26 @@ import (
 	"fmt"
 
 	"github.com/gobwas/glob"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
+	"gopkg.in/yaml.v2"
 )
 
 // Resource represents a single Resource destined for a single endpoint
 type Resource struct {
-	UID      string      `json:"uid"`
-	Filename string      `json:"filename"`
-	Handler  Handler     `json:"handler"`
-	Detail   interface{} `json:"detail"`
-	JSONPath string      `json:"path"`
+	UID      string            `json:"uid"`
+	Filename string            `json:"filename"`
+	Handler  Handler           `json:"handler"`
+	Detail   manifest.Manifest `json:"detail"`
+}
+
+// NewResource encapsulates a manifest into a Resource object
+func NewResource(m manifest.Manifest, handler Handler) *Resource {
+	resource := Resource{
+		UID:     m.Metadata().Name(),
+		Detail:  m,
+		Handler: handler,
+	}
+	return &resource
 }
 
 // APIVersion returns the group and version of the provider of the resource
@@ -32,12 +43,20 @@ func (r *Resource) Key() string {
 
 // GetRepresentation Gets the string representation for this resource
 func (r *Resource) GetRepresentation() (string, error) {
-	return r.Handler.GetRepresentation(r.UID, *r)
+	y, err := yaml.Marshal(r.Detail)
+	if err != nil {
+		return "", err
+	}
+	return string(y), nil
 }
 
 // GetRemoteRepresentation Gets the string representation for this resource
 func (r *Resource) GetRemoteRepresentation() (string, error) {
-	return r.Handler.GetRemoteRepresentation(r.UID)
+	remote, err := r.Handler.GetRemote(*r)
+	if err != nil {
+		return "", err
+	}
+	return remote.GetRepresentation()
 }
 
 // MatchesTarget identifies whether a resource is in a target list
@@ -55,6 +74,26 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 	return false
 }
 
+// DeleteSpecKey deletes an element from the spec
+func (r *Resource) DeleteSpecKey(key string) {
+	msi := r.Detail["spec"].(map[string]interface{})
+	delete(msi, key)
+	r.Detail["spec"] = msi
+}
+
+// GetSpecKey retrieves a value from the spec
+func (r *Resource) GetSpecKey(key string) string {
+	msi := r.Detail["spec"].(map[string]interface{})
+	return msi[key].(string)
+}
+
+// SetSpecKey sets a value from in the spec
+func (r *Resource) SetSpecKey(key, value string) {
+	msi := r.Detail["spec"].(map[string]interface{})
+	msi[key] = value
+	r.Detail["spec"] = msi
+}
+
 // ResourceList represents a set of named resources
 type ResourceList map[string]Resource
 
@@ -65,11 +104,7 @@ type Resources map[Handler]ResourceList
 type Handler interface {
 	APIVersion() string
 	Kind() string
-	GetJSONPaths() []string
 	GetExtension() string
-
-	// Parse parses an interface{} object into a struct for this resource type
-	Parse(path string, i interface{}) (ResourceList, error)
 
 	// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 	Unprepare(resource Resource) *Resource
@@ -77,17 +112,11 @@ type Handler interface {
 	// Prepare gets a resource ready for dispatch to the remote endpoint
 	Prepare(existing, resource Resource) *Resource
 
-	// Get retrieves JSON for a resource from an endpoint, by UID
-	GetByUID(UID string) (*Resource, error)
+	// GetRemoteByUID retrieves a remote resource identified by a string
+	GetRemoteByUID(uid string) (*Resource, error)
 
-	// GetRepresentation renders Jsonnet to Grizzly resources, rendering as a string
-	GetRepresentation(uid string, resource Resource) (string, error)
-
-	// GetRemoteRepresentation retrieves a resource from the endpoint and renders to a string
-	GetRemoteRepresentation(uid string) (string, error)
-
-	// GetRemote retrieves a resource as a datastructure
-	GetRemote(uid string) (*Resource, error)
+	// GetRemote retrieves a remote equivalent of a resource as a datastructure
+	GetRemote(resource Resource) (*Resource, error)
 
 	// Add pushes a new resource to the endpoint
 	Add(resource Resource) error
@@ -152,9 +181,6 @@ func (r *Registry) RegisterProvider(provider Provider) error {
 	r.Providers = append(r.Providers, provider)
 	for _, handler := range provider.GetHandlers() {
 		r.Handlers = append(r.Handlers, handler)
-		for _, path := range handler.GetJSONPaths() {
-			r.HandlerByPath[path] = handler
-		}
 		r.HandlerByName[handler.Kind()] = handler
 	}
 	return nil

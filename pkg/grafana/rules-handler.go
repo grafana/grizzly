@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"github.com/mitchellh/mapstructure"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
 // RuleHandler is a Grizzly Handler for Prometheus Rules
@@ -21,7 +21,7 @@ func NewRuleHandler(provider Provider) *RuleHandler {
 
 // Kind returns the name for this handler
 func (h *RuleHandler) Kind() string {
-	return "PrometheusRules"
+	return "PrometheusRuleGroup"
 }
 
 // APIVersion returns the group and version for the provider of which this handler is a part
@@ -29,51 +29,18 @@ func (h *RuleHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-const prometheusAlertsPath = "prometheusAlerts"
-const prometheusRulesPath = "prometheusRules"
-
-// GetJSONPaths returns paths within Jsonnet output that this provider will consume
-func (h *RuleHandler) GetJSONPaths() []string {
-	return []string{
-		prometheusAlertsPath,
-		prometheusRulesPath,
-	}
-}
-
 // GetExtension returns the file name extension for a rule grouping
 func (h *RuleHandler) GetExtension() string {
 	return "yaml"
 }
 
-func (h *RuleHandler) newRuleGroupingResource(path string, group RuleGroup) grizzly.Resource {
+func (h *RuleHandler) newRuleGroupingResource(m manifest.Manifest) grizzly.Resource {
 	resource := grizzly.Resource{
-		UID:      group.UID(),
-		Filename: group.UID(),
-		Handler:  h,
-		Detail:   group,
-		JSONPath: path,
+		UID:     m.Metadata().Name(),
+		Handler: h,
+		Detail:  m,
 	}
 	return resource
-}
-
-// Parse parses an interface{} object into a struct for this resource type
-func (h *RuleHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
-	resources := grizzly.ResourceList{}
-	msi := i.(map[string]interface{})
-	groupings := map[string]RuleGrouping{}
-	err := mapstructure.Decode(msi, &groupings)
-	if err != nil {
-		return nil, err
-	}
-	for k, grouping := range groupings {
-		for _, group := range grouping.Groups {
-			group.Namespace = k
-			resource := h.newRuleGroupingResource(path, group)
-			key := resource.Key()
-			resources[key] = resource
-		}
-	}
-	return resources, nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
@@ -86,49 +53,27 @@ func (h *RuleHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Reso
 	return &resource
 }
 
-// GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *RuleHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	group, err := getRemoteRuleGroup(UID)
-	if err != nil {
-		return nil, fmt.Errorf("Error retrieving datasource %s: %v", UID, err)
-	}
-	resource := h.newRuleGroupingResource(prometheusAlertsPath, *group)
-	return &resource, nil
-}
-
-// GetRepresentation renders a resource as JSON or YAML as appropriate
-func (h *RuleHandler) GetRepresentation(uid string, resource grizzly.Resource) (string, error) {
-	g := resource.Detail.(RuleGroup)
-	return g.toYAML()
-}
-
-// GetRemoteRepresentation retrieves a datasource as JSON
-func (h *RuleHandler) GetRemoteRepresentation(uid string) (string, error) {
-	group, err := getRemoteRuleGroup(uid)
-	if err != nil {
-		return "", err
-	}
-	return group.toYAML()
-}
-
-// GetRemote retrieves a datasource as a Resource
-func (h *RuleHandler) GetRemote(uid string) (*grizzly.Resource, error) {
-	group, err := getRemoteRuleGroup(uid)
+// GetRemoteByUID retrieves a dashboard as a resource
+func (h *RuleHandler) GetRemoteByUID(uid string) (*grizzly.Resource, error) {
+	m, err := getRemoteRuleGroup(uid)
 	if err != nil {
 		return nil, err
 	}
-	resource := h.newRuleGroupingResource("", *group)
-	return &resource, nil
+	return grizzly.NewResource(*m, h), nil
+}
+
+// GetRemote retrieves a dashboard as a resource
+func (h *RuleHandler) GetRemote(existing grizzly.Resource) (*grizzly.Resource, error) {
+	uid := fmt.Sprintf("%s.%s", existing.Detail.Metadata().Name(), existing.Detail.Metadata().Namespace())
+	return h.GetRemoteByUID(uid)
 }
 
 // Add pushes a datasource to Grafana via the API
 func (h *RuleHandler) Add(resource grizzly.Resource) error {
-	g := resource.Detail.(RuleGroup)
-	return writeRuleGroup(g)
+	return writeRuleGroup(resource.Detail)
 }
 
 // Update pushes a datasource to Grafana via the API
 func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
-	g := resource.Detail.(RuleGroup)
-	return writeRuleGroup(g)
+	return writeRuleGroup(resource.Detail)
 }

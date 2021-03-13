@@ -9,12 +9,14 @@ import (
 	"net/http"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/manifests"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
 const folderNameField = "folderName"
 
 // getRemoteDashboard retrieves a dashboard object from Grafana
-func getRemoteDashboard(uid string) (*Dashboard, error) {
+func getRemoteDashboard(uid string) (*manifest.Manifest, error) {
 	grafanaURL, err := getGrafanaURL("api/dashboards/uid/" + uid)
 	if err != nil {
 		return nil, err
@@ -46,24 +48,30 @@ func getRemoteDashboard(uid string) (*Dashboard, error) {
 	}
 	delete(d.Dashboard, "id")
 	delete(d.Dashboard, "version")
-	d.Dashboard[folderNameField] = d.Meta.FolderTitle
-	return &d.Dashboard, nil
+	m, err := manifests.New("Dashboard", uid, nil, d.Dashboard)
+	if err != nil {
+		return nil, err
+	}
+	metadata := map[string]interface{}(m.Metadata())
+	metadata["folder"] = d.Meta.FolderTitle
+	(*m)["metadata"] = metadata
+	return m, nil
 }
 
-func postDashboard(board Dashboard) error {
+func postDashboard(m manifest.Manifest) error {
+	name := m.Metadata().Name()
 	grafanaURL, err := getGrafanaURL("api/dashboards/db")
 	if err != nil {
 		return err
 	}
 
-	folderUID := board.folderUID()
+	folderUID := m.Metadata()["folder"].(string)
 	folderID, err := findOrCreateFolder(folderUID)
 	if err != nil {
 		return err
 	}
-	delete(board, folderNameField)
 	wrappedBoard := DashboardWrapper{
-		Dashboard: board,
+		Dashboard: m["spec"].(map[string]interface{}),
 		FolderID:  folderID,
 		Overwrite: true,
 	}
@@ -86,9 +94,9 @@ func postDashboard(board Dashboard) error {
 			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
 		}
 		fmt.Println(wrappedJSON)
-		return fmt.Errorf("Error while applying '%s' to Grafana: %s", board.UID(), r.Message)
+		return fmt.Errorf("Error while applying '%s' to Grafana: %s", name, r.Message)
 	default:
-		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s", resp.Status, board.UID())
+		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s", resp.Status, name)
 	}
 
 	return nil
@@ -102,7 +110,7 @@ type SnapshotResp struct {
 	URL       string `json:"url"`
 }
 
-func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, error) {
+func postSnapshot(m manifest.Manifest, opts *grizzly.PreviewOpts) (*SnapshotResp, error) {
 
 	url, err := getGrafanaURL("api/snapshots")
 	if err != nil {
@@ -114,7 +122,7 @@ func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, er
 	}
 
 	sr := &SnapshotReq{
-		Dashboard: board,
+		Dashboard: m["data"].(map[string]interface{}),
 	}
 
 	if opts.ExpiresSeconds > 0 {
@@ -147,56 +155,12 @@ func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, er
 	return s, nil
 }
 
-// Dashboard encapsulates a dashboard
-type Dashboard map[string]interface{}
-
-func newDashboard(resource grizzly.Resource) Dashboard {
-	return resource.Detail.(Dashboard)
-}
-
-// UID retrieves the UID from a dashboard
-func (d *Dashboard) UID() string {
-	uid, ok := (*d)["uid"]
-	if !ok {
-		return ""
-	}
-	return uid.(string)
-}
-
-// toJSON returns JSON for a dashboard
-func (d *Dashboard) toJSON() (string, error) {
-	j, err := json.MarshalIndent(d, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
-}
-
-// folderUID retrieves the folder UID for a dashboard
-func (d *Dashboard) folderUID() string {
-	folderUID, ok := (*d)["folderName"]
-	if ok {
-		return folderUID.(string)
-	}
-	return ""
-}
-
-func dashboardWithFolderSet(resource grizzly.Resource, dashboardFolder string) grizzly.Resource {
-	board := newDashboard(resource)
-	_, ok := board[folderNameField]
-	if !ok {
-		board[folderNameField] = dashboardFolder
-	}
-	resource.Detail = board
-	return resource
-}
-
 // DashboardWrapper adds wrapper to a dashboard JSON. Caters both for Grafana's POST
 // API as well as GET which require different JSON.
 type DashboardWrapper struct {
-	Dashboard Dashboard `json:"dashboard"`
-	FolderID  int64     `json:"folderId"`
-	Overwrite bool      `json:"overwrite"`
+	Dashboard map[string]interface{} `json:"dashboard"`
+	FolderID  int64                  `json:"folderId"`
+	Overwrite bool                   `json:"overwrite"`
 	Meta      struct {
 		FolderID    int64  `json:"folderId"`
 		FolderTitle string `json:"folderTitle"`
@@ -205,7 +169,7 @@ type DashboardWrapper struct {
 
 // UID retrieves the UID from a dashboard wrapper
 func (d *DashboardWrapper) UID() string {
-	return d.Dashboard.UID()
+	return d.Dashboard["uid"].(string)
 }
 
 // toJSON returns JSON expected by Grafana API

@@ -12,8 +12,12 @@ local convert(main, apiVersion) = {
 
   grafana: {
     dashboards:
+      local uid(k, dashboard) =
+        if std.objectHasAll(dashboard, "uid")
+        then dashboard.uid
+        else k;
       local fromMap(dashboards, folder) = [
-        makeResource('Dashboard', k, data=dashboards[k], metadata={ folder: folder })
+        makeResource('Dashboard', uid(k, dashboards[k]), spec=dashboards[k], metadata={ folder: folder })
         for k in std.objectFields(dashboards)
       ];
       local folder = if 'grafanaDashboardFolder' in main then main.grafanaDashboardFolder else 'General';
@@ -41,7 +45,7 @@ local convert(main, apiVersion) = {
 
   syntheticMonitoringChecks:
     local fromMap(checks) = [
-      makeResource('SyntheticMonitoringCheck', k, data=checks[k])
+      makeResource('SyntheticMonitoringCheck', k, spec=checks[k])
       for k in std.objectFields(checks)
     ];
     if 'syntheticMonitoring' in main

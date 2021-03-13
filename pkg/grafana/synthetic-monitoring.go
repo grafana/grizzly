@@ -6,11 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/manifests"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
+	"github.com/kr/pretty"
 )
 
 /*
@@ -31,8 +35,8 @@ import (
 const smURL = "https://synthetic-monitoring-api.grafana.net/%s"
 
 // getRemoteCheck retrieves a check object from SM
-func getRemoteCheck(uid string) (*Check, error) {
-	url := getURL("api/v1/check/list")
+func getRemoteCheck(uid string) (*manifest.Manifest, error) {
+	url := getSyntheticMonitoringURL("api/v1/check/list")
 	authToken, err := getAuthToken()
 	if err != nil {
 		return nil, err
@@ -79,18 +83,37 @@ func getRemoteCheck(uid string) (*Check, error) {
 				probeNames = append(probeNames, name)
 			}
 			check["probes"] = probeNames
-			return &check, nil
+			return manifests.New("SyntheticMonitoringCheck",
+				check.UID(),
+				check,
+				nil)
 		}
 	}
 	return nil, grizzly.ErrNotFound
 }
 
-func postCheck(url string, check Check) error {
-	checkJSON, err := check.toJSON()
+func postCheck(url string, m manifest.Manifest) error {
+	name := m.Metadata().Name()
+
+	probeList, err := getProbeList()
+	if err != nil {
+		return err
+	}
+	spec := m["spec"].(map[string]interface{})
+	probeNames := spec["probes"].([]interface{})
+	probes := []int{}
+	for _, probeName := range probeNames {
+		probes = append(probes, probeList.ByName[probeName.(string)].ID)
+	}
+	spec["probes"] = probes
+	m["spec"] = spec
+
+	checkJSON, err := manifests.JSON(m)
 	if err != nil {
 		return err
 	}
 
+	pretty.Println(checkJSON)
 	client := &http.Client{}
 	accessToken, err := getAuthToken()
 	if err != nil {
@@ -104,6 +127,8 @@ func postCheck(url string, check Check) error {
 	req.Header.Add("Content-type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Println(string(body))
 		return err
 	}
 
@@ -111,7 +136,9 @@ func postCheck(url string, check Check) error {
 	case http.StatusOK:
 		break
 	default:
-		return fmt.Errorf("Non-200 response from Grafana Synthetic Monitoring while applying '%s': %s", resp.Status, check.UID())
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Println(string(body))
+		return fmt.Errorf("Non-200 response from Grafana Synthetic Monitoring while applying '%s': %s", resp.Status, name)
 	}
 	return nil
 }
@@ -134,7 +161,7 @@ type Probes struct {
 
 // getRemoteCheck retrieves a check object from SM
 func getProbeList() (*Probes, error) {
-	url := getURL("api/v1/probe/list")
+	url := getSyntheticMonitoringURL("api/v1/probe/list")
 	authToken, err := getAuthToken()
 	if err != nil {
 		return nil, err
@@ -183,10 +210,6 @@ func getProbeList() (*Probes, error) {
 // Check encapsulates a check
 type Check map[string]interface{}
 
-func newCheck(resource grizzly.Resource) Check {
-	return resource.Detail.(Check)
-}
-
 // UID retrieves the UID from a check
 func (c *Check) UID() string {
 	job, ok := (*c)["job"]
@@ -224,12 +247,12 @@ func (c *Check) toJSON() (string, error) {
 	return string(j), nil
 }
 
-func getURL(path string) string {
+func getSyntheticMonitoringURL(path string) string {
 	return fmt.Sprintf(smURL, path)
 }
 
 func getAuthToken() (string, error) {
-	url := getURL("api/v1/register/install")
+	url := getSyntheticMonitoringURL("api/v1/register/install")
 	apiToken, ok := os.LookupEnv("GRAFANA_SM_TOKEN")
 	if !ok {
 		return "", fmt.Errorf("GRAFANA_SM_TOKEN environment variable must be set.")

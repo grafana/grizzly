@@ -9,12 +9,15 @@ import (
 	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/manifests"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"gopkg.in/yaml.v3"
 )
 
 // getRemoteRuleGrouping retrieves a datasource object from Grafana
-func getRemoteRuleGroup(uid string) (*RuleGroup, error) {
-	parts := strings.SplitN(uid, "-", 2)
+func getRemoteRuleGroup(uid string) (*manifest.Manifest, error) {
+	fmt.Println("UID:", uid)
+	parts := strings.SplitN(uid, ".", 2)
 	namespace := parts[0]
 	name := parts[1]
 
@@ -31,8 +34,18 @@ func getRemoteRuleGroup(uid string) (*RuleGroup, error) {
 		if key == namespace {
 			for _, group := range grouping {
 				if group.Name == name {
-					group.Namespace = namespace
-					return &group, nil
+					m, err := manifests.New("PrometheusRuleGroup",
+						name,
+						nil,
+						group.Rules,
+					)
+					if err != nil {
+						return nil, err
+					}
+					metadata := m.Metadata()
+					metadata["namespace"] = namespace
+					(*m)["metadata"] = metadata
+					return m, nil
 				}
 			}
 		}
@@ -67,14 +80,15 @@ type RuleGrouping struct {
 	Groups    []RuleGroup `json:"groups"`
 }
 
-func writeRuleGroup(group RuleGroup) error {
+func writeRuleGroup(m manifest.Manifest) error {
 	tmpfile, err := ioutil.TempFile("", "cortextool-*")
+	spec, _ := m["spec"].([]map[string]interface{})
 	newGroup := RuleGroup{
-		Name:  group.Name,
-		Rules: group.Rules,
+		Name:  m.Metadata().Name(),
+		Rules: spec,
 	}
 	grouping := RuleGrouping{
-		Namespace: group.Namespace,
+		Namespace: m.Metadata().Namespace(),
 		Groups:    []RuleGroup{newGroup},
 	}
 	out, err := yaml.Marshal(grouping)
