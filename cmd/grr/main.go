@@ -13,7 +13,7 @@ import (
 var Version = "dev"
 
 func main() {
-	log.SetFlags(0)
+	log.SetFlags(log.Ltime)
 
 	rootCmd := &cli.Command{
 		Use:     "grr",
