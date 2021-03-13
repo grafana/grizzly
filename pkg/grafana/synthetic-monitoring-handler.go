@@ -63,24 +63,6 @@ func (h *SyntheticMonitoringHandler) newCheckResource(m manifest.Manifest) grizz
 	return resource
 }
 
-// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *SyntheticMonitoringHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	resource.DeleteSpecKey("tenantId")
-	resource.DeleteSpecKey("id")
-	resource.DeleteSpecKey("modified")
-	resource.DeleteSpecKey("created")
-	return &resource
-}
-
-// Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *SyntheticMonitoringHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	existingTenantID := existing.GetSpecKey("tenantId")
-	resource.SetSpecKey("tenantId", existingTenantID)
-	existingCheckID := existing.GetSpecKey("id")
-	resource.SetSpecKey("id", existingCheckID)
-	return &resource
-}
-
 // GetRemoteByUID retrieves a dashboard as a resource
 func (h *SyntheticMonitoringHandler) GetRemoteByUID(uid string) (*grizzly.Resource, error) {
 	m, err := getRemoteCheck(uid)
@@ -92,11 +74,13 @@ func (h *SyntheticMonitoringHandler) GetRemoteByUID(uid string) (*grizzly.Resour
 
 // GetRemote retrieves a dashboard as a resource
 func (h *SyntheticMonitoringHandler) GetRemote(existing grizzly.Resource) (*grizzly.Resource, error) {
-	return h.GetRemoteByUID(
-		manifests.JoinUID(
-			manifests.GetMetadata(&existing.Detail, "type"),
-			existing.Detail.Metadata().Name(),
-		),
+	return h.GetRemoteByUID(h.uid(existing))
+}
+
+func (h *SyntheticMonitoringHandler) uid(resource grizzly.Resource) string {
+	return manifests.JoinUID(
+		manifests.GetMetadata(&resource.Detail, "type"),
+		resource.Detail.Metadata().Name(),
 	)
 }
 
@@ -109,16 +93,13 @@ func (h *SyntheticMonitoringHandler) Add(resource grizzly.Resource) error {
 // Update pushes an updated check to the SyntheticMonitoring endpoing
 func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource) error {
 	url := getSyntheticMonitoringURL("api/v1/check/update")
+	rawExisting, err := getRemoteCheckRaw(h.uid(existing))
+	if err != nil {
+		return err
+	}
+	tenantID := manifests.GetSpecField(rawExisting, "tenantId")
+	id := manifests.GetSpecField(rawExisting, "id")
+	resource.Detail = *manifests.SetSpecField(&resource.Detail, "id", id)
+	resource.Detail = *manifests.SetSpecField(&resource.Detail, "tenantId", tenantID)
 	return postCheck(url, resource.Detail)
-}
-
-func (h *SyntheticMonitoringHandler) get(resource grizzly.Resource, key string) string {
-	msi := resource.Detail["data"].(map[string]interface{})
-	return msi[key].(string)
-}
-func (h *SyntheticMonitoringHandler) set(resource grizzly.Resource, key, value string) grizzly.Resource {
-	msi := resource.Detail["data"].(map[string]interface{})
-	msi[key] = value
-	resource.Detail["data"] = msi
-	return resource
 }

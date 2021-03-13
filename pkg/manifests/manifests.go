@@ -136,3 +136,27 @@ func SetMetadata(m *manifest.Manifest, key, value string) *manifest.Manifest {
 	(*m)["metadata"] = metadata
 	return m
 }
+
+// RemoveSpecFields removes a set of field values from the spec within the manifest
+func RemoveSpecFields(m *manifest.Manifest, keys []string) *manifest.Manifest {
+	spec := (*m)["spec"].(map[string]interface{})
+	for _, key := range keys {
+		delete(spec, key)
+	}
+	(*m)["spec"] = spec
+	return m
+}
+
+// GetSpecField gets a spec field value from within the manifest
+func GetSpecField(m *manifest.Manifest, key string) interface{} {
+	spec := (*m)["spec"].(map[string]interface{})
+	return spec[key]
+}
+
+// SetSpecField sets a spec field value within the manifest
+func SetSpecField(m *manifest.Manifest, key string, value interface{}) *manifest.Manifest {
+	spec := (*m)["spec"].(map[string]interface{})
+	spec[key] = value
+	(*m)["spec"] = spec
+	return m
+}

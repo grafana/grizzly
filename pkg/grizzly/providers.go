@@ -106,12 +106,6 @@ type Handler interface {
 	Kind() string
 	GetExtension() string
 
-	// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-	Unprepare(resource Resource) *Resource
-
-	// Prepare gets a resource ready for dispatch to the remote endpoint
-	Prepare(existing, resource Resource) *Resource
-
 	// GetRemoteByUID retrieves a remote resource identified by a string
 	GetRemoteByUID(uid string) (*Resource, error)
 

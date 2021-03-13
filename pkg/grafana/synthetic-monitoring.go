@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -14,7 +13,6 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/manifests"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
-	"github.com/kr/pretty"
 )
 
 /*
@@ -36,6 +34,16 @@ const smURL = "https://synthetic-monitoring-api.grafana.net/%s"
 
 // getRemoteCheck retrieves a check object from SM
 func getRemoteCheck(uid string) (*manifest.Manifest, error) {
+	m, err := getRemoteCheckRaw(uid)
+	if err != nil {
+		return nil, err
+	}
+	m = manifests.RemoveSpecFields(m, []string{"tenantId", "job", "id", "created", "modified"})
+	return m, nil
+}
+
+// getRemoteCheck retrieves a check object from SM
+func getRemoteCheckRaw(uid string) (*manifest.Manifest, error) {
 	parts := manifests.SplitUID(uid)
 	typ := parts[0]
 	job := parts[1]
@@ -101,6 +109,14 @@ func getRemoteCheck(uid string) (*manifest.Manifest, error) {
 	return nil, grizzly.ErrNotFound
 }
 
+func (h *SyntheticMonitoringHandler) getTenantID(uid string) (float64, error) {
+	m, err := getRemoteCheckRaw(uid)
+	if err != nil {
+		return 0, err
+	}
+	return manifests.GetSpecField(m, "tenantId").(float64), nil
+}
+
 func postCheck(url string, m manifest.Manifest) error {
 	name := m.Metadata().Name()
 
@@ -114,15 +130,14 @@ func postCheck(url string, m manifest.Manifest) error {
 	for _, probeName := range probeNames {
 		probes = append(probes, probeList.ByName[probeName.(string)].ID)
 	}
-	spec["probes"] = probes
-	m["spec"] = spec
+	m = *manifests.SetSpecField(&m, "probes", probes)
+	m = *manifests.SetSpecField(&m, "job", name)
 
-	checkJSON, err := manifests.JSON(m)
+	checkJSON, err := manifests.SpecAsJSON(m)
 	if err != nil {
 		return err
 	}
 
-	pretty.Println(checkJSON)
 	client := &http.Client{}
 	accessToken, err := getAuthToken()
 	if err != nil {
@@ -136,8 +151,6 @@ func postCheck(url string, m manifest.Manifest) error {
 	req.Header.Add("Content-type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
 		return err
 	}
 
@@ -146,8 +159,7 @@ func postCheck(url string, m manifest.Manifest) error {
 		break
 	default:
 		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
-		return fmt.Errorf("Non-200 response from Grafana Synthetic Monitoring while applying '%s': %s", resp.Status, name)
+		return fmt.Errorf("Non-200 response from Grafana Synthetic Monitoring while applying '%s': %s %s", resp.Status, name, body)
 	}
 	return nil
 }

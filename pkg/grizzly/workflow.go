@@ -43,7 +43,6 @@ func Get(config Config, UID string) error {
 		return err
 	}
 
-	resource = handler.Unprepare(*resource)
 	rep, err := resource.GetRepresentation()
 	if err != nil {
 		return err
@@ -139,10 +138,8 @@ func Parse(config Config, jsonnetFile string, targets []string) (Resources, erro
 func Show(config Config, resources Resources) error {
 
 	var items []term.PageItem
-	for handler, resourceList := range resources {
+	for _, resourceList := range resources {
 		for _, resource := range resourceList {
-			resource = *(handler.Unprepare(resource))
-
 			rep, err := resource.GetRepresentation()
 			if err != nil {
 				return err
@@ -173,7 +170,6 @@ func Diff(config Config, resources Resources) error {
 			if err != nil {
 				return nil
 			}
-			resource = *handler.Unprepare(resource)
 			uid := resource.UID
 			remote, err := handler.GetRemote(resource)
 			if err == ErrNotFound {
@@ -184,7 +180,6 @@ func Diff(config Config, resources Resources) error {
 				return fmt.Errorf("Error retrieving resource from %s %s: %v", resource.Kind(), uid, err)
 			}
 
-			remote = handler.Unprepare(*remote)
 			remoteRepresentation, err := (*remote).GetRepresentation()
 			if err != nil {
 				return err
@@ -228,8 +223,6 @@ func Apply(config Config, resources Resources) error {
 			if err != nil {
 				return err
 			}
-			resource = *handler.Prepare(*existingResource, resource)
-			existingResource = handler.Unprepare(*existingResource)
 			existingResourceRepresentation, err := existingResource.GetRepresentation()
 			if err != nil {
 				return nil

@@ -39,7 +39,12 @@ func getRemoteDatasource(uid string) (*manifest.Manifest, error) {
 	if err != nil {
 		return nil, err
 	}
-	return manifests.New("Datasource", uid, nil, data)
+	m, err := manifests.New("Datasource", uid, nil, data)
+	if err != nil {
+		return nil, err
+	}
+	m = manifests.RemoveSpecFields(m, []string{"name", "id", "version"})
+	return m, nil
 }
 
 func postDatasource(m manifest.Manifest) error {

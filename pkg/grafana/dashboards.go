@@ -46,9 +46,8 @@ func getRemoteDashboard(uid string) (*manifest.Manifest, error) {
 	if err := json.Unmarshal(data, &d); err != nil {
 		return nil, grizzly.APIErr{Err: err, Body: data}
 	}
-	delete(d.Dashboard, "id")
-	delete(d.Dashboard, "version")
 	m, err := manifests.New("Dashboard", uid, nil, d.Dashboard)
+	m = manifests.RemoveSpecFields(m, []string{"id", "version", "uid"})
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +69,10 @@ func postDashboard(m manifest.Manifest) error {
 	if err != nil {
 		return err
 	}
+	dashboard := m["spec"].(map[string]interface{})
+	dashboard["uid"] = name
 	wrappedBoard := DashboardWrapper{
-		Dashboard: m["spec"].(map[string]interface{}),
+		Dashboard: dashboard,
 		FolderID:  folderID,
 		Overwrite: true,
 	}

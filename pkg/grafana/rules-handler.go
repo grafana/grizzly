@@ -42,16 +42,6 @@ func (h *RuleHandler) newRuleGroupingResource(m manifest.Manifest) grizzly.Resou
 	return resource
 }
 
-// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *RuleHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	return &resource
-}
-
-// Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *RuleHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	return &resource
-}
-
 // GetRemoteByUID retrieves a dashboard as a resource
 func (h *RuleHandler) GetRemoteByUID(uid string) (*grizzly.Resource, error) {
 	m, err := getRemoteRuleGroup(uid)

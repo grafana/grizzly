@@ -41,19 +41,6 @@ func (h *DatasourceHandler) newDatasourceResource(m manifest.Manifest) grizzly.R
 	return resource
 }
 
-// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *DatasourceHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	resource.DeleteSpecKey("version")
-	resource.DeleteSpecKey("id")
-	return &resource
-}
-
-// Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *DatasourceHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	resource.DeleteSpecKey("id")
-	return &resource
-}
-
 // GetRemoteByUID retrieves a dashboard as a resource
 func (h *DatasourceHandler) GetRemoteByUID(uid string) (*grizzly.Resource, error) {
 	m, err := getRemoteDatasource(uid)
