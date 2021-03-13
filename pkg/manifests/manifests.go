@@ -3,6 +3,8 @@ package manifests
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"strings"
 
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"gopkg.in/yaml.v2"
@@ -17,7 +19,6 @@ func New(kind, name string, data, spec interface{}) (*manifest.Manifest, error) 
 		"name": name,
 	}
 	m, err := ParseData(m, data)
-
 	if err != nil {
 		return nil, err
 	}
@@ -31,6 +32,8 @@ func New(kind, name string, data, spec interface{}) (*manifest.Manifest, error) 
 				return nil, fmt.Errorf("Error: %v\n%s", err, string(s))
 			}
 			m["spec"] = msi
+		default:
+			log.Printf("Unknown type %T", spec)
 		}
 	}
 	return &m, nil
@@ -104,4 +107,26 @@ func ParseData(m manifest.Manifest, data interface{}) (manifest.Manifest, error)
 		}
 	}
 	return m, nil
+}
+
+// JoinUID joins elements into a multipart UID
+func JoinUID(elements ...string) string {
+	return strings.Join(elements, ".")
+}
+
+// SplitUID splits a multipart UID into its parts
+func SplitUID(uid string) []string {
+	isDelimiter := func(c rune) bool {
+		return c == '/' || c == '.'
+	}
+	return strings.FieldsFunc(uid, isDelimiter)
+
+}
+
+// SetMetadata sets a value in the metadata of a manifest
+func SetMetadata(m *manifest.Manifest, key, value string) *manifest.Manifest {
+	metadata := (*m)["metadata"].(map[string]interface{})
+	metadata[key] = value
+	(*m)["metadata"] = metadata
+	return m
 }
