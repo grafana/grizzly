@@ -1,9 +1,8 @@
 package grafana
 
 import (
-	"fmt"
-
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/manifests"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
@@ -64,8 +63,13 @@ func (h *RuleHandler) GetRemoteByUID(uid string) (*grizzly.Resource, error) {
 
 // GetRemote retrieves a dashboard as a resource
 func (h *RuleHandler) GetRemote(existing grizzly.Resource) (*grizzly.Resource, error) {
-	uid := fmt.Sprintf("%s.%s", existing.Detail.Metadata().Name(), existing.Detail.Metadata().Namespace())
-	return h.GetRemoteByUID(uid)
+
+	return h.GetRemoteByUID(
+		manifests.JoinUID(
+			existing.Detail.Metadata().Namespace(),
+			existing.Detail.Metadata().Name(),
+		),
+	)
 }
 
 // Add pushes a datasource to Grafana via the API
