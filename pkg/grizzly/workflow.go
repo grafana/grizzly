@@ -23,17 +23,12 @@ var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 // Get retrieves a resource from a remote endpoint using its UID
 func Get(config Config, UID string) error {
-	count := strings.Count(UID, ".")
 	var handlerName, resourceID string
-	if count == 1 {
+	count := strings.Count(UID, ".")
+	if count >= 1 {
 		parts := strings.SplitN(UID, ".", 2)
 		handlerName = parts[0]
 		resourceID = parts[1]
-	} else if count == 2 {
-		parts := strings.SplitN(UID, ".", 3)
-		handlerName = parts[0] + "." + parts[1]
-		resourceID = parts[2]
-
 	} else {
 		return fmt.Errorf("UID must be <provider>.<uid>: %s", UID)
 	}
