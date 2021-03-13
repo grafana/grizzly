@@ -40,6 +40,8 @@
       ],
       target: 'https://grafana.com/',
       job: 'grafana-com',
+      alertSensitivity: '',
+      basicMetricsOnly: true,
     },
   },
 }
