@@ -17,7 +17,14 @@ local convert(main, apiVersion) = {
         then dashboard.uid
         else k;
       local fromMap(dashboards, folder) = [
-        makeResource('Dashboard', uid(k, dashboards[k]), spec=dashboards[k], metadata={ folder: folder })
+        makeResource(
+          'Dashboard',
+          uid(k, dashboards[k]),
+          spec=dashboards[k] + {
+            uid::'',
+          },
+          metadata={ folder: folder }
+        )
         for k in std.objectFields(dashboards)
       ];
       local folder = if 'grafanaDashboardFolder' in main then main.grafanaDashboardFolder else 'General';
@@ -27,7 +34,13 @@ local convert(main, apiVersion) = {
 
     datasources:
       local fromMap(datasources) = [
-        makeResource('Datasource', k, spec=datasources[k])
+        makeResource(
+          'Datasource',
+          k,
+          spec=datasources[k] + {
+            name:: ''
+          },
+        )
         for k in std.objectFields(datasources)
       ];
       if 'grafanaDatasources' in main
@@ -36,16 +49,34 @@ local convert(main, apiVersion) = {
   },
 
   prometheus:
-    local fromMap(name) =
-      if name in main
-      then [makeResource('PrometheusRuleGroup', k, spec={ groups: main[name] }) for k in std.objectFields(main[name])]
+    local groupNamespace(key) = std.objectFields(main[key])[0];
+    local groupName(key) = main[key][groupNamespace(key)].groups[0].name;
+    local fromMap(key) =
+      if key in main
+      then [
+              makeResource(
+                'PrometheusRuleGroup',
+                groupName(key),
+                spec={
+                  rules: main[key][groupNamespace(key)].groups[0].rules,
+                },
+                metadata={ namespace: groupNamespace(key)})
+              for k in std.objectFields(main[key])
+           ]
       else [];
     fromMap('prometheusRules')
     + fromMap('prometheusAlerts'),
 
   syntheticMonitoringChecks:
     local fromMap(checks) = [
-      makeResource('SyntheticMonitoringCheck', k, spec=checks[k])
+      makeResource(
+        'SyntheticMonitoringCheck',
+        checks[k].job,
+        spec=checks[k] + {
+          job::'',
+        },
+        metadata={type: std.objectFields(checks[k].settings)[0]}
+      )
       for k in std.objectFields(checks)
     ];
     if 'syntheticMonitoring' in main
