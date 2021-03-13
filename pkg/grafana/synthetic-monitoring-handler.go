@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/manifests"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
@@ -91,7 +92,12 @@ func (h *SyntheticMonitoringHandler) GetRemoteByUID(uid string) (*grizzly.Resour
 
 // GetRemote retrieves a dashboard as a resource
 func (h *SyntheticMonitoringHandler) GetRemote(existing grizzly.Resource) (*grizzly.Resource, error) {
-	return h.GetRemoteByUID(existing.Detail.Metadata().Name())
+	return h.GetRemoteByUID(
+		manifests.JoinUID(
+			manifests.GetMetadata(&existing.Detail, "type"),
+			existing.Detail.Metadata().Name(),
+		),
+	)
 }
 
 // Add adds a new check to the SyntheticMonitoring endpoint

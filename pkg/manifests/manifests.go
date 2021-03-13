@@ -123,6 +123,12 @@ func SplitUID(uid string) []string {
 
 }
 
+// GetMetadata gets a value from the metadata of a manifest
+func GetMetadata(m *manifest.Manifest, key string) string {
+	metadata := (*m)["metadata"].(map[string]interface{})
+	return metadata[key].(string)
+}
+
 // SetMetadata sets a value in the metadata of a manifest
 func SetMetadata(m *manifest.Manifest, key, value string) *manifest.Manifest {
 	metadata := (*m)["metadata"].(map[string]interface{})

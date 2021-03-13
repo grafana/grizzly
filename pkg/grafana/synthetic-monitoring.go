@@ -36,6 +36,9 @@ const smURL = "https://synthetic-monitoring-api.grafana.net/%s"
 
 // getRemoteCheck retrieves a check object from SM
 func getRemoteCheck(uid string) (*manifest.Manifest, error) {
+	parts := manifests.SplitUID(uid)
+	typ := parts[0]
+	job := parts[1]
 	url := getSyntheticMonitoringURL("api/v1/check/list")
 	authToken, err := getAuthToken()
 	if err != nil {
@@ -75,7 +78,7 @@ func getRemoteCheck(uid string) (*manifest.Manifest, error) {
 		return nil, err
 	}
 	for _, check := range checks {
-		if check.UID() == uid {
+		if check.getJob() == job && check.getType() == typ {
 			probeNames := []string{}
 			for _, probe := range check["probes"].([]interface{}) {
 				probeID := int(probe.(float64))
@@ -83,10 +86,16 @@ func getRemoteCheck(uid string) (*manifest.Manifest, error) {
 				probeNames = append(probeNames, name)
 			}
 			check["probes"] = probeNames
-			return manifests.New("SyntheticMonitoringCheck",
-				check.UID(),
-				check,
-				nil)
+			m, err := manifests.New("SyntheticMonitoringCheck",
+				check.getJob(),
+				nil,
+				map[string]interface{}(check))
+			if err != nil {
+				return nil, err
+
+			}
+			m = manifests.SetMetadata(m, "type", check.getType())
+			return m, nil
 		}
 	}
 	return nil, grizzly.ErrNotFound
@@ -210,41 +219,23 @@ func getProbeList() (*Probes, error) {
 // Check encapsulates a check
 type Check map[string]interface{}
 
-// UID retrieves the UID from a check
-func (c *Check) UID() string {
+func (c *Check) getJob() string {
 	job, ok := (*c)["job"]
 	if !ok {
-		return "X"
+		return ""
 	}
-	settings, ok := (*c)["settings"]
-	if !ok {
-		return "Y"
-	}
-	for typ := range settings.(map[string]interface{}) {
-		return fmt.Sprintf("%s-%s", typ, job)
-	}
-	return "NIL"
+	return job.(string)
 }
 
-// toJSON returns JSON for a datasource
-func (c *Check) toJSON() (string, error) {
-	probes, err := getProbeList()
-	if err != nil {
-		return "", err
+func (c *Check) getType() string {
+	settings, ok := (*c)["settings"]
+	if !ok {
+		return ""
 	}
-	probeIDs := []int{}
-	for _, probe := range (*c)["probes"].([]interface{}) {
-		probeName := probe.(string)
-		id := probes.ByName[probeName].ID
-		probeIDs = append(probeIDs, id)
+	for typ := range settings.(map[string]interface{}) {
+		return typ
 	}
-	(*c)["probes"] = probeIDs
-
-	j, err := json.MarshalIndent(c, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
+	return ""
 }
 
 func getSyntheticMonitoringURL(path string) string {
