@@ -277,7 +277,8 @@ func getAuthToken() (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		return "", fmt.Errorf("%d response while authenticating", resp.StatusCode)
+		body, _ := ioutil.ReadAll(resp.Body)
+		return "", fmt.Errorf("%d response while authenticating: %s", resp.StatusCode, string(body))
 	}
 	type AuthResponse struct {
 		AccessToken string `json:"accessToken"`
