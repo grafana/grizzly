@@ -8,7 +8,7 @@ platform:
 
 steps:
 - name: download
-  image: golang:1.13
+  image: golang:1.16.2
   commands:
   - go mod download
   volumes:
@@ -16,7 +16,7 @@ steps:
     path: /go
 
 - name: lint
-  image: golang:1.13
+  image: golang:1.16.2
   commands:
   - make lint
   volumes:
@@ -26,7 +26,7 @@ steps:
   - download
 
 - name: test
-  image: golang:1.13
+  image: golang:1.16.2
   commands:
   - make test
   volumes:
@@ -49,7 +49,7 @@ platform:
 
 steps:
 - name: fetch-tags
-  image: golang:1.13
+  image: golang:1.16.2
   commands:
   - git fetch origin --tags
   volumes:
@@ -57,7 +57,7 @@ steps:
     path: /go
 
 - name: cross
-  image: golang:1.13
+  image: golang:1.16.2
   commands:
   - make cross
   volumes:
@@ -95,7 +95,7 @@ platform:
 
 steps:
 - name: static
-  image: golang:1.13
+  image: golang:1.16.2
   commands:
   - make static
   volumes:
@@ -136,7 +136,7 @@ platform:
 
 steps:
 - name: static
-  image: golang:1.13
+  image: golang:1.16.2
   commands:
   - make static
   volumes:
@@ -177,7 +177,7 @@ platform:
 
 steps:
 - name: static
-  image: golang:1.13
+  image: golang:1.16.2
   commands:
   - make static
   volumes:
@@ -258,9 +258,5 @@ name: docker_password
 get:
   path: infra/data/ci/docker_hub
   name: password
-
----
-kind: signature
-hmac: 7336bf0ea1ab2b21862347a7bff692e97a70294db91cdb2509e51b47c1c514cc
 
 ...

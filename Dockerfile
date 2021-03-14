@@ -1,4 +1,4 @@
-FROM golang
+FROM golang:1.16.2
 WORKDIR /app
 COPY . .
 RUN make install
