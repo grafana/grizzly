@@ -11,7 +11,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/google/go-jsonnet"
-	"github.com/grafana/grizzly/pkg/manifests"
 	"github.com/grafana/grizzly/pkg/term"
 	"github.com/grafana/tanka/pkg/process"
 	"github.com/pmezard/go-difflib/difflib"
@@ -101,12 +100,6 @@ func Parse(config Config, jsonnetFile string, targets []string) (Resources, erro
 
 	resources := Resources{}
 	for _, m := range extracted {
-		if data, ok := m["data"]; ok {
-			m, err = manifests.ParseData(m, data)
-			if err != nil {
-				return nil, err
-			}
-		}
 		handler, err := config.Registry.GetHandler(m.Kind())
 		if err != nil {
 			log.Println("Error getting handler", err)

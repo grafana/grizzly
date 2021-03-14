@@ -18,9 +18,8 @@ func New(kind, name string, data, spec interface{}) (*manifest.Manifest, error) 
 	m["metadata"] = map[string]interface{}{
 		"name": name,
 	}
-	m, err := ParseData(m, data)
-	if err != nil {
-		return nil, err
+	if data != nil {
+		m["data"] = data
 	}
 	if spec != nil {
 		switch s := spec.(type) {
@@ -82,31 +81,6 @@ func DataAsJSON(m manifest.Manifest) (string, error) {
 		return "", err
 	}
 	return string(j), nil
-}
-
-// ParseData parses data element as JSON
-func ParseData(m manifest.Manifest, data interface{}) (manifest.Manifest, error) {
-	if data != nil {
-		switch d := data.(type) {
-		case map[string]interface{}:
-			m["data"] = d
-		case string:
-			msi := map[string]interface{}{}
-			if err := json.Unmarshal([]byte(d), &msi); err != nil {
-				return nil, fmt.Errorf("Error: %v\n%s", err, string(d))
-			}
-			m["data"] = msi
-		case []byte:
-			msi := map[string]interface{}{}
-			if err := json.Unmarshal(d, &msi); err != nil {
-				return nil, fmt.Errorf("Error: %v\n%s", err, string(d))
-			}
-			m["data"] = msi
-		default:
-			return nil, fmt.Errorf("Can't parse %T into manifest.data", data)
-		}
-	}
-	return m, nil
 }
 
 // JoinUID joins elements into a multipart UID
