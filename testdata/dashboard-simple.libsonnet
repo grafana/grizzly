@@ -1,5 +1,5 @@
 {
-  grafanaDashboardFolder: 'sample',
+  grafanaDashboardFolder:: 'sample',
   grafanaDashboards+:: {
     'my-dash.json': {
       uid: 'prod-overview',
