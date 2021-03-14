@@ -1,6 +1,7 @@
 package grizzly
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/term"
+	"github.com/grafana/tanka/pkg/process"
 	"github.com/pmezard/go-difflib/difflib"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
@@ -74,26 +76,13 @@ func List(config Config, resources Resources) error {
 	return w.Flush()
 }
 
-func getPrivateElementsScript(jsonnetFile string, handlers []Handler) string {
-	const script = `
-    local src = import '%s';
-    src + {
-    %s
-    }
-	`
-	handlerStrings := []string{}
-	for _, handler := range handlers {
-		for _, jsonPath := range handler.GetJSONPaths() {
-			handlerStrings = append(handlerStrings, fmt.Sprintf("  %s+::: {},", jsonPath))
-		}
-	}
-	return fmt.Sprintf(script, jsonnetFile, strings.Join(handlerStrings, "\n"))
-}
+//go:embed grizzly.jsonnet
+var script string
 
 // Parse evaluates a jsonnet file and parses it into an object tree
 func Parse(config Config, jsonnetFile string, targets []string) (Resources, error) {
 
-	script := getPrivateElementsScript(jsonnetFile, config.Registry.Handlers)
+	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
 	vm.Importer(newExtendedImporter([]string{"vendor", "lib", "."}))
 
@@ -101,34 +90,43 @@ func Parse(config Config, jsonnetFile string, targets []string) (Resources, erro
 	if err != nil {
 		return nil, err
 	}
+	var data interface{}
+	if err := json.Unmarshal([]byte(result), &data); err != nil {
+		return nil, err
+	}
 
-	msi := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(result), &msi); err != nil {
+	extracted, err := process.Extract(data)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unwrap *List types
+	if err := process.Unwrap(extracted); err != nil {
 		return nil, err
 	}
 
 	resources := Resources{}
-
-	for k, v := range msi {
-		handler, err := config.Registry.GetHandler(k)
+	for _, m := range extracted {
+		handler, err := config.Registry.GetHandler(m.Kind())
 		if err != nil {
-			fmt.Println("Skipping unregistered path", k)
+			log.Println("Error getting handler", err)
 			continue
 		}
-		handlerResources, err := handler.Parse(k, v)
+		parsedResources, err := handler.Parse(m)
 		if err != nil {
 			return nil, err
 		}
-		resourceList, ok := resources[handler]
-		if !ok {
-			resourceList = ResourceList{}
-		}
-		for kk, resource := range handlerResources {
-			if resource.MatchesTarget(targets) {
-				resourceList[kk] = resource
+		for _, resource := range parsedResources {
+			if !resource.MatchesTarget(targets) {
+				continue
 			}
+			resourceList, ok := resources[resource.Handler]
+			if !ok {
+				resourceList = ResourceList{}
+			}
+			resourceList[m.Metadata().Name()] = resource
+			resources[handler] = resourceList
 		}
-		resources[handler] = resourceList
 	}
 	return resources, nil
 }

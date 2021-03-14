@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -67,20 +68,19 @@ func (h *SyntheticMonitoringHandler) newCheckResource(path string, filename stri
 	return resource
 }
 
-// Parse parses an interface{} object into a struct for this resource type
-func (h *SyntheticMonitoringHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
+// Parse parses a manifest object into a struct for this resource type
+func (h *SyntheticMonitoringHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
-	msi := i.(map[string]interface{})
-	for k, v := range msi {
-		check := Check{}
-		err := mapstructure.Decode(v, &check)
-		if err != nil {
-			return nil, err
-		}
-		resource := h.newCheckResource(path, k, check)
-		key := resource.Key()
-		resources[key] = resource
+	spec := m["spec"].(map[string]interface{})
+	check := Check{}
+	err := mapstructure.Decode(spec, &check)
+	if err != nil {
+		return nil, err
 	}
+	check["job"] = m.Metadata().Name()
+	resource := h.newCheckResource("", "", check)
+	key := resource.Key()
+	resources[key] = resource
 	return resources, nil
 }
 

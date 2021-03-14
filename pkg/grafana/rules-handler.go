@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -21,7 +22,7 @@ func NewRuleHandler(provider Provider) *RuleHandler {
 
 // Kind returns the name for this handler
 func (h *RuleHandler) Kind() string {
-	return "PrometheusRules"
+	return "PrometheusRuleGroup"
 }
 
 // APIVersion returns the group and version for the provider of which this handler is a part
@@ -56,23 +57,20 @@ func (h *RuleHandler) newRuleGroupingResource(path string, group RuleGroup) griz
 	return resource
 }
 
-// Parse parses an interface{} object into a struct for this resource type
-func (h *RuleHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
+// Parse parses a manifest object into a struct for this resource type
+func (h *RuleHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
-	msi := i.(map[string]interface{})
-	groupings := map[string]RuleGrouping{}
-	err := mapstructure.Decode(msi, &groupings)
+	spec := m["spec"].(map[string]interface{})
+	group := RuleGroup{}
+	err := mapstructure.Decode(spec, &group)
 	if err != nil {
 		return nil, err
 	}
-	for k, grouping := range groupings {
-		for _, group := range grouping.Groups {
-			group.Namespace = k
-			resource := h.newRuleGroupingResource(path, group)
-			key := resource.Key()
-			resources[key] = resource
-		}
-	}
+	group.Namespace = m.Metadata().Namespace()
+	group.Name = m.Metadata().Name()
+	resource := h.newRuleGroupingResource("", group)
+	key := resource.Key()
+	resources[key] = resource
 	return resources, nil
 }
 

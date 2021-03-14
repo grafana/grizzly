@@ -2,8 +2,10 @@ package grizzly
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gobwas/glob"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
 // Resource represents a single Resource destined for a single endpoint
@@ -52,6 +54,7 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 			return true
 		}
 	}
+	log.Println("Skipping", key)
 	return false
 }
 
@@ -68,8 +71,8 @@ type Handler interface {
 	GetJSONPaths() []string
 	GetExtension() string
 
-	// Parse parses an interface{} object into a struct for this resource type
-	Parse(path string, i interface{}) (ResourceList, error)
+	// Parse parses a manifest object into a struct for this resource type
+	Parse(m manifest.Manifest) (ResourceList, error)
 
 	// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 	Unprepare(resource Resource) *Resource

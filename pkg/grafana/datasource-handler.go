@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -55,32 +56,32 @@ func (h *DatasourceHandler) newDatasourceResource(path, uid, filename string, so
 	return resource
 }
 
-// Parse parses an interface{} object into a struct for this resource type
-func (h *DatasourceHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
+// Parse parses a manifest object into a struct for this resource type
+func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
-	msi := i.(map[string]interface{})
-	for k, v := range msi {
-		source := Datasource{}
-		source["basicAuth"] = false
-		source["basicAuthPassword"] = ""
-		source["basicAuthUser"] = ""
-		source["database"] = ""
-		source["orgId"] = 1
-		source["password"] = ""
-		source["secureJsonFields"] = map[string]interface{}{}
-		source["typeLogoUrl"] = ""
-		source["user"] = ""
-		source["withCredentials"] = false
-		source["readOnly"] = false
+	spec := m["spec"].(map[string]interface{})
+	source := Datasource{}
+	source["basicAuth"] = false
+	source["basicAuthPassword"] = ""
+	source["basicAuthUser"] = ""
+	source["database"] = ""
+	source["orgId"] = 1
+	source["password"] = ""
+	source["secureJsonFields"] = map[string]interface{}{}
+	source["typeLogoUrl"] = ""
+	source["user"] = ""
+	source["withCredentials"] = false
+	source["readOnly"] = false
 
-		err := mapstructure.Decode(v, &source)
-		if err != nil {
-			return nil, err
-		}
-		resource := h.newDatasourceResource(path, source.UID(), k, source)
-		key := resource.Key()
-		resources[key] = resource
+	err := mapstructure.Decode(spec, &source)
+	if err != nil {
+		return nil, err
 	}
+	source["name"] = m.Metadata().Name()
+	resource := h.newDatasourceResource("", source.UID(), "", source)
+	key := resource.Key()
+	resources[key] = resource
+
 	return resources, nil
 }
 
