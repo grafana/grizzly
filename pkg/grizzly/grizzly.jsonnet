@@ -16,6 +16,10 @@ local convert(main, apiVersion) = {
         if std.objectHasAll(dashboard, "uid")
         then dashboard.uid
         else k;
+      local folder =
+        if 'grafanaDashboardFolder' in main
+        then main.grafanaDashboardFolder
+        else 'General';
       local fromMap(dashboards, folder) = [
         makeResource(
           'Dashboard',
@@ -27,7 +31,6 @@ local convert(main, apiVersion) = {
         )
         for k in std.objectFields(dashboards)
       ];
-      local folder = if 'grafanaDashboardFolder' in main then main.grafanaDashboardFolder else 'General';
       if 'grafanaDashboards' in main
       then fromMap(main.grafanaDashboards, folder)
       else {},
