@@ -1,6 +1,6 @@
 {
   syntheticMonitoring+:: {
-    odoko: {
+    grafana: {
       frequency: 60000,
       offset: 0,
       timeout: 2500,

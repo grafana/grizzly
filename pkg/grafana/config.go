@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 )
 
 func getGrafanaURL(urlPath string) (string, error) {
@@ -13,7 +14,11 @@ func getGrafanaURL(urlPath string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		u.Path = path.Join(u.Path, urlPath)
+		parts := strings.Split(urlPath, "?")
+		u.Path = path.Join(u.Path, parts[0])
+		if len(parts) > 1 {
+			u.RawQuery = parts[1]
+		}
 		if token, exists := os.LookupEnv("GRAFANA_TOKEN"); exists {
 			user, exists := os.LookupEnv("GRAFANA_USER")
 			if !exists {
