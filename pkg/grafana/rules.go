@@ -13,7 +13,7 @@ import (
 )
 
 // getRemoteRuleGrouping retrieves a datasource object from Grafana
-func getRemoteRuleGroup(uid string) (*RuleGroup, error) {
+func getRemoteRuleGroup(uid string) (*PrometheusRuleGroup, error) {
 	parts := strings.SplitN(uid, "-", 2)
 	namespace := parts[0]
 	name := parts[1]
@@ -22,7 +22,7 @@ func getRemoteRuleGroup(uid string) (*RuleGroup, error) {
 	if err != nil {
 		return nil, err
 	}
-	groupings := map[string][]RuleGroup{}
+	groupings := map[string][]PrometheusRuleGroup{}
 	err = yaml.Unmarshal(out, &groupings)
 	if err != nil {
 		return nil, err
@@ -40,20 +40,20 @@ func getRemoteRuleGroup(uid string) (*RuleGroup, error) {
 	return nil, grizzly.ErrNotFound
 }
 
-// RuleGroup encapsulates a list of rules
-type RuleGroup struct {
+// PrometheusRuleGroup encapsulates a list of rules
+type PrometheusRuleGroup struct {
 	Namespace string                   `yaml:"-"`
 	Name      string                   `yaml:"name"`
 	Rules     []map[string]interface{} `yaml:"rules"`
 }
 
 // UID retrieves the UID from a rule group
-func (g *RuleGroup) UID() string {
+func (g *PrometheusRuleGroup) UID() string {
 	return fmt.Sprintf("%s-%s", g.Namespace, g.Name)
 }
 
 // toYAML returns YAML for a rule group
-func (g *RuleGroup) toYAML() (string, error) {
+func (g *PrometheusRuleGroup) toYAML() (string, error) {
 	y, err := yaml.Marshal(g)
 	if err != nil {
 		return "", err
@@ -63,19 +63,19 @@ func (g *RuleGroup) toYAML() (string, error) {
 
 // RuleGrouping encapsulates a set of named rule groups
 type RuleGrouping struct {
-	Namespace string      `json:"namespace"`
-	Groups    []RuleGroup `json:"groups"`
+	Namespace string                `json:"namespace"`
+	Groups    []PrometheusRuleGroup `json:"groups"`
 }
 
-func writeRuleGroup(group RuleGroup) error {
+func writeRuleGroup(group PrometheusRuleGroup) error {
 	tmpfile, err := ioutil.TempFile("", "cortextool-*")
-	newGroup := RuleGroup{
+	newGroup := PrometheusRuleGroup{
 		Name:  group.Name,
 		Rules: group.Rules,
 	}
 	grouping := RuleGrouping{
 		Namespace: group.Namespace,
-		Groups:    []RuleGroup{newGroup},
+		Groups:    []PrometheusRuleGroup{newGroup},
 	}
 	out, err := yaml.Marshal(grouping)
 	if err != nil {
