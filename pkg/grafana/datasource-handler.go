@@ -60,19 +60,19 @@ func (h *DatasourceHandler) newDatasourceResource(path, uid, filename string, so
 func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
 	spec := m["spec"].(map[string]interface{})
-	source := Datasource{}
-	source["basicAuth"] = false
-	source["basicAuthPassword"] = ""
-	source["basicAuthUser"] = ""
-	source["database"] = ""
-	source["orgId"] = 1
-	source["password"] = ""
-	source["secureJsonFields"] = map[string]interface{}{}
-	source["typeLogoUrl"] = ""
-	source["user"] = ""
-	source["withCredentials"] = false
-	source["readOnly"] = false
-
+	source := Datasource{
+		"basicAuth":         false,
+		"basicAuthPassword": "",
+		"basicAuthUser":     "",
+		"database":          "",
+		"orgId":             1,
+		"password":          "",
+		"secureJsonFields":  map[string]interface{}{},
+		"typeLogoUrl":       "",
+		"user":              "",
+		"withCredentials":   false,
+		"readOnly":          false,
+	}
 	err := mapstructure.Decode(spec, &source)
 	if err != nil {
 		return nil, err
