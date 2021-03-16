@@ -259,4 +259,8 @@ get:
   path: infra/data/ci/docker_hub
   name: password
 
+---
+kind: signature
+hmac: eb0d850b7e3c160dd9ab5f5370f02cccc1c54353834caa55861f30a3ec5d7a0c
+
 ...
