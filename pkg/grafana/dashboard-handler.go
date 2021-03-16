@@ -3,9 +3,9 @@ package grafana
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pmezard/go-difflib/difflib"
 )
@@ -82,38 +82,21 @@ func (h *DashboardHandler) newDashboardFolderResource(path, folderName string) g
 	return resource
 }
 
-// Parse parses an interface{} object into a struct for this resource type
-func (h *DashboardHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
+// Parse parses a manifest object into a struct for this resource type
+func (h *DashboardHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
+
+	spec := m["spec"].(map[string]interface{})
+	board := Dashboard{}
+	err := mapstructure.Decode(spec, &board)
+	if err != nil {
+		return nil, err
+	}
+	board["uid"] = m.Metadata().Name()
+	board[folderNameField] = m.Metadata()["folder"].(string)
+	resource := h.newDashboardResource("", board.UID(), "", board)
+	key := resource.Key()
 	resources := grizzly.ResourceList{}
-	if path == dashboardFolderPath {
-		if _, ok := i.(string); ok {
-			folderName := strings.ReplaceAll(i.(string), "{ }", "") // No idea why json parsing adds { } to the end of the parsed string :-(
-			resource := h.newDashboardFolderResource(path, folderName)
-			resources[dashboardFolderPath] = resource
-			return resources, nil
-		}
-	}
-	msi := i.(map[string]interface{})
-	for k, v := range msi {
-		board := Dashboard{}
-		err := mapstructure.Decode(v, &board)
-		if err != nil {
-			return nil, err
-		}
-		resource := h.newDashboardResource(path, board.UID(), k, board)
-		key := resource.Key()
-		resources[key] = resource
-	}
-	// check uids missing
-	var missing ErrUidsMissing
-	for _, resource := range resources {
-		if resource.UID == "" {
-			missing = append(missing, resource.Filename)
-		}
-	}
-	if len(missing) > 0 {
-		return nil, missing
-	}
+	resources[key] = resource
 	return resources, nil
 }
 

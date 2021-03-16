@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -21,7 +22,7 @@ func NewRuleHandler(provider Provider) *RuleHandler {
 
 // Kind returns the name for this handler
 func (h *RuleHandler) Kind() string {
-	return "PrometheusRules"
+	return "PrometheusRuleGroup"
 }
 
 // APIVersion returns the group and version for the provider of which this handler is a part
@@ -45,7 +46,7 @@ func (h *RuleHandler) GetExtension() string {
 	return "yaml"
 }
 
-func (h *RuleHandler) newRuleGroupingResource(path string, group RuleGroup) grizzly.Resource {
+func (h *RuleHandler) newRuleGroupResource(path string, group PrometheusRuleGroup) grizzly.Resource {
 	resource := grizzly.Resource{
 		UID:      group.UID(),
 		Filename: group.UID(),
@@ -56,23 +57,20 @@ func (h *RuleHandler) newRuleGroupingResource(path string, group RuleGroup) griz
 	return resource
 }
 
-// Parse parses an interface{} object into a struct for this resource type
-func (h *RuleHandler) Parse(path string, i interface{}) (grizzly.ResourceList, error) {
+// Parse parses a manifest object into a struct for this resource type
+func (h *RuleHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
 	resources := grizzly.ResourceList{}
-	msi := i.(map[string]interface{})
-	groupings := map[string]RuleGrouping{}
-	err := mapstructure.Decode(msi, &groupings)
+	spec := m["spec"].(map[string]interface{})
+	group := PrometheusRuleGroup{}
+	err := mapstructure.Decode(spec, &group)
 	if err != nil {
 		return nil, err
 	}
-	for k, grouping := range groupings {
-		for _, group := range grouping.Groups {
-			group.Namespace = k
-			resource := h.newRuleGroupingResource(path, group)
-			key := resource.Key()
-			resources[key] = resource
-		}
-	}
+	group.Namespace = m.Metadata().Namespace()
+	group.Name = m.Metadata().Name()
+	resource := h.newRuleGroupResource("", group)
+	key := resource.Key()
+	resources[key] = resource
 	return resources, nil
 }
 
@@ -92,13 +90,13 @@ func (h *RuleHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving datasource %s: %v", UID, err)
 	}
-	resource := h.newRuleGroupingResource(prometheusAlertsPath, *group)
+	resource := h.newRuleGroupResource(prometheusAlertsPath, *group)
 	return &resource, nil
 }
 
 // GetRepresentation renders a resource as JSON or YAML as appropriate
 func (h *RuleHandler) GetRepresentation(uid string, resource grizzly.Resource) (string, error) {
-	g := resource.Detail.(RuleGroup)
+	g := resource.Detail.(PrometheusRuleGroup)
 	return g.toYAML()
 }
 
@@ -117,18 +115,18 @@ func (h *RuleHandler) GetRemote(uid string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, err
 	}
-	resource := h.newRuleGroupingResource("", *group)
+	resource := h.newRuleGroupResource("", *group)
 	return &resource, nil
 }
 
 // Add pushes a datasource to Grafana via the API
 func (h *RuleHandler) Add(resource grizzly.Resource) error {
-	g := resource.Detail.(RuleGroup)
+	g := resource.Detail.(PrometheusRuleGroup)
 	return writeRuleGroup(g)
 }
 
 // Update pushes a datasource to Grafana via the API
 func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
-	g := resource.Detail.(RuleGroup)
+	g := resource.Detail.(PrometheusRuleGroup)
 	return writeRuleGroup(g)
 }
