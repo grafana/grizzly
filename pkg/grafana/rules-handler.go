@@ -73,16 +73,6 @@ func (h *RuleHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Reso
 	return &resource
 }
 
-// GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *RuleHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	group, err := getRemoteRuleGroup(UID)
-	if err != nil {
-		return nil, fmt.Errorf("Error retrieving datasource %s: %v", UID, err)
-	}
-	resource := h.newRuleGroupResource(prometheusAlertsPath, *group)
-	return &resource, nil
-}
-
 // GetRepresentation renders a resource as JSON or YAML as appropriate
 func (h *RuleHandler) GetRepresentation(uid string, resource grizzly.Resource) (string, error) {
 	g := resource.Detail.(PrometheusRuleGroup)

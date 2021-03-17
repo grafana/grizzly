@@ -195,16 +195,6 @@ func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly
 	return &resource
 }
 
-// GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	board, err := getRemoteDashboard(UID)
-	if err != nil {
-		return nil, fmt.Errorf("Error retrieving dashboard %s: %v", UID, err)
-	}
-	resource := h.newDashboardResource(dashboardsPath, UID, "", *board)
-	return &resource, nil
-}
-
 // GetRepresentation renders a resource as JSON or YAML as appropriate
 func (h *DashboardHandler) GetRepresentation(uid string, resource grizzly.Resource) (string, error) {
 	j, err := json.MarshalIndent(resource.Detail, "", "  ")
