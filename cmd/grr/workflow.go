@@ -198,12 +198,10 @@ func providersCmd(config grizzly.Config) *cli.Command {
 		f := "%s\t%s\t%s\n"
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
-		fmt.Fprintf(w, f, "API VERSION", "KIND", "JSON Paths")
+		fmt.Fprintf(w, f, "API VERSION", "KIND")
 		for _, provider := range config.Registry.Providers {
 			for _, handler := range provider.GetHandlers() {
-				for _, path := range handler.GetJSONPaths() {
-					fmt.Fprintf(w, f, provider.APIVersion(), handler.Kind(), "/"+path)
-				}
+				fmt.Fprintf(w, f, provider.APIVersion(), handler.Kind())
 			}
 		}
 		return w.Flush()
