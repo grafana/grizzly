@@ -42,18 +42,8 @@ func (h *DashboardHandler) APIVersion() string {
 }
 
 const (
-	dashboardsPath         = "grafanaDashboards"
-	dashboardFolderPath    = "grafanaDashboardFolder"
 	dashboardFolderDefault = "General"
 )
-
-// GetJSONPaths returns paths within Jsonnet output that this provider will consume
-func (h *DashboardHandler) GetJSONPaths() []string {
-	return []string{
-		dashboardsPath,
-		dashboardFolderPath,
-	}
-}
 
 // GetExtension returns the file name extension for a dashboard
 func (h *DashboardHandler) GetExtension() string {

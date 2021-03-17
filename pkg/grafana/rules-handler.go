@@ -30,17 +30,6 @@ func (h *RuleHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-const prometheusAlertsPath = "prometheusAlerts"
-const prometheusRulesPath = "prometheusRules"
-
-// GetJSONPaths returns paths within Jsonnet output that this provider will consume
-func (h *RuleHandler) GetJSONPaths() []string {
-	return []string{
-		prometheusAlertsPath,
-		prometheusRulesPath,
-	}
-}
-
 // GetExtension returns the file name extension for a rule grouping
 func (h *RuleHandler) GetExtension() string {
 	return "yaml"
