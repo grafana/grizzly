@@ -2,7 +2,6 @@ package grafana
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -87,16 +86,6 @@ func (h *DatasourceHandler) Unprepare(resource grizzly.Resource) *grizzly.Resour
 func (h *DatasourceHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
 	resource.Detail.(Datasource)["id"] = existing.Detail.(Datasource)["id"]
 	return &resource
-}
-
-// GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	source, err := getRemoteDatasource(UID)
-	if err != nil {
-		return nil, fmt.Errorf("Error retrieving datasource %s: %v", UID, err)
-	}
-	resource := h.newDatasourceResource(datasourcesPath, UID, "", *source)
-	return &resource, nil
 }
 
 // GetRepresentation renders a resource as JSON or YAML as appropriate

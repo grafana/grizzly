@@ -2,7 +2,6 @@ package grafana
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -89,16 +88,6 @@ func (h *SyntheticMonitoringHandler) Prepare(existing, resource grizzly.Resource
 	resource.Detail.(Check)["tenantId"] = existing.Detail.(Check)["tenantId"]
 	resource.Detail.(Check)["id"] = existing.Detail.(Check)["id"]
 	return &resource
-}
-
-// GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	check, err := getRemoteCheck(UID)
-	if err != nil {
-		return nil, fmt.Errorf("Error retrieving check %s: %v", UID, err)
-	}
-	resource := h.newCheckResource(syntheticMonitoringChecksPath, "", *check)
-	return &resource, nil
 }
 
 // GetRepresentation renders a resource as JSON or YAML as appropriate
