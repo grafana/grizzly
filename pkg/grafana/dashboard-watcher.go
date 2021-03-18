@@ -62,7 +62,7 @@ func (h *eventHandler) OnPublish(sub *centrifuge.Subscription, e centrifuge.Publ
 		h.notifier.Error(nil, fmt.Sprintf("Error: %s", err))
 		return
 	}
-	dashboardJSON, err := dashboard.toJSON()
+	dashboardJSON, err := dashboard.SpecAsJSON()
 	if err != nil {
 		h.notifier.Error(nil, fmt.Sprintf("Error: %s", err))
 		return

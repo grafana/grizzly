@@ -12,7 +12,7 @@ import (
 )
 
 // getRemoteDatasource retrieves a datasource object from Grafana
-func getRemoteDatasource(uid string) (*Datasource, error) {
+func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
 	grafanaURL, err := getGrafanaURL("api/datasources/name/" + uid)
 	if err != nil {
 		return nil, err
@@ -38,20 +38,22 @@ func getRemoteDatasource(uid string) (*Datasource, error) {
 		return nil, err
 	}
 
-	var d Datasource
+	var d map[string]interface{}
 	if err := json.Unmarshal(data, &d); err != nil {
 		return nil, grizzly.APIErr{Err: err, Body: data}
 	}
-	return &d, nil
+	handler := DatasourceHandler{}
+	resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), uid, d)
+	return &resource, nil
 }
 
-func postDatasource(source Datasource) error {
+func postDatasource(resource grizzly.Resource) error {
 	grafanaURL, err := getGrafanaURL("api/datasources")
 	if err != nil {
 		return err
 	}
 
-	sourceJSON, err := source.toJSON()
+	sourceJSON, err := resource.SpecAsJSON()
 	if err != nil {
 		return err
 	}
@@ -73,24 +75,21 @@ func postDatasource(source Datasource) error {
 			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
 		}
 		fmt.Println(sourceJSON)
-		return fmt.Errorf("Error while applying '%s' to Grafana: %s", source.UID(), r.Message)
+		return fmt.Errorf("Error while applying '%s' to Grafana: %s", resource.Name(), r.Message)
 	default:
-		return NewErrNon200Response("datasource", source.UID(), resp)
+		return NewErrNon200Response("datasource", resource.Name(), resp)
 	}
 	return nil
 }
 
-func putDatasource(source Datasource) error {
-	id, err := source.getID()
-	if err != nil {
-		return err
-	}
+func putDatasource(resource grizzly.Resource) error {
+	id := resource.GetSpecString("id")
 	grafanaURL, err := getGrafanaURL(fmt.Sprintf("api/datasources/%d", id))
 	if err != nil {
 		return err
 	}
 
-	sourceJSON, err := source.toJSON()
+	sourceJSON, err := resource.SpecAsJSON()
 	if err != nil {
 		return err
 	}
@@ -116,43 +115,9 @@ func putDatasource(source Datasource) error {
 			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
 		}
 		fmt.Println(sourceJSON)
-		return fmt.Errorf("Error while applying '%s' to Grafana: %s", source.UID(), r.Message)
+		return fmt.Errorf("Error while applying '%s' to Grafana: %s", resource.Name(), r.Message)
 	default:
-		return NewErrNon200Response("datasource", source.UID(), resp)
+		return NewErrNon200Response("datasource", resource.Name(), resp)
 	}
 	return nil
-}
-
-// Datasource encapsulates a datasource
-type Datasource map[string]interface{}
-
-func newDatasource(resource grizzly.Resource) Datasource {
-	return resource.Detail.(Datasource)
-}
-
-// UID retrieves the UID from a datasource
-func (d *Datasource) UID() string {
-	uid, ok := (*d)["name"]
-	if !ok {
-		return ""
-	}
-	return uid.(string)
-}
-
-// toJSON returns JSON for a datasource
-func (d *Datasource) toJSON() (string, error) {
-	j, err := json.MarshalIndent(d, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
-}
-
-func (d *Datasource) getID() (int, error) {
-	v, ok := (*d)["id"]
-	if !ok {
-		return 0, fmt.Errorf("Datasource %s requires an ID to update", d.UID())
-	}
-	id := int(v.(float64))
-	return id, nil
 }

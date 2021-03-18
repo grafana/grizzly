@@ -1,11 +1,8 @@
 package grafana
 
 import (
-	"fmt"
-
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
-	"github.com/mitchellh/mapstructure"
 )
 
 // RuleHandler is a Grizzly Handler for Prometheus Rules
@@ -46,32 +43,10 @@ func (h *RuleHandler) GetExtension() string {
 	return "yaml"
 }
 
-func (h *RuleHandler) newRuleGroupResource(path string, group PrometheusRuleGroup) grizzly.Resource {
-	resource := grizzly.Resource{
-		UID:      group.UID(),
-		Filename: group.UID(),
-		Handler:  h,
-		Detail:   group,
-		JSONPath: path,
-	}
-	return resource
-}
-
 // Parse parses a manifest object into a struct for this resource type
 func (h *RuleHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
-	resources := grizzly.ResourceList{}
-	spec := m["spec"].(map[string]interface{})
-	group := PrometheusRuleGroup{}
-	err := mapstructure.Decode(spec, &group)
-	if err != nil {
-		return nil, err
-	}
-	group.Namespace = m.Metadata().Namespace()
-	group.Name = m.Metadata().Name()
-	resource := h.newRuleGroupResource("", group)
-	key := resource.Key()
-	resources[key] = resource
-	return resources, nil
+	resource := grizzly.Resource(m)
+	return resource.AsResourceList(), nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
@@ -86,47 +61,20 @@ func (h *RuleHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Reso
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *RuleHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	group, err := getRemoteRuleGroup(UID)
-	if err != nil {
-		return nil, fmt.Errorf("Error retrieving datasource %s: %v", UID, err)
-	}
-	resource := h.newRuleGroupResource(prometheusAlertsPath, *group)
-	return &resource, nil
-}
-
-// GetRepresentation renders a resource as JSON or YAML as appropriate
-func (h *RuleHandler) GetRepresentation(uid string, resource grizzly.Resource) (string, error) {
-	g := resource.Detail.(PrometheusRuleGroup)
-	return g.toYAML()
-}
-
-// GetRemoteRepresentation retrieves a datasource as JSON
-func (h *RuleHandler) GetRemoteRepresentation(uid string) (string, error) {
-	group, err := getRemoteRuleGroup(uid)
-	if err != nil {
-		return "", err
-	}
-	return group.toYAML()
+	return getRemoteRuleGroup(UID)
 }
 
 // GetRemote retrieves a datasource as a Resource
 func (h *RuleHandler) GetRemote(uid string) (*grizzly.Resource, error) {
-	group, err := getRemoteRuleGroup(uid)
-	if err != nil {
-		return nil, err
-	}
-	resource := h.newRuleGroupResource("", *group)
-	return &resource, nil
+	return getRemoteRuleGroup(uid)
 }
 
 // Add pushes a datasource to Grafana via the API
 func (h *RuleHandler) Add(resource grizzly.Resource) error {
-	g := resource.Detail.(PrometheusRuleGroup)
-	return writeRuleGroup(g)
+	return writeRuleGroup(resource)
 }
 
 // Update pushes a datasource to Grafana via the API
 func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
-	g := resource.Detail.(PrometheusRuleGroup)
-	return writeRuleGroup(g)
+	return writeRuleGroup(resource)
 }

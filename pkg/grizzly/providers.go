@@ -6,40 +6,102 @@ import (
 
 	"github.com/gobwas/glob"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
+	"gopkg.in/yaml.v3"
 )
 
 // Resource represents a single Resource destined for a single endpoint
-type Resource struct {
-	UID      string      `json:"uid"`
-	Filename string      `json:"filename"`
-	Handler  Handler     `json:"handler"`
-	Detail   interface{} `json:"detail"`
-	JSONPath string      `json:"path"`
+type Resource map[string]interface{}
+
+// NewResource returns a new Resource object
+func NewResource(apiVersion, kind, name string, spec map[string]interface{}) Resource {
+	resource := Resource{
+		"apiVersion": apiVersion,
+		"kind":       kind,
+		"metadata": map[string]interface{}{
+			"name": name,
+		},
+		"spec": spec,
+	}
+	return resource
 }
 
 // APIVersion returns the group and version of the provider of the resource
 func (r *Resource) APIVersion() string {
-	return r.Handler.APIVersion()
+	return (*r)["apiVersion"].(string)
 }
 
 // Kind returns the 'kind' of the resource, i.e. the type of the handler
 func (r *Resource) Kind() string {
-	return r.Handler.Kind()
+	return (*r)["kind"].(string)
+}
+
+func (r *Resource) Name() string {
+	return r.GetMetadata("name")
 }
 
 // Key returns a key that combines kind and uid
 func (r *Resource) Key() string {
-	return fmt.Sprintf("%s/%s", r.Kind(), r.UID)
+	return fmt.Sprintf("%s/%s", r.Kind(), r.Name())
+}
+
+func (r *Resource) GetMetadata(key string) string {
+	metadata := (*r)["metadata"].(map[string]interface{})
+	return metadata[key].(string)
+}
+
+func (r *Resource) SetMetadata(key, value string) Resource {
+	metadata := (*r)["metadata"].(map[string]interface{})
+	metadata[key] = value
+	(*r)["metadata"] = metadata
+	return *r
+}
+
+func (r *Resource) GetSpecString(key string) string {
+	spec := (*r)["spec"].(map[string]interface{})
+	return spec[key].(string)
+}
+
+func (r *Resource) SetSpecString(key, value string) *Resource {
+	spec := (*r)["spec"].(map[string]interface{})
+	spec[key] = value
+	(*r)["spec"] = spec
+	return r
+}
+
+func (r *Resource) DeleteSpecKey(key string) *Resource {
+	spec := (*r)["spec"].(map[string]interface{})
+	delete(spec, key)
+	(*r)["spec"] = spec
+	return r
+}
+
+func (r *Resource) Spec() map[string]interface{} {
+	return (*r)["spec"].(map[string]interface{})
+}
+
+func (r *Resource) AsResourceList() ResourceList {
+	key := r.Key()
+	resources := ResourceList{}
+	resources[key] = *r
+	return resources
+}
+
+func (r *Resource) SpecAsJSON() (string, error) {
+	y, err := yaml.Marshal(*r)
+	if err != nil {
+		return "", err
+	}
+	return string(y), nil
+
 }
 
 // GetRepresentation Gets the string representation for this resource
 func (r *Resource) GetRepresentation() (string, error) {
-	return r.Handler.GetRepresentation(r.UID, *r)
-}
-
-// GetRemoteRepresentation Gets the string representation for this resource
-func (r *Resource) GetRemoteRepresentation() (string, error) {
-	return r.Handler.GetRemoteRepresentation(r.UID)
+	y, err := yaml.Marshal(*r)
+	if err != nil {
+		return "", err
+	}
+	return string(y), nil
 }
 
 // MatchesTarget identifies whether a resource is in a target list
@@ -83,12 +145,6 @@ type Handler interface {
 	// Get retrieves JSON for a resource from an endpoint, by UID
 	GetByUID(UID string) (*Resource, error)
 
-	// GetRepresentation renders Jsonnet to Grizzly resources, rendering as a string
-	GetRepresentation(uid string, resource Resource) (string, error)
-
-	// GetRemoteRepresentation retrieves a resource from the endpoint and renders to a string
-	GetRemoteRepresentation(uid string) (string, error)
-
 	// GetRemote retrieves a resource as a datastructure
 	GetRemote(uid string) (*Resource, error)
 
@@ -97,17 +153,6 @@ type Handler interface {
 
 	// Update pushes an existing resource to the endpoint
 	Update(existing, resource Resource) error
-}
-
-// MultiResourceHandler describes a handler that can handle multiple resources in one go.
-// This could be because it needs to see all resources before sending, or because the
-// endpoint API supports batching of resources.
-type MultiResourceHandler interface {
-	// Diff compares local resources with remote equivalents and output result
-	Diff(notifier Notifier, resources ResourceList) error
-
-	// Apply local resources to remote endpoint
-	Apply(notifier Notifier, resources ResourceList) error
 }
 
 // PreviewHandler describes a handler that has the ability to render
