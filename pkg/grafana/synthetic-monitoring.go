@@ -111,7 +111,7 @@ func postCheck(url string, check Check) error {
 	case http.StatusOK:
 		break
 	default:
-		return fmt.Errorf("Non-200 response from Grafana Synthetic Monitoring while applying '%s': %s", resp.Status, check.UID())
+		return NewErrNon200Response("Synthetic Monitoring", check.UID(), resp)
 	}
 	return nil
 }
