@@ -238,7 +238,7 @@ func findOrCreateFolder(UID string) (int64, error) {
 	if UID == "0" || UID == "" || UID == dashboardFolderDefault {
 		return 0, nil
 	}
-	grafanaURL, err := getGrafanaURL("api/folders/" + UID)
+	grafanaURL, err := getGrafanaURL("api/folders?limit=10000")
 	if err != nil {
 		return 0, err
 	}
@@ -247,23 +247,24 @@ func findOrCreateFolder(UID string) (int64, error) {
 		return 0, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return 0, err
-		}
-		var folder Folder
-		if err := json.Unmarshal([]byte(string(body)), &folder); err != nil {
-			return 0, err
-		}
-		return folder.ID, nil
-
-	} else if resp.StatusCode == 404 {
-		return createFolder(UID)
-
-	} else {
+	if resp.StatusCode != 200 {
 		return 0, fmt.Errorf("Getting folder %s returned error %d", UID, resp.StatusCode)
 	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 0, err
+	}
+	var folders []Folder
+	if err := json.Unmarshal([]byte(string(body)), &folders); err != nil {
+		return 0, err
+	}
+	for _, folder := range folders {
+		if folder.Title == UID {
+			return folder.ID, nil
+		}
+	}
+	return createFolder(UID)
 }
 
 func createFolder(UID string) (int64, error) {
