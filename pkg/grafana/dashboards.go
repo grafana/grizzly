@@ -88,8 +88,7 @@ func postDashboard(board Dashboard) error {
 		fmt.Println(wrappedJSON)
 		return fmt.Errorf("Error while applying '%s' to Grafana: %s", board.UID(), r.Message)
 	default:
-		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s %s", board.UID(), resp.Status, string(body))
+		return NewErrNon200Response("dashboard", board.UID(), resp)
 	}
 
 	return nil
@@ -132,8 +131,8 @@ func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, er
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Non-200 response from Grafana: %s %s", resp.Status, string(body))
+		return nil, NewErrNon200Response("snapshot", board.UID(), resp)
+
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
@@ -286,8 +285,7 @@ func createFolder(UID string) (int64, error) {
 	if err != nil {
 		return 0, err
 	} else if resp.StatusCode >= 400 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return 0, fmt.Errorf("Non-200 response from Grafana while applying folder %s: %s %s", UID, resp.Status, string(body))
+		return 0, NewErrNon200Response("folder", UID, resp)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err := json.Unmarshal([]byte(string(body)), &folder); err != nil {

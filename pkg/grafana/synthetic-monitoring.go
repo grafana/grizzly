@@ -111,8 +111,7 @@ func postCheck(url string, check Check) error {
 	case http.StatusOK:
 		break
 	default:
-		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("Non-200 response from Grafana Synthetic Monitoring while applying '%s': %s %s", check.UID(), resp.Status, string(body))
+		return NewErrNon200Response("Synthetic Monitoring", check.UID(), resp)
 	}
 	return nil
 }

@@ -75,8 +75,7 @@ func postDatasource(source Datasource) error {
 		fmt.Println(sourceJSON)
 		return fmt.Errorf("Error while applying '%s' to Grafana: %s", source.UID(), r.Message)
 	default:
-		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s %s", source.UID(), resp.Status, string(body))
+		return NewErrNon200Response("datasource", source.UID(), resp)
 	}
 	return nil
 }
@@ -119,8 +118,7 @@ func putDatasource(source Datasource) error {
 		fmt.Println(sourceJSON)
 		return fmt.Errorf("Error while applying '%s' to Grafana: %s", source.UID(), r.Message)
 	default:
-		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("Non-200 response from Grafana while applying '%s': %s %s", source.UID(), resp.Status, string(body))
+		return NewErrNon200Response("datasource", source.UID(), resp)
 	}
 	return nil
 }
