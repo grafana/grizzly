@@ -83,7 +83,8 @@ func postDatasource(resource grizzly.Resource) error {
 }
 
 func putDatasource(resource grizzly.Resource) error {
-	id := resource.GetSpecString("id")
+	spec := resource.Spec()
+	id := spec["id"].(int64)
 	grafanaURL, err := getGrafanaURL(fmt.Sprintf("api/datasources/%d", id))
 	if err != nil {
 		return err
