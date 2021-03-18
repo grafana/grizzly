@@ -12,8 +12,8 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/term"
-	"github.com/grafana/tanka/pkg/process"
 	"github.com/grafana/tanka/pkg/jsonnet/native"
+	"github.com/grafana/tanka/pkg/process"
 	"github.com/pmezard/go-difflib/difflib"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
