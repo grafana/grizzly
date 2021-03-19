@@ -13,8 +13,8 @@ import (
 )
 
 // getRemoteRuleGrouping retrieves a datasource object from Grafana
-func getRemoteRuleGroup(uid string) (*PrometheusRuleGroup, error) {
-	parts := strings.SplitN(uid, "-", 2)
+func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
+	parts := strings.SplitN(uid, ".", 2)
 	namespace := parts[0]
 	name := parts[1]
 
@@ -31,8 +31,13 @@ func getRemoteRuleGroup(uid string) (*PrometheusRuleGroup, error) {
 		if key == namespace {
 			for _, group := range grouping {
 				if group.Name == name {
-					group.Namespace = namespace
-					return &group, nil
+					spec := map[string]interface{}{
+						"rules": group.Rules,
+					}
+					handler := RuleHandler{}
+					resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), uid, spec)
+					resource.SetMetadata("namespace", namespace)
+					return &resource, nil
 				}
 			}
 		}
@@ -47,34 +52,20 @@ type PrometheusRuleGroup struct {
 	Rules     []map[string]interface{} `yaml:"rules"`
 }
 
-// UID retrieves the UID from a rule group
-func (g *PrometheusRuleGroup) UID() string {
-	return fmt.Sprintf("%s-%s", g.Namespace, g.Name)
-}
-
-// toYAML returns YAML for a rule group
-func (g *PrometheusRuleGroup) toYAML() (string, error) {
-	y, err := yaml.Marshal(g)
-	if err != nil {
-		return "", err
-	}
-	return string(y), nil
-}
-
-// RuleGrouping encapsulates a set of named rule groups
-type RuleGrouping struct {
+// PrometheusRuleGrouping encapsulates a set of named rule groups
+type PrometheusRuleGrouping struct {
 	Namespace string                `json:"namespace"`
 	Groups    []PrometheusRuleGroup `json:"groups"`
 }
 
-func writeRuleGroup(group PrometheusRuleGroup) error {
+func writeRuleGroup(resource grizzly.Resource) error {
 	tmpfile, err := ioutil.TempFile("", "cortextool-*")
 	newGroup := PrometheusRuleGroup{
-		Name:  group.Name,
-		Rules: group.Rules,
+		Name:  resource.Name(),
+		Rules: resource.Spec()["rules"].([]map[string]interface{}),
 	}
-	grouping := RuleGrouping{
-		Namespace: group.Namespace,
+	grouping := PrometheusRuleGrouping{
+		Namespace: resource.GetMetadata("namespace"),
 		Groups:    []PrometheusRuleGroup{newGroup},
 	}
 	out, err := yaml.Marshal(grouping)

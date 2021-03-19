@@ -21,11 +21,6 @@ import (
 
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
-func isMultiResource(handler Handler) bool {
-	_, ok := handler.(MultiResourceHandler)
-	return ok
-}
-
 // Get retrieves a resource from a remote endpoint using its UID
 func Get(config Config, UID string) error {
 	count := strings.Count(UID, ".")
@@ -54,7 +49,7 @@ func Get(config Config, UID string) error {
 	}
 
 	resource = handler.Unprepare(*resource)
-	rep, err := resource.GetRepresentation()
+	rep, err := resource.YAML()
 	if err != nil {
 		return err
 	}
@@ -71,7 +66,7 @@ func List(config Config, resources Resources) error {
 	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
 	for handler, resourceList := range resources {
 		for _, r := range resourceList {
-			fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), r.UID)
+			fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), r.Name())
 		}
 	}
 	return w.Flush()
@@ -121,10 +116,11 @@ func Parse(config Config, jsonnetFile string, targets []string) (Resources, erro
 			return nil, err
 		}
 		for _, resource := range parsedResources {
+			handler, err = config.Registry.GetHandler(resource.Kind())
 			if !resource.MatchesTarget(targets) {
 				continue
 			}
-			resourceList, ok := resources[resource.Handler]
+			resourceList, ok := resources[handler]
 			if !ok {
 				resourceList = ResourceList{}
 			}
@@ -143,17 +139,17 @@ func Show(config Config, resources Resources) error {
 		for _, resource := range resourceList {
 			resource = *(handler.Unprepare(resource))
 
-			rep, err := resource.GetRepresentation()
+			rep, err := resource.YAML()
 			if err != nil {
 				return err
 			}
 			if interactive {
 				items = append(items, term.PageItem{
-					Name:    fmt.Sprintf("%s/%s", resource.Kind(), resource.UID),
+					Name:    fmt.Sprintf("%s/%s", resource.Kind(), resource.Name()),
 					Content: rep,
 				})
 			} else {
-				fmt.Printf("%s/%s:\n", resource.Kind(), resource.UID)
+				fmt.Printf("%s/%s:\n", resource.Kind(), resource.Name())
 				fmt.Println(rep)
 			}
 		}
@@ -168,20 +164,14 @@ func Show(config Config, resources Resources) error {
 func Diff(config Config, resources Resources) error {
 
 	for handler, resourceList := range resources {
-		if isMultiResource(handler) {
-			multiHandler := handler.(MultiResourceHandler)
-			multiHandler.Diff(config.Notifier, resourceList)
-			continue
-		}
-
 		for _, resource := range resourceList {
-			local, err := resource.GetRepresentation()
+			local, err := resource.YAML()
 			if err != nil {
 				return nil
 			}
 			resource = *handler.Unprepare(resource)
-			uid := resource.UID
-			remote, err := handler.GetRemote(resource.UID)
+			uid := resource.Name()
+			remote, err := handler.GetRemote(resource)
 			if err == ErrNotFound {
 				config.Notifier.NotFound(resource)
 				continue
@@ -190,7 +180,7 @@ func Diff(config Config, resources Resources) error {
 				return fmt.Errorf("Error retrieving resource from %s %s: %v", resource.Kind(), uid, err)
 			}
 			remote = handler.Unprepare(*remote)
-			remoteRepresentation, err := (*remote).GetRepresentation()
+			remoteRepresentation, err := (*remote).YAML()
 			if err != nil {
 				return err
 			}
@@ -216,16 +206,8 @@ func Diff(config Config, resources Resources) error {
 // Apply pushes resources to endpoints
 func Apply(config Config, resources Resources) error {
 	for handler, resourceList := range resources {
-		if isMultiResource(handler) {
-			multiHandler := handler.(MultiResourceHandler)
-			err := multiHandler.Apply(config.Notifier, resourceList)
-			if err != nil {
-				return err
-			}
-			continue
-		}
 		for _, resource := range resourceList {
-			existingResource, err := handler.GetRemote(resource.UID)
+			existingResource, err := handler.GetRemote(resource)
 			if err == ErrNotFound {
 
 				err := handler.Add(resource)
@@ -237,13 +219,13 @@ func Apply(config Config, resources Resources) error {
 			} else if err != nil {
 				return err
 			}
-			resourceRepresentation, err := resource.GetRepresentation()
+			resourceRepresentation, err := resource.YAML()
 			if err != nil {
 				return err
 			}
 			resource = *handler.Prepare(*existingResource, resource)
 			existingResource = handler.Unprepare(*existingResource)
-			existingResourceRepresentation, err := existingResource.GetRepresentation()
+			existingResourceRepresentation, err := existingResource.YAML()
 			if err != nil {
 				return nil
 			}
@@ -267,12 +249,7 @@ func Preview(config Config, resources Resources, opts *PreviewOpts) error {
 		for _, resource := range resourceList {
 			previewHandler, ok := handler.(PreviewHandler)
 			if !ok {
-				tmpResource := Resource{
-					JSONPath: "",
-					UID:      resource.UID,
-					Handler:  handler,
-				}
-				config.Notifier.NotSupported(tmpResource, "preview")
+				config.Notifier.NotSupported(handler.Kind(), resource.Name(), "preview")
 				return nil
 			}
 			err := previewHandler.Preview(resource, config.Notifier, opts)
@@ -359,12 +336,7 @@ func Listen(config Config, UID, filename string) error {
 	}
 	listenHandler, ok := handler.(ListenHandler)
 	if !ok {
-		tmpResource := Resource{
-			JSONPath: "",
-			UID:      resourceID,
-			Handler:  handler,
-		}
-		config.Notifier.NotSupported(tmpResource, "listen")
+		config.Notifier.NotSupported(handler.Kind(), resourceID, "listen")
 		return nil
 	}
 	return listenHandler.Listen(config.Notifier, resourceID, filename)
@@ -381,7 +353,7 @@ func Export(config Config, exportDir string, resources Resources) error {
 
 	for handler, resourceList := range resources {
 		for _, resource := range resourceList {
-			updatedResource, err := resource.GetRepresentation()
+			updatedResource, err := resource.YAML()
 			if err != nil {
 				return err
 			}
@@ -393,7 +365,7 @@ func Export(config Config, exportDir string, resources Resources) error {
 					return err
 				}
 			}
-			path := fmt.Sprintf("%s/%s.%s", dir, resource.UID, extension)
+			path := fmt.Sprintf("%s/%s.%s", dir, resource.Name(), extension)
 
 			existingResourceBytes, err := ioutil.ReadFile(path)
 			isNotExist := os.IsNotExist(err)

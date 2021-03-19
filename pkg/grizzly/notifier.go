@@ -17,33 +17,33 @@ type Notifier struct{}
 
 // NoChanges announces that nothing has changed
 func (n *Notifier) NoChanges(resource Resource) {
-	fmt.Printf("%s/%s %s\n", resource.Kind(), resource.UID, yellow("no differences"))
+	fmt.Printf("%s/%s %s\n", resource.Kind(), resource.Name(), yellow("no differences"))
 }
 
 // HasChanges announces that a resource has changed, and displays the differences
 func (n *Notifier) HasChanges(resource Resource, diff string) {
-	fmt.Printf("%s/%s %s\n", resource.Kind(), resource.UID, red("changes detected:"))
+	fmt.Printf("%s/%s %s\n", resource.Kind(), resource.Name(), red("changes detected:"))
 	fmt.Println(diff)
 }
 
 // NotFound announces that a resource was not found on the remote endpoint
 func (n *Notifier) NotFound(resource Resource) {
-	fmt.Printf("%s/%s %s\n", resource.Kind(), resource.UID, yellow("not present in "+resource.Kind()))
+	fmt.Printf("%s/%s %s\n", resource.Kind(), resource.Name(), yellow("not present in "+resource.Kind()))
 }
 
 // Added announces that a resource has been added to the remote endpoint
 func (n *Notifier) Added(resource Resource) {
-	fmt.Printf("%s/%s %s\n", resource.Kind(), resource.UID, green("added"))
+	fmt.Printf("%s/%s %s\n", resource.Kind(), resource.Name(), green("added"))
 }
 
 // Updated announces that a resource has been updated at the remote endpoint
 func (n *Notifier) Updated(resource Resource) {
-	fmt.Printf("%s/%s %s\n", resource.Kind(), resource.UID, green("updated"))
+	fmt.Printf("%s/%s %s\n", resource.Kind(), resource.Name(), green("updated"))
 }
 
 // NotSupported announces that a behaviour is not supported by a handler
-func (n *Notifier) NotSupported(resource Resource, behaviour string) {
-	fmt.Printf("%s/%s %s provider %s\n", resource.Kind(), resource.UID, resource.Kind(), red("does not support "+behaviour))
+func (n *Notifier) NotSupported(kind, name string, behaviour string) {
+	fmt.Printf("%s/%s %s\n", kind, name, red("does not support "+behaviour))
 }
 
 // Info announces a message in green
@@ -51,7 +51,7 @@ func (n *Notifier) Info(resource *Resource, msg string) {
 	if resource == nil {
 		fmt.Println(green(msg))
 	} else {
-		fmt.Printf("%s/%s %s\n", resource.Kind(), resource.UID, green(msg))
+		fmt.Printf("%s/%s %s\n", resource.Kind(), resource.Name(), green(msg))
 	}
 }
 
@@ -60,7 +60,7 @@ func (n *Notifier) Warn(resource *Resource, msg string) {
 	if resource == nil {
 		fmt.Println(yellow(msg))
 	} else {
-		fmt.Printf("%s/%s %s\n", resource.Kind(), resource.UID, yellow(msg))
+		fmt.Printf("%s/%s %s\n", resource.Kind(), resource.Name(), yellow(msg))
 	}
 }
 
@@ -69,6 +69,6 @@ func (n *Notifier) Error(resource *Resource, msg string) {
 	if resource == nil {
 		fmt.Println(red(msg))
 	} else {
-		fmt.Printf("%s/%s %s\n", resource.Kind(), resource.UID, red(msg))
+		fmt.Printf("%s/%s %s\n", resource.Kind(), resource.Name(), red(msg))
 	}
 }

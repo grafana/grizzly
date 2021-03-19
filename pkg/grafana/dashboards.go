@@ -11,10 +11,8 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
-const folderNameField = "folderName"
-
 // getRemoteDashboard retrieves a dashboard object from Grafana
-func getRemoteDashboard(uid string) (*Dashboard, error) {
+func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	grafanaURL, err := getGrafanaURL("api/dashboards/uid/" + uid)
 	if err != nil {
 		return nil, err
@@ -46,24 +44,25 @@ func getRemoteDashboard(uid string) (*Dashboard, error) {
 	}
 	delete(d.Dashboard, "id")
 	delete(d.Dashboard, "version")
-	d.Dashboard[folderNameField] = d.Meta.FolderTitle
-	return &d.Dashboard, nil
+	h := DashboardHandler{}
+	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, d.Dashboard)
+	resource.SetMetadata("folder", d.Meta.FolderTitle)
+	return &resource, nil
 }
 
-func postDashboard(board Dashboard) error {
+func postDashboard(resource grizzly.Resource) error {
 	grafanaURL, err := getGrafanaURL("api/dashboards/db")
 	if err != nil {
 		return err
 	}
 
-	folderUID := board.folderUID()
+	folderUID := resource.GetMetadata("folder")
 	folderID, err := findOrCreateFolder(folderUID)
 	if err != nil {
 		return err
 	}
-	delete(board, folderNameField)
 	wrappedBoard := DashboardWrapper{
-		Dashboard: board,
+		Dashboard: resource["spec"].(map[string]interface{}),
 		FolderID:  folderID,
 		Overwrite: true,
 	}
@@ -86,9 +85,9 @@ func postDashboard(board Dashboard) error {
 			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
 		}
 		fmt.Println(wrappedJSON)
-		return fmt.Errorf("Error while applying '%s' to Grafana: %s", board.UID(), r.Message)
+		return fmt.Errorf("Error while applying '%s' to Grafana: %s", resource.Name(), r.Message)
 	default:
-		return NewErrNon200Response("dashboard", board.UID(), resp)
+		return NewErrNon200Response("dashboard", resource.Name(), resp)
 	}
 
 	return nil
@@ -102,7 +101,7 @@ type SnapshotResp struct {
 	URL       string `json:"url"`
 }
 
-func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, error) {
+func postSnapshot(resource grizzly.Resource, opts *grizzly.PreviewOpts) (*SnapshotResp, error) {
 
 	url, err := getGrafanaURL("api/snapshots")
 	if err != nil {
@@ -114,7 +113,7 @@ func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, er
 	}
 
 	sr := &SnapshotReq{
-		Dashboard: board,
+		Dashboard: resource["spec"].(map[string]interface{}),
 	}
 
 	if opts.ExpiresSeconds > 0 {
@@ -131,7 +130,7 @@ func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, er
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, NewErrNon200Response("snapshot", board.UID(), resp)
+		return nil, NewErrNon200Response("snapshot", resource.Name(), resp)
 
 	}
 
@@ -150,10 +149,6 @@ func postSnapshot(board Dashboard, opts *grizzly.PreviewOpts) (*SnapshotResp, er
 
 // Dashboard encapsulates a dashboard
 type Dashboard map[string]interface{}
-
-func newDashboard(resource grizzly.Resource) Dashboard {
-	return resource.Detail.(Dashboard)
-}
 
 // UID retrieves the UID from a dashboard
 func (d *Dashboard) UID() string {
@@ -180,16 +175,6 @@ func (d *Dashboard) folderUID() string {
 		return folderUID.(string)
 	}
 	return ""
-}
-
-func dashboardWithFolderSet(resource grizzly.Resource, dashboardFolder string) grizzly.Resource {
-	board := newDashboard(resource)
-	_, ok := board[folderNameField]
-	if !ok {
-		board[folderNameField] = dashboardFolder
-	}
-	resource.Detail = board
-	return resource
 }
 
 // DashboardWrapper adds wrapper to a dashboard JSON. Caters both for Grafana's POST

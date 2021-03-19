@@ -1,13 +1,10 @@
 package grafana
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pmezard/go-difflib/difflib"
 )
 
 /*
@@ -60,139 +57,11 @@ func (h *DashboardHandler) GetExtension() string {
 	return "json"
 }
 
-func (h *DashboardHandler) newDashboardResource(path, uid, filename string, board Dashboard) grizzly.Resource {
-	resource := grizzly.Resource{
-		UID:      uid,
-		Filename: filename,
-		Handler:  h,
-		Detail:   board,
-		JSONPath: path,
-	}
-	return resource
-}
-
-func (h *DashboardHandler) newDashboardFolderResource(path, folderName string) grizzly.Resource {
-	resource := grizzly.Resource{
-		UID:      folderName,
-		Filename: folderName,
-		Handler:  h,
-		Detail:   "",
-		JSONPath: path,
-	}
-	return resource
-}
-
 // Parse parses a manifest object into a struct for this resource type
 func (h *DashboardHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
-
-	spec := m["spec"].(map[string]interface{})
-	board := Dashboard{}
-	err := mapstructure.Decode(spec, &board)
-	if err != nil {
-		return nil, err
-	}
-	board["uid"] = m.Metadata().Name()
-	board[folderNameField] = m.Metadata()["folder"].(string)
-	resource := h.newDashboardResource("", board.UID(), "", board)
-	key := resource.Key()
-	resources := grizzly.ResourceList{}
-	resources[key] = resource
-	return resources, nil
-}
-
-// Diff compares local resources with remote equivalents and output result
-func (h *DashboardHandler) Diff(notifier grizzly.Notifier, resources grizzly.ResourceList) error {
-	dashboardFolder := dashboardFolderDefault
-	dashboardFolderResource, ok := resources[dashboardFolderPath]
-	if ok {
-		dashboardFolder = dashboardFolderResource.Filename
-	}
-	for _, resource := range resources {
-		if resource.JSONPath == dashboardFolderPath {
-			continue
-		}
-		resource = dashboardWithFolderSet(resource, dashboardFolder)
-		local, err := resource.GetRepresentation()
-		if err != nil {
-			return nil
-		}
-		resource = *h.Unprepare(resource)
-		uid := resource.UID
-		remote, err := h.GetRemote(resource.UID)
-		if err == grizzly.ErrNotFound {
-			notifier.NotFound(resource)
-			continue
-		}
-		if err != nil {
-			return fmt.Errorf("Error retrieving resource from %s %s: %v", resource.Kind(), uid, err)
-		}
-		remote = h.Unprepare(*remote)
-		remoteRepresentation, err := (*remote).GetRepresentation()
-		if err != nil {
-			return err
-		}
-
-		if local == remoteRepresentation {
-			notifier.NoChanges(resource)
-		} else {
-			diff := difflib.UnifiedDiff{
-				A:        difflib.SplitLines(remoteRepresentation),
-				B:        difflib.SplitLines(local),
-				FromFile: "Remote",
-				ToFile:   "Local",
-				Context:  3,
-			}
-			difference, _ := difflib.GetUnifiedDiffString(diff)
-			notifier.HasChanges(resource, difference)
-		}
-	}
-	return nil
-}
-
-// Apply local resources to remote endpoint
-func (h *DashboardHandler) Apply(notifier grizzly.Notifier, resources grizzly.ResourceList) error {
-	dashboardFolder := dashboardFolderDefault
-	dashboardFolderResource, ok := resources[dashboardFolderPath]
-	if ok {
-		dashboardFolder = dashboardFolderResource.Filename
-	}
-	for _, resource := range resources {
-		if resource.JSONPath == dashboardFolderPath {
-			continue
-		}
-		existingResource, err := h.GetRemote(resource.UID)
-		if err == grizzly.ErrNotFound {
-			err := h.Add(resource)
-			if err != nil {
-				return err
-			}
-			notifier.Added(resource)
-			continue
-		} else if err != nil {
-			return err
-		}
-		resource = dashboardWithFolderSet(resource, dashboardFolder)
-		resourceRepresentation, err := resource.GetRepresentation()
-		if err != nil {
-			return err
-		}
-		resource = *h.Prepare(*existingResource, resource)
-		existingResource = h.Unprepare(*existingResource)
-		existingResourceRepresentation, err := existingResource.GetRepresentation()
-		if err != nil {
-			return nil
-		}
-		if resourceRepresentation == existingResourceRepresentation {
-			notifier.NoChanges(resource)
-		} else {
-			err = h.Update(*existingResource, resource)
-			if err != nil {
-				return err
-			}
-			notifier.Updated(resource)
-		}
-	}
-	return nil
+	resource := grizzly.Resource(m)
+	resource.SetSpecString("uid", resource.GetMetadata("name"))
+	return resource.AsResourceList(), nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
@@ -207,48 +76,21 @@ func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	board, err := getRemoteDashboard(UID)
+	resource, err := getRemoteDashboard(UID)
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving dashboard %s: %v", UID, err)
 	}
-	resource := h.newDashboardResource(dashboardsPath, UID, "", *board)
-	return &resource, nil
-}
-
-// GetRepresentation renders a resource as JSON or YAML as appropriate
-func (h *DashboardHandler) GetRepresentation(uid string, resource grizzly.Resource) (string, error) {
-	j, err := json.MarshalIndent(resource.Detail, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
-}
-
-// GetRemoteRepresentation retrieves a dashboard as JSON
-func (h *DashboardHandler) GetRemoteRepresentation(uid string) (string, error) {
-	board, err := getRemoteDashboard(uid)
-
-	if err != nil {
-		return "", err
-	}
-	return board.toJSON()
+	return resource, nil
 }
 
 // GetRemote retrieves a dashboard as a resource
-func (h *DashboardHandler) GetRemote(uid string) (*grizzly.Resource, error) {
-	board, err := getRemoteDashboard(uid)
-	if err != nil {
-		return nil, err
-	}
-	resource := h.newDashboardResource(dashboardsPath, uid, "", *board)
-	return &resource, nil
+func (h *DashboardHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
+	return getRemoteDashboard(resource.Name())
 }
 
 // Add pushes a new dashboard to Grafana via the API
 func (h *DashboardHandler) Add(resource grizzly.Resource) error {
-	board := newDashboard(resource)
-
-	if err := postDashboard(board); err != nil {
+	if err := postDashboard(resource); err != nil {
 		return err
 	}
 	return nil
@@ -256,18 +98,12 @@ func (h *DashboardHandler) Add(resource grizzly.Resource) error {
 
 // Update pushes a dashboard to Grafana via the API
 func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
-	board := newDashboard(resource)
-
-	return postDashboard(board)
+	return postDashboard(resource)
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
 func (h *DashboardHandler) Preview(resource grizzly.Resource, notifier grizzly.Notifier, opts *grizzly.PreviewOpts) error {
-	if resource.JSONPath == dashboardFolderPath {
-		return nil
-	}
-	board := newDashboard(resource)
-	s, err := postSnapshot(board, opts)
+	s, err := postSnapshot(resource, opts)
 	if err != nil {
 		return err
 	}

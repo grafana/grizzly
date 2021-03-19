@@ -31,8 +31,8 @@ import (
 const smURL = "https://synthetic-monitoring-api.grafana.net/%s"
 
 // getRemoteCheck retrieves a check object from SM
-func getRemoteCheck(uid string) (*Check, error) {
-	url := getURL("api/v1/check/list")
+func getRemoteCheck(uid string) (*grizzly.Resource, error) {
+	url := getSyntheticMonitoringURL("api/v1/check/list")
 	authToken, err := getAuthToken()
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func getRemoteCheck(uid string) (*Check, error) {
 		return nil, err
 	}
 	for _, check := range checks {
-		if check.UID() == uid {
+		if check.Job() == uid {
 			probeNames := []string{}
 			for _, probe := range check["probes"].([]interface{}) {
 				probeID := int(probe.(float64))
@@ -79,14 +79,16 @@ func getRemoteCheck(uid string) (*Check, error) {
 				probeNames = append(probeNames, name)
 			}
 			check["probes"] = probeNames
-			return &check, nil
+			handler := SyntheticMonitoringHandler{}
+			resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), uid, check)
+			return &resource, nil
 		}
 	}
 	return nil, grizzly.ErrNotFound
 }
 
-func postCheck(url string, check Check) error {
-	checkJSON, err := check.toJSON()
+func postCheck(url string, resource grizzly.Resource) error {
+	checkJSON, err := resource.SpecAsJSON()
 	if err != nil {
 		return err
 	}
@@ -111,7 +113,7 @@ func postCheck(url string, check Check) error {
 	case http.StatusOK:
 		break
 	default:
-		return NewErrNon200Response("Synthetic Monitoring", check.UID(), resp)
+		return NewErrNon200Response("Synthetic Monitoring", resource.Name(), resp)
 	}
 	return nil
 }
@@ -134,7 +136,7 @@ type Probes struct {
 
 // getRemoteCheck retrieves a check object from SM
 func getProbeList() (*Probes, error) {
-	url := getURL("api/v1/probe/list")
+	url := getSyntheticMonitoringURL("api/v1/probe/list")
 	authToken, err := getAuthToken()
 	if err != nil {
 		return nil, err
@@ -183,24 +185,24 @@ func getProbeList() (*Probes, error) {
 // Check encapsulates a check
 type Check map[string]interface{}
 
-func newCheck(resource grizzly.Resource) Check {
-	return resource.Detail.(Check)
-}
-
-// UID retrieves the UID from a check
-func (c *Check) UID() string {
+// Job retrieves the job name from a check
+func (c *Check) Job() string {
 	job, ok := (*c)["job"]
 	if !ok {
-		return "X"
+		return ""
 	}
+	return job.(string)
+}
+
+func (c *Check) Type() string {
 	settings, ok := (*c)["settings"]
 	if !ok {
-		return "Y"
+		return ""
 	}
 	for typ := range settings.(map[string]interface{}) {
-		return fmt.Sprintf("%s-%s", typ, job)
+		return typ
 	}
-	return "NIL"
+	return ""
 }
 
 // toJSON returns JSON for a datasource
@@ -224,12 +226,12 @@ func (c *Check) toJSON() (string, error) {
 	return string(j), nil
 }
 
-func getURL(path string) string {
+func getSyntheticMonitoringURL(path string) string {
 	return fmt.Sprintf(smURL, path)
 }
 
 func getAuthToken() (string, error) {
-	url := getURL("api/v1/register/install")
+	url := getSyntheticMonitoringURL("api/v1/register/install")
 	apiToken, ok := os.LookupEnv("GRAFANA_SM_TOKEN")
 	if !ok {
 		return "", fmt.Errorf("GRAFANA_SM_TOKEN environment variable must be set.")
