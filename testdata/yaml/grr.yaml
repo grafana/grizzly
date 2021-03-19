@@ -1,0 +1,98 @@
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: Dashboard
+metadata:
+    folder: sample
+    name: prod-overview
+spec:
+    schemaVersion: 17
+    tags:
+        - templated
+    timezone: browser
+    title: Production Overview
+    uid: prod-overview
+---
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: Datasource
+metadata:
+    name: prometheus
+spec:
+    access: proxy
+    basicAuth: false
+    basicAuthPassword: ""
+    basicAuthUser: ""
+    database: ""
+    isDefault: true
+    jsonData:
+        httpMethod: GET
+    name: prometheus
+    orgId: 1
+    password: ""
+    readOnly: false
+    secureJsonFields: {}
+    type: prometheus
+    typeLogoUrl: ""
+    url: http://localhost/prometheus/
+    user: ""
+    withCredentials: false
+---
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: SyntheticMonitoringCheck
+metadata:
+    name: grafana-com
+    type: http
+spec:
+    alertSensitivity: ""
+    basicMetricsOnly: true
+    enabled: true
+    frequency: 60000
+    job: grafana-com
+    labels: []
+    offset: 0
+    probes:
+        - Atlanta
+        - Chicago
+        - LosAngeles
+        - Miami
+        - Seattle
+        - SanJose
+        - Paris
+        - Tokyo
+        - Seol
+        - NewYork
+        - SanFrancisco
+        - Amsterdam
+        - Singapore
+        - Frankfurt
+        - Bangalore
+        - Dallas
+        - Newark
+        - Toronto
+        - London
+        - Mumbai
+        - Sydney
+    settings:
+        http:
+            failIfNotSSL: false
+            failIfSSL: false
+            ipVersion: V4
+            method: GET
+            noFollowRedirects: false
+    target: https://grafana.com/
+    timeout: 2500
+---
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: PrometheusRuleGroup
+metadata:
+    name: grizzly_alerts
+    namespace: first_rules
+spec:
+    rules:
+        - alert: PromScrapeFailed
+          annotations:
+            message: Prometheus failed to scrape a target {{ $labels.job }}  / {{ $labels.instance }}
+          expr: up != 1
+          for: 1m
+          labels:
+            severity: critical
+        - expr: sum by(job) (up)
+          record: job:up:sum
