@@ -92,8 +92,8 @@ func (r *Resource) SpecAsJSON() (string, error) {
 
 }
 
-// AsYAML Gets the string representation for this resource
-func (r *Resource) AsYAML() (string, error) {
+// YAML Gets the string representation for this resource
+func (r *Resource) YAML() (string, error) {
 	y, err := yaml.Marshal(*r)
 	if err != nil {
 		return "", err
@@ -142,8 +142,8 @@ type Handler interface {
 	// Get retrieves JSON for a resource from an endpoint, by UID
 	GetByUID(UID string) (*Resource, error)
 
-	// GetRemote retrieves a resource as a datastructure
-	GetRemote(uid string) (*Resource, error)
+	// GetRemote retrieves a remote equivalent of a remote resource
+	GetRemote(resource Resource) (*Resource, error)
 
 	// Add pushes a new resource to the endpoint
 	Add(resource Resource) error

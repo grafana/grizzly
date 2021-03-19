@@ -61,7 +61,6 @@ func (h *DashboardHandler) GetExtension() string {
 func (h *DashboardHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
 	resource := grizzly.Resource(m)
 	resource.SetSpecString("uid", resource.GetMetadata("name"))
-	resource.SetSpecString(folderNameField, resource.GetMetadata("folder"))
 	return resource.AsResourceList(), nil
 }
 
@@ -85,8 +84,8 @@ func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 }
 
 // GetRemote retrieves a dashboard as a resource
-func (h *DashboardHandler) GetRemote(uid string) (*grizzly.Resource, error) {
-	return getRemoteDashboard(uid)
+func (h *DashboardHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
+	return getRemoteDashboard(resource.Name())
 }
 
 // Add pushes a new dashboard to Grafana via the API

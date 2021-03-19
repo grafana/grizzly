@@ -49,7 +49,7 @@ func Get(config Config, UID string) error {
 	}
 
 	resource = handler.Unprepare(*resource)
-	rep, err := resource.AsYAML()
+	rep, err := resource.YAML()
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func Show(config Config, resources Resources) error {
 		for _, resource := range resourceList {
 			resource = *(handler.Unprepare(resource))
 
-			rep, err := resource.AsYAML()
+			rep, err := resource.YAML()
 			if err != nil {
 				return err
 			}
@@ -165,13 +165,13 @@ func Diff(config Config, resources Resources) error {
 
 	for handler, resourceList := range resources {
 		for _, resource := range resourceList {
-			local, err := resource.AsYAML()
+			local, err := resource.YAML()
 			if err != nil {
 				return nil
 			}
 			resource = *handler.Unprepare(resource)
 			uid := resource.Name()
-			remote, err := handler.GetRemote(resource.Name())
+			remote, err := handler.GetRemote(resource)
 			if err == ErrNotFound {
 				config.Notifier.NotFound(resource)
 				continue
@@ -180,7 +180,7 @@ func Diff(config Config, resources Resources) error {
 				return fmt.Errorf("Error retrieving resource from %s %s: %v", resource.Kind(), uid, err)
 			}
 			remote = handler.Unprepare(*remote)
-			remoteRepresentation, err := (*remote).AsYAML()
+			remoteRepresentation, err := (*remote).YAML()
 			if err != nil {
 				return err
 			}
@@ -207,7 +207,7 @@ func Diff(config Config, resources Resources) error {
 func Apply(config Config, resources Resources) error {
 	for handler, resourceList := range resources {
 		for _, resource := range resourceList {
-			existingResource, err := handler.GetRemote(resource.Name())
+			existingResource, err := handler.GetRemote(resource)
 			if err == ErrNotFound {
 
 				err := handler.Add(resource)
@@ -219,13 +219,13 @@ func Apply(config Config, resources Resources) error {
 			} else if err != nil {
 				return err
 			}
-			resourceRepresentation, err := resource.AsYAML()
+			resourceRepresentation, err := resource.YAML()
 			if err != nil {
 				return err
 			}
 			resource = *handler.Prepare(*existingResource, resource)
 			existingResource = handler.Unprepare(*existingResource)
-			existingResourceRepresentation, err := existingResource.AsYAML()
+			existingResourceRepresentation, err := existingResource.YAML()
 			if err != nil {
 				return nil
 			}
@@ -353,7 +353,7 @@ func Export(config Config, exportDir string, resources Resources) error {
 
 	for handler, resourceList := range resources {
 		for _, resource := range resourceList {
-			updatedResource, err := resource.AsYAML()
+			updatedResource, err := resource.YAML()
 			if err != nil {
 				return err
 			}

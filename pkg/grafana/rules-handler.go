@@ -1,6 +1,8 @@
 package grafana
 
 import (
+	"fmt"
+
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
@@ -65,7 +67,8 @@ func (h *RuleHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 }
 
 // GetRemote retrieves a datasource as a Resource
-func (h *RuleHandler) GetRemote(uid string) (*grizzly.Resource, error) {
+func (h *RuleHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
+	uid := fmt.Sprintf("%s.%s", resource.GetMetadata("namespace"), resource.Name())
 	return getRemoteRuleGroup(uid)
 }
 

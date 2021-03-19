@@ -88,8 +88,8 @@ func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 }
 
 // GetRemote retrieves a datasource as a Resource
-func (h *DatasourceHandler) GetRemote(uid string) (*grizzly.Resource, error) {
-	return getRemoteDatasource(uid)
+func (h *DatasourceHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
+	return getRemoteDatasource(resource.Name())
 }
 
 // Add pushes a datasource to Grafana via the API

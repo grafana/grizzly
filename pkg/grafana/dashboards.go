@@ -11,8 +11,6 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
-const folderNameField = "folderName"
-
 // getRemoteDashboard retrieves a dashboard object from Grafana
 func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	grafanaURL, err := getGrafanaURL("api/dashboards/uid/" + uid)

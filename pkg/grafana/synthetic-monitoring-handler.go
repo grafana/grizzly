@@ -1,6 +1,8 @@
 package grafana
 
 import (
+	"fmt"
+
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
@@ -57,7 +59,6 @@ func (h *SyntheticMonitoringHandler) GetExtension() string {
 func (h *SyntheticMonitoringHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
 	resource := grizzly.Resource(m)
 	resource.SetSpecString("job", resource.GetMetadata("name"))
-	resource.SetSpecString(folderNameField, resource.GetMetadata("type"))
 	return resource.AsResourceList(), nil
 }
 
@@ -83,7 +84,8 @@ func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, er
 }
 
 // GetRemote retrieves a datasource as a Resource
-func (h *SyntheticMonitoringHandler) GetRemote(uid string) (*grizzly.Resource, error) {
+func (h *SyntheticMonitoringHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
+	uid := fmt.Sprintf("%s.%s", resource.GetMetadata("type"), resource.Name())
 	return getRemoteCheck(uid)
 }
 
