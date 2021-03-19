@@ -72,6 +72,12 @@ func (r *Resource) DeleteSpecKey(key string) {
 	(*r)["spec"] = spec
 }
 
+func (r *Resource) HasSpecKey(key string) bool {
+	spec := (*r)["spec"].(map[string]interface{})
+	_, ok := spec[key]
+	return ok
+}
+
 func (r *Resource) Spec() map[string]interface{} {
 	return (*r)["spec"].(map[string]interface{})
 }
@@ -122,6 +128,30 @@ type ResourceList map[string]Resource
 
 // Resources represents a set of resources by handler
 type Resources map[Handler]ResourceList
+
+// AddResource adds a resource to a list of resources
+func (r *Resources) AddResource(handler Handler, resource Resource) {
+	resourceList, ok := (*r)[handler]
+	if !ok {
+		resourceList = ResourceList{}
+	}
+	resourceList[resource.Name()] = resource
+	(*r)[handler] = resourceList
+}
+
+// AddResource adds a resource to a list of resources
+func (r *Resources) AddResources(resources Resources) {
+	for handler, rl := range resources {
+		for k, resource := range rl {
+			rl, ok := (*r)[handler]
+			if !ok {
+				rl = ResourceList{}
+			}
+			rl[k] = resource
+			(*r)[handler] = rl
+		}
+	}
+}
 
 // Handler describes a handler for a single API resource handled by a single provider
 type Handler interface {

@@ -1,22 +1,27 @@
 package grizzly
 
 import (
+	"bufio"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/term"
 	"github.com/grafana/tanka/pkg/jsonnet/native"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/grafana/tanka/pkg/process"
 	"github.com/pmezard/go-difflib/difflib"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
+	"gopkg.in/yaml.v3"
 )
 
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
@@ -75,9 +80,32 @@ func List(config Config, resources Resources) error {
 //go:embed grizzly.jsonnet
 var script string
 
-// Parse evaluates a jsonnet file and parses it into an object tree
-func Parse(config Config, jsonnetFile string, targets []string) (Resources, error) {
+// Parse parses a file into a list of resources
+func Parse(config Config, file string, targets []string) (Resources, error) {
+	if strings.HasSuffix(file, ".yaml") || strings.HasSuffix(file, ".") {
+		return ParseYAML(config, file, targets)
+	}
+	return ParseJsonnet(config, file, targets)
+}
 
+// ParseYAML evaluates a YAML file and parses it into resources
+func ParseYAML(config Config, yamlFile string, targets []string) (Resources, error) {
+	f, err := os.Open(yamlFile)
+	if err != nil {
+		return nil, err
+	}
+	reader := bufio.NewReader(f)
+	decoder := yaml.NewDecoder(reader)
+	manifests := map[string]manifest.Manifest{}
+	var m manifest.Manifest
+	for i := 0; decoder.Decode(&m) == nil; i++ {
+		manifests[strconv.Itoa(i)] = m
+	}
+	return ManifestsAsResources(config, yamlFile, manifests, targets)
+}
+
+// ParseJsonnet evaluates a jsonnet file and parses it into resources
+func ParseJsonnet(config Config, jsonnetFile string, targets []string) (Resources, error) {
 	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
 	vm.Importer(newExtendedImporter([]string{"vendor", "lib", "."}))
@@ -103,29 +131,72 @@ func Parse(config Config, jsonnetFile string, targets []string) (Resources, erro
 	if err := process.Unwrap(extracted); err != nil {
 		return nil, err
 	}
+	return ManifestsAsResources(config, jsonnetFile, extracted, targets)
+}
 
-	resources := Resources{}
-	for _, m := range extracted {
-		handler, err := config.Registry.GetHandler(m.Kind())
-		if err != nil {
-			log.Println("Error getting handler", err)
-			continue
-		}
-		parsedResources, err := handler.Parse(m)
+func ParseDirectory(config Config, source string, m manifest.Manifest, targets []string) (Resources, error) {
+	resource := Resource(m)
+	path := resource.GetSpecString("path")
+	var files []string
+	if resource.HasSpecKey("glob") {
+		glob := resource.GetSpecString("glob")
+		globPath := filepath.Join(source, path, glob)
+		globbedFiles, err := filepath.Glob(globPath)
 		if err != nil {
 			return nil, err
 		}
-		for _, resource := range parsedResources {
-			handler, err = config.Registry.GetHandler(resource.Kind())
-			if !resource.MatchesTarget(targets) {
+		for _, file := range globbedFiles {
+			files = append(files, file)
+		}
+	} else {
+		fullpath := filepath.Join(source, path)
+		fis, err := ioutil.ReadDir(fullpath)
+		if err != nil {
+			return nil, err
+		}
+		for _, fi := range fis {
+			files = append(files, filepath.Join(fullpath, fi.Name()))
+		}
+		log.Println("NONGLOB", files)
+	}
+	resources := Resources{}
+	for _, file := range files {
+		newResources, err := Parse(config, file, targets)
+		if err != nil {
+			return nil, err
+		}
+		resources.AddResources(newResources)
+	}
+	return resources, nil
+}
+
+func ManifestsAsResources(config Config, file string, manifests map[string]manifest.Manifest, targets []string) (Resources, error) {
+	resources := Resources{}
+	for _, m := range manifests {
+		if m.Kind() == "Directory" {
+			source := filepath.Dir(file)
+			newResources, err := ParseDirectory(config, source, m, targets)
+			if err != nil {
+				return nil, err
+			}
+			resources.AddResources(newResources)
+		} else {
+			handler, err := config.Registry.GetHandler(m.Kind())
+			if err != nil {
+				log.Println("Error getting handler", err)
 				continue
 			}
-			resourceList, ok := resources[handler]
-			if !ok {
-				resourceList = ResourceList{}
+			parsedResources, err := handler.Parse(m)
+			if err != nil {
+				return nil, err
 			}
-			resourceList[m.Metadata().Name()] = resource
-			resources[handler] = resourceList
+			for _, resource := range parsedResources {
+				handler, err = config.Registry.GetHandler(resource.Kind())
+				if !resource.MatchesTarget(targets) {
+					continue
+				}
+				resources.AddResource(handler, resource)
+			}
 		}
 	}
 	return resources, nil
@@ -149,8 +220,8 @@ func Show(config Config, resources Resources) error {
 					Content: rep,
 				})
 			} else {
-				fmt.Printf("%s/%s:\n", resource.Kind(), resource.Name())
 				fmt.Println(rep)
+				fmt.Println("---")
 			}
 		}
 	}
