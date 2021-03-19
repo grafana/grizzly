@@ -136,11 +136,10 @@ func ParseJsonnet(config Config, jsonnetFile string, targets []string) (Resource
 
 func ParseDirectory(config Config, source string, m manifest.Manifest, targets []string) (Resources, error) {
 	resource := Resource(m)
-	path := resource.GetSpecString("path")
 	var files []string
 	if resource.HasSpecKey("glob") {
 		glob := resource.GetSpecString("glob")
-		globPath := filepath.Join(source, path, glob)
+		globPath := filepath.Join(source, glob)
 		globbedFiles, err := filepath.Glob(globPath)
 		if err != nil {
 			return nil, err
@@ -149,6 +148,7 @@ func ParseDirectory(config Config, source string, m manifest.Manifest, targets [
 			files = append(files, file)
 		}
 	} else {
+		path := resource.GetSpecString("path")
 		fullpath := filepath.Join(source, path)
 		fis, err := ioutil.ReadDir(fullpath)
 		if err != nil {
