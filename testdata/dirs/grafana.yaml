@@ -1,0 +1,15 @@
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: Directory
+metadata:
+  name: dashboards
+spec:
+  path: files
+  glob: dashboard*
+---
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: Directory
+metadata:
+  name: datasources
+spec:
+  path: files
+  glob: datasource*

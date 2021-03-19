@@ -1,0 +1,23 @@
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: Datasource
+metadata:
+    name: prometheus
+spec:
+    access: proxy
+    basicAuth: false
+    basicAuthPassword: ""
+    basicAuthUser: ""
+    database: ""
+    isDefault: true
+    jsonData:
+        httpMethod: GET
+    name: prometheus
+    orgId: 1
+    password: ""
+    readOnly: false
+    secureJsonFields: {}
+    type: prometheus
+    typeLogoUrl: ""
+    url: http://localhost/prometheus/
+    user: ""
+    withCredentials: false
