@@ -36,7 +36,7 @@ func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 					}
 					handler := RuleHandler{}
 					resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), uid, spec)
-					resource = resource.SetMetadata("namespace", namespace)
+					resource.SetMetadata("namespace", namespace)
 					return &resource, nil
 				}
 			}

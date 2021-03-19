@@ -48,7 +48,7 @@ func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	delete(d.Dashboard, "version")
 	h := DashboardHandler{}
 	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, d.Dashboard)
-	resource = resource.SetMetadata("folder", d.Meta.FolderTitle)
+	resource.SetMetadata("folder", d.Meta.FolderTitle)
 	return &resource, nil
 }
 

@@ -49,11 +49,10 @@ func (r *Resource) GetMetadata(key string) string {
 	return metadata[key].(string)
 }
 
-func (r *Resource) SetMetadata(key, value string) Resource {
+func (r *Resource) SetMetadata(key, value string) {
 	metadata := (*r)["metadata"].(map[string]interface{})
 	metadata[key] = value
 	(*r)["metadata"] = metadata
-	return *r
 }
 
 func (r *Resource) GetSpecString(key string) string {
@@ -61,18 +60,16 @@ func (r *Resource) GetSpecString(key string) string {
 	return spec[key].(string)
 }
 
-func (r *Resource) SetSpecString(key, value string) *Resource {
+func (r *Resource) SetSpecString(key, value string) {
 	spec := (*r)["spec"].(map[string]interface{})
 	spec[key] = value
 	(*r)["spec"] = spec
-	return r
 }
 
-func (r *Resource) DeleteSpecKey(key string) *Resource {
+func (r *Resource) DeleteSpecKey(key string) {
 	spec := (*r)["spec"].(map[string]interface{})
 	delete(spec, key)
 	(*r)["spec"] = spec
-	return r
 }
 
 func (r *Resource) Spec() map[string]interface{} {
@@ -95,8 +92,8 @@ func (r *Resource) SpecAsJSON() (string, error) {
 
 }
 
-// GetRepresentation Gets the string representation for this resource
-func (r *Resource) GetRepresentation() (string, error) {
+// AsYAML Gets the string representation for this resource
+func (r *Resource) AsYAML() (string, error) {
 	y, err := yaml.Marshal(*r)
 	if err != nil {
 		return "", err

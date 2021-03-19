@@ -49,7 +49,7 @@ func Get(config Config, UID string) error {
 	}
 
 	resource = handler.Unprepare(*resource)
-	rep, err := resource.GetRepresentation()
+	rep, err := resource.AsYAML()
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func Show(config Config, resources Resources) error {
 		for _, resource := range resourceList {
 			resource = *(handler.Unprepare(resource))
 
-			rep, err := resource.GetRepresentation()
+			rep, err := resource.AsYAML()
 			if err != nil {
 				return err
 			}
@@ -165,7 +165,7 @@ func Diff(config Config, resources Resources) error {
 
 	for handler, resourceList := range resources {
 		for _, resource := range resourceList {
-			local, err := resource.GetRepresentation()
+			local, err := resource.AsYAML()
 			if err != nil {
 				return nil
 			}
@@ -180,7 +180,7 @@ func Diff(config Config, resources Resources) error {
 				return fmt.Errorf("Error retrieving resource from %s %s: %v", resource.Kind(), uid, err)
 			}
 			remote = handler.Unprepare(*remote)
-			remoteRepresentation, err := (*remote).GetRepresentation()
+			remoteRepresentation, err := (*remote).AsYAML()
 			if err != nil {
 				return err
 			}
@@ -219,13 +219,13 @@ func Apply(config Config, resources Resources) error {
 			} else if err != nil {
 				return err
 			}
-			resourceRepresentation, err := resource.GetRepresentation()
+			resourceRepresentation, err := resource.AsYAML()
 			if err != nil {
 				return err
 			}
 			resource = *handler.Prepare(*existingResource, resource)
 			existingResource = handler.Unprepare(*existingResource)
-			existingResourceRepresentation, err := existingResource.GetRepresentation()
+			existingResourceRepresentation, err := existingResource.AsYAML()
 			if err != nil {
 				return nil
 			}
@@ -353,7 +353,7 @@ func Export(config Config, exportDir string, resources Resources) error {
 
 	for handler, resourceList := range resources {
 		for _, resource := range resourceList {
-			updatedResource, err := resource.GetRepresentation()
+			updatedResource, err := resource.AsYAML()
 			if err != nil {
 				return err
 			}

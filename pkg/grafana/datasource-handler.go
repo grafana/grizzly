@@ -71,14 +71,14 @@ func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, er
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *DatasourceHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	resource = *(resource.DeleteSpecKey("version"))
-	resource = *(resource.DeleteSpecKey("id"))
+	resource.DeleteSpecKey("version")
+	resource.DeleteSpecKey("id")
 	return &resource
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *DatasourceHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	resource = *(resource.SetSpecString("id", existing.GetSpecString("id")))
+	resource.SetSpecString("id", existing.GetSpecString("id"))
 	return &resource
 }
 

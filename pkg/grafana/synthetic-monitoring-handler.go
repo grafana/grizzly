@@ -57,23 +57,23 @@ func (h *SyntheticMonitoringHandler) GetExtension() string {
 func (h *SyntheticMonitoringHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
 	resource := grizzly.Resource(m)
 	resource.SetSpecString("job", resource.GetMetadata("name"))
-	resource.SetSpecString(folderNameField, resource.GetMetadata("folder"))
+	resource.SetSpecString(folderNameField, resource.GetMetadata("type"))
 	return resource.AsResourceList(), nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *SyntheticMonitoringHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	resource = *(resource.DeleteSpecKey("tenantId"))
-	resource = *(resource.DeleteSpecKey("id"))
-	resource = *(resource.DeleteSpecKey("modified"))
-	resource = *(resource.DeleteSpecKey("created"))
+	resource.DeleteSpecKey("tenantId")
+	resource.DeleteSpecKey("id")
+	resource.DeleteSpecKey("modified")
+	resource.DeleteSpecKey("created")
 	return &resource
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *SyntheticMonitoringHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	resource = *(resource.SetSpecString("tenantId", existing.GetSpecString("tenantId")))
-	resource = *(resource.SetSpecString("id", existing.GetSpecString("id")))
+	resource.SetSpecString("tenantId", existing.GetSpecString("tenantId"))
+	resource.SetSpecString("id", existing.GetSpecString("id"))
 	return &resource
 }
 
