@@ -127,7 +127,6 @@ type Resources map[Handler]ResourceList
 type Handler interface {
 	APIVersion() string
 	Kind() string
-	GetJSONPaths() []string
 	GetExtension() string
 
 	// Parse parses a manifest object into a struct for this resource type
@@ -179,7 +178,6 @@ type Registry struct {
 	Providers     []Provider
 	Handlers      []Handler
 	HandlerByName map[string]Handler
-	HandlerByPath map[string]Handler
 }
 
 // NewProviderRegistry returns a new registry instance
@@ -188,7 +186,6 @@ func NewProviderRegistry() Registry {
 	registry.Providers = []Provider{}
 	registry.Handlers = []Handler{}
 	registry.HandlerByName = map[string]Handler{}
-	registry.HandlerByPath = map[string]Handler{}
 	return registry
 }
 
@@ -197,9 +194,6 @@ func (r *Registry) RegisterProvider(provider Provider) error {
 	r.Providers = append(r.Providers, provider)
 	for _, handler := range provider.GetHandlers() {
 		r.Handlers = append(r.Handlers, handler)
-		for _, path := range handler.GetJSONPaths() {
-			r.HandlerByPath[path] = handler
-		}
 		r.HandlerByName[handler.Kind()] = handler
 	}
 	return nil
@@ -207,13 +201,9 @@ func (r *Registry) RegisterProvider(provider Provider) error {
 
 // GetHandler returns a single provider based upon a JSON path
 func (r *Registry) GetHandler(path string) (Handler, error) {
-	handler, exists := r.HandlerByPath[path]
+	handler, exists := r.HandlerByName[path]
 	if !exists {
-		handler, exists = r.HandlerByName[path]
-		if !exists {
-			return nil, fmt.Errorf("No handler registered to %s", path)
-		}
-		return handler, nil
+		return nil, fmt.Errorf("No handler registered to %s", path)
 	}
 	return handler, nil
 }

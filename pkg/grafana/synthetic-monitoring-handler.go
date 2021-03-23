@@ -41,15 +41,6 @@ func (h *SyntheticMonitoringHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-const syntheticMonitoringChecksPath = "syntheticMonitoring"
-
-// GetJSONPaths returns paths within Jsonnet output that this provider will consume
-func (h *SyntheticMonitoringHandler) GetJSONPaths() []string {
-	return []string{
-		syntheticMonitoringChecksPath,
-	}
-}
-
 // GetExtension returns the file name extension for a check
 func (h *SyntheticMonitoringHandler) GetExtension() string {
 	return "json"
