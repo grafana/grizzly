@@ -11,6 +11,7 @@ are:
 It is designed to work with existing [monitoring mixins](https://github.com/monitoring-mixins/docs).
 
 > **Status: Alpha**. This is a proof of concept. It will have many holes. PRs welcome.
+> **Release / Install** Please see the release page https://github.com/grafana/grizzly/releases/ 
 
 ## Authentication and Configuration
 
