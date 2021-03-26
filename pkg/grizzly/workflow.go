@@ -76,11 +76,11 @@ func List(config Config, resources Resources) error {
 var script string
 
 // Parse evaluates a jsonnet file and parses it into an object tree
-func Parse(config Config, jsonnetFile string, targets []string) (Resources, error) {
+func Parse(config Config, jsonnetFile string, jsonnetPaths []string, targets []string) (Resources, error) {
 
 	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
-	vm.Importer(newExtendedImporter([]string{"vendor", "lib", "."}))
+	vm.Importer(newExtendedImporter(jsonnetPaths))
 	for _, nf := range native.Funcs() {
 		vm.NativeFunction(nf)
 	}

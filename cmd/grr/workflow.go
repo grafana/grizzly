@@ -29,9 +29,11 @@ func listCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	jsonnetPaths := cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *jsonnetPaths, *targets)
 		if err != nil {
 			return err
 		}
@@ -48,9 +50,11 @@ func showCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	jsonnetPaths := cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *jsonnetPaths, *targets)
 		if err != nil {
 			return err
 		}
@@ -66,9 +70,11 @@ func diffCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	jsonnetPaths := cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *jsonnetPaths, *targets)
 		if err != nil {
 			return err
 		}
@@ -84,9 +90,11 @@ func applyCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	jsonnetPaths := cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *jsonnetPaths, *targets)
 		if err != nil {
 			return err
 		}
@@ -96,8 +104,9 @@ func applyCmd(config grizzly.Config) *cli.Command {
 }
 
 type jsonnetWatchParser struct {
-	jsonnetFile string
-	targets     []string
+	jsonnetFile  string
+	jsonnetPaths []string
+	targets      []string
 }
 
 func (p *jsonnetWatchParser) Name() string {
@@ -105,9 +114,9 @@ func (p *jsonnetWatchParser) Name() string {
 }
 
 func (p *jsonnetWatchParser) Parse(config grizzly.Config) (grizzly.Resources, error) {
-	return grizzly.Parse(config, p.jsonnetFile, p.targets)
-
+	return grizzly.Parse(config, p.jsonnetFile, p.jsonnetPaths, p.targets)
 }
+
 func watchCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "watch <dir-to-watch> <jsonnet-file>",
@@ -115,10 +124,13 @@ func watchCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(2),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	jsonnetPaths := cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		parser := &jsonnetWatchParser{
-			jsonnetFile: args[1],
-			targets:     *targets,
+			jsonnetFile:  args[1],
+			jsonnetPaths: *jsonnetPaths,
+			targets:      *targets,
 		}
 		watchDir := args[0]
 
@@ -149,19 +161,18 @@ func previewCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsAny(),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
-	cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
+	expires := cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
+	jsonnetPaths := cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *jsonnetPaths, *targets)
 		if err != nil {
 			return err
 		}
-		e, err := cmd.Flags().GetInt("expires")
-		if err != nil {
-			return err
-		}
+
 		opts := &grizzly.PreviewOpts{
-			ExpiresSeconds: e,
+			ExpiresSeconds: *expires,
 		}
 
 		return grizzly.Preview(config, resources, opts)
@@ -176,10 +187,12 @@ func exportCmd(config grizzly.Config) *cli.Command {
 		Args:  cli.ArgsExact(2),
 	}
 	targets := cmd.Flags().StringSliceP("target", "t", nil, "resources to target")
+	jsonnetPaths := cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		dashboardDir := args[1]
-		resources, err := grizzly.Parse(config, jsonnetFile, *targets)
+		resources, err := grizzly.Parse(config, jsonnetFile, *jsonnetPaths, *targets)
 		if err != nil {
 			return err
 		}
@@ -209,4 +222,8 @@ func providersCmd(config grizzly.Config) *cli.Command {
 		return w.Flush()
 	}
 	return cmd
+}
+
+func getDefaultJsonnetFolders() []string {
+	return []string{"vendor", "lib", "."}
 }
