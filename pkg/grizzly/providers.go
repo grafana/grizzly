@@ -76,13 +76,6 @@ func (r *Resource) Spec() map[string]interface{} {
 	return (*r)["spec"].(map[string]interface{})
 }
 
-func (r *Resource) AsResourceList() ResourceList {
-	key := r.Key()
-	resources := ResourceList{}
-	resources[key] = *r
-	return resources
-}
-
 func (r *Resource) SpecAsJSON() (string, error) {
 	y, err := yaml.Marshal(*r)
 	if err != nil {
@@ -117,11 +110,8 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 	return false
 }
 
-// ResourceList represents a set of named resources
-type ResourceList map[string]Resource
-
-// Resources represents a set of resources by handler
-type Resources map[Handler]ResourceList
+// Resources represents a set of resources
+type Resources []Resource
 
 // Handler describes a handler for a single API resource handled by a single provider
 type Handler interface {
@@ -131,7 +121,7 @@ type Handler interface {
 	GetExtension() string
 
 	// Parse parses a manifest object into a struct for this resource type
-	Parse(m manifest.Manifest) (ResourceList, error)
+	Parse(m manifest.Manifest) (Resources, error)
 
 	// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 	Unprepare(resource Resource) *Resource
