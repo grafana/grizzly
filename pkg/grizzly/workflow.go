@@ -78,21 +78,21 @@ func List(config Config, resources Resources) error {
 	return w.Flush()
 }
 
-func Parse(config Config, filename string, jsonnetPaths []string, targets []string) (Resources, error) {
+func Parse(config Config, filename string, opts GrizzlyOpts) (Resources, error) {
 	if strings.HasSuffix(filename, ".yaml") ||
 		strings.HasSuffix(filename, ".yml") {
-		return ParseYAML(config, filename, targets)
+		return ParseYAML(config, filename, opts)
 	} else if strings.HasSuffix(filename, ".jsonnet") ||
 		strings.HasSuffix(filename, ".libsonnet") ||
 		strings.HasSuffix(filename, ".json") {
-		return ParseJsonnet(config, filename, jsonnetPaths, targets)
+		return ParseJsonnet(config, filename, opts)
 	} else {
 		return nil, fmt.Errorf("Either a config file or a resource file is required")
 	}
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources
-func ParseYAML(config Config, yamlFile string, targets []string) (Resources, error) {
+func ParseYAML(config Config, yamlFile string, opts GrizzlyOpts) (Resources, error) {
 	f, err := os.Open(yamlFile)
 	if err != nil {
 		return nil, err
@@ -122,11 +122,11 @@ func ParseYAML(config Config, yamlFile string, targets []string) (Resources, err
 var script string
 
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree
-func ParseJsonnet(config Config, jsonnetFile string, jsonnetPaths []string, targets []string) (Resources, error) {
+func ParseJsonnet(config Config, jsonnetFile string, opts GrizzlyOpts) (Resources, error) {
 
 	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
-	vm.Importer(newExtendedImporter(jsonnetPaths))
+	vm.Importer(newExtendedImporter(opts.JsonnetPaths))
 	for _, nf := range native.Funcs() {
 		vm.NativeFunction(nf)
 	}
