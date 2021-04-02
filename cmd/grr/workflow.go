@@ -9,6 +9,13 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
+func getGrizzlyOpts(cmd *cli.Command) grizzly.GrizzlyOpts {
+	return grizzly.GrizzlyOpts{
+		Targets:      *cmd.Flags().StringSliceP("target", "t", nil, "resources to target"),
+		JsonnetPaths: *cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)"),
+	}
+
+}
 func getCmd(config grizzly.Config) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "get <resource-type>.<resource-uid>",
@@ -28,11 +35,7 @@ func listCmd(config grizzly.Config) *cli.Command {
 		Short: "list resource keys from file",
 		Args:  cli.ArgsExact(1),
 	}
-	opts := grizzly.GrizzlyOpts{
-		Targets:      *cmd.Flags().StringSliceP("target", "t", nil, "resources to target"),
-		JsonnetPaths: *cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)"),
-	}
-
+	opts := getGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		resources, err := grizzly.Parse(config, jsonnetFile, opts)
@@ -51,11 +54,7 @@ func showCmd(config grizzly.Config) *cli.Command {
 		Short: "render Jsonnet as json",
 		Args:  cli.ArgsExact(1),
 	}
-	opts := grizzly.GrizzlyOpts{
-		Targets:      *cmd.Flags().StringSliceP("target", "t", nil, "resources to target"),
-		JsonnetPaths: *cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)"),
-	}
-
+	opts := getGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		resources, err := grizzly.Parse(config, jsonnetFile, opts)
@@ -73,11 +72,7 @@ func diffCmd(config grizzly.Config) *cli.Command {
 		Short: "compare Jsonnet resources with endpoint(s)",
 		Args:  cli.ArgsExact(1),
 	}
-	opts := grizzly.GrizzlyOpts{
-		Targets:      *cmd.Flags().StringSliceP("target", "t", nil, "resources to target"),
-		JsonnetPaths: *cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)"),
-	}
-
+	opts := getGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		resources, err := grizzly.Parse(config, jsonnetFile, opts)
@@ -95,11 +90,7 @@ func applyCmd(config grizzly.Config) *cli.Command {
 		Short: "render Jsonnet and push dashboard(s) to Grafana",
 		Args:  cli.ArgsExact(1),
 	}
-	opts := grizzly.GrizzlyOpts{
-		Targets:      *cmd.Flags().StringSliceP("target", "t", nil, "resources to target"),
-		JsonnetPaths: *cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)"),
-	}
-
+	opts := getGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		resources, err := grizzly.Parse(config, jsonnetFile, opts)
@@ -130,11 +121,7 @@ func watchCmd(config grizzly.Config) *cli.Command {
 		Short: "watch for file changes and apply",
 		Args:  cli.ArgsExact(2),
 	}
-	opts := grizzly.GrizzlyOpts{
-		Targets:      *cmd.Flags().StringSliceP("target", "t", nil, "resources to target"),
-		JsonnetPaths: *cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)"),
-	}
-
+	opts := getGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		parser := &jsonnetWatchParser{
 			jsonnetFile: args[1],
@@ -167,10 +154,7 @@ func previewCmd(config grizzly.Config) *cli.Command {
 		Short: "upload a snapshot to preview the rendered file",
 		Args:  cli.ArgsAny(),
 	}
-	opts := grizzly.GrizzlyOpts{
-		Targets:      *cmd.Flags().StringSliceP("target", "t", nil, "resources to target"),
-		JsonnetPaths: *cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)"),
-	}
+	opts := getGrizzlyOpts(cmd)
 	expires := cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
@@ -180,11 +164,11 @@ func previewCmd(config grizzly.Config) *cli.Command {
 			return err
 		}
 
-		opts := &grizzly.PreviewOpts{
+		previewOpts := &grizzly.PreviewOpts{
 			ExpiresSeconds: *expires,
 		}
 
-		return grizzly.Preview(config, resources, opts)
+		return grizzly.Preview(config, resources, previewOpts)
 	}
 	return cmd
 }
@@ -195,11 +179,7 @@ func exportCmd(config grizzly.Config) *cli.Command {
 		Short: "render Jsonnet and save to a directory",
 		Args:  cli.ArgsExact(2),
 	}
-	opts := grizzly.GrizzlyOpts{
-		Targets:      *cmd.Flags().StringSliceP("target", "t", nil, "resources to target"),
-		JsonnetPaths: *cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)"),
-	}
-
+	opts := getGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		dashboardDir := args[1]
