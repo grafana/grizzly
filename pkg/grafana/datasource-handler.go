@@ -27,15 +27,6 @@ func (h *DatasourceHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-const datasourcesPath = "grafanaDatasources"
-
-// GetJSONPaths returns paths within Jsonnet output that this provider will consume
-func (h *DatasourceHandler) GetJSONPaths() []string {
-	return []string{
-		datasourcesPath,
-	}
-}
-
 // GetExtension returns the file name extension for a datasource
 func (h *DatasourceHandler) GetExtension() string {
 	return "json"
