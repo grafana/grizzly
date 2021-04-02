@@ -1,6 +1,7 @@
 package grizzly
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -66,6 +67,17 @@ func (r *Resource) SetSpecString(key, value string) {
 	(*r)["spec"] = spec
 }
 
+func (r *Resource) GetSpecValue(key string) interface{} {
+	spec := (*r)["spec"].(map[string]interface{})
+	return spec[key]
+}
+
+func (r *Resource) SetSpecValue(key string, value interface{}) {
+	spec := (*r)["spec"].(map[string]interface{})
+	spec[key] = value
+	(*r)["spec"] = spec
+}
+
 func (r *Resource) DeleteSpecKey(key string) {
 	spec := (*r)["spec"].(map[string]interface{})
 	delete(spec, key)
@@ -77,11 +89,11 @@ func (r *Resource) Spec() map[string]interface{} {
 }
 
 func (r *Resource) SpecAsJSON() (string, error) {
-	y, err := yaml.Marshal(*r)
+	j, err := json.Marshal(r.Spec())
 	if err != nil {
 		return "", err
 	}
-	return string(y), nil
+	return string(j), nil
 
 }
 
