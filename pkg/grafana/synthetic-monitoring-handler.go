@@ -47,10 +47,10 @@ func (h *SyntheticMonitoringHandler) GetExtension() string {
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *SyntheticMonitoringHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
+func (h *SyntheticMonitoringHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 	resource := grizzly.Resource(m)
 	resource.SetSpecString("job", resource.GetMetadata("name"))
-	return resource.AsResourceList(), nil
+	return grizzly.Resources{resource}, nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison

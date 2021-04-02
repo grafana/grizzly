@@ -33,7 +33,7 @@ func (h *DatasourceHandler) GetExtension() string {
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
+func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 	resource := grizzly.Resource(m)
 	defaults := map[string]interface{}{
 		"basicAuth":         false,
@@ -57,7 +57,7 @@ func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, er
 	}
 	spec["name"] = m.Metadata().Name()
 	resource["spec"] = spec
-	return resource.AsResourceList(), nil
+	return grizzly.Resources{resource}, nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison

@@ -35,9 +35,9 @@ func (h *RuleHandler) GetExtension() string {
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *RuleHandler) Parse(m manifest.Manifest) (grizzly.ResourceList, error) {
+func (h *RuleHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 	resource := grizzly.Resource(m)
-	return resource.AsResourceList(), nil
+	return grizzly.Resources{resource}, nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
