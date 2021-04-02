@@ -1,22 +1,26 @@
 package grizzly
 
 import (
+	"bufio"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/term"
 	"github.com/grafana/tanka/pkg/jsonnet/native"
+	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/grafana/tanka/pkg/process"
 	"github.com/pmezard/go-difflib/difflib"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
+	"gopkg.in/yaml.v3"
 )
 
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
@@ -74,11 +78,51 @@ func List(config Config, resources Resources) error {
 	return w.Flush()
 }
 
+func Parse(config Config, filename string, jsonnetPaths []string, targets []string) (Resources, error) {
+	if strings.HasSuffix(filename, ".yaml") ||
+		strings.HasSuffix(filename, ".yml") {
+		return ParseYAML(config, filename, targets)
+	} else if strings.HasSuffix(filename, ".jsonnet") ||
+		strings.HasSuffix(filename, ".libsonnet") ||
+		strings.HasSuffix(filename, ".json") {
+		return ParseJsonnet(config, filename, jsonnetPaths, targets)
+	} else {
+		return nil, fmt.Errorf("Either a config file or a resource file is required")
+	}
+}
+
+// ParseYAML evaluates a YAML file and parses it into resources
+func ParseYAML(config Config, yamlFile string, targets []string) (Resources, error) {
+	f, err := os.Open(yamlFile)
+	if err != nil {
+		return nil, err
+	}
+	reader := bufio.NewReader(f)
+	decoder := yaml.NewDecoder(reader)
+	manifests := map[string]manifest.Manifest{}
+	var m manifest.Manifest
+	var resources Resources
+	for i := 0; decoder.Decode(&m) == nil; i++ {
+		manifests[strconv.Itoa(i)] = m
+		handler, err := config.Registry.GetHandler(m.Kind())
+		if err != nil {
+			return nil, err
+		}
+		parsedResources, err := handler.Parse(m)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, parsedResources...)
+
+	}
+	return resources, nil
+}
+
 //go:embed grizzly.jsonnet
 var script string
 
-// Parse evaluates a jsonnet file and parses it into an object tree
-func Parse(config Config, jsonnetFile string, jsonnetPaths []string, targets []string) (Resources, error) {
+// ParseJsonnet evaluates a jsonnet file and parses it into an object tree
+func ParseJsonnet(config Config, jsonnetFile string, jsonnetPaths []string, targets []string) (Resources, error) {
 
 	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
