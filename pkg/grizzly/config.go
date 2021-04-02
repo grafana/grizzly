@@ -14,6 +14,5 @@ type GrizzlyOpts struct {
 
 // PreviewOpts Options to Configure a Preview
 type PreviewOpts struct {
-	GrizzlyOpts
 	ExpiresSeconds int
 }
