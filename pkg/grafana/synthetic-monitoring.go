@@ -80,7 +80,8 @@ func getRemoteCheck(uid string) (*grizzly.Resource, error) {
 			}
 			check["probes"] = probeNames
 			handler := SyntheticMonitoringHandler{}
-			resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), uid, check)
+			resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), check.Job(), check)
+			resource.SetMetadata("type", check.Type())
 			return &resource, nil
 		}
 	}
