@@ -73,8 +73,8 @@ func (h *SyntheticMonitoringHandler) Unprepare(resource grizzly.Resource) *grizz
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *SyntheticMonitoringHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	resource.SetSpecString("tenantId", existing.GetSpecString("tenantId"))
-	resource.SetSpecString("id", existing.GetSpecString("id"))
+	resource.SetSpecValue("tenantId", existing.GetSpecValue("tenantId"))
+	resource.SetSpecValue("id", existing.GetSpecValue("id"))
 	return &resource
 }
 

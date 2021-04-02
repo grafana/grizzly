@@ -71,7 +71,7 @@ func getRemoteCheck(uid string) (*grizzly.Resource, error) {
 		return nil, err
 	}
 	for _, check := range checks {
-		if check.Job() == uid {
+		if check.UID() == uid {
 			probeNames := []string{}
 			for _, probe := range check["probes"].([]interface{}) {
 				probeID := int(probe.(float64))
@@ -88,7 +88,8 @@ func getRemoteCheck(uid string) (*grizzly.Resource, error) {
 }
 
 func postCheck(url string, resource grizzly.Resource) error {
-	checkJSON, err := resource.SpecAsJSON()
+	check := Check(resource.Spec())
+	checkJSON, err := check.toJSON()
 	if err != nil {
 		return err
 	}
@@ -203,6 +204,10 @@ func (c *Check) Type() string {
 		return typ
 	}
 	return ""
+}
+
+func (c *Check) UID() string {
+	return fmt.Sprintf("%s.%s", c.Type(), c.Job())
 }
 
 // toJSON returns JSON for a datasource
