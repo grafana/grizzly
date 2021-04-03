@@ -26,22 +26,18 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	config := grizzly.Config{
-		Registry: registry,
-		Notifier: grizzly.Notifier{},
-	}
 	// workflow commands
 	rootCmd.AddCommand(
-		getCmd(config),
-		listCmd(config),
-		showCmd(config),
-		diffCmd(config),
-		applyCmd(config),
-		watchCmd(config),
-		listenCmd(config),
-		exportCmd(config),
-		previewCmd(config),
-		providersCmd(config),
+		getCmd(registry),
+		listCmd(registry),
+		showCmd(registry),
+		diffCmd(registry),
+		applyCmd(registry),
+		watchCmd(registry),
+		listenCmd(registry),
+		exportCmd(registry),
+		previewCmd(registry),
+		providersCmd(registry),
 	)
 
 	// Run!

@@ -17,21 +17,21 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(config Config, filename string, opts GrizzlyOpts) (Resources, error) {
+func Parse(registry Registry, filename string, opts GrizzlyOpts) (Resources, error) {
 	if strings.HasSuffix(filename, ".yaml") ||
 		strings.HasSuffix(filename, ".yml") {
-		return ParseYAML(config, filename, opts)
+		return ParseYAML(registry, filename, opts)
 	} else if strings.HasSuffix(filename, ".jsonnet") ||
 		strings.HasSuffix(filename, ".libsonnet") ||
 		strings.HasSuffix(filename, ".json") {
-		return ParseJsonnet(config, filename, opts)
+		return ParseJsonnet(registry, filename, opts)
 	} else {
 		return nil, fmt.Errorf("Either a config file or a resource file is required")
 	}
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources
-func ParseYAML(config Config, yamlFile string, opts GrizzlyOpts) (Resources, error) {
+func ParseYAML(registry Registry, yamlFile string, opts GrizzlyOpts) (Resources, error) {
 	f, err := os.Open(yamlFile)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func ParseYAML(config Config, yamlFile string, opts GrizzlyOpts) (Resources, err
 	var resources Resources
 	for i := 0; decoder.Decode(&m) == nil; i++ {
 		manifests[strconv.Itoa(i)] = m
-		handler, err := config.Registry.GetHandler(m.Kind())
+		handler, err := registry.GetHandler(m.Kind())
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +61,7 @@ func ParseYAML(config Config, yamlFile string, opts GrizzlyOpts) (Resources, err
 var script string
 
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree
-func ParseJsonnet(config Config, jsonnetFile string, opts GrizzlyOpts) (Resources, error) {
+func ParseJsonnet(registry Registry, jsonnetFile string, opts GrizzlyOpts) (Resources, error) {
 
 	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
@@ -91,7 +91,7 @@ func ParseJsonnet(config Config, jsonnetFile string, opts GrizzlyOpts) (Resource
 
 	resources := Resources{}
 	for _, m := range extracted {
-		handler, err := config.Registry.GetHandler(m.Kind())
+		handler, err := registry.GetHandler(m.Kind())
 		if err != nil {
 			log.Println("Error getting handler", err)
 			continue

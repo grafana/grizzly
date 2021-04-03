@@ -209,3 +209,8 @@ func (r *Registry) GetHandler(path string) (Handler, error) {
 	}
 	return handler, nil
 }
+
+// Notifier returns a notifier for responding to users
+func (r *Registry) Notifier() *Notifier {
+	return &Notifier{}
+}

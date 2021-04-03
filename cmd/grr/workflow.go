@@ -16,7 +16,7 @@ func getGrizzlyOpts(cmd *cli.Command) grizzly.GrizzlyOpts {
 	}
 
 }
-func getCmd(config grizzly.Config) *cli.Command {
+func getCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "get <resource-type>.<resource-uid>",
 		Short: "retrieve resource",
@@ -24,12 +24,12 @@ func getCmd(config grizzly.Config) *cli.Command {
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		uid := args[0]
-		return grizzly.Get(config, uid)
+		return grizzly.Get(registry, uid)
 	}
 	return cmd
 }
 
-func listCmd(config grizzly.Config) *cli.Command {
+func listCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "list <jsonnet-file>",
 		Short: "list resource keys from file",
@@ -38,17 +38,17 @@ func listCmd(config grizzly.Config) *cli.Command {
 	opts := getGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, opts)
+		resources, err := grizzly.Parse(registry, jsonnetFile, opts)
 		if err != nil {
 			return err
 		}
 
-		return grizzly.List(config, resources)
+		return grizzly.List(registry, resources)
 	}
 	return cmd
 }
 
-func showCmd(config grizzly.Config) *cli.Command {
+func showCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "show <jsonnet-file>",
 		Short: "render Jsonnet as json",
@@ -57,16 +57,16 @@ func showCmd(config grizzly.Config) *cli.Command {
 	opts := getGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, opts)
+		resources, err := grizzly.Parse(registry, jsonnetFile, opts)
 		if err != nil {
 			return err
 		}
-		return grizzly.Show(config, resources)
+		return grizzly.Show(registry, resources)
 	}
 	return cmd
 }
 
-func diffCmd(config grizzly.Config) *cli.Command {
+func diffCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "diff <jsonnet-file>",
 		Short: "compare Jsonnet resources with endpoint(s)",
@@ -75,16 +75,16 @@ func diffCmd(config grizzly.Config) *cli.Command {
 	opts := getGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, opts)
+		resources, err := grizzly.Parse(registry, jsonnetFile, opts)
 		if err != nil {
 			return err
 		}
-		return grizzly.Diff(config, resources)
+		return grizzly.Diff(registry, resources)
 	}
 	return cmd
 }
 
-func applyCmd(config grizzly.Config) *cli.Command {
+func applyCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "apply <jsonnet-file>",
 		Short: "render Jsonnet and push dashboard(s) to Grafana",
@@ -93,11 +93,11 @@ func applyCmd(config grizzly.Config) *cli.Command {
 	opts := getGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, opts)
+		resources, err := grizzly.Parse(registry, jsonnetFile, opts)
 		if err != nil {
 			return err
 		}
-		return grizzly.Apply(config, resources)
+		return grizzly.Apply(registry, resources)
 	}
 	return cmd
 }
@@ -111,11 +111,11 @@ func (p *jsonnetWatchParser) Name() string {
 	return p.jsonnetFile
 }
 
-func (p *jsonnetWatchParser) Parse(config grizzly.Config) (grizzly.Resources, error) {
-	return grizzly.Parse(config, p.jsonnetFile, p.opts)
+func (p *jsonnetWatchParser) Parse(registry grizzly.Registry) (grizzly.Resources, error) {
+	return grizzly.Parse(registry, p.jsonnetFile, p.opts)
 }
 
-func watchCmd(config grizzly.Config) *cli.Command {
+func watchCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "watch <dir-to-watch> <jsonnet-file>",
 		Short: "watch for file changes and apply",
@@ -129,12 +129,12 @@ func watchCmd(config grizzly.Config) *cli.Command {
 		}
 		watchDir := args[0]
 
-		return grizzly.Watch(config, watchDir, parser)
+		return grizzly.Watch(registry, watchDir, parser)
 	}
 	return cmd
 }
 
-func listenCmd(config grizzly.Config) *cli.Command {
+func listenCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "listen <uid-to-watch> <output-file>",
 		Short: "listen for file changes on remote and save locally",
@@ -143,12 +143,12 @@ func listenCmd(config grizzly.Config) *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		uid := args[0]
 		filename := args[1]
-		return grizzly.Listen(config, uid, filename)
+		return grizzly.Listen(registry, uid, filename)
 	}
 	return cmd
 }
 
-func previewCmd(config grizzly.Config) *cli.Command {
+func previewCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "preview <jsonnet-file>",
 		Short: "upload a snapshot to preview the rendered file",
@@ -159,7 +159,7 @@ func previewCmd(config grizzly.Config) *cli.Command {
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
-		resources, err := grizzly.Parse(config, jsonnetFile, opts)
+		resources, err := grizzly.Parse(registry, jsonnetFile, opts)
 		if err != nil {
 			return err
 		}
@@ -168,12 +168,12 @@ func previewCmd(config grizzly.Config) *cli.Command {
 			ExpiresSeconds: *expires,
 		}
 
-		return grizzly.Preview(config, resources, previewOpts)
+		return grizzly.Preview(registry, resources, previewOpts)
 	}
 	return cmd
 }
 
-func exportCmd(config grizzly.Config) *cli.Command {
+func exportCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "export <jsonnet-file> <dashboard-dir>",
 		Short: "render Jsonnet and save to a directory",
@@ -183,16 +183,16 @@ func exportCmd(config grizzly.Config) *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		jsonnetFile := args[0]
 		dashboardDir := args[1]
-		resources, err := grizzly.Parse(config, jsonnetFile, opts)
+		resources, err := grizzly.Parse(registry, jsonnetFile, opts)
 		if err != nil {
 			return err
 		}
-		return grizzly.Export(config, dashboardDir, resources)
+		return grizzly.Export(registry, dashboardDir, resources)
 	}
 	return cmd
 }
 
-func providersCmd(config grizzly.Config) *cli.Command {
+func providersCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "providers",
 		Short: "Lists all providers registered with Grizzly",
@@ -203,7 +203,7 @@ func providersCmd(config grizzly.Config) *cli.Command {
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
 		fmt.Fprintf(w, f, "API VERSION", "KIND")
-		for _, provider := range config.Registry.Providers {
+		for _, provider := range registry.Providers {
 			for _, handler := range provider.GetHandlers() {
 				fmt.Fprintf(w, f, provider.APIVersion(), handler.Kind())
 			}
