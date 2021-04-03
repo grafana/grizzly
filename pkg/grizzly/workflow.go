@@ -205,15 +205,15 @@ func Preview(registry Registry, resources Resources, opts *PreviewOpts) error {
 	return nil
 }
 
-// Parser encapsulates the action of parsing a resource (jsonnet or otherwise)
-type Parser interface {
+// WatchParser encapsulates the action of parsing a resource (jsonnet or otherwise)
+type WatchParser interface {
 	Name() string
 	Parse(registry Registry) (Resources, error)
 }
 
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
 // when changes are noticed
-func Watch(registry Registry, watchDir string, parser Parser) error {
+func Watch(registry Registry, watchDir string, parser WatchParser) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err

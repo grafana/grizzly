@@ -177,17 +177,15 @@ type Provider interface {
 
 // Registry records providers
 type Registry struct {
-	Providers     []Provider
-	Handlers      []Handler
-	HandlerByName map[string]Handler
+	Providers []Provider
+	Handlers  map[string]Handler
 }
 
 // NewProviderRegistry returns a new registry instance
 func NewProviderRegistry() Registry {
 	registry := Registry{}
 	registry.Providers = []Provider{}
-	registry.Handlers = []Handler{}
-	registry.HandlerByName = map[string]Handler{}
+	registry.Handlers = map[string]Handler{}
 	return registry
 }
 
@@ -195,15 +193,14 @@ func NewProviderRegistry() Registry {
 func (r *Registry) RegisterProvider(provider Provider) error {
 	r.Providers = append(r.Providers, provider)
 	for _, handler := range provider.GetHandlers() {
-		r.Handlers = append(r.Handlers, handler)
-		r.HandlerByName[handler.Kind()] = handler
+		r.Handlers[handler.Kind()] = handler
 	}
 	return nil
 }
 
 // GetHandler returns a single provider based upon a JSON path
 func (r *Registry) GetHandler(path string) (Handler, error) {
-	handler, exists := r.HandlerByName[path]
+	handler, exists := r.Handlers[path]
 	if !exists {
 		return nil, fmt.Errorf("No handler registered to %s", path)
 	}

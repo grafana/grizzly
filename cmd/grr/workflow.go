@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"text/tabwriter"
 
@@ -51,7 +50,6 @@ func showCmd(registry grizzly.Registry) *cli.Command {
 	opts := NewGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		opts.ConsumeArguments(args)
-		log.Printf("targ %v,%s\n", opts.Targets, *opts.ConfigFile)
 		resources, err := grizzly.Parse(registry, opts)
 		if err != nil {
 			return err
@@ -209,14 +207,13 @@ func providersCmd(registry grizzly.Registry) *cli.Command {
 }
 
 func NewGrizzlyOpts(cmd *cli.Command) grizzly.GrizzlyOpts {
-	g := grizzly.GrizzlyOpts{
+	return grizzly.GrizzlyOpts{
 		ConfigFile:   cmd.Flags().StringP("config", "c", "", "config file"),
 		Targets:      cmd.Flags().StringSliceP("target", "t", nil, "resources to target"),
 		JsonnetPaths: cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)"),
 	}
-	log.Println("Targets", g.Targets)
-	return g
 }
+
 func getDefaultJsonnetFolders() []string {
 	return []string{"vendor", "lib", "."}
 }
