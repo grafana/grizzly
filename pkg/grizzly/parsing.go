@@ -17,14 +17,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(registry Registry, filename string, opts GrizzlyOpts) (Resources, error) {
-	if strings.HasSuffix(filename, ".yaml") ||
-		strings.HasSuffix(filename, ".yml") {
-		return ParseYAML(registry, filename, opts)
-	} else if strings.HasSuffix(filename, ".jsonnet") ||
-		strings.HasSuffix(filename, ".libsonnet") ||
-		strings.HasSuffix(filename, ".json") {
-		return ParseJsonnet(registry, filename, opts)
+func Parse(registry Registry, opts GrizzlyOpts) (Resources, error) {
+	if strings.HasSuffix(*opts.ResourceFile, ".yaml") ||
+		strings.HasSuffix(*opts.ResourceFile, ".yml") {
+		return ParseYAML(registry, *opts.ResourceFile, opts)
+	} else if strings.HasSuffix(*opts.ResourceFile, ".jsonnet") ||
+		strings.HasSuffix(*opts.ResourceFile, ".libsonnet") ||
+		strings.HasSuffix(*opts.ResourceFile, ".json") {
+		return ParseJsonnet(registry, *opts.ResourceFile, opts)
 	} else {
 		return nil, fmt.Errorf("Either a config file or a resource file is required")
 	}
@@ -65,7 +65,7 @@ func ParseJsonnet(registry Registry, jsonnetFile string, opts GrizzlyOpts) (Reso
 
 	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
-	vm.Importer(newExtendedImporter(opts.JsonnetPaths))
+	vm.Importer(newExtendedImporter(*opts.JsonnetPaths))
 	for _, nf := range native.Funcs() {
 		vm.NativeFunction(nf)
 	}
