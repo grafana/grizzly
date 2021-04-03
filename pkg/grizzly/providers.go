@@ -167,6 +167,11 @@ type ListenHandler interface {
 	Listen(notifier Notifier, UID, filename string) error
 }
 
+type Parser interface {
+	// Parse parses a manifest object into a struct for this resource type
+	Parse(m manifest.Manifest) (Resources, error)
+}
+
 // Provider describes a single Endpoint Provider
 type Provider interface {
 	Group() string
@@ -198,13 +203,21 @@ func (r *Registry) RegisterProvider(provider Provider) error {
 	return nil
 }
 
-// GetHandler returns a single provider based upon a JSON path
+// GetHandler returns a single handler based upon a Kind
 func (r *Registry) GetHandler(path string) (Handler, error) {
 	handler, exists := r.Handlers[path]
 	if !exists {
 		return nil, fmt.Errorf("No handler registered to %s", path)
 	}
 	return handler, nil
+}
+
+// GetParser returns a single parser based upon a Kind
+func (r *Registry) GetParser(path string) (Parser, error) {
+	if path == ConfigKind {
+		return &ConfigParser{}, nil
+	}
+	return r.GetHandler(path)
 }
 
 // Notifier returns a notifier for responding to users

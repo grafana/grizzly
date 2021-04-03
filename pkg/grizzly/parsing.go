@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -18,16 +19,46 @@ import (
 )
 
 func Parse(registry Registry, opts GrizzlyOpts) (Resources, error) {
-	if strings.HasSuffix(*opts.ResourceFile, ".yaml") ||
-		strings.HasSuffix(*opts.ResourceFile, ".yml") {
-		return ParseYAML(registry, *opts.ResourceFile, opts)
-	} else if strings.HasSuffix(*opts.ResourceFile, ".jsonnet") ||
-		strings.HasSuffix(*opts.ResourceFile, ".libsonnet") ||
-		strings.HasSuffix(*opts.ResourceFile, ".json") {
-		return ParseJsonnet(registry, *opts.ResourceFile, opts)
-	} else {
-		return nil, fmt.Errorf("Either a config file or a resource file is required")
+	if opts.ResourceFile != nil {
+		if strings.HasSuffix(*opts.ResourceFile, ".jsonnet") ||
+			strings.HasSuffix(*opts.ResourceFile, ".libsonnet") ||
+			strings.HasSuffix(*opts.ResourceFile, ".json") {
+			return ParseJsonnet(registry, *opts.ResourceFile, opts)
+		}
+
+		if strings.HasSuffix(*opts.ResourceFile, ".yaml") ||
+			strings.HasSuffix(*opts.ResourceFile, ".yml") {
+			return ParseYAML(registry, *opts.ResourceFile, opts)
+		}
 	}
+	if opts.ConfigFile != nil {
+		configResources, err := ParseYAML(registry, *opts.ConfigFile, opts)
+		if err != nil {
+			return nil, err
+		}
+		config, err := NewConfig(configResources)
+		if err != nil {
+			return nil, err
+		}
+
+		var resources Resources
+		for _, source := range config.Outbound {
+			globs, err := filepath.Glob(source.Path)
+			if err != nil {
+				return nil, err
+			}
+			for _, filename := range globs {
+				parsedResources, err := ParseYAML(registry, filename, opts)
+				if err != nil {
+					return nil, err
+				}
+				resources = append(resources, parsedResources...)
+			}
+		}
+		return resources, nil
+	}
+
+	return nil, fmt.Errorf("Either a config file or a resource file is required")
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources
@@ -43,7 +74,7 @@ func ParseYAML(registry Registry, yamlFile string, opts GrizzlyOpts) (Resources,
 	var resources Resources
 	for i := 0; decoder.Decode(&m) == nil; i++ {
 		manifests[strconv.Itoa(i)] = m
-		handler, err := registry.GetHandler(m.Kind())
+		handler, err := registry.GetParser(m.Kind())
 		if err != nil {
 			return nil, err
 		}
