@@ -253,13 +253,17 @@ func findOrCreateFolder(UID string) (int64, error) {
 	return createFolder(UID)
 }
 
+func makeFolderUID(title string) string {
+	uid := strings.ReplaceAll(title, " ", "-")
+	return uid
+}
 func createFolder(UID string) (int64, error) {
 	grafanaURL, err := getGrafanaURL("api/folders")
 	if err != nil {
 		return 0, err
 	}
 	folder := Folder{
-		UID:   UID,
+		UID:   makeFolderUID(UID),
 		Title: UID,
 	}
 
