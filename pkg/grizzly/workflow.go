@@ -76,6 +76,9 @@ func Show(registry Registry, resources Resources) error {
 	var items []term.PageItem
 	for _, resource := range resources {
 		handler, err := registry.GetHandler(resource.Kind())
+		if err != nil {
+			return nil
+		}
 		resource = *(handler.Unprepare(resource))
 
 		rep, err := resource.YAML()
