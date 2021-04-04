@@ -32,15 +32,10 @@ func Parse(registry Registry, opts GrizzlyOpts) (Resources, error) {
 		}
 	}
 	if opts.ConfigFile != nil {
-		configResources, err := ParseYAML(registry, *opts.ConfigFile, opts)
+		config, err := ParseConfig(registry, opts)
 		if err != nil {
 			return nil, err
 		}
-		config, err := NewConfig(configResources)
-		if err != nil {
-			return nil, err
-		}
-
 		var resources Resources
 		for _, source := range config.Outbound {
 			globs, err := filepath.Glob(source.Path)
@@ -59,6 +54,20 @@ func Parse(registry Registry, opts GrizzlyOpts) (Resources, error) {
 	}
 
 	return nil, fmt.Errorf("Either a config file or a resource file is required")
+}
+
+// ParseConfig parses a config file from a filename
+func ParseConfig(registry Registry, opts GrizzlyOpts) (*Config, error) {
+	configResources, err := ParseYAML(registry, *opts.ConfigFile, opts)
+	if err != nil {
+		return nil, err
+	}
+	config, err := NewConfig(configResources)
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
+
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources
