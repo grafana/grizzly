@@ -31,10 +31,17 @@ type OutboundSource struct {
 	Path string `yaml:"path"`
 }
 
+type InboundSource struct {
+	Name     string `yaml:"name"`
+	Kind     string `yaml:"kind"`
+	Template string `yaml:"template"`
+}
+
 const ConfigKind = "GrizzlyConfig"
 
 type Config struct {
 	Outbound []OutboundSource `yaml:"outbound"`
+	Inbound  []InboundSource  `yaml:"inbound"`
 }
 
 func NewConfig(configResources Resources) (*Config, error) {

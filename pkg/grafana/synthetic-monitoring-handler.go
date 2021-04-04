@@ -80,6 +80,11 @@ func (h *SyntheticMonitoringHandler) GetRemote(resource grizzly.Resource) (*griz
 	return getRemoteCheck(uid)
 }
 
+// ListRemote retrieves as list of UIDs of all remote resources
+func (h *SyntheticMonitoringHandler) ListRemote() ([]string, error) {
+	return nil, nil
+}
+
 // Add adds a new check to the SyntheticMonitoring endpoint
 func (h *SyntheticMonitoringHandler) Add(resource grizzly.Resource) error {
 	url := getSyntheticMonitoringURL("api/v1/check/add")

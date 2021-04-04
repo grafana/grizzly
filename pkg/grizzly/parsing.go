@@ -2,9 +2,12 @@ package grizzly
 
 import (
 	"bufio"
+	"bytes"
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -143,4 +146,29 @@ func ParseJsonnet(registry Registry, jsonnetFile string, opts GrizzlyOpts) (Reso
 		resources = append(resources, parsedResources...)
 	}
 	return resources, nil
+}
+
+// UnparseYAML takes a resource and renders it to a source file as a YAML string
+func UnparseYAML(resource Resource, source InboundSource) error {
+	tmpl, err := template.New("path").Parse(source.Template)
+	if err != nil {
+		return err
+	}
+	buf := bytes.Buffer{}
+	err = tmpl.Execute(&buf, resource)
+	path := buf.String()
+	y, err := resource.YAML()
+	if err != nil {
+		return err
+	}
+	dir := filepath.Dir(path)
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(path, []byte(y), 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }

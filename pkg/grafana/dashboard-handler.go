@@ -78,6 +78,11 @@ func (h *DashboardHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resour
 	return getRemoteDashboard(resource.Name())
 }
 
+// ListRemote retrieves as list of UIDs of all remote resources
+func (h *DashboardHandler) ListRemote() ([]string, error) {
+	return getRemoteDashboardList()
+}
+
 // Add pushes a new dashboard to Grafana via the API
 func (h *DashboardHandler) Add(resource grizzly.Resource) error {
 	if err := postDashboard(resource); err != nil {

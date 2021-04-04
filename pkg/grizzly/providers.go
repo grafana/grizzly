@@ -146,6 +146,9 @@ type Handler interface {
 	// GetRemote retrieves a remote equivalent of a remote resource
 	GetRemote(resource Resource) (*Resource, error)
 
+	// ListRemote retrieves as list of UIDs of all remote resources
+	ListRemote() ([]string, error)
+
 	// Add pushes a new resource to the endpoint
 	Add(resource Resource) error
 

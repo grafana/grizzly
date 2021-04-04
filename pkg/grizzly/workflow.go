@@ -2,6 +2,7 @@ package grizzly
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -68,6 +69,42 @@ func List(registry Registry, resources Resources) error {
 		fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), resource.Name())
 	}
 	return w.Flush()
+}
+
+// Pulls remote resources
+func Pull(registry Registry, sources []InboundSource) error {
+
+	f, _ := os.Create("log")
+	defer f.Close()
+
+	for _, source := range sources {
+		handler, err := registry.GetHandler(source.Kind)
+		if err != nil {
+			return nil
+		}
+		log.Printf("%T", handler)
+		UIDs, err := handler.ListRemote()
+		if len(UIDs) == 0 {
+			registry.Notifier().Error(nil, "No resources found")
+		}
+		registry.Notifier().Warn(nil, fmt.Sprintf("Pulling %d resources", len(UIDs)))
+		for _, UID := range UIDs {
+			resource, err := handler.GetByUID(UID)
+			if errors.As(err, &ErrNotFound) {
+				registry.Notifier().Error(nil, fmt.Sprintf("%s not found", UID))
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			err = UnparseYAML(*resource, source)
+			if err != nil {
+				return err
+			}
+			registry.Notifier().Info(resource, "pulled")
+		}
+	}
+	return nil
 }
 
 // Show displays resources

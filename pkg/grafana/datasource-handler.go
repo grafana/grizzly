@@ -83,6 +83,11 @@ func (h *DatasourceHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resou
 	return getRemoteDatasource(resource.Name())
 }
 
+// ListRemote retrieves as list of UIDs of all remote resources
+func (h *DatasourceHandler) ListRemote() ([]string, error) {
+	return getRemoteDatasourceList()
+}
+
 // Add pushes a datasource to Grafana via the API
 func (h *DatasourceHandler) Add(resource grizzly.Resource) error {
 	return postDatasource(resource)

@@ -61,6 +61,11 @@ func (h *RuleHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, e
 	return getRemoteRuleGroup(uid)
 }
 
+// ListRemote retrieves as list of UIDs of all remote resources
+func (h *RuleHandler) ListRemote() ([]string, error) {
+	return nil, nil
+}
+
 // Add pushes a datasource to Grafana via the API
 func (h *RuleHandler) Add(resource grizzly.Resource) error {
 	return writeRuleGroup(resource)

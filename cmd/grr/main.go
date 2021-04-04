@@ -30,6 +30,7 @@ func main() {
 	rootCmd.AddCommand(
 		getCmd(registry),
 		listCmd(registry),
+		pullCmd(registry),
 		showCmd(registry),
 		diffCmd(registry),
 		applyCmd(registry),
