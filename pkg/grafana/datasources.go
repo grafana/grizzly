@@ -13,7 +13,7 @@ import (
 
 // getRemoteDatasource retrieves a datasource object from Grafana
 func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
-	grafanaURL, err := getGrafanaURL("api/datasources/name/" + uid)
+	grafanaURL, err := getGrafanaURL("api/datasources/uid/" + uid)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
 		resp.Body.Close()
-		grafanaURL, err := getGrafanaURL("api/datasources/uid/" + uid)
+		grafanaURL, err := getGrafanaURL("api/datasources/name/" + uid)
 		if err != nil {
 			return nil, err
 		}

@@ -55,7 +55,7 @@ func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.Resources, error
 			spec[k] = defaults[k]
 		}
 	}
-	spec["name"] = m.Metadata().Name()
+	spec["uid"] = m.Metadata().Name()
 	resource["spec"] = spec
 	return grizzly.Resources{resource}, nil
 }
@@ -70,6 +70,7 @@ func (h *DatasourceHandler) Unprepare(resource grizzly.Resource) *grizzly.Resour
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *DatasourceHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
 	resource.SetSpecValue("id", existing.GetSpecValue("id"))
+	resource.DeleteSpecKey("version")
 	return &resource
 }
 
