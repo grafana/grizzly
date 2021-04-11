@@ -41,7 +41,7 @@ func (r *Resource) Name() string {
 }
 
 func (r Resource) String() string {
-	return fmt.Sprintf("%s/%s", r.Key(), r.Name())
+	return r.Key()
 }
 
 // Key returns a key that combines kind and uid
