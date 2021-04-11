@@ -45,6 +45,28 @@ func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 	return nil, grizzly.ErrNotFound
 }
 
+// getRemoteRuleGroupingList retrieves a datasource object from Grafana
+func getRemoteRuleGroupList() ([]string, error) {
+	out, err := cortexTool("rules", "print", "--disable-color")
+	if err != nil {
+		return nil, err
+	}
+	groupings := map[string][]PrometheusRuleGroup{}
+	err = yaml.Unmarshal(out, &groupings)
+	if err != nil {
+		return nil, err
+	}
+
+	IDs := []string{}
+	for namespace, grouping := range groupings {
+		for _, group := range grouping {
+			uid := fmt.Sprintf("%s.%s", namespace, group.Name)
+			IDs = append(IDs, uid)
+		}
+	}
+	return IDs, nil
+}
+
 // PrometheusRuleGroup encapsulates a list of rules
 type PrometheusRuleGroup struct {
 	Namespace string                   `yaml:"-"`

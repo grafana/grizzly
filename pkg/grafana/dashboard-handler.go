@@ -48,12 +48,20 @@ func (h *DashboardHandler) GetExtension() string {
 	return "json"
 }
 
-const dashboardGlob = "dashboards/*/dashboard-*"
+const (
+	dashboardGlob    = "dashboards/*/dashboard-*"
+	dashboardPattern = "dashboards/%s/dashboard-%s.%s"
+)
 
 // FindResourceFiles identifies files within a directory that this handler can process
 func (h *DashboardHandler) FindResourceFiles(dir string) ([]string, error) {
 	path := filepath.Join(dir, dashboardGlob)
 	return filepath.Glob(path)
+}
+
+// ResourceFilePath returns the location on disk where a resource should be updated
+func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
+	return fmt.Sprintf(dashboardPattern, resource.GetMetadata("folder"), resource.Name(), filetype)
 }
 
 // Parse parses a manifest object into a struct for this resource type
@@ -85,6 +93,11 @@ func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 // GetRemote retrieves a dashboard as a resource
 func (h *DashboardHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
 	return getRemoteDashboard(resource.Name())
+}
+
+// ListRemote retrieves as list of UIDs of all remote resources
+func (h *DashboardHandler) ListRemote() ([]string, error) {
+	return getRemoteDashboardList()
 }
 
 // Add pushes a new dashboard to Grafana via the API

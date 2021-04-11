@@ -2,10 +2,12 @@ package grizzly
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 
@@ -68,6 +70,41 @@ func List(registry Registry, resources Resources) error {
 		fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), resource.Name())
 	}
 	return w.Flush()
+}
+
+// Pulls remote resources
+func Pull(registry Registry, opts GrizzlyOpts) error {
+
+	f, _ := os.Create("log")
+	defer f.Close()
+
+	for _, handler := range registry.Handlers {
+		UIDs, err := handler.ListRemote()
+		if err != nil {
+			return err
+		}
+		if len(UIDs) == 0 {
+			registry.Notifier().Info(nil, "No resources found")
+		}
+		registry.Notifier().Warn(nil, fmt.Sprintf("Pulling %d resources", len(UIDs)))
+		for _, UID := range UIDs {
+			resource, err := handler.GetByUID(UID)
+			if errors.As(err, &ErrNotFound) {
+				registry.Notifier().NotFound(SimpleString(UID))
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			path := filepath.Join(*opts.Directory, handler.ResourceFilePath(*resource, "yaml"))
+			err = UnparseYAML(*resource, path)
+			if err != nil {
+				return err
+			}
+			registry.Notifier().Info(resource, "pulled")
+		}
+	}
+	return nil
 }
 
 // Show displays resources

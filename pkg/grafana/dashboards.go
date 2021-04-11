@@ -52,6 +52,49 @@ func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	return &resource, nil
 }
 
+func getRemoteDashboardList() ([]string, error) {
+	batchSize := 500
+
+	UIDs := []string{}
+	for page := 1; ; page++ {
+		grafanaURL, err := getGrafanaURL(fmt.Sprintf("/api/search?type=dash-db&limit=%d&page=%d", batchSize, page))
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := http.Get(grafanaURL)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		switch resp.StatusCode {
+		case http.StatusNotFound:
+			return nil, grizzly.ErrNotFound
+		default:
+			if resp.StatusCode >= 400 {
+				return nil, errors.New(resp.Status)
+			}
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		var dashboards []Dashboard
+		if err := json.Unmarshal([]byte(string(body)), &dashboards); err != nil {
+			return nil, err
+		}
+		for _, dashboard := range dashboards {
+			UIDs = append(UIDs, dashboard.UID())
+		}
+		if len(dashboards) < batchSize {
+			break
+		}
+	}
+	return UIDs, nil
+
+}
+
 func postDashboard(resource grizzly.Resource) error {
 	grafanaURL, err := getGrafanaURL("api/dashboards/db")
 	if err != nil {

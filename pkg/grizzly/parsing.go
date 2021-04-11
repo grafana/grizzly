@@ -5,8 +5,10 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -31,7 +33,6 @@ func Parse(registry Registry, opts GrizzlyOpts) (Resources, error) {
 			return nil, err
 		}
 		for _, file := range files {
-			log.Println("Parsing", file)
 			r, err := ParseFile(registry, opts, file)
 			if err != nil {
 				return nil, err
@@ -141,4 +142,22 @@ func ParseJsonnet(registry Registry, jsonnetFile string, opts GrizzlyOpts) (Reso
 		resources = append(resources, parsedResources...)
 	}
 	return resources, nil
+}
+
+// UnparseYAML takes a resource and renders it to a source file as a YAML string
+func UnparseYAML(resource Resource, filename string) error {
+	y, err := resource.YAML()
+	if err != nil {
+		return err
+	}
+	dir := filepath.Dir(filename)
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filename, []byte(y), 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }

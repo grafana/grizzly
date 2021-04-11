@@ -138,6 +138,9 @@ type Handler interface {
 	// FindResourceFiles identifies files within a directory that this handler can process
 	FindResourceFiles(dir string) ([]string, error)
 
+	// ResourceFilePath returns the location on disk where a resource should be updated
+	ResourceFilePath(resource Resource, filetype string) string
+
 	// Parse parses a manifest object into a struct for this resource type
 	Parse(m manifest.Manifest) (Resources, error)
 
@@ -152,6 +155,9 @@ type Handler interface {
 
 	// GetRemote retrieves a remote equivalent of a remote resource
 	GetRemote(resource Resource) (*Resource, error)
+
+	// ListRemote retrieves as list of UIDs of all remote resources
+	ListRemote() ([]string, error)
 
 	// Add pushes a new resource to the endpoint
 	Add(resource Resource) error
