@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -254,7 +256,9 @@ func findOrCreateFolder(UID string) (int64, error) {
 }
 
 func makeFolderUID(title string) string {
+	re, _ := regexp.Compile(`[^A-Za-z0-9_\-]`)
 	uid := strings.ReplaceAll(title, " ", "-")
+	uid = re.ReplaceAllString(uid, "")
 	return uid
 }
 func createFolder(UID string) (int64, error) {
