@@ -197,7 +197,7 @@ func Preview(registry Registry, resources Resources, opts *PreviewOpts) error {
 		}
 		previewHandler, ok := handler.(PreviewHandler)
 		if !ok {
-			registry.Notifier().NotSupported(handler.Kind(), resource.Name(), "preview")
+			registry.Notifier().NotSupported(resource, "preview")
 			return nil
 		}
 		err = previewHandler.Preview(resource, *registry.Notifier(), opts)
@@ -283,7 +283,8 @@ func Listen(registry Registry, UID, filename string) error {
 	}
 	listenHandler, ok := handler.(ListenHandler)
 	if !ok {
-		registry.Notifier().NotSupported(handler.Kind(), resourceID, "listen")
+		uid := fmt.Sprintf("%s.%s", handler.Kind(), resourceID)
+		registry.Notifier().NotSupported(SimpleString(uid), "listen")
 		return nil
 	}
 	return listenHandler.Listen(*registry.Notifier(), resourceID, filename)

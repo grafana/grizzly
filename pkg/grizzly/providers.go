@@ -40,6 +40,10 @@ func (r *Resource) Name() string {
 	return r.GetMetadata("name")
 }
 
+func (r Resource) String() string {
+	return fmt.Sprintf("%s/%s", r.Key(), r.Name())
+}
+
 // Key returns a key that combines kind and uid
 func (r *Resource) Key() string {
 	return fmt.Sprintf("%s/%s", r.Kind(), r.Name())
