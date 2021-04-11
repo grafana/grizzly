@@ -24,9 +24,9 @@ func getCmd(registry grizzly.Registry) *cli.Command {
 
 func listCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
-		Use:   "list <jsonnet-file>",
+		Use:   "list [-d <directory> [<jsonnet-file>]",
 		Short: "list resource keys from file",
-		Args:  cli.ArgsExact(1),
+		Args:  cli.ArgsRange(0, 1),
 	}
 	opts := grizzlyOptsFromCmd(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
@@ -45,9 +45,9 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 
 func showCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
-		Use:   "show <jsonnet-file>",
+		Use:   "show [-d <directory>] [<jsonnet-file>]",
 		Short: "render Jsonnet as json",
-		Args:  cli.ArgsExact(1),
+		Args:  cli.ArgsRange(0, 1),
 	}
 	opts := grizzlyOptsFromCmd(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
@@ -67,7 +67,7 @@ func diffCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "diff <jsonnet-file>",
 		Short: "compare Jsonnet resources with endpoint(s)",
-		Args:  cli.ArgsExact(1),
+		Args:  cli.ArgsRange(0, 1),
 	}
 	opts := grizzlyOptsFromCmd(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
@@ -87,7 +87,7 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "apply <jsonnet-file>",
 		Short: "render Jsonnet and push dashboard(s) to Grafana",
-		Args:  cli.ArgsExact(1),
+		Args:  cli.ArgsRange(0, 1),
 	}
 	opts := grizzlyOptsFromCmd(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
@@ -220,7 +220,7 @@ func providersCmd(registry grizzly.Registry) *cli.Command {
 
 func grizzlyOptsFromCmd(cmd *cli.Command) grizzly.GrizzlyOpts {
 	return grizzly.GrizzlyOpts{
-		ConfigFile:   cmd.Flags().StringP("config", "c", "", "config file"),
+		Directory:    cmd.Flags().StringP("directory", "d", "", "directory containing resource files"),
 		Targets:      cmd.Flags().StringSliceP("target", "t", nil, "resources to target"),
 		JsonnetPaths: cmd.Flags().StringSliceP("jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)"),
 	}

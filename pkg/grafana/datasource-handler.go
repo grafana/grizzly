@@ -1,6 +1,8 @@
 package grafana
 
 import (
+	"path/filepath"
+
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
@@ -30,6 +32,14 @@ func (h *DatasourceHandler) APIVersion() string {
 // GetExtension returns the file name extension for a datasource
 func (h *DatasourceHandler) GetExtension() string {
 	return "json"
+}
+
+const datasourceGlob = "datasources/datasource-*"
+
+// FindResourceFiles identifies files within a directory that this handler can process
+func (h *DatasourceHandler) FindResourceFiles(dir string) ([]string, error) {
+	path := filepath.Join(dir, datasourceGlob)
+	return filepath.Glob(path)
 }
 
 // Parse parses a manifest object into a struct for this resource type

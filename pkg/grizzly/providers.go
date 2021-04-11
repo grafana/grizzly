@@ -131,6 +131,9 @@ type Handler interface {
 	Kind() string
 	GetExtension() string
 
+	// FindResourceFiles identifies files within a directory that this handler can process
+	FindResourceFiles(dir string) ([]string, error)
+
 	// Parse parses a manifest object into a struct for this resource type
 	Parse(m manifest.Manifest) (Resources, error)
 

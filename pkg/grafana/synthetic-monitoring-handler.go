@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -44,6 +45,14 @@ func (h *SyntheticMonitoringHandler) APIVersion() string {
 // GetExtension returns the file name extension for a check
 func (h *SyntheticMonitoringHandler) GetExtension() string {
 	return "json"
+}
+
+const syntheticMonitoringCheckGlob = "synthetic-monitoring/check-*"
+
+// FindResourceFiles identifies files within a directory that this handler can process
+func (h *SyntheticMonitoringHandler) FindResourceFiles(dir string) ([]string, error) {
+	path := filepath.Join(dir, syntheticMonitoringCheckGlob)
+	return filepath.Glob(path)
 }
 
 // Parse parses a manifest object into a struct for this resource type

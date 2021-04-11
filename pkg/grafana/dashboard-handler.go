@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -45,6 +46,14 @@ const (
 // GetExtension returns the file name extension for a dashboard
 func (h *DashboardHandler) GetExtension() string {
 	return "json"
+}
+
+const dashboardGlob = "dashboards/*/dashboard-*"
+
+// FindResourceFiles identifies files within a directory that this handler can process
+func (h *DashboardHandler) FindResourceFiles(dir string) ([]string, error) {
+	path := filepath.Join(dir, dashboardGlob)
+	return filepath.Glob(path)
 }
 
 // Parse parses a manifest object into a struct for this resource type
