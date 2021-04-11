@@ -1,0 +1,12 @@
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: Dashboard
+metadata:
+    folder: sample
+    name: prod-overview
+spec:
+    schemaVersion: 17
+    tags:
+        - templated
+    timezone: browser
+    title: Production Overview
+    uid: prod-overview
