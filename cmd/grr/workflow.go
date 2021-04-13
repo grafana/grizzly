@@ -49,7 +49,7 @@ func pullCmd(registry grizzly.Registry) *cli.Command {
 		Short: "Pulls remote resources and writes them to local sources",
 		Args:  cli.ArgsNone(),
 	}
-	opts := NewGrizzlyOpts(cmd)
+	opts := grizzlyOptsFromCmd(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		return grizzly.Pull(registry, opts)
 	}
