@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/gobwas/glob"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -218,6 +219,22 @@ func (r *Registry) GetHandler(path string) (Handler, error) {
 		return nil, fmt.Errorf("No handler registered to %s", path)
 	}
 	return handler, nil
+}
+
+// HandlerMatchesTarget identifies whether a resource is in a target list
+func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool {
+	if len(targets) == 0 {
+		return true
+	}
+	key := handler.Kind()
+
+	for _, target := range targets {
+		if strings.Contains(target, "/") && strings.Split(target, "/")[0] == key {
+			return true
+		}
+	}
+	r.Notifier().Info(SimpleString(key), "skipped")
+	return false
 }
 
 // Notifier returns a notifier for responding to users

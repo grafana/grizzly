@@ -79,6 +79,9 @@ func Pull(registry Registry, opts GrizzlyOpts) error {
 	defer f.Close()
 
 	for _, handler := range registry.Handlers {
+		if !registry.HandlerMatchesTarget(handler, *opts.Targets) {
+			continue
+		}
 		UIDs, err := handler.ListRemote()
 		if err != nil {
 			return err
@@ -96,6 +99,10 @@ func Pull(registry Registry, opts GrizzlyOpts) error {
 			if err != nil {
 				return err
 			}
+			if !resource.MatchesTarget(*opts.Targets) {
+				continue
+			}
+
 			path := filepath.Join(*opts.Directory, handler.ResourceFilePath(*resource, "yaml"))
 			err = UnparseYAML(*resource, path)
 			if err != nil {
