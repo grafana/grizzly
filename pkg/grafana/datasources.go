@@ -11,9 +11,8 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
-// getRemoteDatasource retrieves a datasource object from Grafana
-func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
-	grafanaURL, err := getGrafanaURL("api/datasources/name/" + uid)
+func makeDatasourceRequest(url string) ([]byte, error) {
+	grafanaURL, err := getGrafanaURL(url)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +22,6 @@ func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-
 	switch resp.StatusCode {
 	case http.StatusNotFound:
 		return nil, grizzly.ErrNotFound
@@ -32,8 +30,19 @@ func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
 			return nil, errors.New(resp.Status)
 		}
 	}
-
 	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// getRemoteDatasource retrieves a datasource object from Grafana
+func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
+	data, err := makeDatasourceRequest("api/datasources/uid/" + uid)
+	if errors.Is(err, grizzly.ErrNotFound) {
+		data, err = makeDatasourceRequest("api/datasources/name/" + uid)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +93,7 @@ func postDatasource(resource grizzly.Resource) error {
 
 func putDatasource(resource grizzly.Resource) error {
 	spec := resource.Spec()
-	id := spec["id"].(int64)
+	id := int64(spec["id"].(float64))
 	grafanaURL, err := getGrafanaURL(fmt.Sprintf("api/datasources/%d", id))
 	if err != nil {
 		return err

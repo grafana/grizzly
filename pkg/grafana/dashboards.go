@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -253,14 +255,20 @@ func findOrCreateFolder(UID string) (int64, error) {
 	return createFolder(UID)
 }
 
-func createFolder(UID string) (int64, error) {
+func createFolder(title string) (int64, error) {
 	grafanaURL, err := getGrafanaURL("api/folders")
 	if err != nil {
 		return 0, err
 	}
+
+	// Convert title to UID (replace space with dash, strip all non alphanumeric characters):
+	UID := strings.ReplaceAll(title, " ", "-")
+	re, _ := regexp.Compile(`[^A-Za-z0-9_\-]`)
+	UID = re.ReplaceAllString(UID, "")
+
 	folder := Folder{
 		UID:   UID,
-		Title: UID,
+		Title: title,
 	}
 
 	folderJSON, err := folder.toJSON()

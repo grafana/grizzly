@@ -2,7 +2,6 @@ package grizzly
 
 import (
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,10 +9,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/term"
-	"github.com/grafana/tanka/pkg/jsonnet/native"
-	"github.com/grafana/tanka/pkg/process"
 	"github.com/pmezard/go-difflib/difflib"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
@@ -22,7 +18,7 @@ import (
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 // Get retrieves a resource from a remote endpoint using its UID
-func Get(config Config, UID string) error {
+func Get(registry Registry, UID string) error {
 	count := strings.Count(UID, ".")
 	var handlerName, resourceID string
 	if count == 1 {
@@ -38,7 +34,7 @@ func Get(config Config, UID string) error {
 		return fmt.Errorf("UID must be <provider>.<uid>: %s", UID)
 	}
 
-	handler, err := config.Registry.GetHandler(handlerName)
+	handler, err := registry.GetHandler(handlerName)
 	if err != nil {
 		return err
 	}
@@ -59,13 +55,13 @@ func Get(config Config, UID string) error {
 }
 
 // List outputs the keys resources found in resulting json.
-func List(config Config, resources Resources) error {
+func List(registry Registry, resources Resources) error {
 	f := "%s\t%s\t%s\n"
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
 	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
 	for _, resource := range resources {
-		handler, err := config.Registry.GetHandler(resource.Kind())
+		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
 		}
@@ -74,60 +70,15 @@ func List(config Config, resources Resources) error {
 	return w.Flush()
 }
 
-//go:embed grizzly.jsonnet
-var script string
-
-// Parse evaluates a jsonnet file and parses it into an object tree
-func Parse(config Config, jsonnetFile string, jsonnetPaths []string, targets []string) (Resources, error) {
-
-	script := fmt.Sprintf(script, jsonnetFile)
-	vm := jsonnet.MakeVM()
-	vm.Importer(newExtendedImporter(jsonnetPaths))
-	for _, nf := range native.Funcs() {
-		vm.NativeFunction(nf)
-	}
-
-	result, err := vm.EvaluateSnippet(jsonnetFile, script)
-	if err != nil {
-		return nil, err
-	}
-	var data interface{}
-	if err := json.Unmarshal([]byte(result), &data); err != nil {
-		return nil, err
-	}
-
-	extracted, err := process.Extract(data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unwrap *List types
-	if err := process.Unwrap(extracted); err != nil {
-		return nil, err
-	}
-
-	resources := Resources{}
-	for _, m := range extracted {
-		handler, err := config.Registry.GetHandler(m.Kind())
-		if err != nil {
-			log.Println("Error getting handler", err)
-			continue
-		}
-		parsedResources, err := handler.Parse(m)
-		if err != nil {
-			return nil, err
-		}
-		resources = append(resources, parsedResources...)
-	}
-	return resources, nil
-}
-
 // Show displays resources
-func Show(config Config, resources Resources) error {
+func Show(registry Registry, resources Resources) error {
 
 	var items []term.PageItem
 	for _, resource := range resources {
-		handler, err := config.Registry.GetHandler(resource.Kind())
+		handler, err := registry.GetHandler(resource.Kind())
+		if err != nil {
+			return nil
+		}
 		resource = *(handler.Unprepare(resource))
 
 		rep, err := resource.YAML()
@@ -151,10 +102,10 @@ func Show(config Config, resources Resources) error {
 }
 
 // Diff compares resources to those at the endpoints
-func Diff(config Config, resources Resources) error {
+func Diff(registry Registry, resources Resources) error {
 
 	for _, resource := range resources {
-		handler, err := config.Registry.GetHandler(resource.Kind())
+		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return nil
 		}
@@ -166,7 +117,7 @@ func Diff(config Config, resources Resources) error {
 		uid := resource.Name()
 		remote, err := handler.GetRemote(resource)
 		if err == ErrNotFound {
-			config.Notifier.NotFound(resource)
+			registry.Notifier().NotFound(resource)
 			continue
 		}
 		if err != nil {
@@ -179,7 +130,7 @@ func Diff(config Config, resources Resources) error {
 		}
 
 		if local == remoteRepresentation {
-			config.Notifier.NoChanges(resource)
+			registry.Notifier().NoChanges(resource)
 		} else {
 			diff := difflib.UnifiedDiff{
 				A:        difflib.SplitLines(remoteRepresentation),
@@ -189,16 +140,16 @@ func Diff(config Config, resources Resources) error {
 				Context:  3,
 			}
 			difference, _ := difflib.GetUnifiedDiffString(diff)
-			config.Notifier.HasChanges(resource, difference)
+			registry.Notifier().HasChanges(resource, difference)
 		}
 	}
 	return nil
 }
 
 // Apply pushes resources to endpoints
-func Apply(config Config, resources Resources) error {
+func Apply(registry Registry, resources Resources) error {
 	for _, resource := range resources {
-		handler, err := config.Registry.GetHandler(resource.Kind())
+		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return nil
 		}
@@ -209,7 +160,7 @@ func Apply(config Config, resources Resources) error {
 			if err != nil {
 				return err
 			}
-			config.Notifier.Added(resource)
+			registry.Notifier().Added(resource)
 			continue
 		} else if err != nil {
 			return err
@@ -225,31 +176,31 @@ func Apply(config Config, resources Resources) error {
 			return nil
 		}
 		if resourceRepresentation == existingResourceRepresentation {
-			config.Notifier.NoChanges(resource)
+			registry.Notifier().NoChanges(resource)
 		} else {
 			err = handler.Update(*existingResource, resource)
 			if err != nil {
 				return err
 			}
-			config.Notifier.Updated(resource)
+			registry.Notifier().Updated(resource)
 		}
 	}
 	return nil
 }
 
 // Preview pushes resources to endpoints as previews, if supported
-func Preview(config Config, resources Resources, opts *PreviewOpts) error {
+func Preview(registry Registry, resources Resources, opts *PreviewOpts) error {
 	for _, resource := range resources {
-		handler, err := config.Registry.GetHandler(resource.Kind())
+		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return nil
 		}
 		previewHandler, ok := handler.(PreviewHandler)
 		if !ok {
-			config.Notifier.NotSupported(handler.Kind(), resource.Name(), "preview")
+			registry.Notifier().NotSupported(handler.Kind(), resource.Name(), "preview")
 			return nil
 		}
-		err = previewHandler.Preview(resource, config.Notifier, opts)
+		err = previewHandler.Preview(resource, *registry.Notifier(), opts)
 		if err != nil {
 			return err
 		}
@@ -257,15 +208,15 @@ func Preview(config Config, resources Resources, opts *PreviewOpts) error {
 	return nil
 }
 
-// Parser encapsulates the action of parsing a resource (jsonnet or otherwise)
-type Parser interface {
+// WatchParser encapsulates the action of parsing a resource (jsonnet or otherwise)
+type WatchParser interface {
 	Name() string
-	Parse(config Config) (Resources, error)
+	Parse(registry Registry) (Resources, error)
 }
 
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
 // when changes are noticed
-func Watch(config Config, watchDir string, parser Parser) error {
+func Watch(registry Registry, watchDir string, parser WatchParser) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -283,11 +234,11 @@ func Watch(config Config, watchDir string, parser Parser) error {
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					log.Println("Changes detected. Applying", parser.Name())
-					resources, err := parser.Parse(config)
+					resources, err := parser.Parse(registry)
 					if err != nil {
 						log.Println("Error: ", err)
 					}
-					err = Apply(config, resources)
+					err = Apply(registry, resources)
 					if err != nil {
 						log.Println("Error: ", err)
 					}
@@ -310,7 +261,7 @@ func Watch(config Config, watchDir string, parser Parser) error {
 }
 
 // Listen waits for remote changes to a resource and saves them to disk
-func Listen(config Config, UID, filename string) error {
+func Listen(registry Registry, UID, filename string) error {
 	count := strings.Count(UID, ".")
 	var handlerName, resourceID string
 	if count == 1 {
@@ -326,20 +277,20 @@ func Listen(config Config, UID, filename string) error {
 		return fmt.Errorf("UID must be <provider>.<uid>: %s", UID)
 	}
 
-	handler, err := config.Registry.GetHandler(handlerName)
+	handler, err := registry.GetHandler(handlerName)
 	if err != nil {
 		return err
 	}
 	listenHandler, ok := handler.(ListenHandler)
 	if !ok {
-		config.Notifier.NotSupported(handler.Kind(), resourceID, "listen")
+		registry.Notifier().NotSupported(handler.Kind(), resourceID, "listen")
 		return nil
 	}
-	return listenHandler.Listen(config.Notifier, resourceID, filename)
+	return listenHandler.Listen(*registry.Notifier(), resourceID, filename)
 }
 
 // Export renders Jsonnet resources then saves them to a directory
-func Export(config Config, exportDir string, resources Resources) error {
+func Export(registry Registry, exportDir string, resources Resources) error {
 	if _, err := os.Stat(exportDir); os.IsNotExist(err) {
 		err = os.Mkdir(exportDir, 0755)
 		if err != nil {
@@ -348,7 +299,7 @@ func Export(config Config, exportDir string, resources Resources) error {
 	}
 
 	for _, resource := range resources {
-		handler, err := config.Registry.GetHandler(resource.Kind())
+		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return nil
 		}
@@ -373,16 +324,16 @@ func Export(config Config, exportDir string, resources Resources) error {
 		}
 		existingResource := string(existingResourceBytes)
 		if existingResource == updatedResource {
-			config.Notifier.NoChanges(resource)
+			registry.Notifier().NoChanges(resource)
 		} else {
 			err = ioutil.WriteFile(path, []byte(updatedResource), 0644)
 			if err != nil {
 				return err
 			}
 			if isNotExist {
-				config.Notifier.Added(resource)
+				registry.Notifier().Added(resource)
 			} else {
-				config.Notifier.Updated(resource)
+				registry.Notifier().Updated(resource)
 			}
 		}
 	}
