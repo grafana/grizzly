@@ -28,9 +28,11 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 		Short: "list resource keys from file",
 		Args:  cli.ArgsExact(1),
 	}
-	opts := NewGrizzlyOpts(cmd)
+	opts := newGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		opts.ConsumeArguments(args)
+		if len(args) > 0 {
+			opts.ResourceFile = &args[0]
+		}
 		resources, err := grizzly.Parse(registry, opts)
 		if err != nil {
 			return err
@@ -47,9 +49,11 @@ func showCmd(registry grizzly.Registry) *cli.Command {
 		Short: "render Jsonnet as json",
 		Args:  cli.ArgsExact(1),
 	}
-	opts := NewGrizzlyOpts(cmd)
+	opts := newGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		opts.ConsumeArguments(args)
+		if len(args) > 0 {
+			opts.ResourceFile = &args[0]
+		}
 		resources, err := grizzly.Parse(registry, opts)
 		if err != nil {
 			return err
@@ -65,9 +69,11 @@ func diffCmd(registry grizzly.Registry) *cli.Command {
 		Short: "compare Jsonnet resources with endpoint(s)",
 		Args:  cli.ArgsExact(1),
 	}
-	opts := NewGrizzlyOpts(cmd)
+	opts := newGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		opts.ConsumeArguments(args)
+		if len(args) > 0 {
+			opts.ResourceFile = &args[0]
+		}
 		resources, err := grizzly.Parse(registry, opts)
 		if err != nil {
 			return err
@@ -83,9 +89,11 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 		Short: "render Jsonnet and push dashboard(s) to Grafana",
 		Args:  cli.ArgsExact(1),
 	}
-	opts := NewGrizzlyOpts(cmd)
+	opts := newGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		opts.ConsumeArguments(args)
+		if len(args) > 0 {
+			opts.ResourceFile = &args[0]
+		}
 		resources, err := grizzly.Parse(registry, opts)
 		if err != nil {
 			return err
@@ -114,7 +122,7 @@ func watchCmd(registry grizzly.Registry) *cli.Command {
 		Short: "watch for file changes and apply",
 		Args:  cli.ArgsExact(2),
 	}
-	opts := NewGrizzlyOpts(cmd)
+	opts := newGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		parser := &jsonnetWatchParser{
 			jsonnetFile: args[1],
@@ -147,11 +155,13 @@ func previewCmd(registry grizzly.Registry) *cli.Command {
 		Short: "upload a snapshot to preview the rendered file",
 		Args:  cli.ArgsAny(),
 	}
-	opts := NewGrizzlyOpts(cmd)
+	opts := newGrizzlyOpts(cmd)
 	expires := cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		opts.ConsumeArguments(args)
+		if len(args) > 0 {
+			opts.ResourceFile = &args[0]
+		}
 		resources, err := grizzly.Parse(registry, opts)
 		if err != nil {
 			return err
@@ -172,9 +182,11 @@ func exportCmd(registry grizzly.Registry) *cli.Command {
 		Short: "render Jsonnet and save to a directory",
 		Args:  cli.ArgsExact(2),
 	}
-	opts := NewGrizzlyOpts(cmd)
+	opts := newGrizzlyOpts(cmd)
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		opts.ConsumeArguments(args)
+		if len(args) > 0 {
+			opts.ResourceFile = &args[0]
+		}
 		dashboardDir := args[1]
 		resources, err := grizzly.Parse(registry, opts)
 		if err != nil {
@@ -206,7 +218,7 @@ func providersCmd(registry grizzly.Registry) *cli.Command {
 	return cmd
 }
 
-func NewGrizzlyOpts(cmd *cli.Command) grizzly.GrizzlyOpts {
+func newGrizzlyOpts(cmd *cli.Command) grizzly.GrizzlyOpts {
 	return grizzly.GrizzlyOpts{
 		ConfigFile:   cmd.Flags().StringP("config", "c", "", "config file"),
 		Targets:      cmd.Flags().StringSliceP("target", "t", nil, "resources to target"),
