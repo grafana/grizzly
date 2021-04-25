@@ -51,9 +51,9 @@ func FindResourceFiles(registry Registry, opts GrizzlyOpts) ([]string, error) {
 
 func ParseFile(registry Registry, opts GrizzlyOpts, resourceFile string) (Resources, error) {
 	switch filepath.Ext(resourceFile) {
-	case "yaml", "yml":
+	case ".yaml", ".yml":
 		return ParseYAML(registry, resourceFile, opts)
-	case "jsonnet", "libsonnet", "json":
+	case ".jsonnet", ".libsonnet", ".json":
 		return ParseJsonnet(registry, resourceFile, opts)
 	default:
 		return nil, fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)
