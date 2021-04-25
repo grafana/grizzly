@@ -22,14 +22,13 @@ func makeDatasourceRequest(url string) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	switch resp.StatusCode {
-	case http.StatusNotFound:
+	switch {
+	case resp.StatusCode == http.StatusNotFound:
 		return nil, grizzly.ErrNotFound
-	default:
-		if resp.StatusCode >= 400 {
-			return nil, errors.New(resp.Status)
-		}
+	case resp.StatusCode >= 400:
+		return nil, errors.New(resp.Status)
 	}
+
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -68,14 +67,13 @@ func getRemoteDatasourceList() ([]string, error) {
 	}
 	defer resp.Body.Close()
 
-	switch resp.StatusCode {
-	case http.StatusNotFound:
+	switch {
+	case resp.StatusCode == http.StatusNotFound:
 		return nil, grizzly.ErrNotFound
-	default:
-		if resp.StatusCode >= 400 {
-			return nil, errors.New(resp.Status)
-		}
+	case resp.StatusCode >= 400:
+		return nil, errors.New(resp.Status)
 	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
