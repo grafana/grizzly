@@ -78,7 +78,7 @@ func getRemoteDashboardList() ([]string, error) {
 		}
 		var dashboards []Dashboard
 		if err := json.Unmarshal([]byte(string(body)), &dashboards); err != nil {
-			return nil, err
+			return nil, grizzly.APIErr{Err: err, Body: body}
 		}
 		for _, dashboard := range dashboards {
 			UIDs = append(UIDs, dashboard.UID())
