@@ -92,6 +92,9 @@ func Pull(registry Registry, opts GrizzlyOpts) error {
 		}
 		registry.Notifier().Warn(nil, fmt.Sprintf("Pulling %d resources", len(UIDs)))
 		for _, UID := range UIDs {
+			if !registry.ResourceMatchesTarget(handler, UID, *opts.Targets) {
+				continue
+			}
 			resource, err := handler.GetByUID(UID)
 			if errors.As(err, &ErrNotFound) {
 				registry.Notifier().NotFound(SimpleString(UID))
@@ -99,9 +102,6 @@ func Pull(registry Registry, opts GrizzlyOpts) error {
 			}
 			if err != nil {
 				return err
-			}
-			if !resource.MatchesTarget(*opts.Targets) {
-				continue
 			}
 
 			path := filepath.Join(*opts.ResourcePath, handler.ResourceFilePath(*resource, "yaml"))

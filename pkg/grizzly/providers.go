@@ -3,7 +3,6 @@ package grizzly
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/gobwas/glob"
@@ -123,7 +122,6 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 			return true
 		}
 	}
-	log.Println("Skipping", key)
 	return false
 }
 
@@ -234,6 +232,21 @@ func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool 
 		}
 	}
 	r.Notifier().Info(SimpleString(key), "skipped")
+	return false
+}
+
+// HandlerMatchesTarget identifies whether a resource is in a target list
+func (r *Registry) ResourceMatchesTarget(handler Handler, UID string, targets []string) bool {
+	if len(targets) == 0 {
+		return true
+	}
+	key := fmt.Sprintf("%s/%s", handler.Kind(), UID)
+	for _, target := range targets {
+		g := glob.MustCompile(target)
+		if g.Match(key) {
+			return true
+		}
+	}
 	return false
 }
 
