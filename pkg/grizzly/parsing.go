@@ -20,34 +20,28 @@ import (
 )
 
 func Parse(registry Registry, opts GrizzlyOpts) (Resources, error) {
-	if opts.ResourceFile != nil && opts.Directory != nil {
-		return nil, fmt.Errorf("Only specify a directory or a resource file, not both")
+	if !(*opts.Directory) {
+		return ParseFile(registry, opts, *opts.ResourcePath)
 	}
-	if opts.ResourceFile != nil {
-		return ParseFile(registry, opts, *opts.ResourceFile)
+	resources := Resources{}
+	files, err := FindResourceFiles(registry, opts)
+	if err != nil {
+		return nil, err
 	}
-	if opts.Directory != nil {
-		resources := Resources{}
-		files, err := FindResourceFiles(registry, opts, *opts.Directory)
+	for _, file := range files {
+		r, err := ParseFile(registry, opts, file)
 		if err != nil {
 			return nil, err
 		}
-		for _, file := range files {
-			r, err := ParseFile(registry, opts, file)
-			if err != nil {
-				return nil, err
-			}
-			resources = append(resources, r...)
-		}
-		return resources, nil
+		resources = append(resources, r...)
 	}
-	return nil, fmt.Errorf("Must specify either a resource file or a directory")
+	return resources, nil
 }
 
-func FindResourceFiles(registry Registry, opts GrizzlyOpts, dir string) ([]string, error) {
+func FindResourceFiles(registry Registry, opts GrizzlyOpts) ([]string, error) {
 	files := []string{}
 	for _, handler := range registry.Handlers {
-		handlerFiles, err := handler.FindResourceFiles(dir)
+		handlerFiles, err := handler.FindResourceFiles(*opts.ResourcePath)
 		if err != nil {
 			return nil, err
 		}

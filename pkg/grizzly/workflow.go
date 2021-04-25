@@ -75,8 +75,9 @@ func List(registry Registry, resources Resources) error {
 // Pulls remote resources
 func Pull(registry Registry, opts GrizzlyOpts) error {
 
-	f, _ := os.Create("log")
-	defer f.Close()
+	if !(*opts.Directory) {
+		return fmt.Errorf("pull only works with -d option")
+	}
 
 	for _, handler := range registry.Handlers {
 		if !registry.HandlerMatchesTarget(handler, *opts.Targets) {
@@ -103,7 +104,7 @@ func Pull(registry Registry, opts GrizzlyOpts) error {
 				continue
 			}
 
-			path := filepath.Join(*opts.Directory, handler.ResourceFilePath(*resource, "yaml"))
+			path := filepath.Join(*opts.ResourcePath, handler.ResourceFilePath(*resource, "yaml"))
 			err = UnparseYAML(*resource, path)
 			if err != nil {
 				return err

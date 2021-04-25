@@ -2,8 +2,8 @@ package grizzly
 
 // GrizzlyOpts contains options for all Grizzly commands
 type GrizzlyOpts struct {
-	Directory    *string
-	ResourceFile *string
+	ResourcePath *string
+	Directory    *bool
 	JsonnetPaths *[]string
 	Targets      *[]string
 }
