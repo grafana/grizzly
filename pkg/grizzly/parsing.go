@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/tanka/pkg/jsonnet/native"
@@ -23,7 +22,7 @@ func Parse(registry Registry, opts GrizzlyOpts) (Resources, error) {
 	if !(*opts.Directory) {
 		return ParseFile(registry, opts, *opts.ResourcePath)
 	}
-	resources := Resources{}
+	var resources Resources
 	files, err := FindResourceFiles(registry, opts)
 	if err != nil {
 		return nil, err
@@ -39,7 +38,7 @@ func Parse(registry Registry, opts GrizzlyOpts) (Resources, error) {
 }
 
 func FindResourceFiles(registry Registry, opts GrizzlyOpts) ([]string, error) {
-	files := []string{}
+	var files []string
 	for _, handler := range registry.Handlers {
 		handlerFiles, err := handler.FindResourceFiles(*opts.ResourcePath)
 		if err != nil {
@@ -51,15 +50,13 @@ func FindResourceFiles(registry Registry, opts GrizzlyOpts) ([]string, error) {
 }
 
 func ParseFile(registry Registry, opts GrizzlyOpts, resourceFile string) (Resources, error) {
-	if strings.HasSuffix(resourceFile, ".yaml") ||
-		strings.HasSuffix(resourceFile, ".yml") {
+	switch filepath.Ext(resourceFile) {
+	case "yaml", "yml":
 		return ParseYAML(registry, resourceFile, opts)
-	} else if strings.HasSuffix(resourceFile, ".jsonnet") ||
-		strings.HasSuffix(resourceFile, ".libsonnet") ||
-		strings.HasSuffix(resourceFile, ".json") {
+	case "jsonnet", "libsonnet", "json":
 		return ParseJsonnet(registry, resourceFile, opts)
-	} else {
-		return nil, fmt.Errorf("Either a config file or a resource file is required")
+	default:
+		return nil, fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)
 	}
 }
 
@@ -138,8 +135,8 @@ func ParseJsonnet(registry Registry, jsonnetFile string, opts GrizzlyOpts) (Reso
 	return resources, nil
 }
 
-// UnparseYAML takes a resource and renders it to a source file as a YAML string
-func UnparseYAML(resource Resource, filename string) error {
+// MarshalYAML takes a resource and renders it to a source file as a YAML string
+func MarshalYAML(resource Resource, filename string) error {
 	y, err := resource.YAML()
 	if err != nil {
 		return err

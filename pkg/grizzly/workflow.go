@@ -105,7 +105,7 @@ func Pull(registry Registry, opts GrizzlyOpts) error {
 			}
 
 			path := filepath.Join(*opts.ResourcePath, handler.ResourceFilePath(*resource, "yaml"))
-			err = UnparseYAML(*resource, path)
+			err = MarshalYAML(*resource, path)
 			if err != nil {
 				return err
 			}

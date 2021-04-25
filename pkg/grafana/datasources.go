@@ -80,7 +80,7 @@ func getRemoteDatasourceList() ([]string, error) {
 	}
 	var datasources []map[string]interface{}
 	if err := json.Unmarshal([]byte(string(body)), &datasources); err != nil {
-		return nil, err
+		return nil, grizzly.APIErr{Err: err, Body: body}
 	}
 	UIDs := []string{}
 	for _, datasource := range datasources {
