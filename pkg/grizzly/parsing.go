@@ -81,8 +81,11 @@ func ParseYAML(registry Registry, yamlFile string, opts GrizzlyOpts) (Resources,
 		if err != nil {
 			return nil, err
 		}
-		resources = append(resources, parsedResources...)
-
+		for _, parsedResource := range parsedResources {
+			if parsedResource.MatchesTarget(*opts.Targets) {
+				resources = append(resources, parsedResource)
+			}
+		}
 	}
 	return resources, nil
 }
