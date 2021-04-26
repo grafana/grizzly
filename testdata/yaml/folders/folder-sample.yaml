@@ -1,0 +1,6 @@
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: DashboardFolder
+metadata:
+  name: sample
+spec:
+  title: Special Sample Folder

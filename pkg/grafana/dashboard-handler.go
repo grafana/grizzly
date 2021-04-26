@@ -8,15 +8,6 @@ import (
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
-/*
- * This DashboardHandler supports folders. Add a `folderName` to your dashboard JSON.
- * This will be removed from the JSON, and if no folder exists, a dashboard folder
- * will be created with UID and title matching your `folderName`.
- *
- * Alternatively, create a `grafanaDashboardFolder` root element in your Jsonnet. This
- * value will be used as a folder name for all of your dashboards.
- */
-
 // DashboardHandler is a Grizzly Handler for Grafana dashboards
 type DashboardHandler struct {
 	Provider Provider
