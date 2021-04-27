@@ -18,6 +18,7 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/rivo/tview v0.0.0-20200818120338-53d50e499bf9
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	gopkg.in/fsnotify.v1 v1.4.7

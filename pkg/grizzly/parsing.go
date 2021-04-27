@@ -18,12 +18,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(registry Registry, opts GrizzlyOpts) (Resources, error) {
-	if !(*opts.Directory) {
-		return ParseFile(registry, opts, *opts.ResourcePath)
+func Parse(registry Registry, resourcePath string, opts GrizzlyOpts) (Resources, error) {
+	if !(opts.Directory) {
+		return ParseFile(registry, opts, resourcePath)
 	}
 	var resources Resources
-	files, err := FindResourceFiles(registry, opts)
+	files, err := FindResourceFiles(registry, resourcePath)
 	if err != nil {
 		return nil, err
 	}
@@ -37,10 +37,10 @@ func Parse(registry Registry, opts GrizzlyOpts) (Resources, error) {
 	return resources, nil
 }
 
-func FindResourceFiles(registry Registry, opts GrizzlyOpts) ([]string, error) {
+func FindResourceFiles(registry Registry, resourcePath string) ([]string, error) {
 	var files []string
 	for _, handler := range registry.Handlers {
-		handlerFiles, err := handler.FindResourceFiles(*opts.ResourcePath)
+		handlerFiles, err := handler.FindResourceFiles(resourcePath)
 		if err != nil {
 			return nil, err
 		}
@@ -82,7 +82,7 @@ func ParseYAML(registry Registry, yamlFile string, opts GrizzlyOpts) (Resources,
 			return nil, err
 		}
 		for _, parsedResource := range parsedResources {
-			if parsedResource.MatchesTarget(*opts.Targets) {
+			if parsedResource.MatchesTarget(opts.Targets) {
 				resources = append(resources, parsedResource)
 			}
 		}
@@ -98,7 +98,7 @@ func ParseJsonnet(registry Registry, jsonnetFile string, opts GrizzlyOpts) (Reso
 
 	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
-	vm.Importer(newExtendedImporter(*opts.JsonnetPaths))
+	vm.Importer(newExtendedImporter(opts.JsonnetPaths))
 	for _, nf := range native.Funcs() {
 		vm.NativeFunction(nf)
 	}
