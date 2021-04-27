@@ -11,6 +11,18 @@ local convert(main, apiVersion) = {
   },
 
   grafana: {
+
+    folders:
+      local is_alpha(x) =
+    std.setMember(x,"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_");
+      local uid(folder) = std.join("", std.filter(is_alpha, std.stringChars(folder)));
+     if ('grafanaDashboardFolder' in main) && main.grafanaDashboardFolder != 'General'
+      then makeResource(
+        'DashboardFolder',
+        uid(main.grafanaDashboardFolder),
+        spec={
+          title: main.grafanaDashboardFolder,
+        }),
     dashboards:
       local uid(k, dashboard) =
         if std.objectHasAll(dashboard, "uid")
