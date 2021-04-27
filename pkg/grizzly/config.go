@@ -1,11 +1,10 @@
 package grizzly
 
-// GrizzlyOpts contains options for all Grizzly commands
-type GrizzlyOpts struct {
-	ConfigFile   *string
-	ResourceFile *string
-	JsonnetPaths *[]string
-	Targets      *[]string
+// Opts contains options for all Grizzly commands
+type Opts struct {
+	Directory    bool
+	JsonnetPaths []string
+	Targets      []string
 }
 
 // PreviewOpts Options to Configure a Preview

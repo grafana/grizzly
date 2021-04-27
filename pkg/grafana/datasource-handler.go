@@ -1,6 +1,9 @@
 package grafana
 
 import (
+	"fmt"
+	"path/filepath"
+
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
@@ -30,6 +33,22 @@ func (h *DatasourceHandler) APIVersion() string {
 // GetExtension returns the file name extension for a datasource
 func (h *DatasourceHandler) GetExtension() string {
 	return "json"
+}
+
+const (
+	datasourceGlob    = "datasources/datasource-*"
+	datasourcePattern = "datasources/datasource-%s.%s"
+)
+
+// FindResourceFiles identifies files within a directory that this handler can process
+func (h *DatasourceHandler) FindResourceFiles(dir string) ([]string, error) {
+	path := filepath.Join(dir, datasourceGlob)
+	return filepath.Glob(path)
+}
+
+// ResourceFilePath returns the location on disk where a resource should be updated
+func (h *DatasourceHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
+	return fmt.Sprintf(datasourcePattern, resource.Name(), filetype)
 }
 
 // Parse parses a manifest object into a struct for this resource type
@@ -82,6 +101,11 @@ func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 // GetRemote retrieves a datasource as a Resource
 func (h *DatasourceHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
 	return getRemoteDatasource(resource.Name())
+}
+
+// ListRemote retrieves as list of UIDs of all remote resources
+func (h *DatasourceHandler) ListRemote() ([]string, error) {
+	return getRemoteDatasourceList()
 }
 
 // Add pushes a datasource to Grafana via the API

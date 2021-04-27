@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -34,6 +35,22 @@ func (h *RuleHandler) GetExtension() string {
 	return "yaml"
 }
 
+const (
+	prometheusRuleGroupGlob    = "prometheus/rules-*"
+	prometheusRuleGroupPattern = "prometheus/rules-%s.%s"
+)
+
+// FindResourceFiles identifies files within a directory that this handler can process
+func (h *RuleHandler) FindResourceFiles(dir string) ([]string, error) {
+	path := filepath.Join(dir, prometheusRuleGroupGlob)
+	return filepath.Glob(path)
+}
+
+// ResourceFilePath returns the location on disk where a resource should be updated
+func (h *RuleHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
+	return fmt.Sprintf(prometheusRuleGroupPattern, resource.Name(), filetype)
+}
+
 // Parse parses a manifest object into a struct for this resource type
 func (h *RuleHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 	resource := grizzly.Resource(m)
@@ -59,6 +76,11 @@ func (h *RuleHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 func (h *RuleHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
 	uid := fmt.Sprintf("%s.%s", resource.GetMetadata("namespace"), resource.Name())
 	return getRemoteRuleGroup(uid)
+}
+
+// ListRemote retrieves as list of UIDs of all remote resources
+func (h *RuleHandler) ListRemote() ([]string, error) {
+	return getRemoteRuleGroupList()
 }
 
 // Add pushes a datasource to Grafana via the API

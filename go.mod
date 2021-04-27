@@ -9,16 +9,11 @@ require (
 	github.com/go-clix/cli v0.2.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.17.0
-	github.com/grafana/tanka v0.14.0 // indirect
-	github.com/hashicorp/go-version v1.2.1 // indirect
-	github.com/kr/pretty v0.2.0 // indirect
-	github.com/kylelemons/godebug v1.1.0
+	github.com/grafana/tanka v0.14.0
 	github.com/mattn/go-colorable v0.1.6 // indirect
-	github.com/mitchellh/gox v1.0.1 // indirect
-	github.com/mitchellh/mapstructure v1.3.3
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/rivo/tview v0.0.0-20200818120338-53d50e499bf9
-	github.com/stretchr/testify v1.5.1 // indirect
+	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b

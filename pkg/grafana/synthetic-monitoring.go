@@ -48,13 +48,11 @@ func getRemoteCheck(uid string) (*grizzly.Resource, error) {
 	}
 	defer resp.Body.Close()
 
-	switch resp.StatusCode {
-	case http.StatusNotFound:
+	switch {
+	case resp.StatusCode == http.StatusNotFound:
 		return nil, grizzly.ErrNotFound
-	default:
-		if resp.StatusCode >= 400 {
-			return nil, errors.New(resp.Status)
-		}
+	case resp.StatusCode >= 400:
+		return nil, errors.New(resp.Status)
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
@@ -86,6 +84,47 @@ func getRemoteCheck(uid string) (*grizzly.Resource, error) {
 		}
 	}
 	return nil, grizzly.ErrNotFound
+}
+
+// getRemoteCheck retrieves a check object from SM
+func getRemoteCheckList() ([]string, error) {
+	url := getSyntheticMonitoringURL("api/v1/check/list")
+	authToken, err := getAuthToken()
+	if err != nil {
+		return nil, err
+	}
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", "Bearer "+authToken)
+	req.Header.Add("Content-type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	switch {
+	case resp.StatusCode == http.StatusNotFound:
+		return nil, grizzly.ErrNotFound
+	case resp.StatusCode >= 400:
+		return nil, errors.New(resp.Status)
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var checks []Check
+	if err := json.Unmarshal(data, &checks); err != nil {
+		return nil, grizzly.APIErr{Err: err, Body: data}
+	}
+	var checkIDs []string
+	for _, check := range checks {
+		checkIDs = append(checkIDs, check.UID())
+	}
+	return checkIDs, nil
 }
 
 func postCheck(url string, resource grizzly.Resource) error {

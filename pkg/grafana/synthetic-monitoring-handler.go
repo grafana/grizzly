@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -46,6 +47,22 @@ func (h *SyntheticMonitoringHandler) GetExtension() string {
 	return "json"
 }
 
+const (
+	syntheticMonitoringCheckGlob = "synthetic-monitoring/check-*"
+	syntheticMonitoringPattern   = "synthetic-monitoring/check-%s.%s"
+)
+
+// FindResourceFiles identifies files within a directory that this handler can process
+func (h *SyntheticMonitoringHandler) FindResourceFiles(dir string) ([]string, error) {
+	path := filepath.Join(dir, syntheticMonitoringCheckGlob)
+	return filepath.Glob(path)
+}
+
+// ResourceFilePath returns the location on disk where a resource should be updated
+func (h *SyntheticMonitoringHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
+	return fmt.Sprintf(syntheticMonitoringPattern, resource.Name(), filetype)
+}
+
 // Parse parses a manifest object into a struct for this resource type
 func (h *SyntheticMonitoringHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 	resource := grizzly.Resource(m)
@@ -78,6 +95,11 @@ func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, er
 func (h *SyntheticMonitoringHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
 	uid := fmt.Sprintf("%s.%s", resource.GetMetadata("type"), resource.Name())
 	return getRemoteCheck(uid)
+}
+
+// ListRemote retrieves as list of UIDs of all remote resources
+func (h *SyntheticMonitoringHandler) ListRemote() ([]string, error) {
+	return getRemoteCheckList()
 }
 
 // Add adds a new check to the SyntheticMonitoring endpoint

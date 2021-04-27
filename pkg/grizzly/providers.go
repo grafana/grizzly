@@ -3,7 +3,7 @@ package grizzly
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"strings"
 
 	"github.com/gobwas/glob"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -38,6 +38,10 @@ func (r *Resource) Kind() string {
 
 func (r *Resource) Name() string {
 	return r.GetMetadata("name")
+}
+
+func (r Resource) String() string {
+	return r.Key()
 }
 
 // Key returns a key that combines kind and uid
@@ -118,7 +122,6 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 			return true
 		}
 	}
-	log.Println("Skipping", key)
 	return false
 }
 
@@ -130,6 +133,12 @@ type Handler interface {
 	APIVersion() string
 	Kind() string
 	GetExtension() string
+
+	// FindResourceFiles identifies files within a directory that this handler can process
+	FindResourceFiles(dir string) ([]string, error)
+
+	// ResourceFilePath returns the location on disk where a resource should be updated
+	ResourceFilePath(resource Resource, filetype string) string
 
 	// Parse parses a manifest object into a struct for this resource type
 	Parse(m manifest.Manifest) (Resources, error)
@@ -145,6 +154,9 @@ type Handler interface {
 
 	// GetRemote retrieves a remote equivalent of a remote resource
 	GetRemote(resource Resource) (*Resource, error)
+
+	// ListRemote retrieves as list of UIDs of all remote resources
+	ListRemote() ([]string, error)
 
 	// Add pushes a new resource to the endpoint
 	Add(resource Resource) error
@@ -205,6 +217,37 @@ func (r *Registry) GetHandler(path string) (Handler, error) {
 		return nil, fmt.Errorf("No handler registered to %s", path)
 	}
 	return handler, nil
+}
+
+// HandlerMatchesTarget identifies whether a resource is in a target list
+func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool {
+	if len(targets) == 0 {
+		return true
+	}
+	key := handler.Kind()
+
+	for _, target := range targets {
+		if strings.Contains(target, "/") && strings.Split(target, "/")[0] == key {
+			return true
+		}
+	}
+	r.Notifier().Info(SimpleString(key), "skipped")
+	return false
+}
+
+// HandlerMatchesTarget identifies whether a resource is in a target list
+func (r *Registry) ResourceMatchesTarget(handler Handler, UID string, targets []string) bool {
+	if len(targets) == 0 {
+		return true
+	}
+	key := fmt.Sprintf("%s/%s", handler.Kind(), UID)
+	for _, target := range targets {
+		g := glob.MustCompile(target)
+		if g.Match(key) {
+			return true
+		}
+	}
+	return false
 }
 
 // Notifier returns a notifier for responding to users

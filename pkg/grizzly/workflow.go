@@ -2,10 +2,12 @@ package grizzly
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 
@@ -68,6 +70,49 @@ func List(registry Registry, resources Resources) error {
 		fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), resource.Name())
 	}
 	return w.Flush()
+}
+
+// Pulls remote resources
+func Pull(registry Registry, resourcePath string, opts Opts) error {
+
+	if !(opts.Directory) {
+		return fmt.Errorf("pull only works with -d option")
+	}
+
+	for _, handler := range registry.Handlers {
+		if !registry.HandlerMatchesTarget(handler, opts.Targets) {
+			continue
+		}
+		UIDs, err := handler.ListRemote()
+		if err != nil {
+			return err
+		}
+		if len(UIDs) == 0 {
+			registry.Notifier().Info(nil, "No resources found")
+		}
+		registry.Notifier().Warn(nil, fmt.Sprintf("Pulling %d resources", len(UIDs)))
+		for _, UID := range UIDs {
+			if !registry.ResourceMatchesTarget(handler, UID, opts.Targets) {
+				continue
+			}
+			resource, err := handler.GetByUID(UID)
+			if errors.As(err, &ErrNotFound) {
+				registry.Notifier().NotFound(SimpleString(UID))
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+
+			path := filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "yaml"))
+			err = MarshalYAML(*resource, path)
+			if err != nil {
+				return err
+			}
+			registry.Notifier().Info(resource, "pulled")
+		}
+	}
+	return nil
 }
 
 // Show displays resources
@@ -197,7 +242,7 @@ func Preview(registry Registry, resources Resources, opts *PreviewOpts) error {
 		}
 		previewHandler, ok := handler.(PreviewHandler)
 		if !ok {
-			registry.Notifier().NotSupported(handler.Kind(), resource.Name(), "preview")
+			registry.Notifier().NotSupported(resource, "preview")
 			return nil
 		}
 		err = previewHandler.Preview(resource, *registry.Notifier(), opts)
@@ -283,7 +328,8 @@ func Listen(registry Registry, UID, filename string) error {
 	}
 	listenHandler, ok := handler.(ListenHandler)
 	if !ok {
-		registry.Notifier().NotSupported(handler.Kind(), resourceID, "listen")
+		uid := fmt.Sprintf("%s.%s", handler.Kind(), resourceID)
+		registry.Notifier().NotSupported(SimpleString(uid), "listen")
 		return nil
 	}
 	return listenHandler.Listen(*registry.Notifier(), resourceID, filename)

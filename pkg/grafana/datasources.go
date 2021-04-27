@@ -22,14 +22,13 @@ func makeDatasourceRequest(url string) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	switch resp.StatusCode {
-	case http.StatusNotFound:
+	switch {
+	case resp.StatusCode == http.StatusNotFound:
 		return nil, grizzly.ErrNotFound
-	default:
-		if resp.StatusCode >= 400 {
-			return nil, errors.New(resp.Status)
-		}
+	case resp.StatusCode >= 400:
+		return nil, errors.New(resp.Status)
 	}
+
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -54,6 +53,41 @@ func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
 	handler := DatasourceHandler{}
 	resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), uid, d)
 	return &resource, nil
+}
+
+func getRemoteDatasourceList() ([]string, error) {
+	grafanaURL, err := getGrafanaURL("api/datasources")
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.Get(grafanaURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	switch {
+	case resp.StatusCode == http.StatusNotFound:
+		return nil, grizzly.ErrNotFound
+	case resp.StatusCode >= 400:
+		return nil, errors.New(resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var datasources []map[string]interface{}
+	if err := json.Unmarshal([]byte(string(body)), &datasources); err != nil {
+		return nil, grizzly.APIErr{Err: err, Body: body}
+	}
+	UIDs := []string{}
+	for _, datasource := range datasources {
+		UID := datasource["uid"].(string)
+		UIDs = append(UIDs, UID)
+	}
+	return UIDs, nil
 }
 
 func postDatasource(resource grizzly.Resource) error {

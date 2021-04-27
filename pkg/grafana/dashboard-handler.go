@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -47,6 +48,22 @@ func (h *DashboardHandler) GetExtension() string {
 	return "json"
 }
 
+const (
+	dashboardGlob    = "dashboards/*/dashboard-*"
+	dashboardPattern = "dashboards/%s/dashboard-%s.%s"
+)
+
+// FindResourceFiles identifies files within a directory that this handler can process
+func (h *DashboardHandler) FindResourceFiles(dir string) ([]string, error) {
+	path := filepath.Join(dir, dashboardGlob)
+	return filepath.Glob(path)
+}
+
+// ResourceFilePath returns the location on disk where a resource should be updated
+func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
+	return fmt.Sprintf(dashboardPattern, resource.GetMetadata("folder"), resource.Name(), filetype)
+}
+
 // Parse parses a manifest object into a struct for this resource type
 func (h *DashboardHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 	resource := grizzly.Resource(m)
@@ -78,6 +95,11 @@ func (h *DashboardHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resour
 	return getRemoteDashboard(resource.Name())
 }
 
+// ListRemote retrieves as list of UIDs of all remote resources
+func (h *DashboardHandler) ListRemote() ([]string, error) {
+	return getRemoteDashboardList()
+}
+
 // Add pushes a new dashboard to Grafana via the API
 func (h *DashboardHandler) Add(resource grizzly.Resource) error {
 	if err := postDashboard(resource); err != nil {
@@ -97,10 +119,10 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, notifier grizzly.N
 	if err != nil {
 		return err
 	}
-	notifier.Info(&resource, "view: "+s.URL)
-	notifier.Error(&resource, "delete: "+s.DeleteURL)
+	notifier.Info(resource, "view: "+s.URL)
+	notifier.Error(resource, "delete: "+s.DeleteURL)
 	if opts.ExpiresSeconds > 0 {
-		notifier.Warn(&resource, fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds))
+		notifier.Warn(resource, fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds))
 	}
 	return nil
 }
