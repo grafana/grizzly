@@ -18,7 +18,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(registry Registry, resourcePath string, opts GrizzlyOpts) (Resources, error) {
+func Parse(registry Registry, resourcePath string, opts Opts) (Resources, error) {
 	if !(opts.Directory) {
 		return ParseFile(registry, opts, resourcePath)
 	}
@@ -49,7 +49,7 @@ func FindResourceFiles(registry Registry, resourcePath string) ([]string, error)
 	return files, nil
 }
 
-func ParseFile(registry Registry, opts GrizzlyOpts, resourceFile string) (Resources, error) {
+func ParseFile(registry Registry, opts Opts, resourceFile string) (Resources, error) {
 	switch filepath.Ext(resourceFile) {
 	case ".yaml", ".yml":
 		return ParseYAML(registry, resourceFile, opts)
@@ -61,7 +61,7 @@ func ParseFile(registry Registry, opts GrizzlyOpts, resourceFile string) (Resour
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources
-func ParseYAML(registry Registry, yamlFile string, opts GrizzlyOpts) (Resources, error) {
+func ParseYAML(registry Registry, yamlFile string, opts Opts) (Resources, error) {
 	f, err := os.Open(yamlFile)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func ParseYAML(registry Registry, yamlFile string, opts GrizzlyOpts) (Resources,
 var script string
 
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree
-func ParseJsonnet(registry Registry, jsonnetFile string, opts GrizzlyOpts) (Resources, error) {
+func ParseJsonnet(registry Registry, jsonnetFile string, opts Opts) (Resources, error) {
 
 	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()

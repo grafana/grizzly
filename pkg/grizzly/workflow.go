@@ -73,7 +73,7 @@ func List(registry Registry, resources Resources) error {
 }
 
 // Pulls remote resources
-func Pull(registry Registry, resourcePath string, opts GrizzlyOpts) error {
+func Pull(registry Registry, resourcePath string, opts Opts) error {
 
 	if !(opts.Directory) {
 		return fmt.Errorf("pull only works with -d option")
