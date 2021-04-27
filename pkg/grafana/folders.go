@@ -137,7 +137,7 @@ func putFolder(resource grizzly.Resource) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	switch resp.StatusCode {
