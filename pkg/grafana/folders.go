@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -14,7 +13,6 @@ import (
 
 // getRemoteFolder retrieves a dashboard object from Grafana
 func getRemoteFolder(uid string) (*grizzly.Resource, error) {
-	log.Println("GET")
 	grafanaURL, err := getGrafanaURL("api/folders/" + uid)
 	if err != nil {
 		return nil, err
@@ -28,10 +26,8 @@ func getRemoteFolder(uid string) (*grizzly.Resource, error) {
 
 	switch {
 	case resp.StatusCode == http.StatusNotFound:
-		log.Println("NOT FOUND")
 		return nil, grizzly.ErrNotFound
 	case resp.StatusCode >= 400:
-		log.Println(">400")
 		return nil, errors.New(resp.Status)
 	}
 
@@ -91,7 +87,6 @@ func getRemoteFolderList() ([]string, error) {
 }
 
 func postFolder(resource grizzly.Resource) error {
-	log.Println("POST")
 	grafanaURL, err := getGrafanaURL("api/folders")
 	if err != nil {
 		return err
@@ -100,7 +95,6 @@ func postFolder(resource grizzly.Resource) error {
 	folder := Folder(resource["spec"].(map[string]interface{}))
 	folder["uid"] = resource.GetMetadata("name")
 	folderJSON, err := folder.toJSON()
-	log.Println("JSON", folderJSON)
 
 	resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(folderJSON))
 	if err != nil {
@@ -126,7 +120,6 @@ func postFolder(resource grizzly.Resource) error {
 }
 
 func putFolder(resource grizzly.Resource) error {
-	log.Println("PUT")
 	uid := resource.GetMetadata("name")
 	grafanaURL, err := getGrafanaURL("api/folders/" + uid)
 	if err != nil {
@@ -136,7 +129,6 @@ func putFolder(resource grizzly.Resource) error {
 	folder := Folder(resource["spec"].(map[string]interface{}))
 	folder["overwrite"] = true
 	folderJSON, err := folder.toJSON()
-	log.Println("PUT", grafanaURL)
 	req, err := http.NewRequest(http.MethodPut, grafanaURL, bytes.NewBufferString(folderJSON))
 	if err != nil {
 		return err
