@@ -138,7 +138,7 @@ func putDatasource(resource grizzly.Resource) error {
 		return err
 	}
 
-	client := &http.Client{}
+	client := NewHttpClient()
 	req, err := http.NewRequest("PUT", grafanaURL, bytes.NewBufferString(sourceJSON))
 	req.Header.Add("Content-type", "application/json")
 
