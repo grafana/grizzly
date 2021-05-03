@@ -15,6 +15,8 @@ It is designed to work with existing [monitoring mixins](https://github.com/moni
 
 ## Authentication and Configuration
 
+Grizzly has a 10 second timeout on some HTTP calls. To override this behavior, use the `GRIZZLY_HTTP_TIMEOUT=<seconds>` environment variable
+
 Each system handles authentication differently.
 
 ### Grafana Itself
