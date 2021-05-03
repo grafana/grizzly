@@ -37,7 +37,10 @@ func getRemoteCheck(uid string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := NewHttpClient()
+	client, err := NewHttpClient()
+	if err != nil {
+		return nil, err
+	}
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Authorization", "Bearer "+authToken)
 	req.Header.Add("Content-type", "application/json")
@@ -93,7 +96,10 @@ func getRemoteCheckList() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := NewHttpClient()
+	client, err := NewHttpClient()
+	if err != nil {
+		return nil, err
+	}
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Authorization", "Bearer "+authToken)
 	req.Header.Add("Content-type", "application/json")
@@ -134,7 +140,10 @@ func postCheck(url string, resource grizzly.Resource) error {
 		return err
 	}
 
-	client := NewHttpClient()
+	client, err := NewHttpClient()
+	if err != nil {
+		return err
+	}
 	accessToken, err := getAuthToken()
 	if err != nil {
 		return err
@@ -182,7 +191,10 @@ func getProbeList() (*Probes, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := NewHttpClient()
+	client, err := NewHttpClient()
+	if err != nil {
+		return nil, err
+	}
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Authorization", "Bearer "+authToken)
 
@@ -312,7 +324,10 @@ func getAuthToken() (string, error) {
 		return "", err
 	}
 
-	client := NewHttpClient()
+	client, err := NewHttpClient()
+	if err != nil {
+		return "", err
+	}
 	req, err := http.NewRequest("POST", url, bytes.NewReader(authRequestJSON))
 	req.Header.Add("Authorization", "Bearer "+apiToken)
 	req.Header.Add("Content-type", "application/json")
