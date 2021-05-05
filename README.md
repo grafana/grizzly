@@ -11,7 +11,7 @@ are:
 It is designed to work with existing [monitoring mixins](https://github.com/monitoring-mixins/docs).
 
 > **Status: Alpha**. This is a proof of concept. It will have many holes. PRs welcome.
-> **Release / Install** Please see the release page https://github.com/grafana/grizzly/releases/ 
+> **Release / Install** Please see the release page https://github.com/grafana/grizzly/releases/
 
 ## Authentication and Configuration
 
@@ -139,7 +139,7 @@ Grafana snapshots by default do not expire. Expiration can be set via the
 
 ### `-t, --target strings`
 
-It allows the targeting of resources by key, where key is in the form `<type>.<uid>`.
+It allows the targeting of resources by key, where key is in the form `<type>/<uid>`.
 
 Run `grr list` to get a list of resource keys in your code.
 
