@@ -82,7 +82,7 @@ local vault_secret(name, vault_path, key) = {
         settings: {
           title: '${DRONE_TAG}',
           note: importstr 'release-note.md',
-          api_key: { from_secret: 'GITHUB_TOKEN' },
+          api_key: { from_secret: 'github_token' },
           files: 'dist/*',
           draft: true,
         },
@@ -115,6 +115,7 @@ local vault_secret(name, vault_path, key) = {
   } + constraints.onlyTagOrMaster,
 ]
 + [
+  vault_secret('github_token', 'infra/data/ci/github/grafanabot', 'pat'),
   vault_secret('docker_username', 'infra/data/ci/docker_hub', 'username'),
   vault_secret('docker_password', 'infra/data/ci/docker_hub', 'password'),
 ]
