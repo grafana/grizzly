@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -97,6 +98,9 @@ func postDashboard(resource grizzly.Resource) error {
 		return err
 	}
 
+	resource.SetSpecString("uid", resource.GetMetadata("name"))
+	resource.SetSpecString("slug", "foobarbaz")
+	resource.SetSpecString("title", resource.GetSpecString("title")+"2")
 	folderUID := resource.GetMetadata("folder")
 	folderID, err := findOrCreateFolder(folderUID)
 	if err != nil {
@@ -108,12 +112,15 @@ func postDashboard(resource grizzly.Resource) error {
 		Overwrite: true,
 	}
 	wrappedJSON, err := wrappedBoard.toJSON()
-
+	log.Println("WRAPPED:", wrappedJSON)
 	resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(wrappedJSON))
 	if err != nil {
 		return err
 	}
 
+	log.Println(resp.StatusCode)
+	d, _ := ioutil.ReadAll(resp.Body)
+	log.Println("RESPONSE", string(d))
 	switch resp.StatusCode {
 	case http.StatusOK:
 		break
@@ -129,6 +136,41 @@ func postDashboard(resource grizzly.Resource) error {
 		return fmt.Errorf("Error while applying '%s' to Grafana: %s", resource.Name(), r.Message)
 	default:
 		return NewErrNon200Response("dashboard", resource.Name(), resp)
+	}
+
+	return nil
+}
+
+func deleteRemoteDashboard(UID string) error {
+	grafanaURL, err := getGrafanaURL("api/dashboards/uid/" + UID)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, grafanaURL, nil)
+	if err != nil {
+		return err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		break
+	case http.StatusPreconditionFailed:
+		d := json.NewDecoder(resp.Body)
+		var r struct {
+			Message string `json:"message"`
+		}
+		if err := d.Decode(&r); err != nil {
+			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
+		}
+		return fmt.Errorf("Error while deleting '%s' from Grafana: %s", UID, r.Message)
+	default:
+		return NewErrNon200Response("dashboard", UID, resp)
 	}
 
 	return nil

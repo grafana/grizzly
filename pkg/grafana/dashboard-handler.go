@@ -102,15 +102,17 @@ func (h *DashboardHandler) ListRemote() ([]string, error) {
 
 // Add pushes a new dashboard to Grafana via the API
 func (h *DashboardHandler) Add(resource grizzly.Resource) error {
-	if err := postDashboard(resource); err != nil {
-		return err
-	}
-	return nil
+	return postDashboard(resource)
 }
 
 // Update pushes a dashboard to Grafana via the API
 func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
 	return postDashboard(resource)
+}
+
+// DeleteByUID deletes a resource from an endpoint, by UID
+func (h *DashboardHandler) DeleteByUID(UID string) error {
+	return deleteRemoteDashboard(UID)
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible

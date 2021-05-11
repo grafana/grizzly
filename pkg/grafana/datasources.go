@@ -165,3 +165,38 @@ func putDatasource(resource grizzly.Resource) error {
 	}
 	return nil
 }
+
+func deleteDatasource(UID string) error {
+	grafanaURL, err := getGrafanaURL("api/datasource/uid/" + UID)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, grafanaURL, nil)
+	if err != nil {
+		return err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		break
+	case http.StatusPreconditionFailed:
+		d := json.NewDecoder(resp.Body)
+		var r struct {
+			Message string `json:"message"`
+		}
+		if err := d.Decode(&r); err != nil {
+			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
+		}
+		return fmt.Errorf("Error while deleting '%s' from Grafana: %s", UID, r.Message)
+	default:
+		return NewErrNon200Response("datasource", UID, resp)
+	}
+
+	return nil
+}

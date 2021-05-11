@@ -92,3 +92,8 @@ func (h *RuleHandler) Add(resource grizzly.Resource) error {
 func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
 	return writeRuleGroup(resource)
 }
+
+// DeleteByUID deletes a resource from an endpoint, by UID
+func (h *RuleHandler) DeleteByUID(UID string) error {
+	return deleteRuleGroup(UID)
+}

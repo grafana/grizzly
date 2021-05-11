@@ -159,6 +159,31 @@ func postCheck(url string, resource grizzly.Resource) error {
 	return nil
 }
 
+func deleteCheck(url string, UID string) error {
+	client := &http.Client{}
+	accessToken, err := getAuthToken()
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest(http.MethodDelete, url+UID, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", "Bearer "+accessToken)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		break
+	default:
+		return NewErrNon200Response("Synthetic Monitoring", UID, resp)
+	}
+	return nil
+}
+
 // Probe defines the properties of a single SM Probe
 type Probe struct {
 	ID       int    `json:"id"`

@@ -113,3 +113,9 @@ func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource)
 	url := getSyntheticMonitoringURL("api/v1/check/update")
 	return postCheck(url, resource)
 }
+
+// DeleteByUID deletes a resource from an endpoint, by UID
+func (h *SyntheticMonitoringHandler) DeleteByUID(UID string) error {
+	url := getSyntheticMonitoringURL("api/v1/check/delete/")
+	return deleteCheck(url, UID)
+}

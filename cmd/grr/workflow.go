@@ -55,6 +55,7 @@ func pullCmd(registry grizzly.Registry) *cli.Command {
 	}
 	return cmd
 }
+
 func showCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "show <resource-path>",
@@ -69,6 +70,20 @@ func showCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 		return grizzly.Show(registry, resources)
+	}
+	return cmd
+}
+
+func renameCmd(registry grizzly.Registry) *cli.Command {
+	cmd := &cli.Command{
+		Use:   "rename <resource-type>.<old-uid> <new-uid>",
+		Short: "change the UID for a resource (actually add, then delete)",
+		Args:  cli.ArgsExact(2),
+	}
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		oldUID := args[0]
+		newUID := args[1]
+		return grizzly.Rename(registry, oldUID, newUID)
 	}
 	return cmd
 }

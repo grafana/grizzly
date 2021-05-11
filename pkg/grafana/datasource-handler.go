@@ -117,3 +117,8 @@ func (h *DatasourceHandler) Add(resource grizzly.Resource) error {
 func (h *DatasourceHandler) Update(existing, resource grizzly.Resource) error {
 	return putDatasource(resource)
 }
+
+// DeleteByUID deletes a resource from an endpoint, by UID
+func (h *DatasourceHandler) DeleteByUID(UID string) error {
+	return deleteDatasource(UID)
+}

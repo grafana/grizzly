@@ -32,6 +32,7 @@ func main() {
 		listCmd(registry),
 		pullCmd(registry),
 		showCmd(registry),
+		renameCmd(registry),
 		diffCmd(registry),
 		applyCmd(registry),
 		watchCmd(registry),

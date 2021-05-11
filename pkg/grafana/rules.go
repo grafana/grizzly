@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// getRemoteRuleGrouping retrieves a datasource object from Grafana
+// getRemoteRuleGroup retrieves a datasource object from the remote system
 func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 	parts := strings.SplitN(uid, ".", 2)
 	namespace := parts[0]
@@ -45,7 +45,7 @@ func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 	return nil, grizzly.ErrNotFound
 }
 
-// getRemoteRuleGroupingList retrieves a datasource object from Grafana
+// getRemoteRuleGroupList retrieves a datasource object from the remote system
 func getRemoteRuleGroupList() ([]string, error) {
 	out, err := cortexTool("rules", "print", "--disable-color")
 	if err != nil {
@@ -107,6 +107,16 @@ func writeRuleGroup(resource grizzly.Resource) error {
 		return err
 	}
 	os.Remove(tmpfile.Name())
+	return err
+}
+
+// deleteRuleGroup deletes a resource from the remote system
+func deleteRuleGroup(uid string) error {
+	parts := strings.SplitN(uid, ".", 2)
+	namespace := parts[0]
+	name := parts[1]
+
+	_, err := cortexTool("rules", "delete", namespace, name)
 	return err
 }
 

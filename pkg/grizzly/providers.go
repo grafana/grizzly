@@ -149,7 +149,7 @@ type Handler interface {
 	// Prepare gets a resource ready for dispatch to the remote endpoint
 	Prepare(existing, resource Resource) *Resource
 
-	// Get retrieves JSON for a resource from an endpoint, by UID
+	// GetByUID retrieves JSON for a resource from an endpoint, by UID
 	GetByUID(UID string) (*Resource, error)
 
 	// GetRemote retrieves a remote equivalent of a remote resource
@@ -163,6 +163,9 @@ type Handler interface {
 
 	// Update pushes an existing resource to the endpoint
 	Update(existing, resource Resource) error
+
+	// DeleteByUID deletes a resource from an endpoint, by UID
+	DeleteByUID(UID string) error
 }
 
 // PreviewHandler describes a handler that has the ability to render
