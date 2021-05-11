@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"regexp"
-	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -98,10 +96,12 @@ func postDashboard(resource grizzly.Resource) error {
 	}
 
 	folderUID := resource.GetMetadata("folder")
-	folderID, err := findOrCreateFolder(folderUID)
+	folder, err := getRemoteFolder(folderUID)
 	if err != nil {
 		return err
 	}
+	folderID := int64(folder.GetSpecValue("id").(float64))
+
 	wrappedBoard := DashboardWrapper{
 		Dashboard: resource["spec"].(map[string]interface{}),
 		FolderID:  folderID,
@@ -243,87 +243,4 @@ func (d *DashboardWrapper) toJSON() (string, error) {
 		return "", err
 	}
 	return string(j), nil
-}
-
-// Folder encapsulates a dashboard folder object from the Grafana API
-type Folder struct {
-	ID    int64  `json:"id"`
-	UID   string `json:"uid"`
-	Title string `json:"title"`
-}
-
-// toJSON returns JSON expected by Grafana API
-func (f *Folder) toJSON() (string, error) {
-	j, err := json.MarshalIndent(f, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
-}
-
-func findOrCreateFolder(UID string) (int64, error) {
-	if UID == "0" || UID == "" || UID == dashboardFolderDefault {
-		return 0, nil
-	}
-	grafanaURL, err := getGrafanaURL("api/folders?limit=10000")
-	if err != nil {
-		return 0, err
-	}
-	resp, err := http.Get(grafanaURL)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return 0, fmt.Errorf("Getting folder %s returned error %d", UID, resp.StatusCode)
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return 0, err
-	}
-	var folders []Folder
-	if err := json.Unmarshal([]byte(string(body)), &folders); err != nil {
-		return 0, err
-	}
-	for _, folder := range folders {
-		if folder.Title == UID {
-			return folder.ID, nil
-		}
-	}
-	return createFolder(UID)
-}
-
-func createFolder(title string) (int64, error) {
-	grafanaURL, err := getGrafanaURL("api/folders")
-	if err != nil {
-		return 0, err
-	}
-
-	// Convert title to UID (replace space with dash, strip all non alphanumeric characters):
-	UID := strings.ReplaceAll(title, " ", "-")
-	re, _ := regexp.Compile(`[^A-Za-z0-9_\-]`)
-	UID = re.ReplaceAllString(UID, "")
-
-	folder := Folder{
-		UID:   UID,
-		Title: title,
-	}
-
-	folderJSON, err := folder.toJSON()
-	if err != nil {
-		return 0, err
-	}
-	resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(folderJSON))
-	if err != nil {
-		return 0, err
-	} else if resp.StatusCode >= 400 {
-		return 0, NewErrNon200Response("folder", UID, resp)
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err := json.Unmarshal([]byte(string(body)), &folder); err != nil {
-		return 0, err
-	}
-
-	return folder.ID, nil
 }
