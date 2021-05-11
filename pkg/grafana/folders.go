@@ -11,7 +11,7 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
-// getRemoteFolder retrieves a dashboard object from Grafana
+// getRemoteFolder retrieves a folder object from Grafana
 func getRemoteFolder(uid string) (*grizzly.Resource, error) {
 	grafanaURL, err := getGrafanaURL("api/folders/" + uid)
 	if err != nil {
@@ -114,7 +114,7 @@ func postFolder(resource grizzly.Resource) error {
 		}
 		return fmt.Errorf("Error while applying '%s' to Grafana: %s", resource.Name(), r.Message)
 	default:
-		return NewErrNon200Response("dashboard", resource.Name(), resp)
+		return NewErrNon200Response("folder", resource.Name(), resp)
 	}
 	return nil
 }
@@ -153,7 +153,7 @@ func putFolder(resource grizzly.Resource) error {
 		}
 		return fmt.Errorf("Error while applying '%s' to Grafana: %s", resource.Name(), r.Message)
 	default:
-		return NewErrNon200Response("dashboard", resource.Name(), resp)
+		return NewErrNon200Response("folder", resource.Name(), resp)
 	}
 
 	return nil
