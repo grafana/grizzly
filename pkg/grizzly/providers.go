@@ -219,7 +219,7 @@ func (r *Registry) GetHandler(path string) (Handler, error) {
 	return handler, nil
 }
 
-// HandlerMatchesTarget identifies whether a resource is in a target list
+// HandlerMatchesTarget identifies whether a handler is in a target list
 func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool {
 	if len(targets) == 0 {
 		return true
@@ -235,7 +235,7 @@ func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool 
 	return false
 }
 
-// HandlerMatchesTarget identifies whether a resource is in a target list
+// ResourceMatchesTarget identifies whether a resource is in a target list
 func (r *Registry) ResourceMatchesTarget(handler Handler, UID string, targets []string) bool {
 	if len(targets) == 0 {
 		return true
