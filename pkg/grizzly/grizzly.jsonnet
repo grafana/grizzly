@@ -14,7 +14,7 @@ local convert(main, apiVersion) = {
 
     folders:
       local is_alpha(x) =
-    std.setMember(x,"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_");
+    std.member("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_", x);
       local uid(folder) = std.join("", std.filter(is_alpha, std.stringChars(folder)));
      if ('grafanaDashboardFolder' in main) && main.grafanaDashboardFolder != 'General'
       then makeResource(
