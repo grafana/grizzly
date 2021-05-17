@@ -220,7 +220,7 @@ func (r *Registry) GetHandler(path string) (Handler, error) {
 }
 
 // HandlerMatchesTarget identifies whether a handler is in a target list
-func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool {
+func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string, isSilent bool) bool {
 	if len(targets) == 0 {
 		return true
 	}
@@ -231,7 +231,9 @@ func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool 
 			return true
 		}
 	}
-	r.Notifier().Info(SimpleString(key), "skipped")
+	if !isSilent {
+		r.Notifier().Info(SimpleString(key), "skipped")
+	}
 	return false
 }
 

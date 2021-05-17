@@ -72,6 +72,29 @@ func List(registry Registry, resources Resources) error {
 	return w.Flush()
 }
 
+// ListRetmote outputs the keys of remote resources
+func ListRemote(registry Registry, opts Opts) error {
+	f := "%s\t%s\t%s\n"
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+
+	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
+	for _, handler := range registry.Handlers {
+		if !registry.HandlerMatchesTarget(handler, opts.Targets, true) {
+			continue
+		}
+		IDs, err := handler.ListRemote()
+		if err != nil {
+			return err
+		}
+		for _, id := range IDs {
+			if registry.ResourceMatchesTarget(handler, id, opts.Targets) {
+				fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), id)
+			}
+		}
+	}
+	return w.Flush()
+}
+
 // Pulls remote resources
 func Pull(registry Registry, resourcePath string, opts Opts) error {
 
@@ -80,7 +103,7 @@ func Pull(registry Registry, resourcePath string, opts Opts) error {
 	}
 
 	for _, handler := range registry.Handlers {
-		if !registry.HandlerMatchesTarget(handler, opts.Targets) {
+		if !registry.HandlerMatchesTarget(handler, opts.Targets, false) {
 			continue
 		}
 		UIDs, err := handler.ListRemote()
