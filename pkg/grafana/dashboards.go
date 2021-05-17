@@ -99,8 +99,6 @@ func postDashboard(resource grizzly.Resource) error {
 	}
 
 	resource.SetSpecString("uid", resource.GetMetadata("name"))
-	resource.SetSpecString("slug", "foobarbaz")
-	resource.SetSpecString("title", resource.GetSpecString("title")+"2")
 	folderUID := resource.GetMetadata("folder")
 	folderID, err := findOrCreateFolder(folderUID)
 	if err != nil {
@@ -112,18 +110,15 @@ func postDashboard(resource grizzly.Resource) error {
 		Overwrite: true,
 	}
 	wrappedJSON, err := wrappedBoard.toJSON()
-	log.Println("WRAPPED:", wrappedJSON)
 	resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(wrappedJSON))
 	if err != nil {
 		return err
 	}
 
-	log.Println(resp.StatusCode)
 	d, _ := ioutil.ReadAll(resp.Body)
-	log.Println("RESPONSE", string(d))
 	switch resp.StatusCode {
 	case http.StatusOK:
-		break
+		return nil
 	case http.StatusPreconditionFailed:
 		d := json.NewDecoder(resp.Body)
 		var r struct {
@@ -135,10 +130,9 @@ func postDashboard(resource grizzly.Resource) error {
 		fmt.Println(wrappedJSON)
 		return fmt.Errorf("Error while applying '%s' to Grafana: %s", resource.Name(), r.Message)
 	default:
+		log.Println("ERR")
 		return NewErrNon200Response("dashboard", resource.Name(), resp)
 	}
-
-	return nil
 }
 
 func deleteRemoteDashboard(UID string) error {

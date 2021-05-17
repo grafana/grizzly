@@ -12,7 +12,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/grafana/grizzly/pkg/term"
-	"github.com/kr/pretty"
 	"github.com/pmezard/go-difflib/difflib"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
@@ -148,27 +147,23 @@ func Show(registry Registry, resources Resources) error {
 }
 
 // Rename changes the UID of a resource within a remote system
-func Rename(registry Registry, oldUID, newUID string) error {
-	if strings.Count(oldUID, ".") == 0 {
-		return fmt.Errorf("Old UID must be <provider>.<uid>: %s", oldUID)
-	}
-	parts := strings.SplitN(oldUID, ".", 2)
-	handlerName := parts[0]
-	oldResourceID := parts[1]
-
-	handler, err := registry.GetHandler(handlerName)
+func Rename(registry Registry, kind, oldUID, newUID string) error {
+	handler, err := registry.GetHandler(kind)
 	if err != nil {
 		return err
 	}
 
-	resource, err := handler.GetByUID(oldResourceID)
+	renameHandler, ok := handler.(RenameHandler)
+	if ok {
+		return renameHandler.Rename(oldUID, newUID, *registry.Notifier())
+	}
+	resource, err := handler.GetByUID(oldUID)
 	if err != nil {
 		return err
 	}
 
 	resource = handler.Unprepare(*resource)
 	resource.SetMetadata("name", newUID)
-	pretty.Println(resource)
 	err = handler.Add(*resource)
 	if err != nil {
 		return err

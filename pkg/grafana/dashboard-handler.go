@@ -1,6 +1,8 @@
 package grafana
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"path/filepath"
 
@@ -113,6 +115,38 @@ func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
 // DeleteByUID deletes a resource from an endpoint, by UID
 func (h *DashboardHandler) DeleteByUID(UID string) error {
 	return deleteRemoteDashboard(UID)
+}
+
+// Rename changes the UID of a resource within a remote system
+func (h *DashboardHandler) Rename(oldUID, newUID string, notifier *grizzly.Notifier) error {
+	resource, err := h.GetByUID(oldUID)
+	if err != nil {
+		return err
+	}
+
+	resource = h.Unprepare(*resource)
+	resource.SetMetadata("name", newUID)
+	title := resource.GetSpecString("title")
+
+	token := make([]byte, 7)
+	rand.Read(token)
+	base64Token := base64.StdEncoding.EncodeToString(token)
+	resource.SetSpecString("title", base64Token)
+	err = h.Add(*resource)
+	if err != nil {
+		return err
+	}
+	err = h.DeleteByUID(oldUID)
+	if err != nil {
+		return err
+	}
+	resource.SetSpecString("title", title)
+	err = postDashboard(*resource)
+	if err != nil {
+		return err
+	}
+	notifier.Info(grizzly.SimpleString(oldUID), "renamed to "+newUID)
+	return nil
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible

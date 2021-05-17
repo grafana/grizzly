@@ -168,6 +168,12 @@ type Handler interface {
 	DeleteByUID(UID string) error
 }
 
+// RenameHandler describes a handler that has the ability to rename a resource
+type RenameHandler interface {
+	// Rename changes the UID of a resource, by posting a new version, then deleting the old one
+	Rename(oldUID, newUID string, notifier Notifier) error
+}
+
 // PreviewHandler describes a handler that has the ability to render
 // a preview of a resource
 type PreviewHandler interface {

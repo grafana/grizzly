@@ -76,14 +76,15 @@ func showCmd(registry grizzly.Registry) *cli.Command {
 
 func renameCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
-		Use:   "rename <resource-type>.<old-uid> <new-uid>",
+		Use:   "rename <resource-kind> <old-uid> <new-uid>",
 		Short: "change the UID for a resource (actually add, then delete)",
-		Args:  cli.ArgsExact(2),
+		Args:  cli.ArgsExact(3),
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		oldUID := args[0]
-		newUID := args[1]
-		return grizzly.Rename(registry, oldUID, newUID)
+		kind := args[0]
+		oldUID := args[1]
+		newUID := args[2]
+		return grizzly.Rename(registry, kind, oldUID, newUID)
 	}
 	return cmd
 }
