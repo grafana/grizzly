@@ -231,7 +231,6 @@ func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool 
 			return true
 		}
 	}
-	r.Notifier().Info(SimpleString(key), "skipped")
 	return false
 }
 

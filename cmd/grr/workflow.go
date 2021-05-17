@@ -25,13 +25,27 @@ func getCmd(registry grizzly.Registry) *cli.Command {
 
 func listCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
-		Use:   "list <resource-path>",
+		Use:   "list [-r] [<resource-path>]",
 		Short: "list resource keys from file",
-		Args:  cli.ArgsExact(1),
+		Args:  cli.ArgsRange(0, 1),
 	}
 	var opts grizzly.Opts
 	defaultGrizzlyFlags(&opts, cmd.Flags())
+	var isRemote bool
+	cmd.Flags().BoolVarP(&isRemote, "remote", "r", false, "list remote resources")
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		if isRemote {
+			if len(args) > 0 {
+				registry.Notifier().Error(nil, "No resource-path required when listing remote resources")
+				return nil
+			}
+			return grizzly.ListRemote(registry, opts)
+		}
+		if len(args) == 0 {
+			registry.Notifier().Error(nil, "resource-path required when listing local resources")
+			return nil
+		}
 		resources, err := grizzly.Parse(registry, args[0], opts)
 		if err != nil {
 			return err
