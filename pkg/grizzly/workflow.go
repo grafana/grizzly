@@ -79,7 +79,7 @@ func ListRemote(registry Registry, opts Opts) error {
 
 	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
 	for _, handler := range registry.Handlers {
-		if !registry.HandlerMatchesTarget(handler, opts.Targets, true) {
+		if !registry.HandlerMatchesTarget(handler, opts.Targets) {
 			continue
 		}
 		IDs, err := handler.ListRemote()
@@ -103,7 +103,8 @@ func Pull(registry Registry, resourcePath string, opts Opts) error {
 	}
 
 	for _, handler := range registry.Handlers {
-		if !registry.HandlerMatchesTarget(handler, opts.Targets, false) {
+		if !registry.HandlerMatchesTarget(handler, opts.Targets) {
+			registry.Notifier().Info(SimpleString(handler.Kind()), "skipped")
 			continue
 		}
 		UIDs, err := handler.ListRemote()
