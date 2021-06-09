@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
@@ -284,8 +285,8 @@ type WatchParser interface {
 }
 
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
-// when changes are noticed
-func Watch(registry Registry, watchDir string, parser WatchParser) error {
+// when changes are noticed.
+func Watch(registry Registry, watchDir string, parser WatchParser, opts WatchOpts) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -321,11 +322,29 @@ func Watch(registry Registry, watchDir string, parser WatchParser) error {
 		}
 	}()
 
-	err = watcher.Add(watchDir)
-	if err != nil {
-		return err
+	var watchErr error
+	if opts.Recursive {
+		watchErr = filepath.WalkDir(watchDir, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if d.IsDir() {
+				return watcher.Add(path)
+			}
+
+			return nil
+		})
+	} else {
+		watchErr = watcher.Add(watchDir)
 	}
+
+	if watchErr != nil {
+		return watchErr
+	}
+
 	<-done
+
 	return nil
 }
 
