@@ -146,7 +146,7 @@ func Show(registry Registry, resources Resources) error {
 	for _, resource := range resources {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
-			return nil
+			return err
 		}
 		resource = *(handler.Unprepare(resource))
 
@@ -175,12 +175,12 @@ func Diff(registry Registry, resources Resources) error {
 	for _, resource := range resources {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
-			return nil
+			return err
 		}
 
 		local, err := resource.YAML()
 		if err != nil {
-			return nil
+			return err
 		}
 
 		resource = *handler.Unprepare(resource)
@@ -225,8 +225,7 @@ func Apply(registry Registry, resources Resources) error {
 	for _, resource := range resources {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
-			// Why?
-			return nil
+			return err
 		}
 
 		existingResource, err := handler.GetRemote(resource)
@@ -251,8 +250,7 @@ func Apply(registry Registry, resources Resources) error {
 		existingResource = handler.Unprepare(*existingResource)
 		existingResourceRepresentation, err := existingResource.YAML()
 		if err != nil {
-			// Why?
-			return nil
+			return err
 		}
 
 		if resourceRepresentation == existingResourceRepresentation {
@@ -275,7 +273,7 @@ func Preview(registry Registry, resources Resources, opts *PreviewOpts) error {
 	for _, resource := range resources {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
-			return nil
+			return err
 		}
 		previewHandler, ok := handler.(PreviewHandler)
 		if !ok {
@@ -384,7 +382,7 @@ func Export(registry Registry, exportDir string, resources Resources) error {
 	for _, resource := range resources {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
-			return nil
+			return err
 		}
 		updatedResource, err := resource.YAML()
 		if err != nil {

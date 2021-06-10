@@ -5,11 +5,16 @@ import (
 	"fmt"
 )
 
-// ErrNotFound is used to signal a missing resource
-var ErrNotFound = errors.New("not found")
+var (
+	// ErrNotFound is used to signal a missing resource
+	ErrNotFound = errors.New("not found")
 
-// ErrNotImplemented signals a feature that is not supported by a provider
-var ErrNotImplemented = errors.New("not implemented")
+	// ErrNotImplemented signals a feature that is not supported by a provider
+	ErrNotImplemented = errors.New("not implemented")
+
+	// ErrHandlerNotFound indicates that no handler was found for a particular resource Kind.
+	ErrHandlerNotFound = errors.New("handler not found")
+)
 
 // APIErr encapsulates an error from the Grafana API
 type APIErr struct {
