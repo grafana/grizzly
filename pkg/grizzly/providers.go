@@ -214,7 +214,7 @@ func (r *Registry) RegisterProvider(provider Provider) error {
 func (r *Registry) GetHandler(path string) (Handler, error) {
 	handler, exists := r.Handlers[path]
 	if !exists {
-		return nil, fmt.Errorf("No handler registered to %s", path)
+		return nil, fmt.Errorf("couldn't find a handler for %s: %w", path, ErrHandlerNotFound)
 	}
 	return handler, nil
 }

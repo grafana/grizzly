@@ -1,4 +1,5 @@
 local main = import '%s';
+
 local convert(main, apiVersion) = {
   local makeResource(kind, name, spec=null, data=null, metadata={}) = {
     apiVersion: apiVersion,
@@ -10,16 +11,16 @@ local convert(main, apiVersion) = {
     [if data != null then 'data']: std.manifestJsonEx(data, '  '),
   },
 
-  grafana: {
+  local formatUID(name) =
+      local is_alpha(x) = std.member("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_", x);
+      std.join("", std.filter(is_alpha, std.stringChars(name))),
 
+  grafana: {
     folders:
-      local is_alpha(x) =
-    std.member("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_", x);
-      local uid(folder) = std.join("", std.filter(is_alpha, std.stringChars(folder)));
      if ('grafanaDashboardFolder' in main) && main.grafanaDashboardFolder != 'General'
       then makeResource(
         'DashboardFolder',
-        uid(main.grafanaDashboardFolder),
+        formatUID(main.grafanaDashboardFolder),
         spec={
           title: main.grafanaDashboardFolder,
         }),
@@ -30,7 +31,7 @@ local convert(main, apiVersion) = {
         else k;
       local folder =
         if 'grafanaDashboardFolder' in main
-        then main.grafanaDashboardFolder
+        then formatUID(main.grafanaDashboardFolder)
         else 'General';
       local fromMap(dashboards, folder) = [
         makeResource(

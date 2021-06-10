@@ -70,10 +70,11 @@ func (h *FolderHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Re
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *FolderHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	resource, err := getRemoteDashboard(UID)
+	resource, err := getRemoteFolder(UID)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving dashboard %s: %v", UID, err)
+		return nil, fmt.Errorf("Error retrieving dashboard folder %s: %v", UID, err)
 	}
+
 	return resource, nil
 }
 
