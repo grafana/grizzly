@@ -139,15 +139,12 @@ func (p *jsonnetWatchParser) Parse(registry grizzly.Registry) (grizzly.Resources
 func watchCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "watch <dir-to-watch> <resource-path>",
-		Short: "watch for file changes and apply",
+		Short: "watch dir recursively for file changes and apply selected resource path",
 		Args:  cli.ArgsExact(2),
 	}
 
 	var opts grizzly.Opts
 	defaultGrizzlyFlags(&opts, cmd.Flags())
-
-	var wopts grizzly.WatchOpts
-	cmd.Flags().BoolVarP(&wopts.Recursive, "recursive", "r", false, "watch the directory recursively")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		parser := &jsonnetWatchParser{
@@ -157,7 +154,7 @@ func watchCmd(registry grizzly.Registry) *cli.Command {
 
 		watchDir := args[0]
 
-		return grizzly.Watch(registry, watchDir, parser, wopts)
+		return grizzly.Watch(registry, watchDir, parser)
 	}
 	return cmd
 }

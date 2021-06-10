@@ -93,8 +93,12 @@ $ grr apply my-lib.libsonnet
 
 ### grr watch
 Watches a directory for changes. When changes are identified, the
-jsonnet is executed and changes are pushed to remote systems. This
-example watches the current directory for changes, then executes
+jsonnet is executed and changes are pushed to remote systems.
+The directory is watched recursively (i.e. all subdirectories are watched too),
+but if new subdirectories are added, watch command needs to be re-started,
+as new directories will not be picked up automatically.
+
+This example watches the current directory for changes, then executes
 `my-lib.libsonnet` when changes are noticed:
 
 ```sh

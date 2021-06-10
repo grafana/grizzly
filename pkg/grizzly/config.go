@@ -11,8 +11,3 @@ type Opts struct {
 type PreviewOpts struct {
 	ExpiresSeconds int
 }
-
-// WatchOpts Options to configure watch command.
-type WatchOpts struct {
-	Recursive bool
-}
