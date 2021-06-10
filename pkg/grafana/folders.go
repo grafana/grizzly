@@ -26,7 +26,7 @@ func getRemoteFolder(uid string) (*grizzly.Resource, error) {
 
 	switch {
 	case resp.StatusCode == http.StatusNotFound:
-		return nil, grizzly.ErrNotFound
+		return nil, fmt.Errorf("couldn't fetch folder '%s' from remote: %w", uid, grizzly.ErrNotFound)
 	case resp.StatusCode >= 400:
 		return nil, errors.New(resp.Status)
 	}
@@ -63,7 +63,7 @@ func getRemoteFolderList() ([]string, error) {
 
 		switch {
 		case resp.StatusCode == http.StatusNotFound:
-			return nil, grizzly.ErrNotFound
+			return nil, fmt.Errorf("couldn't fetch folder list from remote: %w", grizzly.ErrNotFound)
 		case resp.StatusCode >= 400:
 			return nil, errors.New(resp.Status)
 		}

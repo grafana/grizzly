@@ -120,7 +120,7 @@ func Pull(registry Registry, resourcePath string, opts Opts) error {
 				continue
 			}
 			resource, err := handler.GetByUID(UID)
-			if errors.As(err, &ErrNotFound) {
+			if errors.Is(err, ErrNotFound) {
 				registry.Notifier().NotFound(SimpleString(UID))
 				return nil
 			}
@@ -172,26 +172,30 @@ func Show(registry Registry, resources Resources) error {
 
 // Diff compares resources to those at the endpoints
 func Diff(registry Registry, resources Resources) error {
-
 	for _, resource := range resources {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return nil
 		}
+
 		local, err := resource.YAML()
 		if err != nil {
 			return nil
 		}
+
 		resource = *handler.Unprepare(resource)
 		uid := resource.Name()
+
 		remote, err := handler.GetRemote(resource)
-		if err == ErrNotFound {
+		if errors.Is(err, ErrNotFound) {
 			registry.Notifier().NotFound(resource)
 			continue
 		}
+
 		if err != nil {
 			return fmt.Errorf("Error retrieving resource from %s %s: %v", resource.Kind(), uid, err)
 		}
+
 		remote = handler.Unprepare(*remote)
 		remoteRepresentation, err := (*remote).YAML()
 		if err != nil {
@@ -212,6 +216,7 @@ func Diff(registry Registry, resources Resources) error {
 			registry.Notifier().HasChanges(resource, difference)
 		}
 	}
+
 	return nil
 }
 
@@ -220,40 +225,48 @@ func Apply(registry Registry, resources Resources) error {
 	for _, resource := range resources {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
+			// Why?
 			return nil
 		}
-		existingResource, err := handler.GetRemote(resource)
-		if err == ErrNotFound {
 
-			err := handler.Add(resource)
-			if err != nil {
+		existingResource, err := handler.GetRemote(resource)
+		if errors.Is(err, ErrNotFound) {
+			if err := handler.Add(resource); err != nil {
 				return err
 			}
+
 			registry.Notifier().Added(resource)
 			continue
-		} else if err != nil {
+		}
+		if err != nil {
 			return err
 		}
+
 		resourceRepresentation, err := resource.YAML()
 		if err != nil {
 			return err
 		}
+
 		resource = *handler.Prepare(*existingResource, resource)
 		existingResource = handler.Unprepare(*existingResource)
 		existingResourceRepresentation, err := existingResource.YAML()
 		if err != nil {
+			// Why?
 			return nil
 		}
+
 		if resourceRepresentation == existingResourceRepresentation {
 			registry.Notifier().NoChanges(resource)
-		} else {
-			err = handler.Update(*existingResource, resource)
-			if err != nil {
-				return err
-			}
-			registry.Notifier().Updated(resource)
+			continue
 		}
+
+		if err = handler.Update(*existingResource, resource); err != nil {
+			return err
+		}
+
+		registry.Notifier().Updated(resource)
 	}
+
 	return nil
 }
 
