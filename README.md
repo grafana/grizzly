@@ -62,7 +62,7 @@ Your stack ID is the number at the end of the url when you view your Grafana ins
 Retrieves a resource from the remote system, via its UID. Its UID will be two parts separated by a dot, `<resource-type>.<resource-id>`. A dashboard might be `dashboard.mydash`:
 
 ```sh
-$ grr get dashboard.my-uid
+$ grr get Dashboard.my-uid
 ```
 
 ### grr list
@@ -215,5 +215,5 @@ will push our change up to Grafana. Check your Grafana dashboard list - you shou
 You can retrieve a dashboard from Grafana via its UID:
 
 ```sh
-$ grr get prod-overview
+$ grr get Dashboard.prod-overview
 ```
