@@ -1,0 +1,55 @@
+baseURL: https://rgeyer.github.io/hugoactionstest/
+languageCode: en-us
+defaultContentLanguage: en
+title: Grizzly Docs
+theme: cupper-hugo-theme
+
+params:
+  description: A utility for managing various observability resources with Jsonnet.
+  homeMetaContent: Grizzly
+  footer: Powered by [hugo](https://gohugo.io/), using the [cupper theme](https://themes.gohugo.io/cupper-hugo-theme/)
+  dateFormat: Jan 1, 2021
+  search: true
+  logoAlt: Illustration of a Grizzly Bear Bust
+  staticDir:
+    - staticDir_override
+
+menu:
+  nav:
+    - name: Home
+      url: /
+      weight: 1
+    - name: Getting Started
+      url: /gettingstarted/
+      weight: 2
+
+markup:
+  defaultMarkdownHandler: goldmark
+  goldmark:
+    extensions:
+      definitionList: true
+      footnote: true
+      linkify: true
+      strikethrough: true
+      table: true
+      taskList: true
+      typographer: true
+    parser:
+      attribute: true
+      autoHeadingID: true
+    renderer:
+      hardWraps: false
+      unsafe: true
+      xHTML: false
+  highlight:
+    codeFences: false
+    hl_Lines: ""
+    lineNoStart: 1
+    lineNos: false
+    lineNumbersInTable: true
+    noClasses: true
+    style: monokai
+    tabWidth: 4
+  tableOfContents:
+    endLevel: 6
+    startLevel: 2
