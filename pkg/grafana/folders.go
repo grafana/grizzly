@@ -159,6 +159,39 @@ func putFolder(resource grizzly.Resource) error {
 	return nil
 }
 
+var getFolderById = func(folderId int64) (Folder, error) {
+	grafanaURL, err := getGrafanaURL(fmt.Sprintf("folders/id/%d", folderId))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.Get(grafanaURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusNotFound:
+		return nil, fmt.Errorf("NOT FOUND")
+	default:
+		if resp.StatusCode >= 400 {
+			return nil, errors.New(resp.Status)
+		}
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var f Folder
+	if err := json.Unmarshal(data, &f); err != nil {
+		return nil, err
+	}
+	return f, nil
+}
+
 type Folder map[string]interface{}
 
 func (f *Folder) UID() string {

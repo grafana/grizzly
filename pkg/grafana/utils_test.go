@@ -21,9 +21,18 @@ func TestExtractFolderUID(t *testing.T) {
 		require.Equal(t, "sample", uid)
 	})
 
-	t.Run("extract folder uid successfully - empty uid returned", func(t *testing.T) {
-		dashboardWrapper := DashboardWrapper{}
+	t.Run("extract folder uid - empty uid returned", func(t *testing.T) {
+		dashboardWrapper := DashboardWrapper{
+			Dashboard: map[string]interface{}{
+				"FolderId": 1.0,
+			},
+		}
+		getFolderById = func(folderId int64) (Folder, error) {
+			return Folder{
+				"uid": "12345",
+			}, nil
+		}
 		uid := extractFolderUID(dashboardWrapper)
-		require.Equal(t, "", uid)
+		require.Equal(t, "12345", uid)
 	})
 }

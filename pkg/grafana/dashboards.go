@@ -7,12 +7,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
-
-var folderURLRegex = regexp.MustCompile("/dashboards/f/([^/]+)")
 
 // getRemoteDashboard retrieves a dashboard object from Grafana
 func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
