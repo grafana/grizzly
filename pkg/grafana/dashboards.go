@@ -7,9 +7,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
+
+var folderURLRegex = regexp.MustCompile("/dashboards/f/([^/]+)")
 
 // getRemoteDashboard retrieves a dashboard object from Grafana
 func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
@@ -44,7 +47,8 @@ func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	delete(d.Dashboard, "version")
 	h := DashboardHandler{}
 	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, d.Dashboard)
-	resource.SetMetadata("folder", d.Meta.FolderTitle)
+	folderUid := extractFolderUID(d)
+	resource.SetMetadata("folder", folderUid)
 	return &resource, nil
 }
 
@@ -227,6 +231,8 @@ type DashboardWrapper struct {
 	Meta      struct {
 		FolderID    int64  `json:"folderId"`
 		FolderTitle string `json:"folderTitle"`
+		FolderUID   string `json:"folderUid"`
+		FolderURL   string `json:"folderUrl"`
 	} `json:"meta"`
 }
 
