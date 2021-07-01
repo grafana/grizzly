@@ -19,9 +19,53 @@ menu:
     - name: Home
       url: /
       weight: 1
-    - name: Getting Started
-      url: /gettingstarted/
+    - name: What is Grizzly?
       weight: 2
+      url: /what-is-grizzly
+    - name: Getting Started
+      url: /gettingstarted
+      weight: 3
+    - name: Available Systems
+      identifier: systems
+      url: /systems
+      weight: 4
+    - name: Grafana
+      weight: 1
+      url: /systems/grafana
+      parent: systems
+    - name: Prometheus
+      weight: 2
+      url: /systems/prometheus
+      parent: systems
+    - name: Grafana Synthetic Monitoring
+      weight: 3
+      url: /systems/synthetic-monitoring
+      parent: systems
+    - name: Usage
+      url: /usage
+      weight: 5
+    - name: Workflows
+      url: /workflows
+      weight: 6
+      identifier: workflows
+    - name: Jsonnet
+      url: /workflows/jsonnet
+      weight: 1
+      parent: workflows
+    - name: Push/Pull
+      url: /workflows/push-pull
+      weight: 2
+      parent: workflows
+    - name: Listen
+      url: /workflows/listen
+      weight: 3
+      parent: workflows
+    - name: The Future
+      url: /future
+      weight: 7
+
+
+
 
 markup:
   defaultMarkdownHandler: goldmark
