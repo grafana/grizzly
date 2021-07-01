@@ -1,7 +1,7 @@
 /* Fonts */
 @font-face {
     font-family: 'Miriam Libre';
-    src: url('https://rgeyer.github.io/hugoactionstest/css/fonts/miriamlibre-bold.woff2') format('woff2'), url('https://rgeyer.github.io/hugoactionstest/css/fonts/miriamlibre-bold.woff') format('woff');
+    src: url('https://grafana.github.io/grizzly/css/fonts/miriamlibre-bold.woff2') format('woff2'), url('https://grafana.github.io/grizzly/css/fonts/miriamlibre-bold.woff') format('woff');
     font-weight: bold;
     font-style: normal;
 }
@@ -509,7 +509,7 @@ caption {
 }
 .note.warning {
     border-left: 0;
-    background-image: url(https://rgeyer.github.io/hugoactionstest/css/images/stripe.svg);
+    background-image: url(https://grafana.github.io/grizzly/css/images/stripe.svg);
     background-size: 0.5rem auto;
     background-repeat: repeat-y;
 }
@@ -528,7 +528,7 @@ caption {
     width: 1rem;
     height: 1rem;
     margin-right: 0.25rem;
-    background-image: url(https://rgeyer.github.io/hugoactionstest/css/images/icon-tick.svg);
+    background-image: url(https://grafana.github.io/grizzly/css/images/icon-tick.svg);
     background-size: 100% auto;
     position: absolute;
     left: -1.25rem;
