@@ -11,7 +11,7 @@ spec:
     job: grafana-com
     labels: []
     offset: 0
-    probes:
+    probeNames:
         - Atlanta
         - Chicago
         - LosAngeles

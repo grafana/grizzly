@@ -104,12 +104,10 @@ func (h *SyntheticMonitoringHandler) ListRemote() ([]string, error) {
 
 // Add adds a new check to the SyntheticMonitoring endpoint
 func (h *SyntheticMonitoringHandler) Add(resource grizzly.Resource) error {
-	url := getSyntheticMonitoringURL("api/v1/check/add")
-	return postCheck(url, resource)
+	return addCheck(resource)
 }
 
 // Update pushes an updated check to the SyntheticMonitoring endpoing
 func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource) error {
-	url := getSyntheticMonitoringURL("api/v1/check/update")
-	return postCheck(url, resource)
+	return updateCheck(resource)
 }

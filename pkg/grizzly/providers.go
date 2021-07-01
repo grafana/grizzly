@@ -6,12 +6,18 @@ import (
 	"strings"
 
 	"github.com/gobwas/glob"
+	"github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"gopkg.in/yaml.v3"
 )
 
 // Resource represents a single Resource destined for a single endpoint
 type Resource map[string]interface{}
+
+type SMSpec struct {
+	synthetic_monitoring.Check
+	ProbeNames []string `json:"probenames"`
+}
 
 // NewResource returns a new Resource object
 func NewResource(apiVersion, kind, name string, spec map[string]interface{}) Resource {
@@ -90,6 +96,21 @@ func (r *Resource) DeleteSpecKey(key string) {
 
 func (r *Resource) Spec() map[string]interface{} {
 	return (*r)["spec"].(map[string]interface{})
+}
+
+func (r *Resource) SpecToCheck() (synthetic_monitoring.Check, error) {
+	var smSpec SMSpec
+	data, err := json.Marshal((*r)["spec"])
+	if err != nil {
+		return synthetic_monitoring.Check{}, nil
+	}
+
+	err = json.Unmarshal(data, &smSpec)
+	if err != nil {
+		return synthetic_monitoring.Check{}, nil
+	}
+
+	return smSpec.Check, nil
 }
 
 func (r *Resource) SpecAsJSON() (string, error) {
