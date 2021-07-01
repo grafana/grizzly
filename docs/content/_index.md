@@ -1,10 +1,7 @@
 ---
 date: "2021-06-28T00:00:00+00:00"
-title: "Home"
+title: "Grizzly: Deploy and Observe as One"
 ---
-
-# Grizzly: Deploy and Observe as One
-
 <p style="text-align: center;">Building and shipping has become one and the same.</p>
 
 “I test in production and so do you.” - [Charity Majors](https://twitter.com/mipsytipsy?lang=en)
