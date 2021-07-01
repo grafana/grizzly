@@ -45,9 +45,9 @@ and must have these environment variables set:
 
 | Name | Description | Required |
 | --- | --- | --- |
-| `PROMETHEUS_ADDRESS` | URL for Grafana Cloud Prometheus instance | true |
-| `PROMETHEUS_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true |
-| `PROMETHEUS_TOKEN` | Authentication token/api key | true |
+| `CORTEX_ADDRESS` | URL for Grafana Cloud Prometheus instance | true |
+| `CORTEX_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true |
+| `CORTEX_API_KEY` | Authentication token/api key | true |
 
 ### Grafana Synthetic Monitoring
 To interact with Grafana Synthetic Monitoring, you must have these environment variable set:
