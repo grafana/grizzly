@@ -23,9 +23,7 @@ func TestExtractFolderUID(t *testing.T) {
 
 	t.Run("extract folder uid - empty uid returned", func(t *testing.T) {
 		dashboardWrapper := DashboardWrapper{
-			Dashboard: map[string]interface{}{
-				"FolderId": 1.0,
-			},
+			FolderID: 1,
 		}
 		getFolderById = func(folderId int64) (Folder, error) {
 			return Folder{
