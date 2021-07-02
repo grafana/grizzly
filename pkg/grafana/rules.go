@@ -1,15 +1,23 @@
 package grafana
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
-	"os/exec"
 	"strings"
 
+	ctClient "github.com/grafana/cortex-tools/pkg/client"
+	"github.com/grafana/cortex-tools/pkg/rules"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"gopkg.in/yaml.v3"
+)
+
+const (
+	cortexApiKey     = "CORTEX_API_KEY"
+	cortexAddress    = "CORTEX_ADDRESS"
+	cortexTenantID   = "CORTEX_TENANT_ID"
+	backenTypeCortex = "cortex"
 )
 
 // getRemoteRuleGrouping retrieves a datasource object from Grafana
@@ -17,8 +25,7 @@ func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 	parts := strings.SplitN(uid, ".", 2)
 	namespace := parts[0]
 	name := parts[1]
-
-	out, err := cortexTool("rules", "print", "--disable-color")
+	out, err := listRules()
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +54,7 @@ func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 
 // getRemoteRuleGroupingList retrieves a datasource object from Grafana
 func getRemoteRuleGroupList() ([]string, error) {
-	out, err := cortexTool("rules", "print", "--disable-color")
+	out, err := listRules()
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +89,9 @@ type PrometheusRuleGrouping struct {
 
 func writeRuleGroup(resource grizzly.Resource) error {
 	tmpfile, err := ioutil.TempFile("", "cortextool-*")
+	if err != nil {
+		return err
+	}
 	newGroup := PrometheusRuleGroup{
 		Name: resource.Name(),
 		//Rules: resource.Spec()["rules"].([]map[string]interface{}),
@@ -101,25 +111,54 @@ func writeRuleGroup(resource grizzly.Resource) error {
 		return err
 	}
 	ioutil.WriteFile(tmpfile.Name(), out, 0644)
-	output, err := cortexTool("rules", "load", tmpfile.Name())
+	err = writeRules(grouping.Namespace, tmpfile.Name())
 	if err != nil {
-		log.Println("OUTPUT", output)
 		return err
 	}
 	os.Remove(tmpfile.Name())
 	return err
 }
 
-func cortexTool(args ...string) ([]byte, error) {
-	path := os.Getenv("CORTEXTOOL_PATH")
-	if path == "" {
-		var err error
-		path, err = exec.LookPath("cortextool")
-		if err != nil {
-			return nil, err
-		} else if path == "" {
-			return nil, fmt.Errorf("cortextool not found")
+func listRules() ([]byte, error) {
+	client := newCortexClient()
+	rule, err := client.ListRules(context.Background(), "")
+	if err != nil && err != ctClient.ErrResourceNotFound {
+		return nil, err
+	}
+	encodedRule, err := yaml.Marshal(&rule)
+	if err != nil {
+		return nil, err
+	}
+	return encodedRule, nil
+}
+
+func writeRules(namespace, fileName string) error {
+	client := newCortexClient()
+	ruleNamespaces, err := rules.ParseFiles(backenTypeCortex, []string{fileName})
+	if err != nil {
+		return err
+	}
+	for _, ruleNamespace := range ruleNamespaces {
+		for _, group := range ruleNamespace.Groups {
+			err = client.CreateRuleGroup(context.Background(), ruleNamespace.Namespace, group)
+			if err != nil {
+				return err
+			}
 		}
 	}
-	return exec.Command(path, args...).Output()
+	return nil
+}
+
+func newCortexClient() *ctClient.CortexClient {
+	cfg := ctClient.Config{
+		Key:             os.Getenv(cortexApiKey),
+		Address:         os.Getenv(cortexAddress),
+		ID:              os.Getenv(cortexTenantID),
+		UseLegacyRoutes: false,
+	}
+	cortexClient, err := ctClient.New(cfg)
+	if err != nil {
+		return nil
+	}
+	return cortexClient
 }
