@@ -13,6 +13,16 @@ import (
 
 // getRemoteFolder retrieves a folder object from Grafana
 func getRemoteFolder(uid string) (*grizzly.Resource, error) {
+	h := FolderHandler{}
+	if uid == "General" || uid == "general" {
+		folder := Folder{
+			"id":    0.0,
+			"uid":   uid,
+			"title": "General",
+		}
+		resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, folder)
+		return &resource, nil
+	}
 	grafanaURL, err := getGrafanaURL("api/folders/" + uid)
 	if err != nil {
 		return nil, err
@@ -40,7 +50,6 @@ func getRemoteFolder(uid string) (*grizzly.Resource, error) {
 	if err := json.Unmarshal(data, &f); err != nil {
 		return nil, grizzly.APIErr{Err: err, Body: data}
 	}
-	h := FolderHandler{}
 	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, f)
 	return &resource, nil
 }
@@ -87,6 +96,10 @@ func getRemoteFolderList() ([]string, error) {
 }
 
 func postFolder(resource grizzly.Resource) error {
+	name := resource.GetMetadata("name")
+	if name == "General" || name == "general" {
+		return nil
+	}
 	grafanaURL, err := getGrafanaURL("api/folders")
 	if err != nil {
 		return err

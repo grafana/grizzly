@@ -93,10 +93,7 @@ func (h *DashboardHandler) ListRemote() ([]string, error) {
 
 // Add pushes a new dashboard to Grafana via the API
 func (h *DashboardHandler) Add(resource grizzly.Resource) error {
-	if err := postDashboard(resource); err != nil {
-		return err
-	}
-	return nil
+	return postDashboard(resource)
 }
 
 // Update pushes a dashboard to Grafana via the API
