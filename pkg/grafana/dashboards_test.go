@@ -1,59 +1,43 @@
 package grafana
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
-	"net/http"
-	"os"
-	"os/exec"
-	"testing"
-	"time"
-
+	"github.com/docker/docker/api/types/container"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/stretchr/testify/require"
+	"os"
+	"testing"
 )
 
 func TestDashboard(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		return
-	}
 	os.Setenv("GRAFANA_URL", "http://localhost:3000")
 
+	ctx := context.Background()
+	cli, err := initClient(ctx)
+	require.NoError(t, err)
+
+	containerID := startContainer(err, cli, ctx)
+
 	go func() {
-		cmd := exec.Command("/bin/sh", "run_container.sh")
-		if o, err := cmd.CombinedOutput(); err != nil {
-			fmt.Printf("fail to spin up container, err: %q", o)
-			os.Exit(1)
+		statusCh, errCh := cli.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
+		select {
+		case err := <-errCh:
+			if err != nil {
+				panic(err)
+			}
+		case <-statusCh:
 		}
 	}()
 
-	defer func() {
-		cmd := exec.Command("/bin/sh", "kill_container.sh")
-		if o, err := cmd.CombinedOutput(); err != nil {
-			fmt.Printf("fail to kill container, err: %q", o)
-			os.Exit(1)
-		}
-	}()
-
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := pingLocalhost()
 	defer ticker.Stop()
 
-	timeoutExceeded := time.After(120 * time.Second)
+	defer func() {
+		removeContainer(cli, ctx, containerID)
+	}()
 
-	success := false
-	for !success {
-		select {
-		case <-timeoutExceeded:
-			fmt.Println("failed")
-
-		case <-ticker.C:
-			resp, _ := http.Get("http://localhost:3000/")
-			if resp != nil {
-				success = true
-				break
-			}
-		}
-	}
+	printContainerLogs(cli, ctx, containerID)
 
 	t.Run("get remote dashboard - success", func(t *testing.T) {
 		resource, err := getRemoteDashboard("ReciqtgGk")
@@ -101,11 +85,12 @@ func TestDashboard(t *testing.T) {
 		resource = map[string]interface{}{
 			"metadata": map[string]interface{}{
 				"folder": "dummy",
+				"name":   "dummy",
 			},
 		}
 
 		err := postDashboard(resource)
-		require.EqualError(t, err, "couldn't fetch folder 'dummy' from remote: not found")
+		require.EqualError(t, err, "Cannot upload dashboard dummy as folder dummy not found")
 	})
 
 	_ = os.Unsetenv("GRAFANA_URL")
