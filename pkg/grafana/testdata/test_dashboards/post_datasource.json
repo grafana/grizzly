@@ -1,0 +1,29 @@
+{
+  "apiVersion": "grizzly.grafana.com/v1alpha1",
+  "kind": "Datasource",
+  "metadata": {
+    "name": "AppDynamicsTest"
+  },
+  "spec": {
+    "access": "proxy",
+    "basicAuth": true,
+    "basicAuthPassword": "l9pufv67qmud",
+    "basicAuthUser": "mothership2019052316285110@mothership2019052316285110",
+    "database": "",
+    "id": 1,
+    "isDefault": false,
+    "jsonData": {},
+    "name": "AppDynamicsTest",
+    "orgId": 1,
+    "password": "",
+    "readOnly": false,
+    "secureJsonFields": {},
+    "type": "dlopes7-appdynamics-datasource",
+    "typeLogoUrl": "",
+    "uid": "appdynamics",
+    "url": "https://mothership2019052316285110.saas.appdynamics.com",
+    "user": "",
+    "version": 1,
+    "withCredentials": true
+  }
+}
