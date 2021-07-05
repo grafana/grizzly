@@ -142,25 +142,22 @@ func getRemoteCheck(uid string) (*grizzly.Resource, error) {
 	}
 
 	for _, check := range checkList {
-		var spec grizzly.SMSpec
-		spec.Check = check
-
 		if getUID(&check) == uid {
-			spec.ProbeNames = []string{}
+			probeNames := []string{}
 			for _, probeID := range check.Probes {
-				spec.ProbeNames = append(spec.ProbeNames, probes.ByID[probeID].Name)
+				probeNames = append(probeNames, probes.ByID[probeID].Name)
 			}
 			handler := SyntheticMonitoringHandler{}
-			data, err := json.Marshal(spec)
+			data, err := json.Marshal(check)
 			if err != nil {
 				return nil, err
 			}
 			var specmap map[string]interface{}
 			err = json.Unmarshal(data, &specmap)
-			delete(specmap, "probes")
 			if err != nil {
 				return nil, err
 			}
+			specmap["probes"] = probeNames
 			resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), check.Job, specmap)
 			resource.SetMetadata("type", getType(&check))
 			return &resource, nil
@@ -176,13 +173,12 @@ func convertProbeNameToID(resource *grizzly.Resource) error {
 	}
 	probeIDs := []int64{}
 
-	for _, probename := range (*resource).GetSpecValue("probeNames").([]interface{}) {
+	for _, probename := range (*resource).GetSpecValue("probes").([]interface{}) {
 		probeName := probename.(string)
 		id := probes.ByName[probeName].Id
 		probeIDs = append(probeIDs, id)
 	}
 	(*resource).SetSpecValue("probes", probeIDs)
-	(*resource).DeleteSpecKey("probeNames")
 	return nil
 }
 
@@ -197,7 +193,7 @@ func addCheck(resource grizzly.Resource) error {
 
 	convertProbeNameToID(&resource)
 
-	theCheck, err := resource.SpecToCheck()
+	theCheck, err := SpecToCheck(&resource)
 	if err != nil {
 		return fmt.Errorf("input file is invalid: %v", err)
 	}
@@ -218,7 +214,7 @@ func updateCheck(resource grizzly.Resource) error {
 
 	convertProbeNameToID(&resource)
 
-	theCheck, err := resource.SpecToCheck()
+	theCheck, err := SpecToCheck(&resource)
 	if err != nil {
 		return fmt.Errorf("input file is invalid: %v", err)
 	}
@@ -228,6 +224,21 @@ func updateCheck(resource grizzly.Resource) error {
 	}
 
 	return nil
+}
+
+func SpecToCheck(r *grizzly.Resource) (synthetic_monitoring.Check, error) {
+	var smCheck synthetic_monitoring.Check
+	data, err := json.Marshal((*r)["spec"])
+	if err != nil {
+		return synthetic_monitoring.Check{}, nil
+	}
+
+	err = json.Unmarshal(data, &smCheck)
+	if err != nil {
+		return synthetic_monitoring.Check{}, nil
+	}
+
+	return smCheck, nil
 }
 
 // Probes allows accessing Probe objects by ID and by name
