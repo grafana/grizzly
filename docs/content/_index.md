@@ -1,3 +1,8 @@
+---
+date: "2021-06-28T00:00:00+00:00"
+title: "Home"
+---
+
 # Grizzly: A tool for Managing Observability Systems
 
 A utility for managing various observability resources with Jsonnet. Currently supported
