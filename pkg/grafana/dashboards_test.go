@@ -97,7 +97,7 @@ func TestDashboard(t *testing.T) {
 		require.Equal(t, resource.GetMetadata("folder"), "abcdefghi")
 	})
 
-	t.Run("post remote dashboard - success", func(t *testing.T) {
+	t.Run("post remote dashboard - not found", func(t *testing.T) {
 		var resource grizzly.Resource
 		resource = map[string]interface{}{
 			"metadata": map[string]interface{}{
