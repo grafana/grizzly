@@ -1,0 +1,22 @@
+{
+  "apiVersion": "grizzly.grafana.com/v1alpha1",
+  "kind": "DashboardFolder",
+  "metadata": {
+    "name": "newFolder"
+  },
+  "spec": {
+    "canAdmin": true,
+    "canEdit": true,
+    "canSave": true,
+    "created": "2021-07-05T09:17:29Z",
+    "createdBy": "Anonymous",
+    "hasAcl": false,
+    "id": 1,
+    "title": "New Folder",
+    "uid": "newFolder",
+    "updated": "2021-07-05T09:17:29Z",
+    "updatedBy": "Anonymous",
+    "url": "/dashboards/f/newFolder/azure-data-explorer",
+    "version": 1
+  }
+}

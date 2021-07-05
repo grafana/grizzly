@@ -71,7 +71,6 @@ func TestDashboard(t *testing.T) {
 
 	t.Run("get remote dashboard list - success", func(t *testing.T) {
 		list, err := getRemoteDashboardList()
-		fmt.Println(list)
 		require.NoError(t, err)
 
 		require.Len(t, list, 3)
@@ -79,7 +78,7 @@ func TestDashboard(t *testing.T) {
 	})
 
 	t.Run("post remote dashboard - success", func(t *testing.T) {
-		dashboard, err := os.ReadFile("testdata/test_dashboards/post_dashboard.json")
+		dashboard, err := os.ReadFile("testdata/test_json/post_dashboard.json")
 		require.NoError(t, err)
 
 		var resource grizzly.Resource

@@ -65,7 +65,7 @@ func TestDatasources(t *testing.T) {
 
 	t.Run("get remote datasource - not found", func(t *testing.T) {
 		_, err := getRemoteDatasource("dummy")
-		require.Errorf(t, err, "not found")
+		require.EqualError(t, err, "not found")
 	})
 
 	t.Run("get remote datasources list", func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestDatasources(t *testing.T) {
 	})
 
 	t.Run("post remote datasource - success", func(t *testing.T) {
-		datasource, err := os.ReadFile("testdata/test_dashboards/post_datasource.json")
+		datasource, err := os.ReadFile("testdata/test_json/post_datasource.json")
 		require.NoError(t, err)
 
 		var resource grizzly.Resource
@@ -107,7 +107,7 @@ func TestDatasources(t *testing.T) {
 	})
 
 	t.Run("post remote datasource - conflict - datasource already exists", func(t *testing.T) {
-		datasource, err := os.ReadFile("testdata/test_dashboards/post_datasource.json")
+		datasource, err := os.ReadFile("testdata/test_json/post_datasource.json")
 		require.NoError(t, err)
 
 		var resource grizzly.Resource
