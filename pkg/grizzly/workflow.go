@@ -231,10 +231,6 @@ func Apply(registry Registry, resources Resources) error {
 
 		existingResource, err := handler.GetRemote(resource)
 		if errors.Is(err, ErrNotFound) {
-			uid := resource.GetSpecString("uid")
-			if uid != resource.Name() {
-				return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.GetSpecString("uid"))
-			}
 			if err := handler.Add(resource); err != nil {
 				return err
 			}
