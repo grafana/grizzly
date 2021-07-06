@@ -2,8 +2,8 @@
 date: "2021-06-28T00:00:00+00:00"
 title: "What is Grizzly?"
 ---
-Grizzly is a command line tool that allows you to manage your observability
-resources with code.
+Grafana Grizzly is a command line tool that allows you to manage your
+observability resources with code.
 
 Now you can define your dashboards, alerting and recording rules, etc, all
 from within your codebase.

@@ -1,18 +1,19 @@
 baseURL: https://grafana.github.io/grizzly/
 languageCode: en-us
 defaultContentLanguage: en
-title: Grizzly Docs
+title: Grafana Grizzly Docs
 theme: cupper-hugo-theme
 
 params:
   description: A utility for managing various observability resources with Jsonnet.
-  homeMetaContent: Grizzly
-  footer: Powered by [hugo](https://gohugo.io/), using the [cupper theme](https://themes.gohugo.io/cupper-hugo-theme/)
+  homeMetaContent: Grafana Grizzly
+#  footer: Powered by [hugo](https://gohugo.io/), using the [cupper theme](https://themes.gohugo.io/cupper-hugo-theme/)
   dateFormat: Jan 1, 2021
   search: true
   logoAlt: Illustration of a Grizzly Bear Bust
   staticDir:
     - staticDir_override
+  showThemeSwitcher: false
 
 menu:
   nav:
@@ -42,9 +43,9 @@ menu:
     - name: The Future
       url: /future/
       weight: 8
-
-
-
+    - name: GitHub
+      url: https://github.com/grafana/grizzly/
+      weight: 9
 
 markup:
   defaultMarkdownHandler: goldmark
