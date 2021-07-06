@@ -231,12 +231,9 @@ func Apply(registry Registry, resources Resources) error {
 
 		existingResource, err := handler.GetRemote(resource)
 		if errors.Is(err, ErrNotFound) {
-			// synthetic monitoring doesn't have uid in the spec
-			if resource.Kind() != "SyntheticMonitoringCheck" {
-				uid := resource.GetSpecString("uid")
-				if uid != resource.Name() {
-					return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.GetSpecString("uid"))
-				}
+			err := handler.Validate(resource)
+			if err != nil {
+				return fmt.Errorf("resource %s is not valid: %v", resource.Name(), err)
 			}
 
 			if err := handler.Add(resource); err != nil {

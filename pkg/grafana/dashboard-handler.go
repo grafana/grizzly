@@ -20,6 +20,17 @@ func NewDashboardHandler(provider Provider) *DashboardHandler {
 	}
 }
 
+// Validate returns the uid of resource
+func (h *DashboardHandler) Validate(resource grizzly.Resource) error {
+	uid, exist := resource.GetSpecString("uid")
+	if exist {
+		if uid != resource.Name() {
+			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
+		}
+	}
+	return nil
+}
+
 // Kind returns the name for this handler
 func (h *DashboardHandler) Kind() string {
 	return "Dashboard"
