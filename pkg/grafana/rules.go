@@ -20,12 +20,22 @@ const (
 	backenTypeCortex = "cortex"
 )
 
+var client CTClient = CTService{}
+
+type CTClient interface {
+	listRules() ([]byte, error)
+	writeRules(string, string) error
+}
+
+type CTService struct {
+}
+
 // getRemoteRuleGrouping retrieves a datasource object from Grafana
 func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 	parts := strings.SplitN(uid, ".", 2)
 	namespace := parts[0]
 	name := parts[1]
-	out, err := listRules()
+	out, err := client.listRules()
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +64,7 @@ func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 
 // getRemoteRuleGroupingList retrieves a datasource object from Grafana
 func getRemoteRuleGroupList() ([]string, error) {
-	out, err := listRules()
+	out, err := client.listRules()
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +121,7 @@ func writeRuleGroup(resource grizzly.Resource) error {
 		return err
 	}
 	ioutil.WriteFile(tmpfile.Name(), out, 0644)
-	err = writeRules(grouping.Namespace, tmpfile.Name())
+	err = client.writeRules(grouping.Namespace, tmpfile.Name())
 	if err != nil {
 		return err
 	}
@@ -119,9 +129,10 @@ func writeRuleGroup(resource grizzly.Resource) error {
 	return err
 }
 
-func listRules() ([]byte, error) {
+func (ct CTService) listRules() ([]byte, error) {
 	client := newCortexClient()
 	rule, err := client.ListRules(context.Background(), "")
+	fmt.Println("RULE", rule)
 	if err != nil && err != ctClient.ErrResourceNotFound {
 		return nil, err
 	}
@@ -132,7 +143,7 @@ func listRules() ([]byte, error) {
 	return encodedRule, nil
 }
 
-func writeRules(namespace, fileName string) error {
+func (ct CTService) writeRules(namespace, fileName string) error {
 	client := newCortexClient()
 	ruleNamespaces, err := rules.ParseFiles(backenTypeCortex, []string{fileName})
 	if err != nil {
