@@ -1,5 +1,6 @@
 ---
 kind: pipeline
+type: docker
 name: check
 
 platform:
@@ -11,17 +12,23 @@ steps:
   image: golang:1.16.2
   commands:
   - go mod download
+  network_mode: host
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: lint
   image: golang:1.16.2
   commands:
   - make lint
+  network_mode: host
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
   depends_on:
   - download
 
@@ -29,18 +36,25 @@ steps:
   image: golang:1.16.2
   commands:
   - make test
+  network_mode: host
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
   depends_on:
   - download
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
 ---
 kind: pipeline
+type: docker
 name: release
 
 platform:
@@ -52,17 +66,23 @@ steps:
   image: golang:1.16.2
   commands:
   - git fetch origin --tags
+  network_mode: host
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: cross
   image: golang:1.16.2
   commands:
   - make cross
+  network_mode: host
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: publish
   image: plugins/github-release
@@ -75,6 +95,9 @@ steps:
     title: ${DRONE_TAG}
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
@@ -87,6 +110,7 @@ depends_on:
 
 ---
 kind: pipeline
+type: docker
 name: docker-amd64
 
 platform:
@@ -98,9 +122,12 @@ steps:
   image: golang:1.16.2
   commands:
   - make static
+  network_mode: host
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: container
   image: plugins/docker
@@ -114,6 +141,9 @@ steps:
       from_secret: docker_username
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
@@ -128,6 +158,7 @@ depends_on:
 
 ---
 kind: pipeline
+type: docker
 name: docker-arm
 
 platform:
@@ -139,9 +170,12 @@ steps:
   image: golang:1.16.2
   commands:
   - make static
+  network_mode: host
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: container
   image: plugins/docker
@@ -155,6 +189,9 @@ steps:
       from_secret: docker_username
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
@@ -169,6 +206,7 @@ depends_on:
 
 ---
 kind: pipeline
+type: docker
 name: docker-arm64
 
 platform:
@@ -180,9 +218,12 @@ steps:
   image: golang:1.16.2
   commands:
   - make static
+  network_mode: host
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: container
   image: plugins/docker
@@ -196,6 +237,9 @@ steps:
       from_secret: docker_username
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
@@ -210,6 +254,7 @@ depends_on:
 
 ---
 kind: pipeline
+type: docker
 name: manifest
 
 platform:
@@ -229,6 +274,9 @@ steps:
       from_secret: docker_username
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
@@ -269,6 +317,6 @@ get:
 
 ---
 kind: signature
-hmac: 6035bef2436872897ab49f9768eb249e4a001da24bd8b6e3d459806fee549d5a
+hmac: ab7785ebbf693b1cc6944b572dab50b351d3f49e11c6b8f72e5043cc0590a0fa
 
 ...

@@ -40,15 +40,14 @@ func startContainer(err error, cli *client.Client, ctx context.Context) string {
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "grafana/grafana:8.0.4",
 		Env: []string{
-			"GF_PATHS_CONFIG=/etc/grafana/custom.ini",
-			"GF_PATHS_PROVISIONING=/etc/grafana/provisioning",
+			"GF_PATHS_CONFIG=" + getCurrentDir() + "/testdata/custom.ini",
+			"GF_PATHS_PROVISIONING=" + getCurrentDir() + "/grafana/provisioning",
 		},
-		ExposedPorts: nat.PortSet{"3000": struct{}{}},
+		ExposedPorts: nat.PortSet{"3000/tcp": struct{}{}},
 	}, &container.HostConfig{
-		Binds: []string{
-			getCurrentDir() + "/testdata:/etc/grafana",
-		},
-		PortBindings: map[nat.Port][]nat.PortBinding{"3000": {{HostIP: "127.0.0.1", HostPort: "3000"}}},
+		PortBindings: map[nat.Port][]nat.PortBinding{"3000/tcp": {{HostIP: "0.0.0.0", HostPort: "3000"}}},
+		AutoRemove:   true,
+		NetworkMode:  "host",
 	}, nil, nil, "grafana")
 	if err != nil {
 		panic(err)
@@ -71,7 +70,7 @@ func pingLocalhost() *time.Ticker {
 			fmt.Println("failed")
 
 		case <-ticker.C:
-			resp, _ := http.Get("http://localhost:3000/")
+			resp, _ := http.Get("http://0.0.0.0:3000/")
 			if resp != nil {
 				success = true
 				break

@@ -1,7 +1,7 @@
 local golang = 'golang:1.16.2';
 
-local volumes = [{ name: 'gopath', temp: {} }];
-local mounts = [{ name: 'gopath', path: '/go' }];
+local volumes = [{ name: 'docker', host: { path: '/var/run/docker.sock'}}, { name: 'gopath', temp: {} }];
+local mounts = [{ name: 'gopath', path: '/go' }, { name: 'docker', path: '/var/run/docker.sock'}];
 
 local constraints = {
   onlyTagOrMaster: { trigger: {
@@ -21,6 +21,7 @@ local go(name, commands) = {
   name: name,
   image: golang,
   volumes: mounts,
+  network_mode: 'host',
   commands: commands,
 };
 
@@ -29,6 +30,7 @@ local make(target) = go(target, ['make ' + target]);
 local pipeline(name) = {
   kind: 'pipeline',
   name: name,
+  type: 'docker',
   volumes: volumes,
   steps: [],
 };

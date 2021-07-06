@@ -11,7 +11,7 @@ import (
 )
 
 func TestDashboard(t *testing.T) {
-	os.Setenv("GRAFANA_URL", "http://localhost:3000")
+	os.Setenv("GRAFANA_URL", "tcp://0.0.0.0:3000")
 
 	ctx := context.Background()
 	cli, err := initClient(ctx)
