@@ -3,21 +3,22 @@ package grafana
 import (
 	"context"
 	"encoding/json"
+	"os"
+	"testing"
+
 	"github.com/docker/docker/api/types/container"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/stretchr/testify/require"
-	"os"
-	"testing"
 )
 
 func TestDashboard(t *testing.T) {
-	os.Setenv("GRAFANA_URL", "tcp://0.0.0.0:3000")
+	os.Setenv("GRAFANA_URL", "http://localhost:3000")
 
 	ctx := context.Background()
 	cli, err := initClient(ctx)
 	require.NoError(t, err)
 
-	containerID := startContainer(err, cli, ctx)
+	containerID := startContainer(cli, ctx)
 
 	go func() {
 		statusCh, errCh := cli.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
@@ -30,7 +31,7 @@ func TestDashboard(t *testing.T) {
 		}
 	}()
 
-	ticker := pingLocalhost()
+	ticker := pingLocalhost(cli, ctx, containerID)
 	defer ticker.Stop()
 
 	defer func() {

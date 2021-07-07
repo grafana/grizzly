@@ -13,7 +13,9 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.17.0
 	github.com/grafana/tanka v0.14.0
+	github.com/hashicorp/go-version v1.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
+	github.com/mitchellh/gox v1.0.1 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/rivo/tview v0.0.0-20200818120338-53d50e499bf9

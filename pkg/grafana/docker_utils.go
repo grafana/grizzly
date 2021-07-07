@@ -3,15 +3,16 @@ package grafana
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
-	"io"
-	"net/http"
-	"os"
-	"time"
 )
 
 func getCurrentDir() string {
@@ -36,22 +37,24 @@ func initClient(ctx context.Context) (*client.Client, error) {
 	return cli, err
 }
 
-func startContainer(err error, cli *client.Client, ctx context.Context) string {
+func startContainer(cli *client.Client, ctx context.Context) string {
+	exposedPorts, portBindings, _ := nat.ParsePortSpecs([]string{"3000:3000"})
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "grafana/grafana:8.0.4",
 		Env: []string{
 			"GF_PATHS_CONFIG=" + getCurrentDir() + "/testdata/custom.ini",
 			"GF_PATHS_PROVISIONING=" + getCurrentDir() + "/grafana/provisioning",
 		},
-		ExposedPorts: nat.PortSet{"3000/tcp": struct{}{}},
+		ExposedPorts: exposedPorts,
 	}, &container.HostConfig{
-		PortBindings: map[nat.Port][]nat.PortBinding{"3000/tcp": {{HostIP: "0.0.0.0", HostPort: "3000"}}},
+		PortBindings: portBindings,
 		AutoRemove:   true,
 		NetworkMode:  "host",
 	}, nil, nil, "grafana")
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Container ID:", resp.ID)
 
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		panic(err)
@@ -59,7 +62,7 @@ func startContainer(err error, cli *client.Client, ctx context.Context) string {
 	return resp.ID
 }
 
-func pingLocalhost() *time.Ticker {
+func pingLocalhost(cli *client.Client, ctx context.Context, containerID string) *time.Ticker {
 	ticker := time.NewTicker(1 * time.Second)
 	timeoutExceeded := time.After(120 * time.Second)
 
@@ -67,13 +70,14 @@ func pingLocalhost() *time.Ticker {
 	for !success {
 		select {
 		case <-timeoutExceeded:
-			fmt.Println("failed")
+			printContainerLogs(cli, ctx, containerID)
+			panic("Unable to connect to localhost:3000")
 
 		case <-ticker.C:
-			resp, _ := http.Get("http://0.0.0.0:3000/")
+			resp, _ := http.Get("http://localhost:3000/")
+			fmt.Println("Response:", resp)
 			if resp != nil {
 				success = true
-				break
 			}
 		}
 	}
