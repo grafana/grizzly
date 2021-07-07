@@ -1,7 +1,7 @@
 local golang = 'golang:1.16.2';
 
-local volumes = [{ name: 'docker', host: { path: '/var/run/docker.sock'}}, { name: 'gopath', temp: {} }];
-local mounts = [{ name: 'gopath', path: '/go' }, { name: 'docker', path: '/var/run/docker.sock'}];
+local volumes = [{ name: 'docker', host: { path: '/var/run/docker.sock' } }, { name: 'gopath', temp: {} }];
+local mounts = [{ name: 'gopath', path: '/go' }, { name: 'docker', path: '/var/run/docker.sock' }];
 
 local constraints = {
   onlyTagOrMaster: { trigger: {
@@ -21,7 +21,6 @@ local go(name, commands) = {
   name: name,
   image: golang,
   volumes: mounts,
-  network_mode: 'host',
   commands: commands,
 };
 
@@ -67,6 +66,17 @@ local vault_secret(name, vault_path, key) = {
 
 [
   pipeline('check') {
+    services: [
+      {
+        name: 'grizzly-grafana',
+        image: 'alpine',
+        volumes: mounts,
+        commands: ['apk add docker make && make run-test-image'],
+        ports: [
+          3000,
+        ],
+      },
+    ],
     steps: [
       go('download', ['go mod download']),
       make('lint') { depends_on: ['download'] },

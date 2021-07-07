@@ -62,7 +62,7 @@ func startContainer(cli *client.Client, ctx context.Context) string {
 	return resp.ID
 }
 
-func pingLocalhost(cli *client.Client, ctx context.Context, containerID string) *time.Ticker {
+func pingLocalhost() *time.Ticker {
 	ticker := time.NewTicker(1 * time.Second)
 	timeoutExceeded := time.After(120 * time.Second)
 
@@ -70,11 +70,10 @@ func pingLocalhost(cli *client.Client, ctx context.Context, containerID string) 
 	for !success {
 		select {
 		case <-timeoutExceeded:
-			printContainerLogs(cli, ctx, containerID)
-			panic("Unable to connect to localhost:3000")
+			panic("Unable to connect to grizzly-grafana:3000")
 
 		case <-ticker.C:
-			resp, _ := http.Get("http://localhost:3000/")
+			resp, _ := http.Get("http://grizzly-grafana:3000/")
 			fmt.Println("Response:", resp)
 			if resp != nil {
 				success = true

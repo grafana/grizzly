@@ -12,7 +12,6 @@ steps:
   image: golang:1.16.2
   commands:
   - go mod download
-  network_mode: host
   volumes:
   - name: gopath
     path: /go
@@ -23,7 +22,6 @@ steps:
   image: golang:1.16.2
   commands:
   - make lint
-  network_mode: host
   volumes:
   - name: gopath
     path: /go
@@ -36,7 +34,6 @@ steps:
   image: golang:1.16.2
   commands:
   - make test
-  network_mode: host
   volumes:
   - name: gopath
     path: /go
@@ -44,6 +41,19 @@ steps:
     path: /var/run/docker.sock
   depends_on:
   - download
+
+services:
+- name: grizzly-grafana
+  image: alpine
+  commands:
+  - apk add docker make && make run-test-image
+  ports:
+  - 3000
+  volumes:
+  - name: gopath
+    path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 volumes:
 - name: docker
@@ -66,7 +76,6 @@ steps:
   image: golang:1.16.2
   commands:
   - git fetch origin --tags
-  network_mode: host
   volumes:
   - name: gopath
     path: /go
@@ -77,7 +86,6 @@ steps:
   image: golang:1.16.2
   commands:
   - make cross
-  network_mode: host
   volumes:
   - name: gopath
     path: /go
@@ -122,7 +130,6 @@ steps:
   image: golang:1.16.2
   commands:
   - make static
-  network_mode: host
   volumes:
   - name: gopath
     path: /go
@@ -170,7 +177,6 @@ steps:
   image: golang:1.16.2
   commands:
   - make static
-  network_mode: host
   volumes:
   - name: gopath
     path: /go
@@ -218,7 +224,6 @@ steps:
   image: golang:1.16.2
   commands:
   - make static
-  network_mode: host
   volumes:
   - name: gopath
     path: /go
@@ -317,6 +322,6 @@ get:
 
 ---
 kind: signature
-hmac: ab7785ebbf693b1cc6944b572dab50b351d3f49e11c6b8f72e5043cc0590a0fa
+hmac: e01a01dad8055a2186a15227032e54eec3a59a16229f7fb7c03133f0dfb96ef6
 
 ...

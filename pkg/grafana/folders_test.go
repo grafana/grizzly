@@ -1,44 +1,42 @@
 package grafana
 
 import (
-	"context"
 	"encoding/json"
 	"os"
 	"testing"
 
-	"github.com/docker/docker/api/types/container"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFolders(t *testing.T) {
-	os.Setenv("GRAFANA_URL", "http://localhost:3000")
+	os.Setenv("GRAFANA_URL", "http://grizzly-grafana:3000")
 
-	ctx := context.Background()
-	cli, err := initClient(ctx)
-	require.NoError(t, err)
+	// ctx := context.Background()
+	// cli, err := initClient(ctx)
+	// require.NoError(t, err)
 
-	containerID := startContainer(cli, ctx)
+	// containerID := startContainer(cli, ctx)
 
-	go func() {
-		statusCh, errCh := cli.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
-		select {
-		case err := <-errCh:
-			if err != nil {
-				panic(err)
-			}
-		case <-statusCh:
-		}
-	}()
+	// go func() {
+	// 	statusCh, errCh := cli.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
+	// 	select {
+	// 	case err := <-errCh:
+	// 		if err != nil {
+	// 			panic(err)
+	// 		}
+	// 	case <-statusCh:
+	// 	}
+	// }()
 
-	ticker := pingLocalhost(cli, ctx, containerID)
+	ticker := pingLocalhost()
 	defer ticker.Stop()
 
-	defer func() {
-		removeContainer(cli, ctx, containerID)
-	}()
+	// defer func() {
+	// 	removeContainer(cli, ctx, containerID)
+	// }()
 
-	printContainerLogs(cli, ctx, containerID)
+	// printContainerLogs(cli, ctx, containerID)
 
 	t.Run("get remote folder - success", func(t *testing.T) {
 		resource, err := getRemoteFolder("abcdefghi")
