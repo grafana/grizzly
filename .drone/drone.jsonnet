@@ -80,7 +80,7 @@ local vault_secret(name, vault_path, key) = {
     steps: [
       go('download', ['go mod download']),
       make('lint') { depends_on: ['download'] },
-      make('test') { depends_on: ['download'] },
+      go('test', ['go test ./...']),
     ],
   } + constraints.always,
 

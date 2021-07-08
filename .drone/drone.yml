@@ -33,14 +33,12 @@ steps:
 - name: test
   image: golang:1.16.2
   commands:
-  - make test
+  - go test ./...
   volumes:
   - name: gopath
     path: /go
   - name: docker
     path: /var/run/docker.sock
-  depends_on:
-  - download
 
 services:
 - name: grizzly-grafana
@@ -322,6 +320,6 @@ get:
 
 ---
 kind: signature
-hmac: e01a01dad8055a2186a15227032e54eec3a59a16229f7fb7c03133f0dfb96ef6
+hmac: c43c45c827c9fb5c2436edeebb7f04fdc115e79e219691524970aeb83d2ead4c
 
 ...

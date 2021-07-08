@@ -10,10 +10,15 @@ lint:
 run-test-image:
 	cd pkg/grafana/testdata && docker build . -t grizzly-grafana-test:latest
 	docker rm -f grizzly-grafana
-	if [ -z "$(DRONE_DOCKER_NETWORK_ID)" ]; then docker run --name grizzly-grafana -p 3000:3000 --rm grizzly-grafana-test:latest; else docker run --net $$DRONE_DOCKER_NETWORK_ID --name grizzly-grafana -p 3000:3000 --rm grizzly-grafana-test:latest; fi
+	docker run --net $$DRONE_DOCKER_NETWORK_ID --name grizzly-grafana -p 3000:3000 --rm grizzly-grafana-test:latest
+
+run-test-image-locally:
+	cd pkg/grafana/testdata && docker build . -t grizzly-grafana-test:latest
+	docker rm -f grizzly-grafana
+	docker run --name grizzly-grafana -p 3000:3000 --rm grizzly-grafana-test:latest
 
 test:
-	make run-test-image &
+	make run-test-image-locally &
 	go test ./...
 
 # Compilation
