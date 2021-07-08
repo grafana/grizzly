@@ -10,33 +10,10 @@ import (
 )
 
 func TestDashboard(t *testing.T) {
-	os.Setenv("GRAFANA_URL", "http://grizzly-grafana:3000")
+	os.Setenv("GRAFANA_URL", getUrl())
 
-	// ctx := context.Background()
-	// cli, err := initClient(ctx)
-	// require.NoError(t, err)
-
-	// containerID := startContainer(cli, ctx)
-
-	// go func() {
-	// 	statusCh, errCh := cli.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
-	// 	select {
-	// 	case err := <-errCh:
-	// 		if err != nil {
-	// 			panic(err)
-	// 		}
-	// 	case <-statusCh:
-	// 	}
-	// }()
-
-	ticker := pingLocalhost()
+	ticker := pingService(getUrl())
 	defer ticker.Stop()
-
-	// defer func() {
-	// 	removeContainer(cli, ctx, containerID)
-	// }()
-
-	// printContainerLogs(cli, ctx, containerID)
 
 	t.Run("get remote dashboard - success", func(t *testing.T) {
 		resource, err := getRemoteDashboard("ReciqtgGk")
