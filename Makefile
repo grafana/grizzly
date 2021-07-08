@@ -18,6 +18,7 @@ run-test-image-locally:
 	docker run --name grizzly-grafana -p 3000:3000 --rm grizzly-grafana-test:latest
 
 test:
+	go clean -testcache
 	make run-test-image-locally &
 	go test ./...
 
