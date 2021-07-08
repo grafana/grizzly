@@ -1,5 +1,6 @@
 ---
 kind: pipeline
+type: docker
 name: check
 
 platform:
@@ -14,6 +15,8 @@ steps:
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: lint
   image: golang:1.16.2
@@ -22,25 +25,44 @@ steps:
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
   depends_on:
   - download
 
 - name: test
   image: golang:1.16.2
   commands:
-  - make test
+  - go test ./...
   volumes:
   - name: gopath
     path: /go
-  depends_on:
-  - download
+  - name: docker
+    path: /var/run/docker.sock
+
+services:
+- name: grizzly-grafana
+  image: alpine
+  commands:
+  - apk add docker make && make run-test-image
+  ports:
+  - 3000
+  volumes:
+  - name: gopath
+    path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
 ---
 kind: pipeline
+type: docker
 name: release
 
 platform:
@@ -55,6 +77,8 @@ steps:
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: cross
   image: golang:1.16.2
@@ -63,6 +87,8 @@ steps:
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: publish
   image: plugins/github-release
@@ -75,6 +101,9 @@ steps:
     title: ${DRONE_TAG}
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
@@ -87,6 +116,7 @@ depends_on:
 
 ---
 kind: pipeline
+type: docker
 name: docker-amd64
 
 platform:
@@ -101,6 +131,8 @@ steps:
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: container
   image: plugins/docker
@@ -114,6 +146,9 @@ steps:
       from_secret: docker_username
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
@@ -128,6 +163,7 @@ depends_on:
 
 ---
 kind: pipeline
+type: docker
 name: docker-arm
 
 platform:
@@ -142,6 +178,8 @@ steps:
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: container
   image: plugins/docker
@@ -155,6 +193,9 @@ steps:
       from_secret: docker_username
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
@@ -169,6 +210,7 @@ depends_on:
 
 ---
 kind: pipeline
+type: docker
 name: docker-arm64
 
 platform:
@@ -183,6 +225,8 @@ steps:
   volumes:
   - name: gopath
     path: /go
+  - name: docker
+    path: /var/run/docker.sock
 
 - name: container
   image: plugins/docker
@@ -196,6 +240,9 @@ steps:
       from_secret: docker_username
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
@@ -210,6 +257,7 @@ depends_on:
 
 ---
 kind: pipeline
+type: docker
 name: manifest
 
 platform:
@@ -229,6 +277,9 @@ steps:
       from_secret: docker_username
 
 volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
 - name: gopath
   temp: {}
 
@@ -269,6 +320,6 @@ get:
 
 ---
 kind: signature
-hmac: 6035bef2436872897ab49f9768eb249e4a001da24bd8b6e3d459806fee549d5a
+hmac: c43c45c827c9fb5c2436edeebb7f04fdc115e79e219691524970aeb83d2ead4c
 
 ...

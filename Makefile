@@ -7,7 +7,19 @@ lint:
 	test -z $$(gofmt -s -l cmd/ pkg/)
 	go vet ./...
 
+run-test-image:
+	cd pkg/grafana/testdata && docker build . -t grizzly-grafana-test:latest
+	docker rm -f grizzly-grafana
+	docker run --net $$DRONE_DOCKER_NETWORK_ID --name grizzly-grafana -p 3000:3000 --rm grizzly-grafana-test:latest
+
+run-test-image-locally:
+	cd pkg/grafana/testdata && docker build . -t grizzly-grafana-test:latest
+	docker rm -f grizzly-grafana
+	docker run --name grizzly-grafana -p 3000:3000 --rm grizzly-grafana-test:latest
+
 test:
+	go clean -testcache
+	make run-test-image-locally &
 	go test ./...
 
 # Compilation
