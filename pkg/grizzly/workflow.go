@@ -285,7 +285,7 @@ func Preview(resources Resources, opts *PreviewOpts) error {
 		previewHandler, ok := handler.(PreviewHandler)
 		if !ok {
 			notifier.NotSupported(resource, "preview")
-			return nil
+			continue
 		}
 		err = previewHandler.Preview(resource, opts)
 		if err != nil {
