@@ -130,12 +130,18 @@ func writeRuleGroup(resource grizzly.Resource) error {
 }
 
 func (ct CTService) listRules() ([]byte, error) {
-	client := newCortexClient()
-	rule, err := client.ListRules(context.Background(), "")
-	fmt.Println("RULE", rule)
-	if err != nil && err != ctClient.ErrResourceNotFound {
+	client, err := newCortexClient()
+	if err != nil {
 		return nil, err
 	}
+	rule, err := client.ListRules(context.Background(), "")
+	if err != nil {
+		if err == ctClient.ErrResourceNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
 	encodedRule, err := yaml.Marshal(&rule)
 	if err != nil {
 		return nil, err
@@ -144,7 +150,10 @@ func (ct CTService) listRules() ([]byte, error) {
 }
 
 func (ct CTService) writeRules(namespace, fileName string) error {
-	client := newCortexClient()
+	client, err := newCortexClient()
+	if err != nil {
+		return err
+	}
 	ruleNamespaces, err := rules.ParseFiles(backenTypeCortex, []string{fileName})
 	if err != nil {
 		return err
@@ -160,7 +169,7 @@ func (ct CTService) writeRules(namespace, fileName string) error {
 	return nil
 }
 
-func newCortexClient() *ctClient.CortexClient {
+func newCortexClient() (*ctClient.CortexClient, error) {
 	cfg := ctClient.Config{
 		Key:             os.Getenv(cortexApiKey),
 		Address:         os.Getenv(cortexAddress),
@@ -169,7 +178,7 @@ func newCortexClient() *ctClient.CortexClient {
 	}
 	cortexClient, err := ctClient.New(cfg)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return cortexClient
+	return cortexClient, nil
 }

@@ -1,7 +1,6 @@
 package grafana
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -17,10 +16,8 @@ func TestRules(t *testing.T) {
 		client = mockCTClient{
 			rules: file,
 		}
-		remoteGroupRules, err := getRemoteRuleGroup("rules.rules")
+		_, err = getRemoteRuleGroup("rules.rules")
 		require.NoError(t, err)
-		// require.Equal(t, resource, *remoteGroupRules)
-		fmt.Println(remoteGroupRules, err)
 	})
 
 	t.Run("get remote rule group list", func(t *testing.T) {
@@ -29,10 +26,8 @@ func TestRules(t *testing.T) {
 		client = mockCTClient{
 			rules: file,
 		}
-		remoteGroupRules, err := getRemoteRuleGroupList()
+		_, err = getRemoteRuleGroupList()
 		require.NoError(t, err)
-		// require.Equal(t, remoteGroupRules, &grizzly.Resource{})
-		fmt.Println(remoteGroupRules, err)
 	})
 
 	t.Run("write rule group", func(t *testing.T) {
