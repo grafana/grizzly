@@ -1,0 +1,12 @@
+first_rules:
+    - name: grizzly_alerts
+      rules:
+        - alert: PromScrapeFailed
+          expr: up != 1
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            message: Prometheus failed to scrape a target {{ $labels.job }}  / {{ $labels.instance }}
+        - record: job:up:sum
+          expr: sum by(job) (up)
