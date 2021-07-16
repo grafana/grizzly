@@ -28,19 +28,20 @@ import (
  *    them to IDs, having requested an ID<->string mapping from the API.
  */
 
+const smBaseURL = "https://synthetic-monitoring-api.grafana.net"
+
 type Probes struct {
 	ByID   map[int64]synthetic_monitoring.Probe
 	ByName map[string]synthetic_monitoring.Probe
 }
 
-// NewSynthenticMonitoringService creates a new client for synthetic monitoring go client
-func NewSynthenticMonitoringClient() (*smapi.Client, error) {
+// NewSyntheticMonitoringClient creates a new client for synthetic monitoring go client
+func NewSyntheticMonitoringClient() (*smapi.Client, error) {
 	client, err := NewHttpClient()
 	if err != nil {
 		return nil, err
 	}
 
-	const smBaseURL = "https://synthetic-monitoring-api.grafana.net"
 	smClient := smapi.NewClient(smBaseURL, "", client)
 
 	apiToken, ok := os.LookupEnv("GRAFANA_SM_TOKEN")
@@ -73,17 +74,17 @@ func NewSynthenticMonitoringClient() (*smapi.Client, error) {
 }
 
 // getProbeList retrieves the list of probe and grouped by id and name
-func getProbeList() (*Probes, error) {
-	smClient, err := NewSynthenticMonitoringClient()
+func getProbeList() (Probes, error) {
+	smClient, err := NewSyntheticMonitoringClient()
 	if err != nil {
-		return nil, err
+		return Probes{}, err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	probeList, err := smClient.ListProbes(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize probes list: %v", err)
+		return Probes{}, fmt.Errorf("failed to initialize probes list: %v", err)
 	}
 
 	probes := Probes{
@@ -97,12 +98,12 @@ func getProbeList() (*Probes, error) {
 			probes.ByName[probe.Name] = probe
 		}
 	}
-	return &probes, nil
+	return probes, nil
 }
 
 // getRemoteCheck retrieves a check object from SM
 func getRemoteCheckList() ([]string, error) {
-	smClient, err := NewSynthenticMonitoringClient()
+	smClient, err := NewSyntheticMonitoringClient()
 	if err != nil {
 		return nil, err
 	}
@@ -116,14 +117,14 @@ func getRemoteCheckList() ([]string, error) {
 	var checkIDs []string
 
 	for _, check := range checks {
-		checkIDs = append(checkIDs, getUID(&check))
+		checkIDs = append(checkIDs, getUID(check))
 	}
 	return checkIDs, nil
 }
 
 // getRemoteCheck retrieves a check object from SM
 func getRemoteCheck(uid string) (*grizzly.Resource, error) {
-	smClient, err := NewSynthenticMonitoringClient()
+	smClient, err := NewSyntheticMonitoringClient()
 	if err != nil {
 		return nil, err
 	}
@@ -142,8 +143,8 @@ func getRemoteCheck(uid string) (*grizzly.Resource, error) {
 	}
 
 	for _, check := range checkList {
-		if getUID(&check) == uid {
-			probeNames := []string{}
+		if getUID(check) == uid {
+			var probeNames []string
 			for _, probeID := range check.Probes {
 				probeNames = append(probeNames, probes.ByID[probeID].Name)
 			}
@@ -159,7 +160,7 @@ func getRemoteCheck(uid string) (*grizzly.Resource, error) {
 			}
 			specmap["probes"] = probeNames
 			resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), check.Job, specmap)
-			resource.SetMetadata("type", getType(&check))
+			resource.SetMetadata("type", getType(check))
 			return &resource, nil
 		}
 	}
@@ -171,7 +172,7 @@ func convertProbeNameToID(resource *grizzly.Resource) error {
 	if err != nil {
 		return err
 	}
-	probeIDs := []int64{}
+	var probeIDs []int64
 
 	for _, probename := range (*resource).GetSpecValue("probes").([]interface{}) {
 		probeName := probename.(string)
@@ -183,7 +184,7 @@ func convertProbeNameToID(resource *grizzly.Resource) error {
 }
 
 func addCheck(resource grizzly.Resource) error {
-	smClient, err := NewSynthenticMonitoringClient()
+	smClient, err := NewSyntheticMonitoringClient()
 	if err != nil {
 		return err
 	}
@@ -191,7 +192,10 @@ func addCheck(resource grizzly.Resource) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	convertProbeNameToID(&resource)
+	err = convertProbeNameToID(&resource)
+	if err != nil {
+		return err
+	}
 
 	theCheck, err := SpecToCheck(&resource)
 	if err != nil {
@@ -205,14 +209,17 @@ func addCheck(resource grizzly.Resource) error {
 }
 
 func updateCheck(resource grizzly.Resource) error {
-	smClient, err := NewSynthenticMonitoringClient()
+	smClient, err := NewSyntheticMonitoringClient()
 	if err != nil {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	convertProbeNameToID(&resource)
+	err = convertProbeNameToID(&resource)
+	if err != nil {
+		return err
+	}
 
 	theCheck, err := SpecToCheck(&resource)
 	if err != nil {
@@ -242,7 +249,7 @@ func SpecToCheck(r *grizzly.Resource) (synthetic_monitoring.Check, error) {
 }
 
 // Probes allows accessing Probe objects by ID and by name
-func getType(check *synthetic_monitoring.Check) string {
+func getType(check synthetic_monitoring.Check) string {
 	if check.Settings.Ping != nil {
 		return "ping"
 	}
@@ -258,6 +265,6 @@ func getType(check *synthetic_monitoring.Check) string {
 	return ""
 }
 
-func getUID(check *synthetic_monitoring.Check) string {
+func getUID(check synthetic_monitoring.Check) string {
 	return fmt.Sprintf("%s-%s", getType(check), check.Job)
 }
