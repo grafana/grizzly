@@ -1,0 +1,18 @@
+# config file version
+apiVersion: 1
+
+deleteDatasources:
+  - name: AppDynamics
+    orgId: 1
+
+datasources:
+  - name: AppDynamics
+    type: dlopes7-appdynamics-datasource
+    access: proxy
+    basicAuth: true
+    basicAuthUser: mothership2019052316285110@mothership2019052316285110
+    basicAuthPassword: l9pufv67qmud
+    editable: true
+    enabled: true
+    url: https://mothership2019052316285110.saas.appdynamics.com
+    withCredentials: true

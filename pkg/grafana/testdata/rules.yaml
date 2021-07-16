@@ -1,0 +1,12 @@
+rules:
+  - name: rules
+  - namespace: rules.rules
+  - alert: PromScrapeFailed
+    annotations:
+      message: Prometheus failed to scrape a target {{ $labels.job }}  / {{ $labels.instance }}
+    expr: up != 1
+    for: 1m
+    labels:
+      severity: critical
+  - expr: sum by(job) (up)
+    record: job:up:sum
