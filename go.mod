@@ -12,6 +12,8 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.17.0
 	github.com/grafana/cortex-tools v0.10.2
+	github.com/grafana/synthetic-monitoring-agent v0.0.23
+	github.com/grafana/synthetic-monitoring-api-go-client v0.0.2
 	github.com/grafana/tanka v0.14.0
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/rivo/tview v0.0.0-20200818120338-53d50e499bf9

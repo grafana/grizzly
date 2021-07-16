@@ -25,6 +25,17 @@ func (h *RuleHandler) Kind() string {
 	return "PrometheusRuleGroup"
 }
 
+// Validate returns the uid of resource
+func (h *RuleHandler) Validate(resource grizzly.Resource) error {
+	uid, exist := resource.GetSpecString("uid")
+	if exist {
+		if uid != resource.Name() {
+			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
+		}
+	}
+	return nil
+}
+
 // APIVersion returns the group and version for the provider of which this handler is a part
 func (h *RuleHandler) APIVersion() string {
 	return h.Provider.APIVersion()

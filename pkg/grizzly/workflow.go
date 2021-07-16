@@ -231,6 +231,11 @@ func Apply(registry Registry, resources Resources) error {
 
 		existingResource, err := handler.GetRemote(resource)
 		if errors.Is(err, ErrNotFound) {
+			err := handler.Validate(resource)
+			if err != nil {
+				return fmt.Errorf("resource %s is not valid: %v", resource.Name(), err)
+			}
+
 			if err := handler.Add(resource); err != nil {
 				return err
 			}

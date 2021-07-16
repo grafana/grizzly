@@ -58,6 +58,21 @@ func (h *SyntheticMonitoringHandler) FindResourceFiles(dir string) ([]string, er
 	return filepath.Glob(path)
 }
 
+// Validate returns the uid of resource
+func (h *SyntheticMonitoringHandler) Validate(resource grizzly.Resource) error {
+	job, exist := resource.GetSpecString("job")
+	if exist {
+		if job != resource.Name() {
+			return fmt.Errorf("job '%s' and name '%s', don't match", job, resource.Name())
+		}
+	}
+	settings := resource.GetSpecValue("settings").(map[string]interface{})
+	if _, ok := settings[resource.GetMetadata("type")]; !ok {
+		return fmt.Errorf("type '%s' is incorrect", resource.GetMetadata("type"))
+	}
+	return nil
+}
+
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *SyntheticMonitoringHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
 	return fmt.Sprintf(syntheticMonitoringPattern, resource.Name(), filetype)
@@ -104,12 +119,10 @@ func (h *SyntheticMonitoringHandler) ListRemote() ([]string, error) {
 
 // Add adds a new check to the SyntheticMonitoring endpoint
 func (h *SyntheticMonitoringHandler) Add(resource grizzly.Resource) error {
-	url := getSyntheticMonitoringURL("api/v1/check/add")
-	return postCheck(url, resource)
+	return addCheck(resource)
 }
 
 // Update pushes an updated check to the SyntheticMonitoring endpoing
 func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource) error {
-	url := getSyntheticMonitoringURL("api/v1/check/update")
-	return postCheck(url, resource)
+	return updateCheck(resource)
 }

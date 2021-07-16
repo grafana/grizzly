@@ -1,16 +1,16 @@
 package grafana
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
+	smapi "github.com/grafana/synthetic-monitoring-api-go-client"
 )
 
 /*
@@ -28,331 +28,243 @@ import (
  *    them to IDs, having requested an ID<->string mapping from the API.
  */
 
-const smURL = "https://synthetic-monitoring-api.grafana.net/%s"
+const smBaseURL = "https://synthetic-monitoring-api.grafana.net"
 
-// getRemoteCheck retrieves a check object from SM
-func getRemoteCheck(uid string) (*grizzly.Resource, error) {
-	url := getSyntheticMonitoringURL("api/v1/check/list")
-	authToken, err := getAuthToken()
-	if err != nil {
-		return nil, err
-	}
+type Probes struct {
+	ByID   map[int64]synthetic_monitoring.Probe
+	ByName map[string]synthetic_monitoring.Probe
+}
+
+// NewSyntheticMonitoringClient creates a new client for synthetic monitoring go client
+func NewSyntheticMonitoringClient() (*smapi.Client, error) {
 	client, err := NewHttpClient()
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", "Bearer "+authToken)
-	req.Header.Add("Content-type", "application/json")
 
-	resp, err := client.Do(req)
+	smClient := smapi.NewClient(smBaseURL, "", client)
+
+	apiToken, ok := os.LookupEnv("GRAFANA_SM_TOKEN")
+	if !ok {
+		return nil, fmt.Errorf("GRAFANA_SM_TOKEN environment variable must be set")
+	}
+
+	stackID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_STACK_ID"))
+	if err != nil {
+		return nil, fmt.Errorf("GRAFANA_SM_STACK_ID environment variable must be set")
+	}
+	metricsInstanceID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_METRICS_ID"))
+	if err != nil {
+		return nil, fmt.Errorf("GRAFANA_SM_METRICS_ID environment variable must be set")
+	}
+	logsInstanceID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_LOGS_ID"))
+	if err != nil {
+		return nil, fmt.Errorf("GRAFANA_SM_LOGS_ID environment variable must be set")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err = smClient.Install(ctx, int64(stackID), int64(metricsInstanceID), int64(logsInstanceID), apiToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to install synthetic monitoring client : %v", err)
+	}
+
+	return smClient, nil
+}
+
+// getProbeList retrieves the list of probe and grouped by id and name
+func getProbeList() (Probes, error) {
+	smClient, err := NewSyntheticMonitoringClient()
+	if err != nil {
+		return Probes{}, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	probeList, err := smClient.ListProbes(ctx)
+	if err != nil {
+		return Probes{}, fmt.Errorf("failed to initialize probes list: %v", err)
+	}
+
+	probes := Probes{
+		ByID:   map[int64]synthetic_monitoring.Probe{},
+		ByName: map[string]synthetic_monitoring.Probe{},
+	}
+
+	for _, probe := range probeList {
+		if probe.Online && probe.Public {
+			probes.ByID[probe.Id] = probe
+			probes.ByName[probe.Name] = probe
+		}
+	}
+	return probes, nil
+}
+
+// getRemoteCheck retrieves a check object from SM
+func getRemoteCheckList() ([]string, error) {
+	smClient, err := NewSyntheticMonitoringClient()
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	switch {
-	case resp.StatusCode == http.StatusNotFound:
-		return nil, grizzly.ErrNotFound
-	case resp.StatusCode >= 400:
-		return nil, errors.New(resp.Status)
+	checks, err := smClient.ListChecks(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get checks list: %v", err)
 	}
+	var checkIDs []string
 
-	data, err := ioutil.ReadAll(resp.Body)
+	for _, check := range checks {
+		checkIDs = append(checkIDs, getUID(check))
+	}
+	return checkIDs, nil
+}
+
+// getRemoteCheck retrieves a check object from SM
+func getRemoteCheck(uid string) (*grizzly.Resource, error) {
+	smClient, err := NewSyntheticMonitoringClient()
 	if err != nil {
 		return nil, err
 	}
 
-	var checks []Check
-	if err := json.Unmarshal(data, &checks); err != nil {
-		return nil, grizzly.APIErr{Err: err, Body: data}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	checkList, err := smClient.ListChecks(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get checks list: %v", err)
 	}
+
 	probes, err := getProbeList()
 	if err != nil {
 		return nil, err
 	}
-	for _, check := range checks {
-		if check.UID() == uid {
-			probeNames := []string{}
-			for _, probe := range check["probes"].([]interface{}) {
-				probeID := int(probe.(float64))
-				name := probes.ByID[probeID].Name
-				probeNames = append(probeNames, name)
+
+	for _, check := range checkList {
+		if getUID(check) == uid {
+			var probeNames []string
+			for _, probeID := range check.Probes {
+				probeNames = append(probeNames, probes.ByID[probeID].Name)
 			}
-			check["probes"] = probeNames
 			handler := SyntheticMonitoringHandler{}
-			resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), check.Job(), check)
-			resource.SetMetadata("type", check.Type())
+			data, err := json.Marshal(check)
+			if err != nil {
+				return nil, err
+			}
+			var specmap map[string]interface{}
+			err = json.Unmarshal(data, &specmap)
+			if err != nil {
+				return nil, err
+			}
+			specmap["probes"] = probeNames
+			resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), check.Job, specmap)
+			resource.SetMetadata("type", getType(check))
 			return &resource, nil
 		}
 	}
 	return nil, grizzly.ErrNotFound
 }
 
-// getRemoteCheck retrieves a check object from SM
-func getRemoteCheckList() ([]string, error) {
-	url := getSyntheticMonitoringURL("api/v1/check/list")
-	authToken, err := getAuthToken()
+func convertProbeNameToID(resource *grizzly.Resource) error {
+	probes, err := getProbeList()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	client, err := NewHttpClient()
-	if err != nil {
-		return nil, err
-	}
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", "Bearer "+authToken)
-	req.Header.Add("Content-type", "application/json")
+	var probeIDs []int64
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	for _, probename := range (*resource).GetSpecValue("probes").([]interface{}) {
+		probeName := probename.(string)
+		id := probes.ByName[probeName].Id
+		probeIDs = append(probeIDs, id)
 	}
-	defer resp.Body.Close()
-
-	switch {
-	case resp.StatusCode == http.StatusNotFound:
-		return nil, grizzly.ErrNotFound
-	case resp.StatusCode >= 400:
-		return nil, errors.New(resp.Status)
-	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var checks []Check
-	if err := json.Unmarshal(data, &checks); err != nil {
-		return nil, grizzly.APIErr{Err: err, Body: data}
-	}
-	var checkIDs []string
-	for _, check := range checks {
-		checkIDs = append(checkIDs, check.UID())
-	}
-	return checkIDs, nil
+	(*resource).SetSpecValue("probes", probeIDs)
+	return nil
 }
 
-func postCheck(url string, resource grizzly.Resource) error {
-	check := Check(resource.Spec())
-	checkJSON, err := check.toJSON()
+func addCheck(resource grizzly.Resource) error {
+	smClient, err := NewSyntheticMonitoringClient()
 	if err != nil {
 		return err
 	}
 
-	client, err := NewHttpClient()
-	if err != nil {
-		return err
-	}
-	accessToken, err := getAuthToken()
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequest("POST", url, bytes.NewBufferString(checkJSON))
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Authorization", "Bearer "+accessToken)
-	req.Header.Add("Content-type", "application/json")
-	resp, err := client.Do(req)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = convertProbeNameToID(&resource)
 	if err != nil {
 		return err
 	}
 
-	switch resp.StatusCode {
-	case http.StatusOK:
-		break
-	default:
-		return NewErrNon200Response("Synthetic Monitoring", resource.Name(), resp)
+	theCheck, err := SpecToCheck(&resource)
+	if err != nil {
+		return fmt.Errorf("input file is invalid: %v", err)
+	}
+	_, err = smClient.AddCheck(ctx, theCheck)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-// Probe defines the properties of a single SM Probe
-type Probe struct {
-	ID       int    `json:"id"`
-	TenantID int    `json:"tenantId"`
-	Name     string `json:"name"`
-	Region   string `json:"region"`
-	Public   bool   `json:"public"`
-	Online   bool   `json:"online"`
+func updateCheck(resource grizzly.Resource) error {
+	smClient, err := NewSyntheticMonitoringClient()
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = convertProbeNameToID(&resource)
+	if err != nil {
+		return err
+	}
+
+	theCheck, err := SpecToCheck(&resource)
+	if err != nil {
+		return fmt.Errorf("input file is invalid: %v", err)
+	}
+	_, err = smClient.UpdateCheck(ctx, theCheck)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SpecToCheck(r *grizzly.Resource) (synthetic_monitoring.Check, error) {
+	var smCheck synthetic_monitoring.Check
+	data, err := json.Marshal((*r)["spec"])
+	if err != nil {
+		return synthetic_monitoring.Check{}, nil
+	}
+
+	err = json.Unmarshal(data, &smCheck)
+	if err != nil {
+		return synthetic_monitoring.Check{}, nil
+	}
+
+	return smCheck, nil
 }
 
 // Probes allows accessing Probe objects by ID and by name
-type Probes struct {
-	ByID   map[int]Probe
-	ByName map[string]Probe
-}
-
-// getRemoteCheck retrieves a check object from SM
-func getProbeList() (*Probes, error) {
-	url := getSyntheticMonitoringURL("api/v1/probe/list")
-	authToken, err := getAuthToken()
-	if err != nil {
-		return nil, err
+func getType(check synthetic_monitoring.Check) string {
+	if check.Settings.Ping != nil {
+		return "ping"
 	}
-	client, err := NewHttpClient()
-	if err != nil {
-		return nil, err
+	if check.Settings.Http != nil {
+		return "http"
 	}
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", "Bearer "+authToken)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
+	if check.Settings.Tcp != nil {
+		return "tcp"
 	}
-	defer resp.Body.Close()
-
-	switch resp.StatusCode {
-	case http.StatusNotFound:
-		return nil, grizzly.ErrNotFound
-	default:
-		if resp.StatusCode >= 400 {
-			return nil, errors.New(resp.Status)
-		}
-	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	probeList := []Probe{}
-	if err := json.Unmarshal(data, &probeList); err != nil {
-		return nil, grizzly.APIErr{Err: err, Body: data}
-	}
-	probes := Probes{
-		ByID:   map[int]Probe{},
-		ByName: map[string]Probe{},
-	}
-	for _, probe := range probeList {
-		if probe.Online && probe.Public {
-			probes.ByID[probe.ID] = probe
-			probes.ByName[probe.Name] = probe
-		}
-	}
-	return &probes, nil
-}
-
-// Check encapsulates a check
-type Check map[string]interface{}
-
-// Job retrieves the job name from a check
-func (c *Check) Job() string {
-	job, ok := (*c)["job"]
-	if !ok {
-		return ""
-	}
-	return job.(string)
-}
-
-func (c *Check) Type() string {
-	settings, ok := (*c)["settings"]
-	if !ok {
-		return ""
-	}
-	for typ := range settings.(map[string]interface{}) {
-		return typ
+	if check.Settings.Dns != nil {
+		return "dns"
 	}
 	return ""
 }
 
-func (c *Check) UID() string {
-	return fmt.Sprintf("%s.%s", c.Type(), c.Job())
-}
-
-// toJSON returns JSON for a datasource
-func (c *Check) toJSON() (string, error) {
-	probes, err := getProbeList()
-	if err != nil {
-		return "", err
-	}
-	probeIDs := []int{}
-	for _, probe := range (*c)["probes"].([]interface{}) {
-		probeName := probe.(string)
-		id := probes.ByName[probeName].ID
-		probeIDs = append(probeIDs, id)
-	}
-	(*c)["probes"] = probeIDs
-
-	j, err := json.MarshalIndent(c, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
-}
-
-func getSyntheticMonitoringURL(path string) string {
-	return fmt.Sprintf(smURL, path)
-}
-
-func getAuthToken() (string, error) {
-	url := getSyntheticMonitoringURL("api/v1/register/install")
-	apiToken, ok := os.LookupEnv("GRAFANA_SM_TOKEN")
-	if !ok {
-		return "", fmt.Errorf("GRAFANA_SM_TOKEN environment variable must be set.")
-	}
-
-	stackID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_STACK_ID"))
-	if err != nil {
-		return "", fmt.Errorf("GRAFANA_SM_STACK_ID environment variable must be set.")
-	}
-	metricsInstanceID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_METRICS_ID"))
-	if err != nil {
-		return "", fmt.Errorf("GRAFANA_SM_METRICS_ID environment variable must be set.")
-	}
-	logsInstanceID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_LOGS_ID"))
-	if err != nil {
-		return "", fmt.Errorf("GRAFANA_SM_LOGS_ID environment variable must be set.")
-	}
-
-	type AuthRequest struct {
-		StackID           int `json:"stackId"`
-		MetricsInstanceID int `json:"metricsInstanceId"`
-		LogsInstanceID    int `json:"logsInstanceId"`
-	}
-
-	authRequest := AuthRequest{
-		StackID:           stackID,
-		MetricsInstanceID: metricsInstanceID,
-		LogsInstanceID:    logsInstanceID,
-	}
-
-	authRequestJSON, err := json.Marshal(authRequest)
-	if err != nil {
-		return "", err
-	}
-
-	client, err := NewHttpClient()
-	if err != nil {
-		return "", err
-	}
-	req, err := http.NewRequest("POST", url, bytes.NewReader(authRequestJSON))
-	req.Header.Add("Authorization", "Bearer "+apiToken)
-	req.Header.Add("Content-type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return "", fmt.Errorf("%d response while authenticating: %s", resp.StatusCode, string(body))
-	}
-	type AuthResponse struct {
-		AccessToken string `json:"accessToken"`
-	}
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	authResponse := AuthResponse{}
-	if err := json.Unmarshal(data, &authResponse); err != nil {
-		return "", grizzly.APIErr{Err: err, Body: data}
-
-	}
-	return authResponse.AccessToken, nil
+func getUID(check synthetic_monitoring.Check) string {
+	return fmt.Sprintf("%s-%s", getType(check), check.Job)
 }

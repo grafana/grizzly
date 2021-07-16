@@ -60,9 +60,12 @@ func (r *Resource) SetMetadata(key, value string) {
 	(*r)["metadata"] = metadata
 }
 
-func (r *Resource) GetSpecString(key string) string {
+func (r *Resource) GetSpecString(key string) (string, bool) {
 	spec := (*r)["spec"].(map[string]interface{})
-	return spec[key].(string)
+	if val, ok := spec[key]; ok {
+		return val.(string), true
+	}
+	return "", false
 }
 
 func (r *Resource) SetSpecString(key, value string) {
@@ -163,6 +166,9 @@ type Handler interface {
 
 	// Update pushes an existing resource to the endpoint
 	Update(existing, resource Resource) error
+
+	// Validate gets or build the uid of corresponding resource
+	Validate(resource Resource) error
 }
 
 // PreviewHandler describes a handler that has the ability to render
