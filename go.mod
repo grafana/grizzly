@@ -15,6 +15,8 @@ require (
 	github.com/grafana/synthetic-monitoring-agent v0.0.23
 	github.com/grafana/synthetic-monitoring-api-go-client v0.0.2
 	github.com/grafana/tanka v0.14.0
+	github.com/hashicorp/go-version v1.3.0 // indirect
+	github.com/mitchellh/gox v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/rivo/tview v0.0.0-20200818120338-53d50e499bf9
 	github.com/sirupsen/logrus v1.8.1 // indirect
