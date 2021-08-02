@@ -7,5 +7,5 @@ This directory contains examples that use this format.
 To look at the examples in this directory, execute:
 
 ```
-grr show testdata/kubernetes-style/grr.jsonnet
+grr show examples/grr.jsonnet
 ```
