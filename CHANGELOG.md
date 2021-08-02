@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 (2021-08-02)
+
+Add binary for Darwin Arm64 arch
+
 ## 0.1.0 (2021-02-27)
 
 This is a substantial release.
