@@ -36,3 +36,4 @@ func TestExtractFolderUID(t *testing.T) {
 		require.Equal(t, "12345", uid)
 	})
 }
+
