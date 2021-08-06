@@ -21,7 +21,7 @@ func TestRules(t *testing.T) {
 		}
 		res, err := getRemoteRuleGroup("first_rules.grizzly_alerts")
 		require.NoError(t, err)
-		require.Equal(t, "first_rules.grizzly_alerts", res.Name())
+		require.Equal(t, "grizzly_alerts", res.Name())
 		require.Equal(t, "PrometheusRuleGroup", res.Kind())
 		require.Equal(t, "PrometheusRuleGroup/first_rules.grizzly_alerts", res.Key())
 	})

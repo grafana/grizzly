@@ -1,8 +1,9 @@
 package grafana
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestExtractFolderUID(t *testing.T) {
@@ -27,7 +28,8 @@ func TestExtractFolderUID(t *testing.T) {
 		}
 		getFolderById = func(folderId int64) (Folder, error) {
 			return Folder{
-				"uid": "12345",
+				"uid":       "12345",
+				"folderURL": "http://localhost:3000/blah",
 			}, nil
 		}
 		uid := extractFolderUID(dashboardWrapper)
