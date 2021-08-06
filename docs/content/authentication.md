@@ -1,6 +1,6 @@
 ---
 date: "2021-06-28T00:00:00+00:00"
-title: "Getting Started"
+title: "Authentication"
 ---
 
 # Authentication and Configuration
@@ -32,6 +32,8 @@ and must have these environment variables set:
 | `CORTEX_ADDRESS` | URL for Grafana Cloud Prometheus instance | true |
 | `CORTEX_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true |
 | `CORTEX_API_KEY` | Authentication token/api key | true |
+
+Note, this will also work with other Cortex installations, alongside Grafana Cloud Prometheus.
 
 ## Grafana Synthetic Monitoring
 To interact with Grafana Synthetic Monitoring, you must have these environment variable set:

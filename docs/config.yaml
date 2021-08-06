@@ -5,9 +5,8 @@ title: Grafana Grizzly Docs
 theme: cupper-hugo-theme
 
 params:
-  description: A utility for managing various observability resources with Jsonnet.
+  description: Manage your observability resources easily
   homeMetaContent: Grafana Grizzly
-#  footer: Powered by [hugo](https://gohugo.io/), using the [cupper theme](https://themes.gohugo.io/cupper-hugo-theme/)
   dateFormat: Jan 1, 2021
   search: true
   logoAlt: Illustration of a Grizzly Bear Bust
@@ -20,32 +19,36 @@ menu:
     - name: Home
       url: /
       weight: 1
-    - name: What is Grizzly?
-      weight: 2
-      url: /what-is-grizzly/
     - name: Installation
       url: /installation/
+      weight: 2
+    - name: What is Grizzly?
+      url: /what-is-grizzly/
       weight: 3
-    - name: Getting Started
-      url: /getting-started/
+    - name: Authentication
+      url: /authentication/
       weight: 4
-    - name: Available Systems
-      identifier: systems
-      url: /systems/
+    - name: With Grafana
+      url: /grafana/
       weight: 5
-    - name: Workflows
-      url: /workflows/
+    - name: With Prometheus
+      url: /prometheus/
       weight: 6
-      identifier: workflows
-    - name: Usage
-      url: /usage/
+    - name: Synthetic Monitoring
+      url: /synthetic-monitoring/
       weight: 7
-    - name: The Future
-      url: /future/
+    - name: Alternate Workflows
+      url: /workflows/
       weight: 8
+    - name: Using Jsonnet
+      url: /jsonnet/
+      weight: 9
+    - name: Hidden Elements
+      url: /hidden-elements/
+      weight: 10
     - name: GitHub
       url: https://github.com/grafana/grizzly/
-      weight: 9
+      weight: 12
 
 markup:
   defaultMarkdownHandler: goldmark
