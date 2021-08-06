@@ -96,6 +96,9 @@ func postDashboard(resource grizzly.Resource) error {
 		return err
 	}
 
+	if !resource.HasMetadata("folder") {
+		return fmt.Errorf("Resource %s requires a folder within its metadata", resource.GetMetadata("name"))
+	}
 	folderUID := resource.GetMetadata("folder")
 	var folderID int64
 	if !(folderUID == "General" || folderUID == "general") {

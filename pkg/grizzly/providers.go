@@ -49,6 +49,12 @@ func (r *Resource) Key() string {
 	return fmt.Sprintf("%s/%s", r.Kind(), r.Name())
 }
 
+func (r *Resource) HasMetadata(key string) bool {
+	metadata := (*r)["metadata"].(map[string]interface{})
+	_, ok := metadata[key]
+	return ok
+}
+
 func (r *Resource) GetMetadata(key string) string {
 	metadata := (*r)["metadata"].(map[string]interface{})
 	return metadata[key].(string)
