@@ -21,35 +21,28 @@ func main() {
 		Version: Version,
 	}
 
-	registry, err := GetProviderRegistry()
-	if err != nil {
-		log.Fatalln(err)
-	}
+	grizzly.ConfigureProviderRegistry(
+		[]grizzly.Provider{
+			&grafana.Provider{},
+		})
 
 	// workflow commands
 	rootCmd.AddCommand(
-		getCmd(registry),
-		listCmd(registry),
-		pullCmd(registry),
-		showCmd(registry),
-		diffCmd(registry),
-		applyCmd(registry),
-		watchCmd(registry),
-		listenCmd(registry),
-		exportCmd(registry),
-		previewCmd(registry),
-		providersCmd(registry),
+		getCmd(),
+		listCmd(),
+		pullCmd(),
+		showCmd(),
+		diffCmd(),
+		applyCmd(),
+		watchCmd(),
+		listenCmd(),
+		exportCmd(),
+		previewCmd(),
+		providersCmd(),
 	)
 
 	// Run!
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalln(err)
 	}
-}
-
-// GetProviderRegistry registers all known providers
-func GetProviderRegistry() (grizzly.Registry, error) {
-	registry := grizzly.NewProviderRegistry()
-	registry.RegisterProvider(&grafana.Provider{})
-	return registry, nil
 }

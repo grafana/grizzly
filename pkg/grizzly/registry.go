@@ -15,34 +15,29 @@ type Provider interface {
 	GetHandlers() []Handler
 }
 
-// Registry records providers
-type Registry struct {
+// ProviderSet records providers
+type registry struct {
 	Providers []Provider
 	Handlers  map[string]Handler
 }
 
 // Global Handler registry
-var registry Registry
+var Registry registry
 
 // NewProviderRegistry returns a new registry instance
-func NewProviderRegistry() Registry {
-	registry := Registry{}
-	registry.Providers = []Provider{}
+func ConfigureProviderRegistry(providers []Provider) {
+	registry := registry{}
+	registry.Providers = providers
 	registry.Handlers = map[string]Handler{}
-	return registry
-}
-
-// RegisterProvider will register a new provider
-func (r *Registry) RegisterProvider(provider Provider) error {
-	r.Providers = append(r.Providers, provider)
-	for _, handler := range provider.GetHandlers() {
-		r.Handlers[handler.Kind()] = handler
+	for _, provider := range providers {
+		for _, handler := range provider.GetHandlers() {
+			registry.Handlers[handler.Kind()] = handler
+		}
 	}
-	return nil
 }
 
 // GetHandler returns a single provider based upon a JSON path
-func (r *Registry) GetHandler(path string) (Handler, error) {
+func (r *registry) GetHandler(path string) (Handler, error) {
 	handler, exists := r.Handlers[path]
 	if !exists {
 		return nil, fmt.Errorf("couldn't find a handler for %s: %w", path, ErrHandlerNotFound)
@@ -51,7 +46,7 @@ func (r *Registry) GetHandler(path string) (Handler, error) {
 }
 
 // HandlerMatchesTarget identifies whether a handler is in a target list
-func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool {
+func (r *registry) HandlerMatchesTarget(handler Handler, targets []string) bool {
 	if len(targets) == 0 {
 		return true
 	}
@@ -66,7 +61,7 @@ func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool 
 }
 
 // ResourceMatchesTarget identifies whether a resource is in a target list
-func (r *Registry) ResourceMatchesTarget(handler Handler, UID string, targets []string) bool {
+func (r *registry) ResourceMatchesTarget(handler Handler, UID string, targets []string) bool {
 	if len(targets) == 0 {
 		return true
 	}
@@ -78,9 +73,4 @@ func (r *Registry) ResourceMatchesTarget(handler Handler, UID string, targets []
 		}
 	}
 	return false
-}
-
-// Notifier returns a notifier for responding to users
-func (r *Registry) Notifier() *Notifier {
-	return &Notifier{}
 }
