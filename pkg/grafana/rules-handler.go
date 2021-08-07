@@ -78,6 +78,11 @@ func (h *RuleHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Reso
 	return &resource
 }
 
+// GetUID returns the UID for a resource
+func (h *RuleHandler) GetUID(resource grizzly.Resource) (string, error) {
+	return fmt.Sprintf("%s.%s", resource.GetMetadata("namespace"), resource.Name()), nil
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *RuleHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	return getRemoteRuleGroup(UID)

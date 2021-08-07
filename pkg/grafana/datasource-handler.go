@@ -104,6 +104,11 @@ func (h *DatasourceHandler) Prepare(existing, resource grizzly.Resource) *grizzl
 	return &resource
 }
 
+// GetUID returns the UID for a resource
+func (h *DatasourceHandler) GetUID(resource grizzly.Resource) (string, error) {
+	return resource.Name(), nil
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	return getRemoteDatasource(UID)

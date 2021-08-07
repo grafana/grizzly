@@ -80,6 +80,11 @@ func (h *FolderHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Re
 	return &resource
 }
 
+// GetUID returns the UID for a resource
+func (h *FolderHandler) GetUID(resource grizzly.Resource) (string, error) {
+	return resource.Name(), nil
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *FolderHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	resource, err := getRemoteFolder(UID)

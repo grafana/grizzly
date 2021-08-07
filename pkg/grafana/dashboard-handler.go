@@ -83,6 +83,11 @@ func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly
 	return &resource
 }
 
+// GetUID returns the UID for a resource
+func (h *DashboardHandler) GetUID(resource grizzly.Resource) (string, error) {
+	return resource.Name(), nil
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	resource, err := getRemoteDashboard(UID)

@@ -101,6 +101,11 @@ func (h *SyntheticMonitoringHandler) Prepare(existing, resource grizzly.Resource
 	return &resource
 }
 
+// GetUID returns the UID for a resource
+func (h *SyntheticMonitoringHandler) GetUID(resource grizzly.Resource) (string, error) {
+	return fmt.Sprintf("%s.%s", resource.GetMetadata("type"), resource.Name()), nil
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	return getRemoteCheck(UID)

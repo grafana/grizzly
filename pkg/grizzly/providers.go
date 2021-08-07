@@ -158,7 +158,10 @@ type Handler interface {
 	// Prepare gets a resource ready for dispatch to the remote endpoint
 	Prepare(existing, resource Resource) *Resource
 
-	// Get retrieves JSON for a resource from an endpoint, by UID
+	// GetUID returns the UID for a resource
+	GetUID(resource Resource) (string, error)
+
+	// GetByUID retrieves JSON for a resource from an endpoint, by UID
 	GetByUID(UID string) (*Resource, error)
 
 	// GetRemote retrieves a remote equivalent of a remote resource
