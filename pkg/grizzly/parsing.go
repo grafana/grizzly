@@ -18,17 +18,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(registry Registry, resourcePath string, opts Opts) (Resources, error) {
+func Parse(resourcePath string, opts Opts) (Resources, error) {
 	if !(opts.Directory) {
-		return ParseFile(registry, opts, resourcePath)
+		return ParseFile(opts, resourcePath)
 	}
 	var resources Resources
-	files, err := FindResourceFiles(registry, resourcePath)
+	files, err := FindResourceFiles(resourcePath)
 	if err != nil {
 		return nil, err
 	}
 	for _, file := range files {
-		r, err := ParseFile(registry, opts, file)
+		r, err := ParseFile(opts, file)
 		if err != nil {
 			return nil, err
 		}
@@ -37,9 +37,9 @@ func Parse(registry Registry, resourcePath string, opts Opts) (Resources, error)
 	return resources, nil
 }
 
-func FindResourceFiles(registry Registry, resourcePath string) ([]string, error) {
+func FindResourceFiles(resourcePath string) ([]string, error) {
 	var files []string
-	for _, handler := range registry.Handlers {
+	for _, handler := range Registry.Handlers {
 		handlerFiles, err := handler.FindResourceFiles(resourcePath)
 		if err != nil {
 			return nil, err
@@ -49,19 +49,19 @@ func FindResourceFiles(registry Registry, resourcePath string) ([]string, error)
 	return files, nil
 }
 
-func ParseFile(registry Registry, opts Opts, resourceFile string) (Resources, error) {
+func ParseFile(opts Opts, resourceFile string) (Resources, error) {
 	switch filepath.Ext(resourceFile) {
 	case ".yaml", ".yml":
-		return ParseYAML(registry, resourceFile, opts)
+		return ParseYAML(resourceFile, opts)
 	case ".jsonnet", ".libsonnet", ".json":
-		return ParseJsonnet(registry, resourceFile, opts)
+		return ParseJsonnet(resourceFile, opts)
 	default:
 		return nil, fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)
 	}
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources
-func ParseYAML(registry Registry, yamlFile string, opts Opts) (Resources, error) {
+func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 	f, err := os.Open(yamlFile)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func ParseYAML(registry Registry, yamlFile string, opts Opts) (Resources, error)
 	var resources Resources
 	for i := 0; decoder.Decode(&m) == nil; i++ {
 		manifests[strconv.Itoa(i)] = m
-		handler, err := registry.GetHandler(m.Kind())
+		handler, err := Registry.GetHandler(m.Kind())
 		if err != nil {
 			return nil, err
 		}
@@ -94,7 +94,7 @@ func ParseYAML(registry Registry, yamlFile string, opts Opts) (Resources, error)
 var script string
 
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree
-func ParseJsonnet(registry Registry, jsonnetFile string, opts Opts) (Resources, error) {
+func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 
 	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
@@ -124,7 +124,7 @@ func ParseJsonnet(registry Registry, jsonnetFile string, opts Opts) (Resources, 
 
 	resources := Resources{}
 	for _, m := range extracted {
-		handler, err := registry.GetHandler(m.Kind())
+		handler, err := Registry.GetHandler(m.Kind())
 		if err != nil {
 			log.Println("Error getting handler", err)
 			continue

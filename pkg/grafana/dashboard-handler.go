@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
@@ -117,7 +118,7 @@ func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (h *DashboardHandler) Preview(resource grizzly.Resource, notifier grizzly.Notifier, opts *grizzly.PreviewOpts) error {
+func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
 	s, err := postSnapshot(resource, opts)
 	if err != nil {
 		return err
@@ -131,6 +132,6 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, notifier grizzly.N
 }
 
 // Listen watches a resource and updates local file on changes
-func (h *DashboardHandler) Listen(notifier grizzly.Notifier, UID, filename string) error {
-	return watchDashboard(notifier, UID, filename)
+func (h *DashboardHandler) Listen(UID, filename string) error {
+	return watchDashboard(UID, filename)
 }
