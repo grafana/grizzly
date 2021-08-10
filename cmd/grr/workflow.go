@@ -7,10 +7,11 @@ import (
 
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/spf13/pflag"
 )
 
-func getCmd(registry grizzly.Registry) *cli.Command {
+func getCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "get <resource-type>.<resource-uid>",
 		Short: "retrieve resource",
@@ -18,12 +19,12 @@ func getCmd(registry grizzly.Registry) *cli.Command {
 	}
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		uid := args[0]
-		return grizzly.Get(registry, uid)
+		return grizzly.Get(uid)
 	}
 	return cmd
 }
 
-func listCmd(registry grizzly.Registry) *cli.Command {
+func listCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "list [-r] [<resource-path>]",
 		Short: "list resource keys from file",
@@ -37,26 +38,26 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		if isRemote {
 			if len(args) > 0 {
-				registry.Notifier().Error(nil, "No resource-path required when listing remote resources")
+				notifier.Error(nil, "No resource-path required when listing remote resources")
 				return nil
 			}
-			return grizzly.ListRemote(registry, opts)
+			return grizzly.ListRemote(opts)
 		}
 		if len(args) == 0 {
-			registry.Notifier().Error(nil, "resource-path required when listing local resources")
+			notifier.Error(nil, "resource-path required when listing local resources")
 			return nil
 		}
-		resources, err := grizzly.Parse(registry, args[0], opts)
+		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
 			return err
 		}
 
-		return grizzly.List(registry, resources)
+		return grizzly.List(resources)
 	}
 	return cmd
 }
 
-func pullCmd(registry grizzly.Registry) *cli.Command {
+func pullCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "pull <resource-path>",
 		Short: "Pulls remote resources and writes them to local sources",
@@ -65,11 +66,11 @@ func pullCmd(registry grizzly.Registry) *cli.Command {
 	var opts grizzly.Opts
 	defaultGrizzlyFlags(&opts, cmd.Flags())
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		return grizzly.Pull(registry, args[0], opts)
+		return grizzly.Pull(args[0], opts)
 	}
 	return cmd
 }
-func showCmd(registry grizzly.Registry) *cli.Command {
+func showCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "show <resource-path>",
 		Short: "show list of resource types and UIDs",
@@ -78,16 +79,16 @@ func showCmd(registry grizzly.Registry) *cli.Command {
 	var opts grizzly.Opts
 	defaultGrizzlyFlags(&opts, cmd.Flags())
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		resources, err := grizzly.Parse(registry, args[0], opts)
+		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
 			return err
 		}
-		return grizzly.Show(registry, resources)
+		return grizzly.Show(resources)
 	}
 	return cmd
 }
 
-func diffCmd(registry grizzly.Registry) *cli.Command {
+func diffCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "diff <resource-path>",
 		Short: "compare local and remote resources",
@@ -96,16 +97,16 @@ func diffCmd(registry grizzly.Registry) *cli.Command {
 	var opts grizzly.Opts
 	defaultGrizzlyFlags(&opts, cmd.Flags())
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		resources, err := grizzly.Parse(registry, args[0], opts)
+		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
 			return err
 		}
-		return grizzly.Diff(registry, resources)
+		return grizzly.Diff(resources)
 	}
 	return cmd
 }
 
-func applyCmd(registry grizzly.Registry) *cli.Command {
+func applyCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "apply <resource-path>",
 		Short: "apply local resources to remote endpoints",
@@ -114,11 +115,11 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 	var opts grizzly.Opts
 	defaultGrizzlyFlags(&opts, cmd.Flags())
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		resources, err := grizzly.Parse(registry, args[0], opts)
+		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
 			return err
 		}
-		return grizzly.Apply(registry, resources)
+		return grizzly.Apply(resources)
 	}
 	return cmd
 }
@@ -132,11 +133,11 @@ func (p *jsonnetWatchParser) Name() string {
 	return p.resourcePath
 }
 
-func (p *jsonnetWatchParser) Parse(registry grizzly.Registry) (grizzly.Resources, error) {
-	return grizzly.Parse(registry, p.resourcePath, p.opts)
+func (p *jsonnetWatchParser) Parse() (grizzly.Resources, error) {
+	return grizzly.Parse(p.resourcePath, p.opts)
 }
 
-func watchCmd(registry grizzly.Registry) *cli.Command {
+func watchCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "watch <dir-to-watch> <resource-path>",
 		Short: "watch dir recursively for file changes and apply selected resource path",
@@ -154,12 +155,12 @@ func watchCmd(registry grizzly.Registry) *cli.Command {
 
 		watchDir := args[0]
 
-		return grizzly.Watch(registry, watchDir, parser)
+		return grizzly.Watch(watchDir, parser)
 	}
 	return cmd
 }
 
-func listenCmd(registry grizzly.Registry) *cli.Command {
+func listenCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "listen <uid-to-watch> <output-file>",
 		Short: "listen for file changes on remote and save locally",
@@ -168,12 +169,12 @@ func listenCmd(registry grizzly.Registry) *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		uid := args[0]
 		filename := args[1]
-		return grizzly.Listen(registry, uid, filename)
+		return grizzly.Listen(uid, filename)
 	}
 	return cmd
 }
 
-func previewCmd(registry grizzly.Registry) *cli.Command {
+func previewCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "preview <resource-path>",
 		Short: "upload a snapshot to preview the rendered file",
@@ -184,7 +185,7 @@ func previewCmd(registry grizzly.Registry) *cli.Command {
 	expires := cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		resources, err := grizzly.Parse(registry, args[0], opts)
+		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
 			return err
 		}
@@ -193,12 +194,12 @@ func previewCmd(registry grizzly.Registry) *cli.Command {
 			ExpiresSeconds: *expires,
 		}
 
-		return grizzly.Preview(registry, resources, previewOpts)
+		return grizzly.Preview(resources, previewOpts)
 	}
 	return cmd
 }
 
-func exportCmd(registry grizzly.Registry) *cli.Command {
+func exportCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "export <resource-path> <dashboard-dir>",
 		Short: "render resources and save to a directory",
@@ -208,16 +209,16 @@ func exportCmd(registry grizzly.Registry) *cli.Command {
 	defaultGrizzlyFlags(&opts, cmd.Flags())
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		dashboardDir := args[1]
-		resources, err := grizzly.Parse(registry, args[0], opts)
+		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
 			return err
 		}
-		return grizzly.Export(registry, dashboardDir, resources)
+		return grizzly.Export(dashboardDir, resources)
 	}
 	return cmd
 }
 
-func providersCmd(registry grizzly.Registry) *cli.Command {
+func providersCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "providers",
 		Short: "Lists all providers registered with Grizzly",
@@ -228,7 +229,7 @@ func providersCmd(registry grizzly.Registry) *cli.Command {
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
 		fmt.Fprintf(w, f, "API VERSION", "KIND")
-		for _, provider := range registry.Providers {
+		for _, provider := range grizzly.Registry.Providers {
 			for _, handler := range provider.GetHandlers() {
 				fmt.Fprintf(w, f, provider.APIVersion(), handler.Kind())
 			}
