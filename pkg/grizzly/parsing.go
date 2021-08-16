@@ -98,7 +98,12 @@ func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 
 	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
-	vm.Importer(newExtendedImporter(opts.JsonnetPaths))
+	absoluteFile, err := filepath.Abs(jsonnetFile)
+	if err != nil {
+		return nil, err
+	}
+	path := filepath.Dir(absoluteFile)
+	vm.Importer(newExtendedImporter(path, opts.JsonnetPaths))
 	for _, nf := range native.Funcs() {
 		vm.NativeFunction(nf)
 	}
