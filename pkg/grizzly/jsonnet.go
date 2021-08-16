@@ -1,6 +1,8 @@
 package grizzly
 
 import (
+	"path/filepath"
+
 	"github.com/google/go-jsonnet"
 )
 
@@ -26,11 +28,16 @@ func newFileLoader(fi *jsonnet.FileImporter) importLoader {
 	}
 }
 
-func newExtendedImporter(jpath []string) *ExtendedImporter {
+func newExtendedImporter(path string, jpath []string) *ExtendedImporter {
+	absolutePaths := make([]string, len(jpath)+1)
+	absolutePaths = append(absolutePaths, path)
+	for _, p := range jpath {
+		absolutePaths = append(absolutePaths, filepath.Join(path, p))
+	}
 	return &ExtendedImporter{
 		loaders: []importLoader{
 			newFileLoader(&jsonnet.FileImporter{
-				JPaths: jpath,
+				JPaths: absolutePaths,
 			})},
 		processors: []importProcessor{},
 	}
