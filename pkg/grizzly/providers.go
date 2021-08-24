@@ -144,6 +144,22 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 // Resources represents a set of resources
 type Resources []Resource
 
+func (r Resources) Len() int {
+	return len(r)
+}
+
+func (r Resources) Less(i, j int) bool {
+	iKind := r[i].Kind()
+	jKind := r[j].Kind()
+	iPos := Registry.HandlerOrder[iKind]
+	jPos := Registry.HandlerOrder[jKind]
+	return iPos < jPos
+}
+
+func (r Resources) Swap(i, j int) {
+	r[i], r[j] = r[j], r[i]
+}
+
 // Handler describes a handler for a single API resource handled by a single provider
 type Handler interface {
 	APIVersion() string

@@ -30,7 +30,7 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 		NewFolderHandler(*p),
 		NewDashboardHandler(*p),
 		NewDatasourceHandler(*p),
-		NewSyntheticMonitoringHandler(*p),
 		NewRuleHandler(*p),
+		NewSyntheticMonitoringHandler(*p),
 	}
 }
