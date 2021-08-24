@@ -32,7 +32,10 @@ func newExtendedImporter(path string, jpath []string) *ExtendedImporter {
 	absolutePaths := make([]string, len(jpath)+1)
 	absolutePaths = append(absolutePaths, path)
 	for _, p := range jpath {
-		absolutePaths = append(absolutePaths, filepath.Join(path, p))
+		if !filepath.IsAbs(p) {
+			p = filepath.Join(path, p)
+		}
+		absolutePaths = append(absolutePaths, p)
 	}
 	return &ExtendedImporter{
 		loaders: []importLoader{
