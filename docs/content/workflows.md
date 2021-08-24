@@ -30,23 +30,6 @@ To push them to a new Grafana instance:
 $ export GRAFANA_URL=<...destination Grafana URL...>
 $ grr apply -d resources
 ```
-## Listen
-Particularly when working with visual resources, it is often easier to use the
-remote system to edit resources, e.g. using Grafana to edit a dashboard.
-
-However, in this scenario, the versioning and traceability of our dashboards is
-limited.
-
-With `grr listen`, we can have Grizzly 'subscribe' to change notifications on
-Grafana, and be notified when dashboards are saved. When saves happen, the JSON
-for the dashboard will be written to local disk. If this happens to be within a
-git checkout, for example, it then becomes easy to make changes via Grafana itself,
-then push the JSON representation of those changes to Git.
-
-Listening is simple:
-```
-$ grr listen -d resources
-```
 
 ## Jsonnet
 The most powerful workflow for Grizzly involves Jsonnet, a powerful programming
@@ -105,15 +88,6 @@ This example watches the current directory for changes, then executes
 
 ```sh
 $ grr watch . my-lib.libsonnet
-```
-
-### grr listen
-The opposite to `watch`, when supported, this listens for changes on a remote
-system. When a change is noticed, the raw resource is downloaded and saved to
-a local named file.
-
-```sh
-$ grr listen dashboard.my-uid my-dash.json
 ```
 
 ### grr export
