@@ -48,6 +48,12 @@ func (r *Resource) Key() string {
 	return fmt.Sprintf("%s/%s", r.Kind(), r.Name())
 }
 
+func (r *Resource) HasMetadata(key string) bool {
+	metadata := (*r)["metadata"].(map[string]interface{})
+	_, ok := metadata[key]
+	return ok
+}
+
 func (r *Resource) GetMetadata(key string) string {
 	metadata := (*r)["metadata"].(map[string]interface{})
 	return metadata[key].(string)
@@ -150,6 +156,9 @@ type Handler interface {
 
 	// Prepare gets a resource ready for dispatch to the remote endpoint
 	Prepare(existing, resource Resource) *Resource
+
+	// Retrieves a UID for a resource
+	GetUID(resource Resource) (string, error)
 
 	// Get retrieves JSON for a resource from an endpoint, by UID
 	GetByUID(UID string) (*Resource, error)
