@@ -12,13 +12,6 @@ dashboards and folders into a directory called <code>resources</code>.</p><block
 when pulled - these will need to be provided manually (either by editing into
 the downloaded YAML or pasting them in via the Grafana UI).</p></blockquote><p>To push them to a new Grafana instance:</p><pre><code>$ export GRAFANA_URL=&lt;...destination Grafana URL...&gt;
 $ grr apply -d resources
-</code></pre><h2 id=listen>Listen</h2><p>Particularly when working with visual resources, it is often easier to use the
-remote system to edit resources, e.g. using Grafana to edit a dashboard.</p><p>However, in this scenario, the versioning and traceability of our dashboards is
-limited.</p><p>With <code>grr listen</code>, we can have Grizzly &lsquo;subscribe&rsquo; to change notifications on
-Grafana, and be notified when dashboards are saved. When saves happen, the JSON
-for the dashboard will be written to local disk. If this happens to be within a
-git checkout, for example, it then becomes easy to make changes via Grafana itself,
-then push the JSON representation of those changes to Git.</p><p>Listening is simple:</p><pre><code>$ grr listen -d resources
 </code></pre><h2 id=jsonnet>Jsonnet</h2><p>The most powerful workflow for Grizzly involves Jsonnet, a powerful programming
 language that can be used to render JSON or YAML.</p><p>With this workflow, resources are described in Jsonnet. When Grizzly is invoked,
 it evaluates the Jsonnet and renders the resources into JSON/YAML. This it can
@@ -33,9 +26,6 @@ The directory is watched recursively (i.e. all subdirectories are watched too),
 but if new subdirectories are added, watch command needs to be re-started,
 as new directories will not be picked up automatically.</p><p>This example watches the current directory for changes, then executes
 <code>my-lib.libsonnet</code> when changes are noticed:</p><pre><code class=language-sh>$ grr watch . my-lib.libsonnet
-</code></pre><h3 id=grr-listen>grr listen</h3><p>The opposite to <code>watch</code>, when supported, this listens for changes on a remote
-system. When a change is noticed, the raw resource is downloaded and saved to
-a local named file.</p><pre><code class=language-sh>$ grr listen dashboard.my-uid my-dash.json
 </code></pre><h3 id=grr-export>grr export</h3><p>Renders Jsonnet and saves resources as files directory which is specified with
 the second argument.</p><p>These resources can then be deployed This can be used with
 <a href=https://grafana.com/docs/grafana/latest/administration/provisioning/>Grafana Provisioning</a>
