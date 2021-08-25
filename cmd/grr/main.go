@@ -35,7 +35,6 @@ func main() {
 		diffCmd(),
 		applyCmd(),
 		watchCmd(),
-		listenCmd(),
 		exportCmd(),
 		previewCmd(),
 		providersCmd(),

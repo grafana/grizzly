@@ -130,8 +130,3 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.Prev
 	}
 	return nil
 }
-
-// Listen watches a resource and updates local file on changes
-func (h *DashboardHandler) Listen(UID, filename string) error {
-	return watchDashboard(UID, filename)
-}
