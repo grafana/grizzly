@@ -52,7 +52,8 @@ func (r *registry) HandlerMatchesTarget(handler Handler, targets []string) bool 
 	key := handler.Kind()
 
 	for _, target := range targets {
-		if strings.Contains(target, "/") && strings.Split(target, "/")[0] == key {
+		if (strings.Contains(target, "/") && strings.Split(target, "/")[0] == key) ||
+			(strings.Contains(target, ".") && strings.Split(target, ".")[0] == key) {
 			return true
 		}
 	}
@@ -64,10 +65,13 @@ func (r *registry) ResourceMatchesTarget(handler Handler, UID string, targets []
 	if len(targets) == 0 {
 		return true
 	}
-	key := fmt.Sprintf("%s/%s", handler.Kind(), UID)
+	// I mistakenly assumed 'dot' was a special character for globs, so opted for '/' as separator.
+	// This keeps back-compat
+	slashKey := fmt.Sprintf("%s/%s", handler.Kind(), UID)
+	dotKey := fmt.Sprintf("%s.%s", handler.Kind(), UID)
 	for _, target := range targets {
 		g := glob.MustCompile(target)
-		if g.Match(key) {
+		if g.Match(slashKey) || g.Match(dotKey) {
 			return true
 		}
 	}
