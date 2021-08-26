@@ -45,7 +45,15 @@ func (r Resource) String() string {
 
 // Key returns a key that combines kind and uid
 func (r *Resource) Key() string {
-	return fmt.Sprintf("%s/%s", r.Kind(), r.Name())
+	handler, err := Registry.GetHandler(r.Kind())
+	if err != nil {
+		return "Unknown-handler:" + r.Kind()
+	}
+	uid, err := handler.GetUID(*r)
+	if err != nil {
+		return "error:" + err.Error()
+	}
+	return fmt.Sprintf("%s/%s", r.Kind(), uid)
 }
 
 func (r *Resource) HasMetadata(key string) bool {

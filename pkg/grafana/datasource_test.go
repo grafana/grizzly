@@ -12,6 +12,11 @@ import (
 func TestDatasources(t *testing.T) {
 	os.Setenv("GRAFANA_URL", getUrl())
 
+	grizzly.ConfigureProviderRegistry(
+		[]grizzly.Provider{
+			&Provider{},
+		})
+
 	ticker := pingService(getUrl())
 	defer ticker.Stop()
 
@@ -83,5 +88,17 @@ func TestDatasources(t *testing.T) {
 		grafanaErr := err.(ErrNon200Response)
 		require.Error(t, err)
 		require.Equal(t, grafanaErr.Response.StatusCode, 409)
+	})
+
+	t.Run("Check getUID is functioning correctly", func(t *testing.T) {
+		resource := grizzly.Resource{
+			"metadata": map[string]interface{}{
+				"name": "test",
+			},
+		}
+		handler := DatasourceHandler{}
+		uid, err := handler.GetUID(resource)
+		require.NoError(t, err)
+		require.Equal(t, uid, "test")
 	})
 }
