@@ -136,10 +136,12 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 	if len(targets) == 0 {
 		return true
 	}
-	key := r.Key()
+	UID := r.UID()
+	slashKey := fmt.Sprintf("%s/%s", r.Kind(), UID)
+	dotKey := fmt.Sprintf("%s.%s", r.Kind(), UID)
 	for _, target := range targets {
 		g := glob.MustCompile(target)
-		if g.Match(key) {
+		if g.Match(slashKey) || g.Match(dotKey) {
 			return true
 		}
 	}
