@@ -36,7 +36,7 @@ func TestRules(t *testing.T) {
 		require.Equal(t, "PrometheusRuleGroup", res.Kind())
 		key := res.Key()
 		require.NoError(t, err)
-		require.Equal(t, "PrometheusRuleGroup/first_rules.grizzly_alerts", key)
+		require.Equal(t, "PrometheusRuleGroup.first_rules.grizzly_alerts", key)
 	})
 
 	t.Run("get remote rule group - error from cortextool client", func(t *testing.T) {
