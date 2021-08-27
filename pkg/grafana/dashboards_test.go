@@ -12,6 +12,11 @@ import (
 func TestDashboard(t *testing.T) {
 	os.Setenv("GRAFANA_URL", getUrl())
 
+	grizzly.ConfigureProviderRegistry(
+		[]grizzly.Provider{
+			&Provider{},
+		})
+
 	ticker := pingService(getUrl())
 	defer ticker.Stop()
 
@@ -67,6 +72,18 @@ func TestDashboard(t *testing.T) {
 
 		err := postDashboard(resource)
 		require.EqualError(t, err, "Cannot upload dashboard dummy as folder dummy not found")
+	})
+
+	t.Run("Check getUID is functioning correctly", func(t *testing.T) {
+		resource := grizzly.Resource{
+			"metadata": map[string]interface{}{
+				"name": "test",
+			},
+		}
+		handler := DashboardHandler{}
+		uid, err := handler.GetUID(resource)
+		require.NoError(t, err)
+		require.Equal(t, uid, "test")
 	})
 
 	_ = os.Unsetenv("GRAFANA_URL")

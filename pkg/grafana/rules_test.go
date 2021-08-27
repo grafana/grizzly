@@ -13,6 +13,12 @@ import (
 var errCortextoolClient = errors.New("error coming from cortextool client")
 
 func TestRules(t *testing.T) {
+
+	grizzly.ConfigureProviderRegistry(
+		[]grizzly.Provider{
+			&Provider{},
+		})
+
 	t.Run("get remote rule group", func(t *testing.T) {
 		file, err := os.ReadFile("testdata/list_rules.yaml")
 		require.NoError(t, err)
@@ -21,9 +27,16 @@ func TestRules(t *testing.T) {
 		}
 		res, err := getRemoteRuleGroup("first_rules.grizzly_alerts")
 		require.NoError(t, err)
-		require.Equal(t, "first_rules.grizzly_alerts", res.Name())
+		handler := RuleHandler{}
+		uid, err := handler.GetUID(*res)
+		require.NoError(t, err)
+		require.Equal(t, "grizzly_alerts", res.Name())
+		require.Equal(t, "first_rules.grizzly_alerts", uid)
+		require.Equal(t, "first_rules", res.GetMetadata("namespace"))
 		require.Equal(t, "PrometheusRuleGroup", res.Kind())
-		require.Equal(t, "PrometheusRuleGroup/first_rules.grizzly_alerts", res.Key())
+		key := res.Key()
+		require.NoError(t, err)
+		require.Equal(t, "PrometheusRuleGroup/first_rules.grizzly_alerts", key)
 	})
 
 	t.Run("get remote rule group - error from cortextool client", func(t *testing.T) {
@@ -94,6 +107,19 @@ func TestRules(t *testing.T) {
 		resource.SetMetadata("namespace", "value")
 		err = writeRuleGroup(resource)
 		require.Error(t, err)
+	})
+
+	t.Run("Check getUID is functioning correctly", func(t *testing.T) {
+		resource := grizzly.Resource{
+			"metadata": map[string]interface{}{
+				"name":      "test",
+				"namespace": "test_namespace",
+			},
+		}
+		handler := RuleHandler{}
+		uid, err := handler.GetUID(resource)
+		require.NoError(t, err)
+		require.Equal(t, uid, "test_namespace.test")
 	})
 }
 
