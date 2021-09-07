@@ -27,10 +27,10 @@ func (p *Provider) APIVersion() string {
 // GetHandlers identifies the handlers for the Grafana provider
 func (p *Provider) GetHandlers() []grizzly.Handler {
 	return []grizzly.Handler{
+		NewDatasourceHandler(*p),
 		NewFolderHandler(*p),
 		NewDashboardHandler(*p),
-		NewDatasourceHandler(*p),
-		NewSyntheticMonitoringHandler(*p),
 		NewRuleHandler(*p),
+		NewSyntheticMonitoringHandler(*p),
 	}
 }
