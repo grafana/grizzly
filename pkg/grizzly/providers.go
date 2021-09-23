@@ -43,6 +43,12 @@ func (r Resource) String() string {
 	return r.Key()
 }
 
+// Key returns a key that combines kind and uid
+func (r *Resource) Key() string {
+	uid := r.UID()
+	return fmt.Sprintf("%s.%s", r.Kind(), uid)
+}
+
 func (r Resource) UID() string {
 	handler, err := Registry.GetHandler(r.Kind())
 	if err != nil {
@@ -53,12 +59,6 @@ func (r Resource) UID() string {
 		return "error:" + err.Error()
 	}
 	return uid
-}
-
-// Key returns a key that combines kind and uid
-func (r *Resource) Key() string {
-	uid := r.UID()
-	return fmt.Sprintf("%s.%s", r.Kind(), uid)
 }
 
 func (r *Resource) HasMetadata(key string) bool {
@@ -137,8 +137,8 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 		return true
 	}
 	UID := r.UID()
+	dotKey := r.Key()
 	slashKey := fmt.Sprintf("%s/%s", r.Kind(), UID)
-	dotKey := fmt.Sprintf("%s.%s", r.Kind(), UID)
 	for _, target := range targets {
 		g := glob.MustCompile(target)
 		if g.Match(slashKey) || g.Match(dotKey) {
