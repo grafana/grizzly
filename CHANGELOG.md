@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.2.0-beta1 (2021-09-23)
+
+Much has changed in Grizzly, including the switch to Kubernetes style resources.
+
+This version needs some testing (hence the beta label) and some work on the new
+tests we've added.
+
+Here's some of the things that are new:
+* Targets now use dots consistently (#163)
+* Handlers are applied in a consistent order, so that folders get created before
+  dashboards (#162)
+* Listen feature (temporarily) removed - Grafana API is not yet stable enough for
+  this (#161)
+* Switch Jsonnet examples to use a Grizzly library (#157)
+* Addition of fuller documentation
+* CortexTool no longer required for interacting with hosted Prometheus
+* `watch` now watches directories recursively (#122)
+* Grizzly can now list remote resources (`grr list -r`) (#120)
+* Folders are now first-class citizens (#115)
+* Grizzly can pull remote resources to local filesystem (`grr pull`) (#110)
+* Grizzly can now be configured with YAML instead of Jsonnet (#100)
+* Resources are now consumed as Kubernetes style objects (#94). Hidden resources
+  in Jsonnet are now deprecated (#94)
+
 ## 0.1.1 (2021-08-02)
 
 Add binary for Darwin Arm64 arch
