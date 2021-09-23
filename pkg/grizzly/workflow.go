@@ -158,11 +158,11 @@ func Show(resources Resources) error {
 		}
 		if interactive {
 			items = append(items, term.PageItem{
-				Name:    fmt.Sprintf("%s/%s", resource.Kind(), resource.Name()),
+				Name:    fmt.Sprintf("%s.%s", resource.Kind(), resource.Name()),
 				Content: rep,
 			})
 		} else {
-			fmt.Printf("%s/%s:\n", resource.Kind(), resource.Name())
+			fmt.Printf("%s.%s:\n", resource.Kind(), resource.Name())
 			fmt.Println(rep)
 		}
 	}
