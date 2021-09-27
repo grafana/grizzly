@@ -1,6 +1,4 @@
-local util = import 'util.libsonnet';
-
-local check = {
+{
   frequency: 60000,
   offset: 0,
   timeout: 2500,
@@ -42,6 +40,4 @@ local check = {
   job: 'grafana-com',
   alertSensitivity: '',
   basicMetricsOnly: true,
-};
-
-util.makeResource('SyntheticMonitoringCheck', check.job, check, { type: std.objectFields(check.settings)[0] })
+}
