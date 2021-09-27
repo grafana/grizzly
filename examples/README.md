@@ -7,5 +7,6 @@ This directory contains examples that use this format.
 To look at the examples in this directory, execute:
 
 ```
-grr show examples/grr.jsonnet
+cd examples
+grr show grr.jsonnet
 ```
