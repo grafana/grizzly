@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/centrifugal/centrifuge-go v0.6.2
-	github.com/containerd/containerd v1.5.4 // indirect
+	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/docker/docker v20.10.7+incompatible // indirect
 	github.com/fatih/color v1.9.0
 	github.com/gdamore/tcell v1.3.0
