@@ -6,7 +6,7 @@ as static resources in YAML. This is the simplest use-case for Grizzly, but ther
 are more powerful workflows available.</p><h2 id=pullpush>Pull/Push</h2><p>With <code>grr pull -d</code> and <code>grr apply -d</code> it is possible to migrate dashboards between
 Grafana instances. To pull dashboards and folders from one instance to another
 is as simple as:</p><pre><code>$ export GRAFANA_URL=&lt;...source Grafana URL...&gt;
-$ grr pull -d resources -t &quot;Dashboard/*&quot; -t &quot;Folder/*&quot;
+$ grr pull -d resources -t &quot;Dashboard/*&quot; -t &quot;DashboardFolder/*&quot;
 </code></pre><p>This asks Grizzly to pull all resources matching the <code>&lt;kind>/&lt;UID></code> pattern for
 dashboards and folders into a directory called <code>resources</code>.</p><blockquote><p><strong>Note</strong>: Grizzly can pull datasources, but secure passwords won&rsquo;t be included
 when pulled - these will need to be provided manually (either by editing into
