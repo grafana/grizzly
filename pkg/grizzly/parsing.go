@@ -98,6 +98,9 @@ var script string
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree
 func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 
+	if _, err := os.Stat(jsonnetFile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file does not exist: %s", jsonnetFile)
+	}
 	script := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
 	currentWorkingDirectory, err := os.Getwd()
