@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0-beta2 (2021-10-11)
+This release provides fixes to problems introduced by 0.2.0-beta1.
+* Improved error messages when the referenced Jsonnet file does not exist (#170)
+* Previously, `lib` and `vendor` directories were looked for relative to the
+  Jsonnet script. This makes it hard to work with larger Jsonnet codebases. This
+  has changed to looking for these directories in the current directory. Ideally,
+  we would have a concept of the "root" of a code tree, and locate `lib` and
+  `vendor` directories there. In lieu of that, using the current directory is
+  better. (#172)
+* Documentation corrections for `grr pull` and Synthetic Monitoring (#174 and #173)
+* Fixed `grr pull` so that it correctly pulls dashboards in the General folder.
+
 ## 0.2.0-beta1 (2021-09-23)
 
 Much has changed in Grizzly, including the switch to Kubernetes style resources.
