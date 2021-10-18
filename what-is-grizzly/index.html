@@ -7,7 +7,7 @@ observability resources with code.</p><p>Now you can define your dashboards, ale
 from within your codebase.</p><p>You can build Grizzly into your continuous deployment pipelines, meaning
 whenever you deploy your application, your observability is updated too.</p><h2 id=getting-started>Getting Started</h2><p>The simplest way to achieve this is using YAML resource
 descriptions. (Programmatic description is explained in the section on
-<a href=/jsonnet/>Jsonnet</a>).</p><p>We will first explore how to use Grizzly with Grafana.</p><h2 id=authentication>Authentication</h2><p>You will need to set at least the <code>GRAFANA_URL</code> environment variable. This should
+<a href=../jsonnet/>Jsonnet</a>).</p><p>We will first explore how to use Grizzly with Grafana.</p><h2 id=authentication>Authentication</h2><p>You will need to set at least the <code>GRAFANA_URL</code> environment variable. This should
 be to the root of your Grafana instance. If your Grafana instance requires authentication,
 then you are recommended to acquire an API key (<code>Configuration</code> / <code>API keys</code>). Set the
 <code>GRAFANA_TOKEN</code> to this value. For more this, see <a href=../authentication/>authentication</a>.</p><h2 id=managing-a-simple-dashboard>Managing a Simple Dashboard</h2><p>Below is an example YAML representation of a Grafana dashboard (the format is inspired by
