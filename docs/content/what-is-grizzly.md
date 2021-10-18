@@ -14,7 +14,7 @@ whenever you deploy your application, your observability is updated too.
 ## Getting Started
 The simplest way to achieve this is using YAML resource
 descriptions. (Programmatic description is explained in the section on 
-[Jsonnet](/jsonnet/)).
+[Jsonnet](../jsonnet/)).
 
 We will first explore how to use Grizzly with Grafana.
 
