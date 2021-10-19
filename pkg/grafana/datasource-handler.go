@@ -86,6 +86,7 @@ func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.Resources, error
 		}
 	}
 	spec["uid"] = m.Metadata().Name()
+	spec["name"] = m.Metadata().Name()
 	resource["spec"] = spec
 	return grizzly.Resources{resource}, nil
 }
