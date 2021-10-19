@@ -71,6 +71,9 @@ func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype 
 func (h *DashboardHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 	resource := grizzly.Resource(m)
 	resource.SetSpecString("uid", resource.GetMetadata("name"))
+	if !resource.HasMetadata("folder") {
+		resource.SetMetadata("folder", dashboardFolderDefault) 
+	}
 	return grizzly.Resources{resource}, nil
 }
 
