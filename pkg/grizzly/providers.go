@@ -69,7 +69,11 @@ func (r *Resource) HasMetadata(key string) bool {
 
 func (r *Resource) GetMetadata(key string) string {
 	metadata := (*r)["metadata"].(map[string]interface{})
-	return metadata[key].(string)
+	value, ok := metadata[key].(string)
+	if !ok {
+		return ""
+	}
+	return value
 }
 
 func (r *Resource) SetMetadata(key, value string) {
