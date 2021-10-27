@@ -89,7 +89,7 @@ func ListRemote(opts Opts) error {
 		if !Registry.HandlerMatchesTarget(handler, opts.Targets) {
 			continue
 		}
-		log.Debug("Listing remote values for handler %s", name)
+		log.Debugf("Listing remote values for handler %s", name)
 		IDs, err := handler.ListRemote()
 		if err != nil {
 			return err
@@ -116,7 +116,7 @@ func Pull(resourcePath string, opts Opts) error {
 			notifier.Info(notifier.SimpleString(handler.Kind()), "skipped")
 			continue
 		}
-		log.Debug("Listing remote values for handler %s", name)
+		log.Debugf("Listing remote values for handler %s", name)
 		UIDs, err := handler.ListRemote()
 		if err != nil {
 			return err
