@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/grizzly/pkg/term"
 	"github.com/pmezard/go-difflib/difflib"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
 )
@@ -22,6 +22,8 @@ var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 // Get retrieves a resource from a remote endpoint using its UID
 func Get(UID string) error {
+	log.Info("Getting ", UID)
+
 	count := strings.Count(UID, ".")
 	var handlerName, resourceID string
 	if count == 1 {
@@ -59,6 +61,8 @@ func Get(UID string) error {
 
 // List outputs the keys resources found in resulting json.
 func List(resources Resources) error {
+	log.Infof("Listing %d resources", resources.Len())
+
 	f := "%s\t%s\t%s\n"
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
@@ -75,14 +79,17 @@ func List(resources Resources) error {
 
 // ListRetmote outputs the keys of remote resources
 func ListRemote(opts Opts) error {
+	log.Info("Listing remotes")
+
 	f := "%s\t%s\t%s\n"
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
 	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
-	for _, handler := range Registry.Handlers {
+	for name, handler := range Registry.Handlers {
 		if !Registry.HandlerMatchesTarget(handler, opts.Targets) {
 			continue
 		}
+		log.Debug("Listing remote values for handler %s", name)
 		IDs, err := handler.ListRemote()
 		if err != nil {
 			return err
@@ -98,16 +105,18 @@ func ListRemote(opts Opts) error {
 
 // Pulls remote resources
 func Pull(resourcePath string, opts Opts) error {
+	log.Infof("Pulling resources from %s", resourcePath)
 
 	if !(opts.Directory) {
 		return fmt.Errorf("pull only works with -d option")
 	}
 
-	for _, handler := range Registry.Handlers {
+	for name, handler := range Registry.Handlers {
 		if !Registry.HandlerMatchesTarget(handler, opts.Targets) {
 			notifier.Info(notifier.SimpleString(handler.Kind()), "skipped")
 			continue
 		}
+		log.Debug("Listing remote values for handler %s", name)
 		UIDs, err := handler.ListRemote()
 		if err != nil {
 			return err
@@ -142,6 +151,7 @@ func Pull(resourcePath string, opts Opts) error {
 
 // Show displays resources
 func Show(resources Resources) error {
+	log.Infof("Showing %d resources", resources.Len())
 
 	var items []term.PageItem
 	for _, resource := range resources {
@@ -173,6 +183,8 @@ func Show(resources Resources) error {
 
 // Diff compares resources to those at the endpoints
 func Diff(resources Resources) error {
+	log.Infof("Diff-ing %d resources", resources.Len())
+
 	for _, resource := range resources {
 		handler, err := Registry.GetHandler(resource.Kind())
 		if err != nil {
@@ -187,6 +199,7 @@ func Diff(resources Resources) error {
 		resource = *handler.Unprepare(resource)
 		uid := resource.Name()
 
+		log.Debugf("Getting the remote value for `%s`", resource.Key())
 		remote, err := handler.GetRemote(resource)
 		if errors.Is(err, ErrNotFound) {
 			notifier.NotFound(resource)
@@ -223,17 +236,22 @@ func Diff(resources Resources) error {
 
 // Apply pushes resources to endpoints
 func Apply(resources Resources) error {
+	log.Infof("Applying %d resources", resources.Len())
+
 	for _, resource := range resources {
 		handler, err := Registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
 		}
 
+		log.Debugf("Getting the remote value for `%s`", resource.Key())
 		existingResource, err := handler.GetRemote(resource)
 		if errors.Is(err, ErrNotFound) {
+			log.Debugf("`%s` was not found, adding it...", resource.Key())
+
 			err := handler.Validate(resource)
 			if err != nil {
-				return fmt.Errorf("resource %s is not valid: %v", resource.Name(), err)
+				return fmt.Errorf("resource %s is not valid: %v", resource.Key(), err)
 			}
 
 			if err := handler.Add(resource); err != nil {
@@ -246,6 +264,7 @@ func Apply(resources Resources) error {
 		if err != nil {
 			return err
 		}
+		log.Debugf("`%s` was found, updating it...", resource.Key())
 
 		resourceRepresentation, err := resource.YAML()
 		if err != nil {
@@ -311,7 +330,7 @@ func Watch(watchDir string, parser WatchParser) error {
 
 	done := make(chan bool)
 	go func() {
-		log.Println("Watching for changes")
+		log.Info("Watching for changes")
 		for {
 			select {
 			case event, ok := <-watcher.Events:
@@ -319,21 +338,21 @@ func Watch(watchDir string, parser WatchParser) error {
 					return
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Println("Changes detected. Applying", parser.Name())
+					log.Info("Changes detected. Applying", parser.Name())
 					resources, err := parser.Parse()
 					if err != nil {
-						log.Println("Error: ", err)
+						log.Error("Error: ", err)
 					}
 					err = Apply(resources)
 					if err != nil {
-						log.Println("Error: ", err)
+						log.Error("Error: ", err)
 					}
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
-				log.Println("error:", err)
+				log.Error("error: ", err)
 			}
 		}
 	}()

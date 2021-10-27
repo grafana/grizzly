@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/grafana"
@@ -12,8 +12,23 @@ import (
 // To be overwritten at build time
 var Version = "dev"
 
+func withLoggingOption(cmd *cli.Command) *cli.Command {
+	logLevelString := cmd.Flags().StringP("log-level", "l", log.InfoLevel.String(), "info, debug, warning, error")
+
+	cmdRun := cmd.Run
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		logLevel, err := log.ParseLevel(*logLevelString)
+		if err != nil {
+			return err
+		}
+		log.SetLevel(logLevel)
+		return cmdRun(cmd, args)
+	}
+
+	return cmd
+}
+
 func main() {
-	log.SetFlags(log.Ltime)
 
 	rootCmd := &cli.Command{
 		Use:     "grr",
@@ -28,16 +43,16 @@ func main() {
 
 	// workflow commands
 	rootCmd.AddCommand(
-		getCmd(),
-		listCmd(),
-		pullCmd(),
-		showCmd(),
-		diffCmd(),
-		applyCmd(),
-		watchCmd(),
-		exportCmd(),
-		previewCmd(),
-		providersCmd(),
+		withLoggingOption(getCmd()),
+		withLoggingOption(listCmd()),
+		withLoggingOption(pullCmd()),
+		withLoggingOption(showCmd()),
+		withLoggingOption(diffCmd()),
+		withLoggingOption(applyCmd()),
+		withLoggingOption(watchCmd()),
+		withLoggingOption(exportCmd()),
+		withLoggingOption(previewCmd()),
+		withLoggingOption(providersCmd()),
 	)
 
 	// Run!
