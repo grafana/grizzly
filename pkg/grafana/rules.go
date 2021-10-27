@@ -3,7 +3,6 @@ package grafana
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -98,7 +97,7 @@ type PrometheusRuleGrouping struct {
 }
 
 func writeRuleGroup(resource grizzly.Resource) error {
-	tmpfile, err := ioutil.TempFile("", "cortextool-*")
+	tmpfile, err := os.CreateTemp("", "cortextool-*")
 	if err != nil {
 		return err
 	}
@@ -120,7 +119,7 @@ func writeRuleGroup(resource grizzly.Resource) error {
 	if err != nil {
 		return err
 	}
-	ioutil.WriteFile(tmpfile.Name(), out, 0644)
+	os.WriteFile(tmpfile.Name(), out, 0644)
 	err = client.writeRules(grouping.Namespace, tmpfile.Name())
 	if err != nil {
 		return err

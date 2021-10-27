@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -41,7 +41,7 @@ func getRemoteFolder(uid string) (*grizzly.Resource, error) {
 		return nil, errors.New(resp.Status)
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func getRemoteFolderList() ([]string, error) {
 		case resp.StatusCode >= 400:
 			return nil, errors.New(resp.Status)
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -193,7 +193,7 @@ var getFolderById = func(folderId int64) (Folder, error) {
 		}
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

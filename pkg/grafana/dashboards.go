@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -31,7 +31,7 @@ func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 		return nil, errors.New(resp.Status)
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func getRemoteDashboardList() ([]string, error) {
 		case resp.StatusCode >= 400:
 			return nil, errors.New(resp.Status)
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +179,7 @@ func postSnapshot(resource grizzly.Resource, opts *grizzly.PreviewOpts) (*Snapsh
 
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to read response body: %w", err)
 	}

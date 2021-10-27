@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -163,7 +162,7 @@ func MarshalYAML(resource Resource, filename string) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filename, []byte(y), 0644)
+	err = os.WriteFile(filename, []byte(y), 0644)
 	if err != nil {
 		return err
 	}

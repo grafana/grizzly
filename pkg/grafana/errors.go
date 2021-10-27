@@ -2,7 +2,7 @@ package grafana
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -28,7 +28,7 @@ func NewErrNon200Response(typ, uid string, resp *http.Response) ErrNon200Respons
 	}
 }
 func (e ErrNon200Response) Error() string {
-	body, _ := ioutil.ReadAll(e.Response.Body)
+	body, _ := io.ReadAll(e.Response.Body)
 	status := e.Response.Status
 	return fmt.Sprintf("Non-200 response from Grafana while applying %s %s: %s %s", e.Type, e.UID, status, string(body))
 }
