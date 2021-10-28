@@ -8,7 +8,7 @@ import (
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
-	"github.com/spf13/pflag"
+	log "github.com/sirupsen/logrus"
 )
 
 func getCmd() *cli.Command {
@@ -17,11 +17,13 @@ func getCmd() *cli.Command {
 		Short: "retrieve resource",
 		Args:  cli.ArgsExact(1),
 	}
+	var opts grizzly.LoggingOpts
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		uid := args[0]
 		return grizzly.Get(uid)
 	}
-	return cmd
+	return initialiseLogging(cmd, &opts)
 }
 
 func listCmd() *cli.Command {
@@ -31,7 +33,6 @@ func listCmd() *cli.Command {
 		Args:  cli.ArgsRange(0, 1),
 	}
 	var opts grizzly.Opts
-	defaultGrizzlyFlags(&opts, cmd.Flags())
 	var isRemote bool
 	cmd.Flags().BoolVarP(&isRemote, "remote", "r", false, "list remote resources")
 
@@ -54,7 +55,7 @@ func listCmd() *cli.Command {
 
 		return grizzly.List(resources)
 	}
-	return cmd
+	return initialiseCmd(cmd, &opts)
 }
 
 func pullCmd() *cli.Command {
@@ -64,11 +65,11 @@ func pullCmd() *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	var opts grizzly.Opts
-	defaultGrizzlyFlags(&opts, cmd.Flags())
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		return grizzly.Pull(args[0], opts)
 	}
-	return cmd
+	return initialiseCmd(cmd, &opts)
 }
 func showCmd() *cli.Command {
 	cmd := &cli.Command{
@@ -77,7 +78,7 @@ func showCmd() *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	var opts grizzly.Opts
-	defaultGrizzlyFlags(&opts, cmd.Flags())
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
@@ -85,7 +86,7 @@ func showCmd() *cli.Command {
 		}
 		return grizzly.Show(resources)
 	}
-	return cmd
+	return initialiseCmd(cmd, &opts)
 }
 
 func diffCmd() *cli.Command {
@@ -95,7 +96,7 @@ func diffCmd() *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	var opts grizzly.Opts
-	defaultGrizzlyFlags(&opts, cmd.Flags())
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
@@ -103,7 +104,7 @@ func diffCmd() *cli.Command {
 		}
 		return grizzly.Diff(resources)
 	}
-	return cmd
+	return initialiseCmd(cmd, &opts)
 }
 
 func applyCmd() *cli.Command {
@@ -113,7 +114,7 @@ func applyCmd() *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	var opts grizzly.Opts
-	defaultGrizzlyFlags(&opts, cmd.Flags())
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
@@ -121,7 +122,7 @@ func applyCmd() *cli.Command {
 		}
 		return grizzly.Apply(resources)
 	}
-	return cmd
+	return initialiseCmd(cmd, &opts)
 }
 
 type jsonnetWatchParser struct {
@@ -143,9 +144,7 @@ func watchCmd() *cli.Command {
 		Short: "watch dir recursively for file changes and apply selected resource path",
 		Args:  cli.ArgsExact(2),
 	}
-
 	var opts grizzly.Opts
-	defaultGrizzlyFlags(&opts, cmd.Flags())
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		parser := &jsonnetWatchParser{
@@ -157,7 +156,7 @@ func watchCmd() *cli.Command {
 
 		return grizzly.Watch(watchDir, parser)
 	}
-	return cmd
+	return initialiseCmd(cmd, &opts)
 }
 
 func previewCmd() *cli.Command {
@@ -167,7 +166,6 @@ func previewCmd() *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	var opts grizzly.Opts
-	defaultGrizzlyFlags(&opts, cmd.Flags())
 	expires := cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
@@ -182,7 +180,7 @@ func previewCmd() *cli.Command {
 
 		return grizzly.Preview(resources, previewOpts)
 	}
-	return cmd
+	return initialiseCmd(cmd, &opts)
 }
 
 func exportCmd() *cli.Command {
@@ -192,7 +190,7 @@ func exportCmd() *cli.Command {
 		Args:  cli.ArgsExact(2),
 	}
 	var opts grizzly.Opts
-	defaultGrizzlyFlags(&opts, cmd.Flags())
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		dashboardDir := args[1]
 		resources, err := grizzly.Parse(args[0], opts)
@@ -201,7 +199,7 @@ func exportCmd() *cli.Command {
 		}
 		return grizzly.Export(dashboardDir, resources)
 	}
-	return cmd
+	return initialiseCmd(cmd, &opts)
 }
 
 func providersCmd() *cli.Command {
@@ -210,6 +208,8 @@ func providersCmd() *cli.Command {
 		Short: "Lists all providers registered with Grizzly",
 		Args:  cli.ArgsExact(0),
 	}
+	var opts grizzly.LoggingOpts
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		f := "%s\t%s\n"
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
@@ -222,13 +222,29 @@ func providersCmd() *cli.Command {
 		}
 		return w.Flush()
 	}
-	return cmd
+	return initialiseLogging(cmd, &opts)
 }
 
-func defaultGrizzlyFlags(opts *grizzly.Opts, fs *pflag.FlagSet) {
-	fs.BoolVarP(&opts.Directory, "directory", "d", false, "treat resource path as a directory")
-	fs.StringSliceVarP(&opts.Targets, "target", "t", nil, "resources to target")
-	fs.StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+func initialiseCmd(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
+	cmd.Flags().BoolVarP(&opts.Directory, "directory", "d", false, "treat resource path as a directory")
+	cmd.Flags().StringSliceVarP(&opts.Targets, "target", "t", nil, "resources to target")
+	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+	return initialiseLogging(cmd, &opts.LoggingOpts)
+}
+
+func initialiseLogging(cmd *cli.Command, loggingOpts *grizzly.LoggingOpts) *cli.Command {
+	cmd.Flags().StringVarP(&loggingOpts.LogLevel, "log-level", "l", log.InfoLevel.String(), "info, debug, warning, error")
+	cmdRun := cmd.Run
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		logLevel, err := log.ParseLevel(loggingOpts.LogLevel)
+		if err != nil {
+			return err
+		}
+		log.SetLevel(logLevel)
+		return cmdRun(cmd, args)
+	}
+
+	return cmd
 }
 
 func getDefaultJsonnetFolders() []string {

@@ -12,22 +12,6 @@ import (
 // To be overwritten at build time
 var Version = "dev"
 
-func withLoggingOption(cmd *cli.Command) *cli.Command {
-	logLevelString := cmd.Flags().StringP("log-level", "l", log.InfoLevel.String(), "info, debug, warning, error")
-
-	cmdRun := cmd.Run
-	cmd.Run = func(cmd *cli.Command, args []string) error {
-		logLevel, err := log.ParseLevel(*logLevelString)
-		if err != nil {
-			return err
-		}
-		log.SetLevel(logLevel)
-		return cmdRun(cmd, args)
-	}
-
-	return cmd
-}
-
 func main() {
 
 	rootCmd := &cli.Command{
@@ -43,16 +27,16 @@ func main() {
 
 	// workflow commands
 	rootCmd.AddCommand(
-		withLoggingOption(getCmd()),
-		withLoggingOption(listCmd()),
-		withLoggingOption(pullCmd()),
-		withLoggingOption(showCmd()),
-		withLoggingOption(diffCmd()),
-		withLoggingOption(applyCmd()),
-		withLoggingOption(watchCmd()),
-		withLoggingOption(exportCmd()),
-		withLoggingOption(previewCmd()),
-		withLoggingOption(providersCmd()),
+		getCmd(),
+		listCmd(),
+		pullCmd(),
+		showCmd(),
+		diffCmd(),
+		applyCmd(),
+		watchCmd(),
+		exportCmd(),
+		previewCmd(),
+		providersCmd(),
 	)
 
 	// Run!
