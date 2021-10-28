@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/grafana"
@@ -13,7 +13,6 @@ import (
 var Version = "dev"
 
 func main() {
-	log.SetFlags(log.Ltime)
 
 	rootCmd := &cli.Command{
 		Use:     "grr",

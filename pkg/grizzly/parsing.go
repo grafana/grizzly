@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -15,6 +14,7 @@ import (
 	"github.com/grafana/tanka/pkg/jsonnet/native"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/grafana/tanka/pkg/process"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -134,7 +134,7 @@ func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 	for _, m := range extracted {
 		handler, err := Registry.GetHandler(m.Kind())
 		if err != nil {
-			log.Println("Error getting handler", err)
+			log.Error("Error getting handler: ", err)
 			continue
 		}
 		parsedResources, err := handler.Parse(m)
