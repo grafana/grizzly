@@ -266,5 +266,5 @@ func getType(check synthetic_monitoring.Check) string {
 }
 
 func getUID(check synthetic_monitoring.Check) string {
-	return fmt.Sprintf("%s-%s", getType(check), check.Job)
+	return fmt.Sprintf("%s.%s", getType(check), check.Job)
 }
