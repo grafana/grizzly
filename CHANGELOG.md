@@ -1,6 +1,14 @@
 # Changelog
 
+## 0.2.0-beta3 (2021-10-28)
+
+This release provides fixes and improvements over 0.2.0-beta-2
+* Set dashboard folder to a default value when it is undefined (#183)
+* Add debug logging for most commands(#188)
+* Correctly match synthetic monitoring locally-generated IDs to currently deployed checks (#189)
+
 ## 0.2.0-beta2 (2021-10-11)
+
 This release provides fixes to problems introduced by 0.2.0-beta1.
 * Improved error messages when the referenced Jsonnet file does not exist (#170)
 * Previously, `lib` and `vendor` directories were looked for relative to the
