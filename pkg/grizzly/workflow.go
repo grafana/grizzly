@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -416,7 +415,7 @@ func Export(exportDir string, resources Resources) error {
 		}
 		path := fmt.Sprintf("%s/%s.%s", dir, resource.Name(), extension)
 
-		existingResourceBytes, err := ioutil.ReadFile(path)
+		existingResourceBytes, err := os.ReadFile(path)
 		isNotExist := os.IsNotExist(err)
 		if err != nil && !isNotExist {
 			return err
@@ -425,7 +424,7 @@ func Export(exportDir string, resources Resources) error {
 		if existingResource == updatedResource {
 			notifier.NoChanges(resource)
 		} else {
-			err = ioutil.WriteFile(path, []byte(updatedResource), 0644)
+			err = os.WriteFile(path, []byte(updatedResource), 0644)
 			if err != nil {
 				return err
 			}
