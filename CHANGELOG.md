@@ -5,7 +5,7 @@
 This release provides fixes and improvements over 0.2.0-beta-2
 * Set dashboard folder to a default value when it is undefined (#183)
 * Add debug logging for most commands(#188)
-* Correctly match synthetic monitoring locally-generated IDs to currently deployed checks
+* Correctly match synthetic monitoring locally-generated IDs to currently deployed checks (#189)
 
 ## 0.2.0-beta2 (2021-10-11)
 
