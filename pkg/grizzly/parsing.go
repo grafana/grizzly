@@ -106,7 +106,7 @@ func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 	if err != nil {
 		return nil, err
 	}
-	vm.Importer(newExtendedImporter(currentWorkingDirectory, opts.JsonnetPaths))
+	vm.Importer(newExtendedImporter(jsonnetFile, currentWorkingDirectory, opts.JsonnetPaths))
 	for _, nf := range native.Funcs() {
 		vm.NativeFunction(nf)
 	}

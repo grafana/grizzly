@@ -28,9 +28,16 @@ func newFileLoader(fi *jsonnet.FileImporter) importLoader {
 	}
 }
 
-func newExtendedImporter(path string, jpath []string) *ExtendedImporter {
-	absolutePaths := make([]string, len(jpath)+1)
+func newExtendedImporter(jsonnetFile, path string, jpath []string) *ExtendedImporter {
+	absolutePaths := make([]string, len(jpath)*2+1)
 	absolutePaths = append(absolutePaths, path)
+	jsonnetDir := filepath.Dir(jsonnetFile)
+	for _, p := range jpath {
+		if !filepath.IsAbs(p) {
+			p = filepath.Join(jsonnetDir, p)
+		}
+		absolutePaths = append(absolutePaths, p)
+	}
 	for _, p := range jpath {
 		if !filepath.IsAbs(p) {
 			p = filepath.Join(path, p)
