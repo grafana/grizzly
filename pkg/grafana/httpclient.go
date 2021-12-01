@@ -2,7 +2,6 @@ package grafana
 
 import (
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -17,11 +16,5 @@ func NewHttpClient() (*http.Client, error) {
 		}
 		timeout = time.Duration(timeoutSeconds) * time.Second
 	}
-	if httpProxy := os.Getenv("HTTP_PROXY"); httpProxy != "" {
-		proxyUrl, err := url.Parse(httpProxy)
-	Transport:
-		&http.Transport{Proxy: http.ProxyURL(proxyUrl)}
-	}
-
 	return &http.Client{Timeout: timeout}, nil
 }
