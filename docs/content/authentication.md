@@ -50,3 +50,11 @@ Your stack ID is the number at the end of the url when you view your Grafana ins
 # Timeouts
 
 Grizzly has a 10 second timeout on some HTTP calls. To override this behavior, use the `GRIZZLY_HTTP_TIMEOUT=<seconds>` environment variable.
+
+## HTTP PROXY
+To use a proxy with Grizzly, you must have the following environment variable set:
+
+| Name | Description | Required |
+| --- | --- | --- |
+| `HTTPS_PROXY` | This should be the full url/port of your proxy https://proxy:8080 | true |
+
