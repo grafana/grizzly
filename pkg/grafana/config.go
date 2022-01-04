@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+func getGrafanaToken() (string, error) {
+	if token, exists := os.LookupEnv("GRAFANA_TOKEN"); exists {
+			return token, nil
+	}
+	return "", fmt.Errorf("Require GRAFANA_TOKEN")
+}
+
 func getGrafanaURL(urlPath string) (string, error) {
 	if grafanaURL, exists := os.LookupEnv("GRAFANA_URL"); exists {
 		u, err := url.Parse(grafanaURL)
