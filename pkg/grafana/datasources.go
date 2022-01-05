@@ -12,12 +12,24 @@ import (
 )
 
 func makeDatasourceRequest(url string) ([]byte, error) {
+	client := new(http.Client)
 	grafanaURL, err := getGrafanaURL(url)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.Get(grafanaURL)
+	req, err := http.NewRequest("GET", grafanaURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	grafanaToken, err := getGrafanaToken()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +68,24 @@ func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
 }
 
 func getRemoteDatasourceList() ([]string, error) {
+	client := new(http.Client)
 	grafanaURL, err := getGrafanaURL("api/datasources")
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.Get(grafanaURL)
+	req, err := http.NewRequest("GET", grafanaURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	grafanaToken, err := getGrafanaToken()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +115,7 @@ func getRemoteDatasourceList() ([]string, error) {
 }
 
 func postDatasource(resource grizzly.Resource) error {
+	client := new(http.Client)
 	grafanaURL, err := getGrafanaURL("api/datasources")
 	if err != nil {
 		return err
@@ -101,7 +126,19 @@ func postDatasource(resource grizzly.Resource) error {
 		return err
 	}
 
-	resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(sourceJSON))
+	req, err := http.NewRequest("POST", grafanaURL, bytes.NewBufferString(sourceJSON))
+	if err != nil {
+		return err
+	}
+
+	grafanaToken, err := getGrafanaToken()
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -144,6 +181,12 @@ func putDatasource(resource grizzly.Resource) error {
 	}
 	req, err := http.NewRequest("PUT", grafanaURL, bytes.NewBufferString(sourceJSON))
 	req.Header.Add("Content-type", "application/json")
+
+	grafanaToken, err := getGrafanaToken()
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
 	resp, err := client.Do(req)
 	if err != nil {

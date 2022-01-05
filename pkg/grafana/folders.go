@@ -13,6 +13,7 @@ import (
 
 // getRemoteFolder retrieves a folder object from Grafana
 func getRemoteFolder(uid string) (*grizzly.Resource, error) {
+	client := new(http.Client)
 	h := FolderHandler{}
 	if uid == "General" || uid == "general" {
 		folder := Folder{
@@ -28,7 +29,18 @@ func getRemoteFolder(uid string) (*grizzly.Resource, error) {
 		return nil, err
 	}
 
-	resp, err := http.Get(grafanaURL)
+	req, err := http.NewRequest("GET", grafanaURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	
+	grafanaToken, err := getGrafanaToken()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +69,8 @@ func getRemoteFolder(uid string) (*grizzly.Resource, error) {
 func getRemoteFolderList() ([]string, error) {
 	batchSize := 100
 
+	client := new(http.Client)
+
 	UIDs := []string{}
 	for page := 1; ; page++ {
 		grafanaURL, err := getGrafanaURL(fmt.Sprintf("/api/search?type=dash-folder&limit=%d&page=%d", batchSize, page))
@@ -64,7 +78,18 @@ func getRemoteFolderList() ([]string, error) {
 			return nil, err
 		}
 
-		resp, err := http.Get(grafanaURL)
+		req, err := http.NewRequest("GET", grafanaURL, nil)
+	    if err != nil {
+		    return nil, err
+	    }
+	
+		grafanaToken, err := getGrafanaToken()
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+		resp, err := client.Do(req)
 		if err != nil {
 			return nil, err
 		}
@@ -97,6 +122,7 @@ func getRemoteFolderList() ([]string, error) {
 
 func postFolder(resource grizzly.Resource) error {
 	name := resource.GetMetadata("name")
+	client := new(http.Client)
 	if name == "General" || name == "general" {
 		return nil
 	}
@@ -109,7 +135,19 @@ func postFolder(resource grizzly.Resource) error {
 	folder["uid"] = resource.GetMetadata("name")
 	folderJSON, err := folder.toJSON()
 
-	resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(folderJSON))
+	req, err := http.NewRequest("POST", grafanaURL, bytes.NewBufferString(folderJSON))
+	if err != nil {
+		return err
+	}
+
+	grafanaToken, err := getGrafanaToken()
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -147,6 +185,13 @@ func putFolder(resource grizzly.Resource) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
+
+	grafanaToken, err := getGrafanaToken()
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -173,12 +218,24 @@ func putFolder(resource grizzly.Resource) error {
 }
 
 var getFolderById = func(folderId int64) (Folder, error) {
+	client := new(http.Client)
 	grafanaURL, err := getGrafanaURL(fmt.Sprintf("folders/id/%d", folderId))
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.Get(grafanaURL)
+    req, err := http.NewRequest("GET", grafanaURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	grafanaToken, err := getGrafanaToken()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

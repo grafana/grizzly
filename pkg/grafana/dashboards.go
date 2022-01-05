@@ -13,12 +13,24 @@ import (
 
 // getRemoteDashboard retrieves a dashboard object from Grafana
 func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
+	client := new(http.Client)
 	grafanaURL, err := getGrafanaURL("api/dashboards/uid/" + uid)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.Get(grafanaURL)
+	req, err := http.NewRequest("GET", grafanaURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	grafanaToken, err := getGrafanaToken()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +64,7 @@ func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 func getRemoteDashboardList() ([]string, error) {
 	batchSize := 500
 
+	client := new(http.Client)
 	UIDs := []string{}
 	for page := 1; ; page++ {
 		grafanaURL, err := getGrafanaURL(fmt.Sprintf("/api/search?type=dash-db&limit=%d&page=%d", batchSize, page))
@@ -59,7 +72,18 @@ func getRemoteDashboardList() ([]string, error) {
 			return nil, err
 		}
 
-		resp, err := http.Get(grafanaURL)
+		req, err := http.NewRequest("GET", grafanaURL, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		grafanaToken, err := getGrafanaToken()
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+		resp, err := client.Do(req)
 		if err != nil {
 			return nil, err
 		}
@@ -91,10 +115,12 @@ func getRemoteDashboardList() ([]string, error) {
 }
 
 func postDashboard(resource grizzly.Resource) error {
+	client := new(http.Client)
 	grafanaURL, err := getGrafanaURL("api/dashboards/db")
 	if err != nil {
 		return err
 	}
+
 
 	folderUID := resource.GetMetadata("folder")
 	var folderID int64
@@ -115,7 +141,19 @@ func postDashboard(resource grizzly.Resource) error {
 	}
 	wrappedJSON, err := wrappedBoard.toJSON()
 
-	resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(wrappedJSON))
+	req, err := http.NewRequest("POST", grafanaURL, bytes.NewBufferString(wrappedJSON))
+	if err != nil {
+		return err
+	}
+
+	grafanaToken, err := getGrafanaToken()
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -147,7 +185,7 @@ type SnapshotResp struct {
 }
 
 func postSnapshot(resource grizzly.Resource, opts *grizzly.PreviewOpts) (*SnapshotResp, error) {
-
+	client := new(http.Client)
 	url, err := getGrafanaURL("api/snapshots")
 	if err != nil {
 		return nil, err
@@ -170,7 +208,19 @@ func postSnapshot(resource grizzly.Resource, opts *grizzly.PreviewOpts) (*Snapsh
 		return nil, err
 	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(bs))
+	req, err :=  http.NewRequest("POST", url, bytes.NewBuffer(bs))
+	if err != nil {
+		return nil, err
+	}
+
+	grafanaToken, err := getGrafanaToken()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
