@@ -40,7 +40,6 @@ func getRemoteFolder(uid string) (*grizzly.Resource, error) {
 	}
 	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
-	//resp, err := http.Get(grafanaURL)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -90,7 +89,6 @@ func getRemoteFolderList() ([]string, error) {
 		}
 		req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
-		//resp, err := http.Get(grafanaURL)
 		resp, err := client.Do(req)
 		if err != nil {
 			return nil, err
@@ -149,7 +147,6 @@ func postFolder(resource grizzly.Resource) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
-	//resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(folderJSON))
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -238,7 +235,6 @@ var getFolderById = func(folderId int64) (Folder, error) {
 	}
 	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
-	//resp, err := http.Get(grafanaURL)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err

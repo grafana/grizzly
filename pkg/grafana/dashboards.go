@@ -30,7 +30,6 @@ func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	}
 	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
-	//resp, err := http.Get(grafanaURL)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -84,7 +83,6 @@ func getRemoteDashboardList() ([]string, error) {
 		}
 		req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
-		//resp, err := http.Get(grafanaURL)
 		resp, err := client.Do(req)
 		if err != nil {
 			return nil, err
@@ -155,7 +153,6 @@ func postDashboard(resource grizzly.Resource) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
-	//resp, err := http.Post(grafanaURL, "application/json", bytes.NewBufferString(wrappedJSON))
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -223,7 +220,6 @@ func postSnapshot(resource grizzly.Resource, opts *grizzly.PreviewOpts) (*Snapsh
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
-	//resp, err := http.Post(url, "application/json", bytes.NewBuffer(bs))
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
