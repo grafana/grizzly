@@ -3,6 +3,7 @@ package grafana
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
@@ -21,13 +22,17 @@ func NewDashboardHandler(provider Provider) *DashboardHandler {
 	}
 }
 
+func formatUID(name string) string {
+	var pattern = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
+	return pattern.ReplaceAllString(name, "")
+}
+
 // Validate returns the uid of resource
 func (h *DashboardHandler) Validate(resource grizzly.Resource) error {
-	uid, exist := resource.GetSpecString("uid")
-	if exist {
-		if uid != resource.Name() {
-			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
-		}
+	uid, _ := resource.GetSpecString("uid")
+
+	if uid != formatUID(resource.Name()) {
+		return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
 	}
 	return nil
 }
@@ -70,7 +75,7 @@ func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype 
 // Parse parses a manifest object into a struct for this resource type
 func (h *DashboardHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 	resource := grizzly.Resource(m)
-	resource.SetSpecString("uid", resource.GetMetadata("name"))
+	resource.SetSpecString("uid", formatUID(resource.Name()))
 	if !resource.HasMetadata("folder") {
 		resource.SetMetadata("folder", dashboardFolderDefault)
 	}
@@ -103,9 +108,8 @@ func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 
 // GetRemote retrieves a dashboard as a resource
 func (h *DashboardHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
-	uid, _ := resource.GetSpecString("uid")
-	if uid != resource.Name() {
-		return nil, fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
+	if err := h.Validate(resource); err != nil {
+		return nil, err
 	}
 	return getRemoteDashboard(resource.Name())
 }
