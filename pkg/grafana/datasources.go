@@ -23,11 +23,9 @@ func makeDatasourceRequest(url string) ([]byte, error) {
 		return nil, err
 	}
 
-	grafanaToken, err := getGrafanaToken()
-	if err != nil {
-		return nil, err
+	if grafanaToken, ok := getGrafanaToken(); ok {
+		req.Header.Set("Authorization", "Bearer "+grafanaToken)
 	}
-	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -79,11 +77,9 @@ func getRemoteDatasourceList() ([]string, error) {
 		return nil, err
 	}
 
-	grafanaToken, err := getGrafanaToken()
-	if err != nil {
-		return nil, err
+	if grafanaToken, ok := getGrafanaToken(); ok {
+		req.Header.Set("Authorization", "Bearer "+grafanaToken)
 	}
-	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -131,12 +127,10 @@ func postDatasource(resource grizzly.Resource) error {
 		return err
 	}
 
-	grafanaToken, err := getGrafanaToken()
-	if err != nil {
-		return err
+	if grafanaToken, ok := getGrafanaToken(); ok {
+		req.Header.Set("Authorization", "Bearer "+grafanaToken)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -182,11 +176,9 @@ func putDatasource(resource grizzly.Resource) error {
 	req, err := http.NewRequest("PUT", grafanaURL, bytes.NewBufferString(sourceJSON))
 	req.Header.Add("Content-type", "application/json")
 
-	grafanaToken, err := getGrafanaToken()
-	if err != nil {
-		return err
+	if grafanaToken, ok := getGrafanaToken(); ok {
+		req.Header.Set("Authorization", "Bearer "+grafanaToken)
 	}
-	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
 	resp, err := client.Do(req)
 	if err != nil {

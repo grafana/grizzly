@@ -33,12 +33,10 @@ func getRemoteFolder(uid string) (*grizzly.Resource, error) {
 	if err != nil {
 		return nil, err
 	}
-	
-	grafanaToken, err := getGrafanaToken()
-	if err != nil {
-		return nil, err
+
+	if grafanaToken, ok := getGrafanaToken(); ok {
+		req.Header.Set("Authorization", "Bearer "+grafanaToken)
 	}
-	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -79,15 +77,13 @@ func getRemoteFolderList() ([]string, error) {
 		}
 
 		req, err := http.NewRequest("GET", grafanaURL, nil)
-	    if err != nil {
-		    return nil, err
-	    }
-	
-		grafanaToken, err := getGrafanaToken()
 		if err != nil {
 			return nil, err
 		}
-		req.Header.Set("Authorization", "Bearer " + grafanaToken)
+
+		if grafanaToken, ok := getGrafanaToken(); ok {
+			req.Header.Set("Authorization", "Bearer "+grafanaToken)
+		}
 
 		resp, err := client.Do(req)
 		if err != nil {
@@ -140,12 +136,10 @@ func postFolder(resource grizzly.Resource) error {
 		return err
 	}
 
-	grafanaToken, err := getGrafanaToken()
-	if err != nil {
-		return err
+	if grafanaToken, ok := getGrafanaToken(); ok {
+		req.Header.Set("Authorization", "Bearer "+grafanaToken)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -186,11 +180,9 @@ func putFolder(resource grizzly.Resource) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	grafanaToken, err := getGrafanaToken()
-	if err != nil {
-		return err
+	if grafanaToken, ok := getGrafanaToken(); ok {
+		req.Header.Set("Authorization", "Bearer "+grafanaToken)
 	}
-	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -224,16 +216,14 @@ var getFolderById = func(folderId int64) (Folder, error) {
 		return nil, err
 	}
 
-    req, err := http.NewRequest("GET", grafanaURL, nil)
+	req, err := http.NewRequest("GET", grafanaURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	grafanaToken, err := getGrafanaToken()
-	if err != nil {
-		return nil, err
+	if grafanaToken, ok := getGrafanaToken(); ok {
+		req.Header.Set("Authorization", "Bearer "+grafanaToken)
 	}
-	req.Header.Set("Authorization", "Bearer " + grafanaToken)
 
 	resp, err := client.Do(req)
 	if err != nil {
