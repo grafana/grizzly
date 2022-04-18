@@ -23,15 +23,13 @@ See Grafana's [Authentication API
 docs](https://grafana.com/docs/grafana/latest/http_api/auth/) for more info.
 
 ## Grafana Cloud Prometheus
-To interact with Grafana Cloud Prometheus, you must have the `cortextool` binary
-available on your path (download it [here](https://github.com/grafana/cortex-tools/releases)),
-and must have these environment variables set:
+To interact with Grafana Cloud Prometheus, you must have these environment variables set:
 
 | Name | Description | Required |
 | --- | --- | --- |
 | `CORTEX_ADDRESS` | URL for Grafana Cloud Prometheus instance | true |
-| `CORTEX_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true |
-| `CORTEX_API_KEY` | Authentication token/api key | true |
+| `CORTEX_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | false |
+| `CORTEX_API_KEY` | Authentication token/api key | false |
 
 Note, this will also work with other Cortex installations, alongside Grafana Cloud Prometheus.
 
