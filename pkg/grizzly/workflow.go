@@ -338,7 +338,7 @@ func Watch(watchDir string, parser WatchParser) error {
 					return
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Info("Changes detected. Applying", parser.Name())
+					log.Info("Changes detected. Applying ", parser.Name())
 					resources, err := parser.Parse()
 					if err != nil {
 						log.Error("Error: ", err)
