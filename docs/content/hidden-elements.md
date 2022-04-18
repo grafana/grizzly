@@ -83,7 +83,7 @@ Prometheus alerts and recording rules can be defined too, for example:
 }
 ```
 Here, we first create an alert rule element (`grizzly_alert`), which we then add to namespace `grizzly_rules` inside `prometheusAlerts`. `PrometheusAlerts` is where Grizzly expects to find alerts for Prometheus configured when using 'hidden
-elements.
+elements'.
 
 Likewise, we then create a recording rule element (`grizzly_record`), which we then add to
 namespace `grizzly_rules` inside `prometheusRules`, which is where Grizzly expects to find Prometheus recording rules configured, again
