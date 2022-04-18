@@ -78,19 +78,20 @@ local convert(main, apiVersion) = {
       if key in main then
         local allNamespaced = forceNamespace(main[key]);
         [
-          [
-            makeResource(
-              'PrometheusRuleGroup',
-              g.name,
-              spec={
-                rules: g.rules,
-              },
-              metadata={ namespace: ns }
-            )
-            for g in allNamespaced[ns].groups
-          ]
+
+          makeResource(
+            'PrometheusRuleGroup',
+            g.name,
+            spec={
+              rules: g.rules,
+            },
+            metadata={ namespace: ns }
+          )
+
           for ns in std.objectFields(allNamespaced)
-        ] else [];
+          for g in allNamespaced[ns].groups
+        ]
+      else [];
     fromMap('prometheusRules')
     + fromMap('prometheusAlerts'),
 
