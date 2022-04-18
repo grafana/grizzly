@@ -62,8 +62,46 @@ Grafana&rsquo;s file-based provisioning, which Grizzly does not use).</p><p>Prom
     },
   },
 }
-</code></pre><p>Here, we first create an alert rule element (<code>grizzly_alert</code>), which we then add to <code>prometheusAlerts</code>. <code>PrometheusAlerts</code> is where Grizzly expects to find alerts for Prometheus configured when using &lsquo;hidden
-elements.</p><p>Likewise, we then create a recording rule element (<code>grizzly_record</code>), which we then add to
-<code>prometheusRules</code>, which is where Grizzly expects to find Prometheus recording rules configured, again
-when using hidden elements.</p></main><footer role=contentinfo><div style=display:none><label for=themer>dark theme: <input type=checkbox id=themer class=vh>
+</code></pre><p>Here, we first create an alert rule element (<code>grizzly_alert</code>), which we then add to namespace <code>grizzly_rules</code> inside <code>prometheusAlerts</code>. <code>PrometheusAlerts</code> is where Grizzly expects to find alerts for Prometheus configured when using &lsquo;hidden
+elements&rsquo;.</p><p>Likewise, we then create a recording rule element (<code>grizzly_record</code>), which we then add to
+namespace <code>grizzly_rules</code> inside <code>prometheusRules</code>, which is where Grizzly expects to find Prometheus recording rules configured, again
+when using hidden elements.</p><p>It also possible to load rules without specifying a namespace at all. In that case <code>grizzly_rules</code> namespace would be used. This is useful when loading alerts from monitoring-mixins:</p><pre><code>{
+  grizzly_alert:: {
+    alert: 'PromScrapeFailed',
+    expr: 'up != 1',
+    'for': '1m',
+    labels: {
+      severity: 'critical',
+    },
+    annotations: {
+      message: 'Prometheus failed to scrape a target {{ $labels.job }}  / {{ $labels.instance }}',
+    },
+  },
+
+  prometheusAlerts+:: {
+      // namespace removed
+      groups: [{
+        name: 'grizzly_alert_rules',
+        rules: [
+          $.grizzly_alert,
+        ],
+      }],
+  },
+
+  grizzly_record:: {
+    record: 'job:up:sum',
+    expr: 'sum by(job) (up)',
+  },
+
+  prometheusRules+:: {
+      // namespace removed
+      groups: [{
+        name: 'grizzly_recording_rules',
+        rules: [
+          $.grizzly_record,
+        ],
+      }],
+  },
+}
+</code></pre></main><footer role=contentinfo><div style=display:none><label for=themer>dark theme: <input type=checkbox id=themer class=vh>
 <span aria-hidden=true></span></label></div></footer></div></div></div><script src=/grizzly/js/dom-scripts.js></script><script src=/grizzly/js/prism.js></script><script src=/grizzly/js/search.7aef046a0cc8b0c532f1d20087b920459bc868c936bb48a6ae221eceefca2d07.js></script><link rel=stylesheet href=/grizzly/css/search.fe0cd54a21628574bff49d721c827d1bb165ab56b0f22dd55ae78addbe61c309.css></link></body></html>
