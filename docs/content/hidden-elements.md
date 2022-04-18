@@ -1,5 +1,5 @@
 ---
-date: "2021-06-28T00:00:00+00:00"
+date: "2022-04-17T00:00:00+00:00"
 title: "Hidden Elements"
 ---
 
@@ -82,9 +82,52 @@ Prometheus alerts and recording rules can be defined too, for example:
   },
 }
 ```
-Here, we first create an alert rule element (`grizzly_alert`), which we then add to `prometheusAlerts`. `PrometheusAlerts` is where Grizzly expects to find alerts for Prometheus configured when using 'hidden
-elements.
+Here, we first create an alert rule element (`grizzly_alert`), which we then add to namespace `grizzly_rules` inside `prometheusAlerts`. `PrometheusAlerts` is where Grizzly expects to find alerts for Prometheus configured when using 'hidden
+elements'.
 
 Likewise, we then create a recording rule element (`grizzly_record`), which we then add to
-`prometheusRules`, which is where Grizzly expects to find Prometheus recording rules configured, again
+namespace `grizzly_rules` inside `prometheusRules`, which is where Grizzly expects to find Prometheus recording rules configured, again
 when using hidden elements.
+
+It also possible to load rules without specifying a namespace at all. In that case `grizzly_rules` namespace would be used. This is useful when loading alerts from monitoring-mixins:
+
+```
+{
+  grizzly_alert:: {
+    alert: 'PromScrapeFailed',
+    expr: 'up != 1',
+    'for': '1m',
+    labels: {
+      severity: 'critical',
+    },
+    annotations: {
+      message: 'Prometheus failed to scrape a target {{ $labels.job }}  / {{ $labels.instance }}',
+    },
+  },
+
+  prometheusAlerts+:: {
+      // namespace removed
+      groups: [{
+        name: 'grizzly_alert_rules',
+        rules: [
+          $.grizzly_alert,
+        ],
+      }],
+  },
+
+  grizzly_record:: {
+    record: 'job:up:sum',
+    expr: 'sum by(job) (up)',
+  },
+
+  prometheusRules+:: {
+      // namespace removed
+      groups: [{
+        name: 'grizzly_recording_rules',
+        rules: [
+          $.grizzly_record,
+        ],
+      }],
+  },
+}
+```

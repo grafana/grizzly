@@ -65,20 +65,32 @@ local convert(main, apiVersion) = {
   },
 
   prometheus:
-    local groupNamespace(key) = std.objectFields(main[key])[0];
-    local groupName(key) = main[key][groupNamespace(key)].groups[0].name;
+    local forceNamespace(contents) =
+      // if rulesGroup isn't namespaced (monitoring-mixins), then put them into default namespace
+      if std.objectHas(contents, 'groups') then
+        // no namespace, wrap into default namespace
+        { 'grizzly_rules': contents }
+      else
+        // already has namespace
+        contents
+    ;
     local fromMap(key) =
-      if key in main
-      then [
-              makeResource(
-                'PrometheusRuleGroup',
-                groupName(key),
-                spec={
-                  rules: main[key][groupNamespace(key)].groups[0].rules,
-                },
-                metadata={ namespace: groupNamespace(key)})
-              for k in std.objectFields(main[key])
-           ]
+      if key in main then
+        local allNamespaced = forceNamespace(main[key]);
+        [
+
+          makeResource(
+            'PrometheusRuleGroup',
+            g.name,
+            spec={
+              rules: g.rules,
+            },
+            metadata={ namespace: ns }
+          )
+
+          for ns in std.objectFields(allNamespaced)
+          for g in allNamespaced[ns].groups
+        ]
       else [];
     fromMap('prometheusRules')
     + fromMap('prometheusAlerts'),
