@@ -28,8 +28,8 @@ To interact with Grafana Cloud Prometheus, you must have these environment varia
 | Name | Description | Required |
 | --- | --- | --- |
 | `CORTEX_ADDRESS` | URL for Grafana Cloud Prometheus instance | true |
-| `CORTEX_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | false |
-| `CORTEX_API_KEY` | Authentication token/api key | false |
+| `CORTEX_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true |
+| `CORTEX_API_KEY` | Authentication token/api key | true |
 
 Note, this will also work with other Cortex installations, alongside Grafana Cloud Prometheus.
 
