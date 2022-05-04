@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0 (2022-05-04)
+
+This release provides fixes and improvements over 0.2.0-beta-3
+* Add missing space in log message (#212)
+* Improve jsonnet parser for alerts/rules (#211)
+* Fix access to Grafana without any auth (#210)
+* Update jsonnet to 0.18.0 (#198)
+* Modify requests to send authorization header (#197)
+* Fix docker arm build (#194)
+* Documenting the use of a proxy with grizzly (#193)
+* Docker: add jsonnet, jsonnetfmt and jsonnet-bundler (#192)
+
 ## 0.2.0-beta3 (2021-10-28)
 
 This release provides fixes and improvements over 0.2.0-beta-2
