@@ -456,3 +456,25 @@ func Export(exportDir string, resources Resources) error {
 	}
 	return nil
 }
+
+func Resolve(resources Resources) (Resources, error) {
+
+	resolvedResources := Resources{}
+	for _, resource := range resources {
+		handler, err := Registry.GetHandler(resource.Kind())
+		if err != nil {
+			return nil, err
+		}
+		composableHandler, ok := handler.(ComposableHandler)
+		if ok {
+			composed, err := composableHandler.Compose(resource, resources)
+			if err != nil {
+				return nil, err
+			}
+			resolvedResources = append(resolvedResources, composed...)
+		} else {
+			resolvedResources = append(resolvedResources, resource)
+		}
+	}
+	return resolvedResources, nil
+}

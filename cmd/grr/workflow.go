@@ -78,11 +78,19 @@ func showCmd() *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	var opts grizzly.Opts
+	isResolved := true
+	cmd.Flags().BoolVarP(&isResolved, "no-resolve", "r", false, "do not resolve composable resources")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
 			return err
+		}
+		if !isResolved {
+			resources, err = grizzly.Resolve(resources)
+			if err != nil {
+				return err
+			}
 		}
 		return grizzly.Show(resources)
 	}
@@ -99,6 +107,10 @@ func diffCmd() *cli.Command {
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		resources, err := grizzly.Parse(args[0], opts)
+		if err != nil {
+			return err
+		}
+		resources, err = grizzly.Resolve(resources)
 		if err != nil {
 			return err
 		}
@@ -120,6 +132,10 @@ func applyCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
+		resources, err = grizzly.Resolve(resources)
+		if err != nil {
+			return err
+		}
 		return grizzly.Apply(resources)
 	}
 	return initialiseCmd(cmd, &opts)
@@ -135,7 +151,11 @@ func (p *jsonnetWatchParser) Name() string {
 }
 
 func (p *jsonnetWatchParser) Parse() (grizzly.Resources, error) {
-	return grizzly.Parse(p.resourcePath, p.opts)
+	resources, err := grizzly.Parse(p.resourcePath, p.opts)
+	if err != nil {
+		return nil, err
+	}
+	return grizzly.Resolve(resources)
 }
 
 func watchCmd() *cli.Command {
@@ -173,6 +193,10 @@ func previewCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
+		resources, err = grizzly.Resolve(resources)
+		if err != nil {
+			return err
+		}
 
 		previewOpts := &grizzly.PreviewOpts{
 			ExpiresSeconds: *expires,
@@ -194,6 +218,10 @@ func exportCmd() *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		dashboardDir := args[1]
 		resources, err := grizzly.Parse(args[0], opts)
+		if err != nil {
+			return err
+		}
+		resources, err = grizzly.Resolve(resources)
 		if err != nil {
 			return err
 		}

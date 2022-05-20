@@ -14,6 +14,9 @@ var (
 
 	// ErrHandlerNotFound indicates that no handler was found for a particular resource Kind.
 	ErrHandlerNotFound = errors.New("handler not found")
+
+	// ErrIsComposable indicates a composable resource that does not exist remotely
+	ErrIsComposable = errors.New("composable resource not available remotely")
 )
 
 // APIErr encapsulates an error from the Grafana API

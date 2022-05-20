@@ -167,6 +167,22 @@ func (r Resources) Swap(i, j int) {
 	r[i], r[j] = r[j], r[i]
 }
 
+type Reference struct {
+	Kind   string
+	Path   string
+	Name   string
+	Type   string
+	Fields []string
+}
+
+type ResourceKind struct {
+	Kind         string
+	ResolvedKind string
+	IsResolvable bool
+	References   []Reference
+	Inputs       []Reference
+}
+
 // Handler describes a handler for a single API resource handled by a single provider
 type Handler interface {
 	APIVersion() string
@@ -222,4 +238,10 @@ type PreviewHandler interface {
 type ListenHandler interface {
 	// Listen watches a resource and update local file on changes
 	Listen(UID, filename string) error
+}
+
+// ComposableHandler describes a handler for a resource that can be composed into
+// one or more other resources
+type ComposableHandler interface {
+	Compose(resource Resource, context Resources) (Resources, error)
 }

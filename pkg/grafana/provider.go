@@ -24,13 +24,81 @@ func (p *Provider) APIVersion() string {
 	return filepath.Join(p.Group(), p.Version())
 }
 
+var foo []grizzly.Handler
+
 // GetHandlers identifies the handlers for the Grafana provider
 func (p *Provider) GetHandlers() []grizzly.Handler {
-	return []grizzly.Handler{
+	handlers := []grizzly.Handler{
 		NewDatasourceHandler(*p),
 		NewFolderHandler(*p),
 		NewDashboardHandler(*p),
 		NewRuleHandler(*p),
 		NewSyntheticMonitoringHandler(*p),
+	}
+
+	for _, resourceKind := range p.ResourceKinds() {
+		handlers = append(handlers, NewComposableHandler(*p, resourceKind))
+	}
+	return handlers
+}
+
+func (p *Provider) ResourceKinds() []grizzly.ResourceKind {
+	return []grizzly.ResourceKind{
+		{
+			Kind:         "DashboardComposition",
+			ResolvedKind: "Dashboard",
+			References: []grizzly.Reference{
+				{
+					Kind: "Template",
+					Path: "spec.templates.reference",
+					Name: "reference",
+					Type: "array",
+				},
+				{
+					Kind: "Panel",
+					Path: "spec.panels.reference",
+					Name: "reference",
+					Type: "array",
+					Fields: []string{
+						"gridPos",
+					},
+				},
+			},
+		}, {
+			Kind: "Panel",
+			References: []grizzly.Reference{
+				{
+					Kind:   "Query",
+					Path:   "spec.targets.reference",
+					Name:   "reference",
+					Type:   "array",
+					Fields: []string{"format", "instant", "range"},
+				},
+				{
+					Kind: "PanelDefaults",
+					Path: "spec.defaults.reference",
+					Name: "reference",
+					Type: "array",
+				},
+			},
+		}, {
+			Kind: "PanelDefaults",
+		}, {
+			Kind: "Query",
+			References: []grizzly.Reference{
+				{
+					Kind: "Query",
+					Path: "spec.variables.reference",
+					Type: "array",
+				},
+				{
+					Kind: "Query",
+					Path: "spec.inputs.reference",
+					Type: "array",
+				},
+			},
+		}, {
+			Kind: "Template",
+		},
 	}
 }

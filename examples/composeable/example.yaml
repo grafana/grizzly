@@ -1,0 +1,48 @@
+apiVersion: grafana.com/v1alpha1
+kind: DashboardComposition
+metadata:
+  name: example-composed-dashboard
+spec:
+  template:
+    metadata:
+      name: example-composed-dashboard
+    spec:
+      title: 'Composed Dashboard'
+      time_from: now-1h
+      timezone: UTC
+      tags:
+       - infra
+      editable: true
+      graphTooltip: shared_crosshair
+      panels:
+      - reference:
+          kind: Panel
+          name: simple-panel
+          properties:
+            gridPos: { h: 15, w: 12, x: 0, y: 0 }
+---
+apiVersion: grafana.com/v1alpha1
+kind: Panel
+metadata:
+  name: simple-panel
+spec:
+  type: table
+  title: Team
+  datasource: $datasource
+  description: |
+      A simple panel to demonstrate composable dashboards.
+  targets:
+  - reference:
+      kind: Query
+      name: sample-query
+      properties:
+        format: table
+        instant: false
+        range: true
+---
+apiVersion: grafana.com/v1alpha1
+kind: Query
+metadata:
+  name: sample-query
+spec:
+  expr: sum by (cluster, team)
