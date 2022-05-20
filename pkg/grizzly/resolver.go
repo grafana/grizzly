@@ -64,16 +64,48 @@ func (r *Resolver) walkMap(m map[string]interface{}, path string) (interface{}, 
 			newPath = fmt.Sprintf("%s.%s", path, k)
 		}
 		if ref := r.getReference(newPath); ref != nil {
-			resolved, err := r.resolveReference(m, k, v, *ref)
-			if err != nil {
-				return nil, err
+			references := v.([]interface{})
+			resolvedList := []interface{}{}
+			for _, reference := range references {
+				referenceAsMap := reference.(map[string]interface{})
+				resolved, err := r.resolveReference(m, k, referenceAsMap[ref.Name], *ref)
+				if err != nil {
+					return nil, err
+				}
+				resolvedKind := r.ResourceKinds[resolved.Kind()]
+				properties := r.getProperties(v)
+				spec := resolved.Spec()
+				for k, v := range properties {
+					spec[k] = v
+				}
+				log.Println(r.ResourceKind.Kind)
+				if resolvedKind.AtRoot {
+					return spec, nil
+				}
+				resolvedList = append(resolvedList, spec)
 			}
-			properties := r.getProperties(v)
-			resolvedAsMap := resolved.(map[string]interface{})
-			for k, v := range properties {
-				resolvedAsMap[k] = v
+			cp[k] = resolvedList
+		} else if ref := r.getInterpolations(newPath); ref != nil {
+			references := v.([]interface{})
+			resolvedList := []interface{}{}
+			for _, reference := range references {
+				referenceAsMap := reference.(map[string]interface{})
+				resolved, err := r.resolveReference(m, k, referenceAsMap[ref.Name], *ref)
+				if err != nil {
+					return nil, err
+				}
+				properties := r.getProperties(v)
+				spec := resolved.Spec()
+				for k, v := range properties {
+					spec[k] = v
+				}
+				resolvedList = append(resolvedList, spec)
 			}
-			return resolvedAsMap, nil
+			interpolationTarget := m[r.ResourceKind.InterpolationTarget].(string)
+			m[r.ResourceKind.InterpolationTarget] = fmt.Sprintf(interpolationTarget, resolvedList)
+
+		} else if ref := r.getInputs(newPath); ref != nil {
+
 		} else {
 			newV, err := r.walkElement(v, newPath)
 			if err != nil {
@@ -129,7 +161,24 @@ func (r *Resolver) getReference(path string) *Reference {
 	return nil
 }
 
-func (r *Resolver) resolveReference(parent map[string]interface{}, key string, value interface{}, refdef Reference) (interface{}, error) {
+func (r *Resolver) getInterpolations(path string) *Reference {
+	for _, ref := range r.ResourceKind.Interpolations {
+		if ref.Path == path {
+			return &ref
+		}
+	}
+	return nil
+}
+
+func (r *Resolver) getInputs(path string) *Reference {
+	for _, ref := range r.ResourceKind.Inputs {
+		if ref.Path == path {
+			return &ref
+		}
+	}
+	return nil
+}
+func (r *Resolver) resolveReference(parent map[string]interface{}, key string, value interface{}, refdef Reference) (Resource, error) {
 	var msi map[string]interface{}
 	switch t := value.(type) {
 	case map[string]interface{}:
@@ -154,7 +203,7 @@ func (r *Resolver) resolveReference(parent map[string]interface{}, key string, v
 	if err != nil {
 		return nil, err
 	}
-	return resolved.Spec(), nil
+	return resolved, nil
 }
 
 func (r *Resolver) getResource(kind, name string) (*Resource, error) {

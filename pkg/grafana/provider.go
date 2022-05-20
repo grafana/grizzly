@@ -50,13 +50,13 @@ func (p *Provider) ResourceKinds() []grizzly.ResourceKind {
 			References: []grizzly.Reference{
 				{
 					Kind: "Template",
-					Path: "spec.templates.reference",
+					Path: "spec.templates",
 					Name: "reference",
 					Type: "array",
 				},
 				{
 					Kind: "Panel",
-					Path: "spec.panels.reference",
+					Path: "spec.panels",
 					Name: "reference",
 					Type: "array",
 					Fields: []string{
@@ -69,31 +69,37 @@ func (p *Provider) ResourceKinds() []grizzly.ResourceKind {
 			References: []grizzly.Reference{
 				{
 					Kind:   "Query",
-					Path:   "spec.targets.reference",
+					Path:   "spec.targets",
 					Name:   "reference",
 					Type:   "array",
 					Fields: []string{"format", "instant", "range"},
 				},
 				{
 					Kind: "PanelDefaults",
-					Path: "spec.defaults.reference",
+					Path: "spec.defaults",
 					Name: "reference",
 					Type: "array",
 				},
 			},
 		}, {
-			Kind: "PanelDefaults",
+			Kind:   "PanelDefaults",
+			AtRoot: true,
 		}, {
-			Kind: "Query",
-			References: []grizzly.Reference{
+			Kind:                "Query",
+			InterpolationTarget: "query",
+			Interpolations: []grizzly.Reference{
 				{
 					Kind: "Query",
-					Path: "spec.variables.reference",
+					Path: "spec.variables",
+					Name: "reference",
 					Type: "array",
 				},
+			},
+			Inputs: []grizzly.Reference{
 				{
 					Kind: "Query",
-					Path: "spec.inputs.reference",
+					Path: "spec.inputs",
+					Name: "reference",
 					Type: "array",
 				},
 			},

@@ -176,11 +176,14 @@ type Reference struct {
 }
 
 type ResourceKind struct {
-	Kind         string
-	ResolvedKind string
-	IsResolvable bool
-	References   []Reference
-	Inputs       []Reference
+	Kind                string
+	ResolvedKind        string
+	IsResolvable        bool
+	AtRoot              bool
+	InterpolationTarget string
+	References          []Reference
+	Interpolations      []Reference
+	Inputs              []Reference
 }
 
 // Handler describes a handler for a single API resource handled by a single provider
