@@ -29,7 +29,7 @@ func Page(items []PageItem) error {
 	}
 
 	// right side: text view
-	text := tview.NewTextView().SetText(items[0].Content).SetDynamicColors(true)
+	text := tview.NewTextView().SetText(items[0].Content).SetDynamicColors(false)
 	text.Box = text.Box.SetBorder(true).SetTitle("Resource")
 
 	// left side: resource chooser
