@@ -78,7 +78,6 @@ func (r *Resolver) walkMap(m map[string]interface{}, path string) (interface{}, 
 				for k, v := range properties {
 					spec[k] = v
 				}
-				log.Println(r.ResourceKind.Kind)
 				if resolvedKind.AtRoot {
 					return spec, nil
 				}
