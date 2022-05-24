@@ -78,6 +78,31 @@ func (r *Resource) SetMetadata(key, value string) {
 	(*r)["metadata"] = metadata
 }
 
+func (r *Resource) SetAnnotation(key, value string) {
+	metadata := (*r)["metadata"].(map[string]interface{})
+	annotationsObj, ok := metadata["annotations"]
+	var annotations map[string]string
+	if !ok {
+		annotations = map[string]string{}
+	} else {
+		annotations = annotationsObj.(map[string]string)
+	}
+	annotations[key] = value
+	metadata["annotations"] = annotations
+	(*r)["metadata"] = metadata
+}
+
+func (r *Resource) DeleteAnnotation(key string) {
+	metadata := (*r)["metadata"].(map[string]interface{})
+	annotationsObj, ok := metadata["annotations"]
+	if ok {
+		annotations := annotationsObj.(map[string]string)
+		delete(annotations, key)
+		metadata["annotations"] = annotations
+		(*r)["metadata"] = metadata
+	}
+}
+
 func (r *Resource) GetSpecString(key string) (string, bool) {
 	spec := (*r)["spec"].(map[string]interface{})
 	if val, ok := spec[key]; ok {

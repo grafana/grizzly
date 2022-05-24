@@ -65,9 +65,11 @@ func pullCmd() *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	var opts grizzly.Opts
+	var pathFormat string
+	cmd.Flags().StringVarP(&pathFormat, "format", "f", "", "path format for written files")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		return grizzly.Pull(args[0], opts)
+		return grizzly.Pull(args[0], opts, pathFormat)
 	}
 	return initialiseCmd(cmd, &opts)
 }

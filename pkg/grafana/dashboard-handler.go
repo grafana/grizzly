@@ -3,6 +3,8 @@ package grafana
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
@@ -79,11 +81,22 @@ func (h *DashboardHandler) Parse(m manifest.Manifest) (grizzly.Resources, error)
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *DashboardHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
+	title, _ := resource.GetSpecString("title")
+	slug := title
+	if slug != "" {
+		reReplace, _ := regexp.Compile(`[-_/\s]+`)
+		reStrip, _ := regexp.Compile(`[^a-zA-Z0-9\-]+`)
+		slug = reReplace.ReplaceAllString(slug, "-")
+		slug = reStrip.ReplaceAllString(slug, "")
+		slug = strings.ToLower(slug)
+		resource.SetAnnotation("slug", slug)
+	}
 	return &resource
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
+	resource.DeleteAnnotation("slug")
 	return &resource
 }
 

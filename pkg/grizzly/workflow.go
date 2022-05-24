@@ -1,6 +1,7 @@
 package grizzly
 
 import (
+	"bytes"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/tabwriter"
+	"text/template"
 
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/grizzly/pkg/term"
@@ -104,7 +106,7 @@ func ListRemote(opts Opts) error {
 }
 
 // Pulls remote resources
-func Pull(resourcePath string, opts Opts) error {
+func Pull(resourcePath string, opts Opts, pathFormat string) error {
 	log.Infof("Pulling resources from %s", resourcePath)
 
 	if !(opts.Directory) {
@@ -138,7 +140,23 @@ func Pull(resourcePath string, opts Opts) error {
 				return err
 			}
 
-			path := filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "yaml"))
+			resource = handler.Unprepare(*resource)
+			var path string
+			if pathFormat == "" {
+				path = filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "yaml"))
+			} else {
+				t, err := template.New("path").Parse(pathFormat)
+				if err != nil {
+					return err
+				}
+				b := bytes.Buffer{}
+				err = t.Execute(&b, resource)
+				if err != nil {
+					return nil
+				}
+				path = filepath.Join(resourcePath, b.String())
+			}
+
 			err = MarshalYAML(*resource, path)
 			if err != nil {
 				return err
