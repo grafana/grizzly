@@ -40,8 +40,8 @@ To interact with Grafana Synthetic Monitoring, you must have these environment v
 | --- | --- | --- |
 | `GRAFANA_SM_TOKEN` | Authentication token/api key (must have MetricsPublisher permissions) | true |
 | `GRAFANA_SM_STACK_ID` | Grafana instance/stack ID | true |
-| `GRAFANA_SM_LOGS_ID` | Metrics instance ID | true |
-| `GRAFANA_SM_METRICS_ID` | Logs instance ID | true |
+| `GRAFANA_SM_LOGS_ID` | Logs instance ID | true |
+| `GRAFANA_SM_METRICS_ID` | Metrics instance ID | true |
 
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
 
