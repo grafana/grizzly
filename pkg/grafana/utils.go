@@ -2,6 +2,8 @@ package grafana
 
 import (
 	"regexp"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 var folderURLRegex = regexp.MustCompile("/dashboards/f/([^/]+)")
@@ -26,4 +28,14 @@ func extractFolderUID(d DashboardWrapper) string {
 		folderUid = urlPaths[1]
 	}
 	return folderUid
+}
+
+func decode(input, output interface{}) error {
+	cfg := &mapstructure.DecoderConfig{
+		Metadata: nil,
+		Result:   &output,
+		TagName:  "json",
+	}
+	decoder, _ := mapstructure.NewDecoder(cfg)
+	return decoder.Decode(input)
 }
