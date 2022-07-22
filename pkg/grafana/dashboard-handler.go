@@ -91,12 +91,34 @@ func (h *DashboardHandler) Unprepare(resource grizzly.Resource) *grizzly.Resourc
 		slug = strings.ToLower(slug)
 		resource.SetAnnotation("slug", slug)
 	}
+
+	folderUID := resource.GetMetadata("folder")
+	folder, err := getRemoteFolder(folderUID)
+
+	if err != nil {
+		// fmt.Errorf("Cannot fetch folder %s for dashboard %s", folderUID, slug)
+		return &resource
+	}
+
+	folderTitle, _ := folder.GetSpecString("title")
+	folderSlug := folderTitle
+
+	if folderSlug != "" {
+		reReplace, _ := regexp.Compile(`[-_/\s]+`)
+		reStrip, _ := regexp.Compile(`[^a-zA-Z0-9\-]+`)
+		folderSlug = reReplace.ReplaceAllString(folderSlug, "-")
+		folderSlug = reStrip.ReplaceAllString(folderSlug, "")
+		folderSlug = strings.ToLower(folderSlug)
+		resource.SetAnnotation("folderSlug", folderSlug)
+	}
+
 	return &resource
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
 	resource.DeleteAnnotation("slug")
+	resource.DeleteAnnotation("folderSlug")
 	return &resource
 }
 
