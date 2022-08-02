@@ -1,4 +1,5 @@
 /grr
 /dist
+.env
 .envrc
 .vscode

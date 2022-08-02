@@ -3,6 +3,7 @@ package grizzly
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/gobwas/glob"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -68,6 +69,9 @@ func (r *Resource) HasMetadata(key string) bool {
 }
 
 func (r *Resource) GetMetadata(key string) string {
+	if !r.HasMetadata(key) {
+		log.Fatal(fmt.Sprintf("TemplateFormatError: Value for key metadata.%s required", key))
+	}
 	metadata := (*r)["metadata"].(map[string]interface{})
 	return metadata[key].(string)
 }

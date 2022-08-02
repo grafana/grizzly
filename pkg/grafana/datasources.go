@@ -65,7 +65,7 @@ func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
 	return &resource, nil
 }
 
-func getRemoteDatasourceList() ([]string, error) {
+func getRemoteDatasources() ([]map[string]interface{}, error) {
 	client := new(http.Client)
 	grafanaURL, err := getGrafanaURL("api/datasources")
 	if err != nil {
@@ -102,6 +102,17 @@ func getRemoteDatasourceList() ([]string, error) {
 	if err := json.Unmarshal([]byte(string(body)), &datasources); err != nil {
 		return nil, grizzly.APIErr{Err: err, Body: body}
 	}
+
+	return datasources, nil
+}
+
+func getRemoteDatasourceList() ([]string, error) {
+	datasources, err := getRemoteDatasources()
+
+	if err != nil {
+		return nil, err
+	}
+
 	UIDs := []string{}
 	for _, datasource := range datasources {
 		UID := datasource["uid"].(string)
@@ -148,7 +159,6 @@ func postDatasource(resource grizzly.Resource) error {
 		if err := d.Decode(&r); err != nil {
 			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
 		}
-		fmt.Println(sourceJSON)
 		return fmt.Errorf("Error while applying '%s' to Grafana: %s", resource.Name(), r.Message)
 	default:
 		return NewErrNon200Response("datasource", resource.Name(), resp)
@@ -196,7 +206,6 @@ func putDatasource(resource grizzly.Resource) error {
 		if err := d.Decode(&r); err != nil {
 			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
 		}
-		fmt.Println(sourceJSON)
 		return fmt.Errorf("Error while applying '%s' to Grafana: %s", resource.Name(), r.Message)
 	default:
 		return NewErrNon200Response("datasource", resource.Name(), resp)

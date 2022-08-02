@@ -39,7 +39,7 @@ func TestDatasources(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NotNil(t, resources)
-		require.Len(t, resources, 1)
+		require.Len(t, resources, 3)
 	})
 
 	t.Run("post remote datasource - success", func(t *testing.T) {

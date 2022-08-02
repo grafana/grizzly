@@ -90,6 +90,7 @@ func ListRemote(opts Opts) error {
 			continue
 		}
 		log.Debugf("Listing remote values for handler %s", name)
+
 		IDs, err := handler.ListRemote()
 		if err != nil {
 			return err
@@ -118,12 +119,15 @@ func Pull(resourcePath string, opts Opts) error {
 		}
 		log.Debugf("Listing remote values for handler %s", name)
 		UIDs, err := handler.ListRemote()
+
 		if err != nil {
 			return err
 		}
+
 		if len(UIDs) == 0 {
 			notifier.Info(nil, "No resources found")
 		}
+
 		notifier.Warn(nil, fmt.Sprintf("Pulling %d resources", len(UIDs)))
 		for _, UID := range UIDs {
 			if !Registry.ResourceMatchesTarget(handler, UID, opts.Targets) {
@@ -261,12 +265,15 @@ func Apply(resources Resources) error {
 			notifier.Added(resource)
 			continue
 		}
+
 		if err != nil {
 			return err
 		}
+
 		log.Debugf("`%s` was found, updating it...", resource.Key())
 
 		resourceRepresentation, err := resource.YAML()
+
 		if err != nil {
 			return err
 		}
