@@ -24,7 +24,7 @@ then push to the relevant systems.</p><p>For more information see the <a href=..
 jsonnet is executed and changes are pushed to remote systems.
 The directory is watched recursively (i.e. all subdirectories are watched too),
 but if new subdirectories are added, watch command needs to be re-started,
-as new directories will not be picked up automatically.</p><p>This example watches the current directory for changes, then executes
+as new directories will not be picked up automatically.</p><p>This example watches the current directory for changes, then executes and applies
 <code>my-lib.libsonnet</code> when changes are noticed:</p><pre><code class=language-sh>$ grr watch . my-lib.libsonnet
 </code></pre><h3 id=grr-export>grr export</h3><p>Renders Jsonnet and saves resources as files directory which is specified with
 the second argument.</p><p>These resources can then be deployed This can be used with
