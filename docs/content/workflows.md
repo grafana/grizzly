@@ -83,7 +83,7 @@ The directory is watched recursively (i.e. all subdirectories are watched too),
 but if new subdirectories are added, watch command needs to be re-started,
 as new directories will not be picked up automatically.
 
-This example watches the current directory for changes, then executes
+This example watches the current directory for changes, then executes and applies
 `my-lib.libsonnet` when changes are noticed:
 
 ```sh
