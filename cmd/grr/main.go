@@ -14,6 +14,7 @@ var Version = "dev"
 
 func main() {
 
+	
 	rootCmd := &cli.Command{
 		Use:     "grr",
 		Short:   "Grizzly",
