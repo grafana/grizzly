@@ -2,7 +2,8 @@ package main
 
 import (
 	log "github.com/sirupsen/logrus"
-
+	"net/http"
+	"crypto/tls"
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -14,7 +15,6 @@ var Version = "dev"
 
 func main() {
 
-	
 	rootCmd := &cli.Command{
 		Use:     "grr",
 		Short:   "Grizzly",
@@ -39,6 +39,8 @@ func main() {
 		previewCmd(),
 		providersCmd(),
 	)
+
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	// Run!
 	if err := rootCmd.Execute(); err != nil {
