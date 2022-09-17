@@ -26,7 +26,7 @@ func TestFolders(t *testing.T) {
 
 	t.Run("get remote folder - not found", func(t *testing.T) {
 		_, err := getRemoteFolder("dummy")
-		require.EqualError(t, err, "couldn't fetch folder 'dummy' from remote: couldn't fetch folder 'dummy' from remote: not found")
+		require.EqualError(t, err, "couldn't fetch folder 'dummy' from remote: not found")
 	})
 
 	t.Run("get folders list", func(t *testing.T) {
