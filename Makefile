@@ -1,4 +1,4 @@
-.PHONY: lint test static install uninstall cross
+.PHONY: lint test static install uninstall cross build-test-image run-test-image run-test-image-locally test-clean
 VERSION := $(shell git describe --tags --dirty --always)
 BIN_DIR := $(GOPATH)/bin
 GOX := $(BIN_DIR)/gox
@@ -7,20 +7,22 @@ lint:
 	test -z $$(gofmt -s -l cmd/ pkg/)
 	go vet ./...
 
-run-test-image:
-	cd pkg/grafana/testdata && docker build . -t grizzly-grafana-test:latest
+build-test-image:
+	docker build pkg/grafana/testdata -t grizzly-grafana-test:latest
+
+run-test-image: build-test-image
 	docker rm -f grizzly-grafana
 	docker run --net $$DRONE_DOCKER_NETWORK_ID --name grizzly-grafana -p 3000:3000 --rm grizzly-grafana-test:latest
 
-run-test-image-locally:
-	cd pkg/grafana/testdata && docker build . -t grizzly-grafana-test:latest
+run-test-image-locally: build-test-image test-clean
 	docker rm -f grizzly-grafana
-	docker run --name grizzly-grafana -p 3000:3000 --rm grizzly-grafana-test:latest
+	docker run -d --name grizzly-grafana -p 3000:3000 --rm grizzly-grafana-test:latest
 
-test:
+test-clean:
 	go clean -testcache
-	make run-test-image-locally &
-	go test ./...
+
+test: run-test-image-locally
+	go test ./... || ( status=$$?; docker logs grizzly-grafana ; exit $$status )
 
 # Compilation
 dev:
