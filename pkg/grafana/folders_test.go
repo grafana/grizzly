@@ -21,7 +21,7 @@ func TestFolders(t *testing.T) {
 
 		require.Equal(t, resource.APIVersion(), "grizzly.grafana.com/v1alpha1")
 		require.Equal(t, resource.Name(), "abcdefghi")
-		require.Len(t, resource.Spec(), 13)
+		require.Len(t, resource.Spec(), 14)
 	})
 
 	t.Run("get remote folder - not found", func(t *testing.T) {
@@ -82,7 +82,6 @@ func TestFolders(t *testing.T) {
 
 		grafanaErr := err.(ErrNon200Response)
 		require.Error(t, err)
-		// TODO: change to 409 after this PR is in the new Grafana version https://github.com/grafana/grafana/pull/36429
-		require.Equal(t, grafanaErr.Response.StatusCode, 400)
+		require.Equal(t, grafanaErr.Response.StatusCode, 409)
 	})
 }
