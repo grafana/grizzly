@@ -9,7 +9,7 @@ platform:
 
 steps:
 - name: download
-  image: golang:1.16.2
+  image: golang:1.19.1
   commands:
   - go mod download
   volumes:
@@ -19,7 +19,7 @@ steps:
     path: /var/run/docker.sock
 
 - name: lint
-  image: golang:1.16.2
+  image: golang:1.19.1
   commands:
   - make lint
   volumes:
@@ -31,7 +31,7 @@ steps:
   - download
 
 - name: test
-  image: golang:1.16.2
+  image: golang:1.19.1
   commands:
   - go test ./...
   volumes:
@@ -71,7 +71,7 @@ platform:
 
 steps:
 - name: fetch-tags
-  image: golang:1.16.2
+  image: golang:1.19.1
   commands:
   - git fetch origin --tags
   volumes:
@@ -81,7 +81,7 @@ steps:
     path: /var/run/docker.sock
 
 - name: cross
-  image: golang:1.16.2
+  image: golang:1.19.1
   commands:
   - make cross
   volumes:
@@ -125,7 +125,7 @@ platform:
 
 steps:
 - name: static
-  image: golang:1.16.2
+  image: golang:1.19.1
   commands:
   - make static
   volumes:
@@ -172,7 +172,7 @@ platform:
 
 steps:
 - name: static
-  image: golang:1.16.2
+  image: golang:1.19.1
   commands:
   - make static
   volumes:
@@ -219,7 +219,7 @@ platform:
 
 steps:
 - name: static
-  image: golang:1.16.2
+  image: golang:1.19.1
   commands:
   - make static
   volumes:

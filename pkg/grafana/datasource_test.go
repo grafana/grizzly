@@ -31,7 +31,7 @@ func TestDatasources(t *testing.T) {
 
 	t.Run("get remote datasource - not found", func(t *testing.T) {
 		_, err := getRemoteDatasource("dummy")
-		require.EqualError(t, err, "couldn't fetch folder 'dummy' from remote: not found")
+		require.Equal(t, err, grizzly.ErrNotFound)
 	})
 
 	t.Run("get remote datasources list", func(t *testing.T) {
