@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 (2023-01-12)
+This patch release only updates the Docker image to a newer version, bringing
+in updated versions of openssl and zlib.
+
 ## 0.2.0 (2022-05-04)
 
 This release provides fixes and improvements over 0.2.0-beta-3
