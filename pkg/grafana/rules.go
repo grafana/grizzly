@@ -18,20 +18,6 @@ const (
 	backenTypeCortex = "cortex"
 )
 
-var cortexTool = func(args ...string) ([]byte, error) {
-	path := os.Getenv("CORTEXTOOL_PATH")
-	if path == "" {
-		var err error
-		path, err = exec.LookPath("cortextool")
-		if err != nil {
-			return nil, err
-		} else if path == "" {
-			return nil, fmt.Errorf("cortextool not found")
-		}
-	}
-	return exec.Command(path, args...).Output()
-}
-
 // getRemoteRuleGroup retrieves a datasource object from Grafana
 func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 	parts := strings.SplitN(uid, ".", 2)
@@ -130,4 +116,18 @@ func writeRuleGroup(resource grizzly.Resource) error {
 	}
 	os.Remove(tmpfile.Name())
 	return err
+}
+
+func cortexTool(args ...string) ([]byte, error) {
+	path := os.Getenv("CORTEXTOOL_PATH")
+	if path == "" {
+		var err error
+		path, err = exec.LookPath("cortextool")
+		if err != nil {
+			return nil, err
+		} else if path == "" {
+			return nil, fmt.Errorf("cortextool not found")
+		}
+	}
+	return exec.Command(path, args...).Output()
 }
