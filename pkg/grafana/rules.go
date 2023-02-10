@@ -18,7 +18,21 @@ const (
 	backenTypeCortex = "cortex"
 )
 
-// getRemoteRuleGrouping retrieves a datasource object from Grafana
+var cortexTool = func(args ...string) ([]byte, error) {
+	path := os.Getenv("CORTEXTOOL_PATH")
+	if path == "" {
+		var err error
+		path, err = exec.LookPath("cortextool")
+		if err != nil {
+			return nil, err
+		} else if path == "" {
+			return nil, fmt.Errorf("cortextool not found")
+		}
+	}
+	return exec.Command(path, args...).Output()
+}
+
+// getRemoteRuleGroup retrieves a datasource object from Grafana
 func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 	parts := strings.SplitN(uid, ".", 2)
 	namespace := parts[0]
@@ -50,7 +64,7 @@ func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 	return nil, grizzly.ErrNotFound
 }
 
-// getRemoteRuleGroupingList retrieves a datasource object from Grafana
+// getRemoteRuleGroupList retrieves a datasource object from Grafana
 func getRemoteRuleGroupList() ([]string, error) {
 	out, err := cortexTool("rules", "print", "--disable-color")
 	if err != nil {
@@ -116,18 +130,4 @@ func writeRuleGroup(resource grizzly.Resource) error {
 	}
 	os.Remove(tmpfile.Name())
 	return err
-}
-
-func cortexTool(args ...string) ([]byte, error) {
-	path := os.Getenv("CORTEXTOOL_PATH")
-	if path == "" {
-		var err error
-		path, err = exec.LookPath("cortextool")
-		if err != nil {
-			return nil, err
-		} else if path == "" {
-			return nil, fmt.Errorf("cortextool not found")
-		}
-	}
-	return exec.Command(path, args...).Output()
 }
