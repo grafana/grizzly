@@ -39,9 +39,10 @@ uninstall:
 	go clean -i ./cmd/grr
 
 $(GOX):
-	go get -u github.com/mitchellh/gox
+	go install github.com/mitchellh/gox@latest
+
 cross: $(GOX)
-	CGO_ENABLED=0 gox -output="dist/{{.Dir}}-{{.OS}}-{{.Arch}}" -ldflags=${LDFLAGS} -arch="amd64 arm64 arm" -os="linux" -osarch="darwin/amd64 darwin/arm64" ./cmd/grr
+	CGO_ENABLED=0 $(HOME)/go/bin/gox -output="dist/{{.Dir}}-{{.OS}}-{{.Arch}}" -ldflags=${LDFLAGS} -arch="amd64 arm64 arm" -os="linux" -osarch="darwin/amd64 darwin/arm64" ./cmd/grr
 
 # Docker container
 container: static
