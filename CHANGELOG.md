@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 (2023-01-12)
+This release is resolves a number of security vulnerabilities.
+* Updates to Golang 1.19.1 (#224) thanks @rhowe!
+* Update Jsonnet/Jsonnet Bundler versions (#231)
+* Revert to external `cortextool`, simplifying security patch maintenance (#231)
+* Updated go dependencies (#234)
+* Updates the Docker image to a newer version, bringing in updated versions of openssl and zlib
+
 ## 0.2.0 (2022-05-04)
 
 This release provides fixes and improvements over 0.2.0-beta-3
