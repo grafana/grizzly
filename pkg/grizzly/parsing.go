@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -71,7 +72,15 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 	manifests := map[string]manifest.Manifest{}
 	var m manifest.Manifest
 	var resources Resources
-	for i := 0; decoder.Decode(&m) == nil; i++ {
+	for i := 0; ; i++ {
+		err = decoder.Decode(&m)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("Decoding %d", i)
 		manifests[strconv.Itoa(i)] = m
 		handler, err := Registry.GetHandler(m.Kind())
 		if err != nil {
