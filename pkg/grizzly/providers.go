@@ -1,6 +1,7 @@
 package grizzly
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -124,11 +125,14 @@ func (r *Resource) SpecAsJSON() (string, error) {
 
 // YAML Gets the string representation for this resource
 func (r *Resource) YAML() (string, error) {
-	y, err := yaml.Marshal(*r)
+	var b bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&b)
+	yamlEncoder.SetIndent(2)
+	err := yamlEncoder.Encode(r)
 	if err != nil {
 		return "", err
 	}
-	return string(y), nil
+	return b.String(), nil
 }
 
 // MatchesTarget identifies whether a resource is in a target list

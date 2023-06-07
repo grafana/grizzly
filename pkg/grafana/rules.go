@@ -1,6 +1,7 @@
 package grafana
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -118,11 +119,14 @@ func writeRuleGroup(resource grizzly.Resource) error {
 		Namespace: resource.GetMetadata("namespace"),
 		Groups:    []PrometheusRuleGroup{newGroup},
 	}
-	out, err := yaml.Marshal(grouping)
+	var b bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&b)
+	yamlEncoder.SetIndent(2)
+	err = yamlEncoder.Encode(&grouping)
 	if err != nil {
 		return err
 	}
-	os.WriteFile(tmpfile.Name(), out, 0644)
+	os.WriteFile(tmpfile.Name(), b.Bytes(), 0644)
 	output, err := cortexTool("rules", "load", tmpfile.Name())
 	if err != nil {
 		log.Println("OUTPUT", output)
