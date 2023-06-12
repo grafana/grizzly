@@ -11,12 +11,12 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/goccy/go-yaml"
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/tanka/pkg/jsonnet/native"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/grafana/tanka/pkg/process"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 )
 
 func Parse(resourcePath string, opts Opts) (Resources, error) {

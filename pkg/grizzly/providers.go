@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/gobwas/glob"
+	"github.com/goccy/go-yaml"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
-	"gopkg.in/yaml.v3"
 )
 
 // Resource represents a single Resource destined for a single endpoint

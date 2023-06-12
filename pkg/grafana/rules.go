@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/goccy/go-yaml"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"gopkg.in/yaml.v3"
 )
 
 const (
