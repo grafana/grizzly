@@ -2,8 +2,10 @@ package encoding
 
 import (
 	"io"
+	"math"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/goccy/go-yaml"
 )
@@ -15,7 +17,28 @@ func NewYAMLDecoder(reader io.Reader) *yaml.Decoder {
 
 // MarshalYAML takes an input and renders as a YAML string.
 func MarshalYAML(input any) (string, error) {
-	y, err := yaml.Marshal(input)
+	y, err := yaml.MarshalWithOptions(
+		input,
+		yaml.Indent(4),
+		yaml.IndentSequence(true),
+		yaml.UseLiteralStyleIfMultiline(true),
+		yaml.CustomMarshaler[float64](func(v float64) ([]byte, error) {
+			// goccy/go-yaml tends to add .0 suffixes to floats, even when they're not required.
+			// To preserve consistency with go-yaml/yaml, this custom marshaler disables that feature.
+
+			if v == math.Inf(0) {
+				return []byte(".inf"), nil
+			}
+			if v == math.Inf(-1) {
+				return []byte("-.inf"), nil
+			}
+			if math.IsNaN(v) {
+				return []byte(".nan"), nil
+			}
+
+			return []byte(strconv.FormatFloat(v, 'g', -1, 64)), nil
+		}),
+	)
 	if err != nil {
 		return "", err
 	}
