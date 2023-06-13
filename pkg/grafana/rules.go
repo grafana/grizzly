@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/goccy/go-yaml"
+	"github.com/grafana/grizzly/pkg/encoding"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
@@ -42,7 +42,7 @@ func getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 		return nil, err
 	}
 	groupings := map[string][]PrometheusRuleGroup{}
-	err = yaml.Unmarshal(out, &groupings)
+	err = encoding.UnmarshalYAML(out, &groupings)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func getRemoteRuleGroupList() ([]string, error) {
 		return nil, err
 	}
 	groupings := map[string][]PrometheusRuleGroup{}
-	err = yaml.Unmarshal(out, &groupings)
+	err = encoding.UnmarshalYAML(out, &groupings)
 	if err != nil {
 		return nil, err
 	}
@@ -118,11 +118,11 @@ func writeRuleGroup(resource grizzly.Resource) error {
 		Namespace: resource.GetMetadata("namespace"),
 		Groups:    []PrometheusRuleGroup{newGroup},
 	}
-	out, err := yaml.Marshal(grouping)
+	out, err := encoding.MarshalYAML(grouping)
 	if err != nil {
 		return err
 	}
-	os.WriteFile(tmpfile.Name(), out, 0644)
+	os.WriteFile(tmpfile.Name(), []byte(out), 0644)
 	output, err := cortexTool("rules", "load", tmpfile.Name())
 	if err != nil {
 		log.Println("OUTPUT", output)

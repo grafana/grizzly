@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gobwas/glob"
-	"github.com/goccy/go-yaml"
+	"github.com/grafana/grizzly/pkg/encoding"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
@@ -124,11 +124,7 @@ func (r *Resource) SpecAsJSON() (string, error) {
 
 // YAML Gets the string representation for this resource
 func (r *Resource) YAML() (string, error) {
-	y, err := yaml.Marshal(*r)
-	if err != nil {
-		return "", err
-	}
-	return string(y), nil
+	return encoding.MarshalYAML(*r)
 }
 
 // MatchesTarget identifies whether a resource is in a target list

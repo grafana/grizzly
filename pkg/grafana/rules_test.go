@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/goccy/go-yaml"
+	"github.com/grafana/grizzly/pkg/encoding"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/stretchr/testify/require"
 )
@@ -74,7 +74,7 @@ func TestRules(t *testing.T) {
 		spec := make(map[string]interface{})
 		file, err := os.ReadFile("testdata/rules.yaml")
 		require.NoError(t, err)
-		err = yaml.Unmarshal(file, &spec)
+		err = encoding.UnmarshalYAML(file, &spec)
 		require.NoError(t, err)
 
 		resource := grizzly.NewResource("apiV", "kind", "name", spec)
@@ -89,7 +89,7 @@ func TestRules(t *testing.T) {
 		spec := make(map[string]interface{})
 		file, err := os.ReadFile("testdata/rules.yaml")
 		require.NoError(t, err)
-		err = yaml.Unmarshal(file, &spec)
+		err = encoding.UnmarshalYAML(file, &spec)
 		require.NoError(t, err)
 
 		resource := grizzly.NewResource("apiV", "kind", "name", spec)

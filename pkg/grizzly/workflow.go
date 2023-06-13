@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/grafana/grizzly/pkg/encoding"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/grizzly/pkg/term"
 	"github.com/pmezard/go-difflib/difflib"
@@ -139,7 +140,7 @@ func Pull(resourcePath string, opts Opts) error {
 			}
 
 			path := filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "yaml"))
-			err = MarshalYAML(*resource, path)
+			err = encoding.MarshalYAMLFile(*resource, path)
 			if err != nil {
 				return err
 			}
