@@ -1,4 +1,4 @@
-local golang = 'golang:1.19.1';
+local golang = 'golang:1.20.6';
 
 local volumes = [{ name: 'docker', host: { path: '/var/run/docker.sock' } }, { name: 'gopath', temp: {} }];
 local mounts = [{ name: 'gopath', path: '/go' }, { name: 'docker', path: '/var/run/docker.sock' }];
