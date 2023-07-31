@@ -229,6 +229,7 @@ func initialiseCmd(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
 	cmd.Flags().BoolVarP(&opts.Directory, "directory", "d", false, "treat resource path as a directory")
 	cmd.Flags().StringSliceVarP(&opts.Targets, "target", "t", nil, "resources to target")
 	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+	cmd.Flags().VarP(&opts.JsonnetVars, "ext-str", "V", "<var>[=<val>] If <val> is omitted, get from environment var <var>")
 	return initialiseLogging(cmd, &opts.LoggingOpts)
 }
 

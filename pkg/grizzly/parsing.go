@@ -105,25 +105,31 @@ var script string
 
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree
 func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
-
 	if _, err := os.Stat(jsonnetFile); os.IsNotExist(err) {
 		return nil, fmt.Errorf("file does not exist: %s", jsonnetFile)
 	}
-	script := fmt.Sprintf(script, jsonnetFile)
-	vm := jsonnet.MakeVM()
+
 	currentWorkingDirectory, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
+
+	vm := jsonnet.MakeVM()
+	for k, v := range opts.JsonnetVars {
+		vm.ExtVar(k, v)
+	}
+
 	vm.Importer(newExtendedImporter(jsonnetFile, currentWorkingDirectory, opts.JsonnetPaths))
 	for _, nf := range native.Funcs() {
 		vm.NativeFunction(nf)
 	}
 
-	result, err := vm.EvaluateSnippet(jsonnetFile, script)
+	script := fmt.Sprintf(script, jsonnetFile)
+	result, err := vm.EvaluateAnonymousSnippet(jsonnetFile, script)
 	if err != nil {
 		return nil, err
 	}
+
 	var data interface{}
 	if err := json.Unmarshal([]byte(result), &data); err != nil {
 		return nil, err
