@@ -30,6 +30,8 @@ func main() {
 		getCmd(),
 		listCmd(),
 		pullCmd(),
+		pullDashboardCmd(),
+		applyDashboardCmd(),
 		showCmd(),
 		diffCmd(),
 		applyCmd(),

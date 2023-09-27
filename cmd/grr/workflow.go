@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/go-clix/cli"
@@ -71,6 +72,23 @@ func pullCmd() *cli.Command {
 	}
 	return initialiseCmd(cmd, &opts)
 }
+
+func pullDashboardCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "pull-dashboard <resource-path>",
+		Short: "Pulls remote dashboards and writes them to local source in JSON format",
+		Args:  cli.ArgsExact(1),
+	}
+	opts := grizzly.Opts{
+		Legacy: true,
+	}
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		return grizzly.Pull(args[0], opts)
+	}
+	return initialiseCmd(cmd, &opts)
+}
+
 func showCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "show <resource-path>",
@@ -123,6 +141,46 @@ func applyCmd() *cli.Command {
 		return grizzly.Apply(resources)
 	}
 	return initialiseCmd(cmd, &opts)
+}
+
+func applyDashboardCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "apply-dashboard [-f <folder-name>] <resource-path>",
+		Short: "apply local dashboards to remote endpoints",
+		Args:  cli.ArgsExact(1),
+	}
+
+	opts := grizzly.Opts{
+		Legacy: true,
+	}
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		ok := targetsOfKind("Dashboard", opts)
+		if !ok {
+			return fmt.Errorf("apply-dashboard only supports dashboards")
+		}
+
+		resources, err := grizzly.Parse(args[0], opts)
+		if err != nil {
+			return err
+		}
+		return grizzly.Apply(resources)
+	}
+
+	cmd.Flags().StringVarP(&opts.Folder, "folder", "f", "general", "folder to push dashboards to")
+	return initialiseCmd(cmd, &opts)
+}
+
+// targetsOfKind checks if the specified targets are of certain kind
+func targetsOfKind(kind string, opts grizzly.Opts) bool {
+	for _, t := range opts.Targets {
+		// TODO: worth making target kinds case insensitive
+		if !(strings.Contains(t, "/") && strings.Split(t, "/")[0] == kind) {
+			return false
+		}
+	}
+
+	return true
 }
 
 type jsonnetWatchParser struct {

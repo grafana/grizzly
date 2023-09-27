@@ -11,6 +11,10 @@ type Opts struct {
 	Directory    bool
 	JsonnetPaths []string
 	Targets      []string
+
+	// Used for supporting commands that output dashboard JSON
+	Folder string
+	Legacy bool
 }
 
 // PreviewOpts contains options to configure a preview

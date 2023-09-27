@@ -51,6 +51,14 @@ func FindResourceFiles(resourcePath string) ([]string, error) {
 }
 
 func ParseFile(opts Opts, resourceFile string) (Resources, error) {
+	if opts.Legacy && filepath.Ext(resourceFile) != ".json" {
+		return nil, fmt.Errorf("apply-dashboard command expects only json files as resources")
+	}
+
+	if opts.Legacy {
+		return ParseDashboardJSON(resourceFile, opts)
+	}
+
 	switch filepath.Ext(resourceFile) {
 	case ".yaml", ".yml":
 		return ParseYAML(resourceFile, opts)
@@ -59,6 +67,34 @@ func ParseFile(opts Opts, resourceFile string) (Resources, error) {
 	default:
 		return nil, fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)
 	}
+}
+
+// ParseDashboardJSON parses a JSON file with a single dashboard object into a Resources (to align with ParseFile interface)
+func ParseDashboardJSON(jsonFile string, opts Opts) (Resources, error) {
+	f, err := os.Open(jsonFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var spec map[string]interface{}
+	err = json.NewDecoder(f).Decode(&spec)
+	if err != nil {
+		return Resources{}, err
+	}
+
+	handler := Registry.Handlers["Dashboard"]
+
+	resource := Resource{
+		"apiVersion": handler.APIVersion(),
+		"kind":       handler.Kind(),
+		"metadata": map[string]interface{}{
+			"folder": opts.Folder,
+			"name":   spec["uid"],
+		},
+		"spec": spec,
+	}
+
+	return Resources{resource}, nil
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources
@@ -166,12 +202,24 @@ func MarshalYAML(resource Resource, filename string) error {
 	if err != nil {
 		return err
 	}
-	dir := filepath.Dir(filename)
-	err = os.MkdirAll(dir, 0755)
+	return writeFile(filename, []byte(y))
+}
+
+func MarshalJSON(resource Resource, filename string) error {
+	j, err := json.MarshalIndent(resource.Spec(), "", "  ")
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(filename, []byte(y), 0644)
+	return writeFile(filename, []byte(j))
+}
+
+func writeFile(filename string, content []byte) error {
+	dir := filepath.Dir(filename)
+	err := os.MkdirAll(dir, 0755)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filename, content, 0644)
 	if err != nil {
 		return err
 	}

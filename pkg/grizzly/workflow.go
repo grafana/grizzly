@@ -103,7 +103,7 @@ func ListRemote(opts Opts) error {
 	return w.Flush()
 }
 
-// Pulls remote resources
+// Pull pulls remote resources, if opts.Legacy is true, saves them as JSON files
 func Pull(resourcePath string, opts Opts) error {
 	log.Infof("Pulling resources from %s", resourcePath)
 
@@ -138,8 +138,14 @@ func Pull(resourcePath string, opts Opts) error {
 				return err
 			}
 
-			path := filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "yaml"))
-			err = MarshalYAML(*resource, path)
+			if opts.Legacy {
+				path := filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "json"))
+				err = MarshalJSON(*resource, path)
+			} else {
+				path := filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "yaml"))
+				err = MarshalYAML(*resource, path)
+			}
+
 			if err != nil {
 				return err
 			}

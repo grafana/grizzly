@@ -5,3 +5,6 @@
 *~
 *.orig
 *.swp
+
+# Ignore IDE files
+.idea
