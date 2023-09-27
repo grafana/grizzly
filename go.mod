@@ -7,6 +7,7 @@ require (
 	github.com/gdamore/tcell v1.4.0
 	github.com/go-clix/cli v0.2.0
 	github.com/gobwas/glob v0.2.3
+	github.com/goccy/go-yaml v1.11.2
 	github.com/google/go-jsonnet v0.20.0
 	github.com/grafana/synthetic-monitoring-agent v0.16.5
 	github.com/grafana/synthetic-monitoring-api-go-client v0.7.0
@@ -17,7 +18,6 @@ require (
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.11.0
 	gopkg.in/fsnotify.v1 v1.4.7
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -53,9 +53,11 @@ require (
 	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/term v0.10.0 // indirect
 	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto v0.0.0-20230524185152-1884fd1fac28 // indirect
 	google.golang.org/grpc v1.56.2 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
