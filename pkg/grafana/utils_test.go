@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
+	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
@@ -40,9 +41,9 @@ func TestExtractFolderUID(t *testing.T) {
 		dashboardWrapper := DashboardWrapper{
 			FolderID: 1,
 		}
-		getFolderById = func(client *gclient.GrafanaHTTPAPI, folderId int64) (Folder, error) {
-			return Folder{
-				"uid": "12345",
+		getFolderById = func(client *gclient.GrafanaHTTPAPI, folderId int64) (*models.Folder, error) {
+			return &models.Folder{
+				UID: "12345",
 			}, nil
 		}
 		uid := extractFolderUID(client, dashboardWrapper)
