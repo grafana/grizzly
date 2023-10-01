@@ -21,7 +21,7 @@ func extractFolderUID(d DashboardWrapper) string {
 			if err != nil {
 				return ""
 			}
-			return folder["uid"].(string)
+			return folder.UID
 		}
 		folderUid = urlPaths[1]
 	}

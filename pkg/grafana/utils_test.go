@@ -1,8 +1,10 @@
 package grafana
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	gapi "github.com/grafana/grafana-api-golang-client"
+	"github.com/stretchr/testify/require"
 )
 
 func TestExtractFolderUID(t *testing.T) {
@@ -25,9 +27,9 @@ func TestExtractFolderUID(t *testing.T) {
 		dashboardWrapper := DashboardWrapper{
 			FolderID: 1,
 		}
-		getFolderById = func(folderId int64) (Folder, error) {
-			return Folder{
-				"uid": "12345",
+		getFolderById = func(folderId int64) (*gapi.Folder, error) {
+			return &gapi.Folder{
+				UID: "12345",
 			}, nil
 		}
 		uid := extractFolderUID(dashboardWrapper)

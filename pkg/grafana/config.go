@@ -12,8 +12,12 @@ func getGrafanaToken() (string, bool) {
 	return os.LookupEnv("GRAFANA_TOKEN")
 }
 
+func getGrafanaBase() (string, bool) {
+	return os.LookupEnv("GRAFANA_URL")
+}
+
 func getGrafanaURL(urlPath string) (string, error) {
-	if grafanaURL, exists := os.LookupEnv("GRAFANA_URL"); exists {
+	if grafanaURL, exists := getGrafanaBase(); exists {
 		u, err := url.Parse(grafanaURL)
 		if err != nil {
 			return "", err
@@ -36,7 +40,7 @@ func getGrafanaURL(urlPath string) (string, error) {
 }
 
 func getWSGrafanaURL(urlPath string) (string, string, error) {
-	grafanaURL, exists := os.LookupEnv("GRAFANA_URL")
+	grafanaURL, exists := getGrafanaBase()
 	if !exists {
 		return "", "", fmt.Errorf("Require GRAFANA_URL (optionally GRAFANA_TOKEN if auth required) for websocket actions")
 	}
