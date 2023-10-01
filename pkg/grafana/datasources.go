@@ -1,205 +1,102 @@
 package grafana
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
-	"net/http"
+	"strings"
 
+	gapi "github.com/grafana/grafana-api-golang-client"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
-func makeDatasourceRequest(url string) ([]byte, error) {
-	client := new(http.Client)
-	grafanaURL, err := getGrafanaURL(url)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", grafanaURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if grafanaToken, ok := getGrafanaToken(); ok {
-		req.Header.Set("Authorization", "Bearer "+grafanaToken)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	switch {
-	case resp.StatusCode == http.StatusNotFound:
-		return nil, grizzly.ErrNotFound
-	case resp.StatusCode >= 400:
-		return nil, errors.New(resp.Status)
-	}
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
+// Losing typeLogoUrl, version, withCredentials, secureJsonFields
+// Losing a bunch of omitempty fields
 
 // getRemoteDatasource retrieves a datasource object from Grafana
 func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
-	data, err := makeDatasourceRequest("api/datasources/uid/" + uid)
-	if errors.Is(err, grizzly.ErrNotFound) {
-		data, err = makeDatasourceRequest("api/datasources/name/" + uid)
-	}
+	h := DatasourceHandler{}
+	client, err := getClient()
 	if err != nil {
 		return nil, err
 	}
 
-	var d map[string]interface{}
-	if err := json.Unmarshal(data, &d); err != nil {
-		return nil, grizzly.APIErr{Err: err, Body: data}
+	datasource, err := client.DataSourceByUID(uid)
+	// TODO: Restore lookup by name functionality, underlying library lacks it
+	if err != nil {
+		if strings.HasPrefix(err.Error(), "status: 404") {
+			return nil, grizzly.ErrNotFound
+		}
 	}
-	handler := DatasourceHandler{}
-	resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), uid, d)
+
+	// TODO: Turn spec into a real gapi.Datasource object
+	var spec map[string]interface{}
+	data, err := json.Marshal(datasource)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(data, &spec)
+	if err != nil {
+		return nil, err
+	}
+
+	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
 	return &resource, nil
 }
 
 func getRemoteDatasourceList() ([]string, error) {
-	client := new(http.Client)
-	grafanaURL, err := getGrafanaURL("api/datasources")
+	client, err := getClient()
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", grafanaURL, nil)
+	datasources, err := client.DataSources()
 	if err != nil {
 		return nil, err
 	}
 
-	if grafanaToken, ok := getGrafanaToken(); ok {
-		req.Header.Set("Authorization", "Bearer "+grafanaToken)
+	uids := make([]string, len(datasources))
+	for i, datasource := range datasources {
+		uids[i] = datasource.UID
 	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	switch {
-	case resp.StatusCode == http.StatusNotFound:
-		return nil, grizzly.ErrNotFound
-	case resp.StatusCode >= 400:
-		return nil, errors.New(resp.Status)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	var datasources []map[string]interface{}
-	if err := json.Unmarshal([]byte(string(body)), &datasources); err != nil {
-		return nil, grizzly.APIErr{Err: err, Body: body}
-	}
-	UIDs := []string{}
-	for _, datasource := range datasources {
-		UID := datasource["uid"].(string)
-		UIDs = append(UIDs, UID)
-	}
-	return UIDs, nil
+	return uids, nil
 }
 
 func postDatasource(resource grizzly.Resource) error {
-	client := new(http.Client)
-	grafanaURL, err := getGrafanaURL("api/datasources")
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
 
-	sourceJSON, err := resource.SpecAsJSON()
+	// TODO: Turn spec into a real gapi.DataSource object
+	data, err := json.Marshal(resource.Spec())
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", grafanaURL, bytes.NewBufferString(sourceJSON))
+	var datasource gapi.DataSource
+	err = json.Unmarshal(data, &datasource)
 	if err != nil {
 		return err
 	}
-
-	if grafanaToken, ok := getGrafanaToken(); ok {
-		req.Header.Set("Authorization", "Bearer "+grafanaToken)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		break
-	case http.StatusPreconditionFailed:
-		d := json.NewDecoder(resp.Body)
-		var r struct {
-			Message string `json:"message"`
-		}
-		if err := d.Decode(&r); err != nil {
-			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
-		}
-		fmt.Println(sourceJSON)
-		return fmt.Errorf("Error while applying '%s' to Grafana: %s", resource.Name(), r.Message)
-	default:
-		return NewErrNon200Response("datasource", resource.Name(), resp)
-	}
-	return nil
+	_, err = client.NewDataSource(&datasource)
+	return err
 }
 
 func putDatasource(resource grizzly.Resource) error {
-	spec := resource.Spec()
-	id := int64(spec["id"].(float64))
-	grafanaURL, err := getGrafanaURL(fmt.Sprintf("api/datasources/%d", id))
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
 
-	sourceJSON, err := resource.SpecAsJSON()
+	// TODO: Turn spec into a real gapi.DataSource object
+	data, err := json.Marshal(resource.Spec())
 	if err != nil {
 		return err
 	}
 
-	client, err := NewHttpClient()
+	var datasource gapi.DataSource
+	err = json.Unmarshal(data, &datasource)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("PUT", grafanaURL, bytes.NewBufferString(sourceJSON))
-	req.Header.Add("Content-type", "application/json")
-
-	if grafanaToken, ok := getGrafanaToken(); ok {
-		req.Header.Set("Authorization", "Bearer "+grafanaToken)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		break
-	case http.StatusPreconditionFailed:
-		d := json.NewDecoder(resp.Body)
-		var r struct {
-			Message string `json:"message"`
-		}
-		if err := d.Decode(&r); err != nil {
-			return fmt.Errorf("Failed to decode actual error (412 Precondition failed): %s", err)
-		}
-		fmt.Println(sourceJSON)
-		return fmt.Errorf("Error while applying '%s' to Grafana: %s", resource.Name(), r.Message)
-	default:
-		return NewErrNon200Response("datasource", resource.Name(), resp)
-	}
-	return nil
+	return client.UpdateDataSource(&datasource)
 }
