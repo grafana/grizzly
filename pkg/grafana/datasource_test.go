@@ -13,19 +13,22 @@ import (
 func TestDatasources(t *testing.T) {
 	os.Setenv("GRAFANA_URL", GetUrl())
 
-	client, err := GetClient()
+	grafanaClient, err := GetClient()
 	require.NoError(t, err)
 
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			&Provider{client: client},
+			NewProvider(grafanaClient),
 		})
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()
 
+	handler, err := grizzly.Registry.GetHandler((&DatasourceHandler{}).Kind())
+	require.NoError(t, err)
+
 	t.Run("get remote datasource - success", func(t *testing.T) {
-		resource, err := getRemoteDatasource(client, "AppDynamics")
+		resource, err := handler.GetByUID("AppDynamics")
 		require.NoError(t, err)
 
 		require.Equal(t, resource.APIVersion(), "grizzly.grafana.com/v1alpha1")
@@ -34,12 +37,12 @@ func TestDatasources(t *testing.T) {
 	})
 
 	t.Run("get remote datasource - not found", func(t *testing.T) {
-		_, err := getRemoteDatasource(client, "dummy")
+		_, err := handler.GetByUID("dummy")
 		require.Equal(t, err, grizzly.ErrNotFound)
 	})
 
 	t.Run("get remote datasources list", func(t *testing.T) {
-		resources, err := getRemoteDatasourceList(client)
+		resources, err := handler.ListRemote()
 		require.NoError(t, err)
 
 		require.NotNil(t, resources)
@@ -55,10 +58,10 @@ func TestDatasources(t *testing.T) {
 		err = json.Unmarshal(datasource, &resource)
 		require.NoError(t, err)
 
-		err = postDatasource(client, resource)
+		err = handler.Add(resource)
 		require.NoError(t, err)
 
-		ds, err := getRemoteDatasource(client, "appdynamics")
+		ds, err := handler.GetByUID("appdynamics")
 		require.NoError(t, err)
 		require.NotNil(t, ds)
 		require.Equal(t, ds.Spec()["type"], "dlopes7-appdynamics-datasource")
@@ -66,10 +69,10 @@ func TestDatasources(t *testing.T) {
 		t.Run("put remote datasource - update", func(t *testing.T) {
 			ds.SetSpecString("type", "new-type")
 
-			err := putDatasource(client, *ds)
+			err := handler.Add(*ds)
 			require.NoError(t, err)
 
-			updatedDS, err := getRemoteDatasource(client, "appdynamics")
+			updatedDS, err := handler.GetByUID("appdynamics")
 			require.NoError(t, err)
 
 			require.Equal(t, updatedDS.Spec()["type"], "new-type")
@@ -87,11 +90,11 @@ func TestDatasources(t *testing.T) {
 
 		resource.SetSpecString("name", "AppDynamics")
 
-		err = postDatasource(client, resource)
+		err = handler.Add(resource)
 
-		grafanaErr := err.(ErrNon200Response)
-		require.Error(t, err)
-		require.Equal(t, grafanaErr.Response.StatusCode, 409)
+		var non200ResponseErr ErrNon200Response
+		require.ErrorAs(t, err, &non200ResponseErr)
+		require.Equal(t, non200ResponseErr.Response.StatusCode, 409)
 	})
 
 	t.Run("Check getUID is functioning correctly", func(t *testing.T) {

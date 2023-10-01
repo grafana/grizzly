@@ -78,7 +78,7 @@ func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.Resources, error
 		"withCredentials":   false,
 		"readOnly":          false,
 	}
-	spec := resource["spec"].(map[string]interface{})
+	spec := resource.Spec()
 	for k := range defaults {
 		_, ok := spec[k]
 		if !ok {
