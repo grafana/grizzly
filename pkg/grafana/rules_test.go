@@ -133,16 +133,3 @@ func mockCortexTool(t *testing.T, file string, err error) {
 		cortexTool = origCorexTool
 	})
 }
-
-type mockCTClient struct {
-	rules []byte
-	err   error
-}
-
-func (m mockCTClient) listRules() ([]byte, error) {
-	return m.rules, m.err
-}
-
-func (m mockCTClient) writeRules(namespace, fileName string) error {
-	return m.err
-}
