@@ -1,4 +1,4 @@
-package grizzly
+package encoding
 
 import (
 	"path/filepath"
