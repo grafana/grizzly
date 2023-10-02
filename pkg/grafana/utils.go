@@ -5,22 +5,20 @@ import (
 	"regexp"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
+	"github.com/grafana/grafana-openapi-client-go/models"
 )
 
 var folderURLRegex = regexp.MustCompile("/dashboards/f/([^/]+)")
 
-const generalFolderId = 0
-const generalFolderUID = "general"
-
-func extractFolderUID(client *gclient.GrafanaHTTPAPI, d DashboardWrapper) string {
+func extractFolderUID(client *gclient.GrafanaHTTPAPI, d models.DashboardFullWithMeta) string {
 	folderUid := d.Meta.FolderUID
 	if folderUid == "" {
 		urlPaths := folderURLRegex.FindStringSubmatch(d.Meta.FolderURL)
 		if len(urlPaths) == 0 {
-			if d.FolderID == generalFolderId {
+			if d.Meta.FolderID == generalFolderId {
 				return generalFolderUID
 			}
-			folder, err := getFolderById(client, d.FolderID)
+			folder, err := getFolderById(client, d.Meta.FolderID)
 			if err != nil {
 				return ""
 			}

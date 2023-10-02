@@ -13,19 +13,22 @@ import (
 func TestDashboard(t *testing.T) {
 	os.Setenv("GRAFANA_URL", GetUrl())
 
-	client, err := GetClient()
+	grafanaClient, err := GetClient()
 	require.NoError(t, err)
 
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			&Provider{client: client},
+			NewProvider(grafanaClient),
 		})
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()
 
+	handler, err := grizzly.Registry.GetHandler((&DashboardHandler{}).Kind())
+	require.NoError(t, err)
+
 	t.Run("get remote dashboard - success", func(t *testing.T) {
-		resource, err := getRemoteDashboard(client, "ReciqtgGk")
+		resource, err := handler.GetByUID("ReciqtgGk")
 		require.NoError(t, err)
 
 		require.Equal(t, resource.APIVersion(), "grizzly.grafana.com/v1alpha1")
@@ -34,12 +37,12 @@ func TestDashboard(t *testing.T) {
 	})
 
 	t.Run("get remote dashboard - not found", func(t *testing.T) {
-		_, err := getRemoteDashboard(client, "dummy")
+		_, err := handler.GetByUID("dummy")
 		require.EqualError(t, err, "not found")
 	})
 
 	t.Run("get remote dashboard list - success", func(t *testing.T) {
-		list, err := getRemoteDashboardList(client)
+		list, err := handler.ListRemote()
 		require.NoError(t, err)
 
 		require.Len(t, list, 3)
@@ -55,10 +58,10 @@ func TestDashboard(t *testing.T) {
 		err = json.Unmarshal(dashboard, &resource)
 		require.NoError(t, err)
 
-		err = postDashboard(client, resource)
+		err = handler.Add(resource)
 		require.NoError(t, err)
 
-		dash, err := getRemoteDashboard(client, "d4sHb0ard-")
+		dash, err := handler.GetByUID("d4sHb0ard-")
 		require.NoError(t, err)
 		require.NotNil(t, dash)
 
@@ -66,15 +69,14 @@ func TestDashboard(t *testing.T) {
 	})
 
 	t.Run("post remote dashboard - not found", func(t *testing.T) {
-		var resource grizzly.Resource
-		resource = map[string]interface{}{
+		resource := map[string]interface{}{
 			"metadata": map[string]interface{}{
 				"folder": "dummy",
 				"name":   "dummy",
 			},
 		}
 
-		err := postDashboard(client, resource)
+		err := handler.Add(resource)
 		require.EqualError(t, err, "Cannot upload dashboard dummy as folder dummy not found")
 	})
 

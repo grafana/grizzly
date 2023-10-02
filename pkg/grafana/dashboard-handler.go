@@ -42,10 +42,6 @@ func (h *DashboardHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-const (
-	dashboardFolderDefault = "General"
-)
-
 // GetExtension returns the file name extension for a dashboard
 func (h *DashboardHandler) GetExtension() string {
 	return "json"
@@ -70,9 +66,9 @@ func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype 
 // Parse parses a manifest object into a struct for this resource type
 func (h *DashboardHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 	resource := grizzly.Resource(m)
-	resource.SetSpecString("uid", resource.GetMetadata("name"))
+	resource.SetSpecString("uid", resource.Name())
 	if !resource.HasMetadata("folder") {
-		resource.SetMetadata("folder", dashboardFolderDefault)
+		resource.SetMetadata("folder", generalFolderUID)
 	}
 	return grizzly.Resources{resource}, nil
 }

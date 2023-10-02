@@ -23,30 +23,40 @@ func TestExtractFolderUID(t *testing.T) {
 		})
 
 	t.Run("extract folder uid successfully - uid exists", func(t *testing.T) {
-		dashboardWrapper := DashboardWrapper{}
-		dashboardWrapper.Meta.FolderUID = "sample"
-		uid := extractFolderUID(client, dashboardWrapper)
+		meta := models.DashboardMeta{
+			FolderUID: "sample",
+		}
+		dashboard := models.DashboardFullWithMeta{
+			Meta: &meta,
+		}
+		uid := extractFolderUID(client, dashboard)
 		require.Equal(t, "sample", uid)
 	})
 
 	t.Run("extract folder uid successfully - url exists", func(t *testing.T) {
-		dashboardWrapper := DashboardWrapper{}
-		url := "/dashboards/f/sample/special-sample-folder"
-		dashboardWrapper.Meta.FolderURL = url
-		uid := extractFolderUID(client, dashboardWrapper)
+		meta := models.DashboardMeta{
+			FolderURL: "/dashboards/f/sample/special-sample-folder",
+		}
+		dashboard := models.DashboardFullWithMeta{
+			Meta: &meta,
+		}
+		uid := extractFolderUID(client, dashboard)
 		require.Equal(t, "sample", uid)
 	})
 
 	t.Run("extract folder uid - empty uid returned", func(t *testing.T) {
-		dashboardWrapper := DashboardWrapper{
+		meta := models.DashboardMeta{
 			FolderID: 1,
+		}
+		dashboard := models.DashboardFullWithMeta{
+			Meta: &meta,
 		}
 		getFolderById = func(client *gclient.GrafanaHTTPAPI, folderId int64) (*models.Folder, error) {
 			return &models.Folder{
 				UID: "12345",
 			}, nil
 		}
-		uid := extractFolderUID(client, dashboardWrapper)
+		uid := extractFolderUID(client, dashboard)
 		require.Equal(t, "12345", uid)
 	})
 }
