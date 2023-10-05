@@ -1,31 +1,34 @@
 package grafana
 
 import (
+	"errors"
 	"fmt"
+	"github.com/grafana/grafana-api-golang-client"
 	"path/filepath"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
-// DatasourceHandler is a Grizzly Handler for Grafana datasources
+// DatasourceHandler is a grizzly.Handler for Grafana data sources.
 type DatasourceHandler struct {
 	Provider Provider
 }
 
-// NewDatasourceHandler returns a new Grizzly Handler for Grafana datasources
+// NewDatasourceHandler returns a new grizzly.Handler for Grafana data sources.
 func NewDatasourceHandler(provider Provider) *DatasourceHandler {
 	return &DatasourceHandler{
 		Provider: provider,
 	}
 }
 
-// Kind returns the kind for this handler
+// Kind returns the kind for this handler.
 func (h *DatasourceHandler) Kind() string {
 	return "Datasource"
 }
 
-// Validate returns the uid of resource
+// Validate checks that the uid within the resource spec,
+// if any, matches with the resource's name, from resource's metadata.
 func (h *DatasourceHandler) Validate(resource grizzly.Resource) error {
 	uid, exist := resource.GetSpecString("uid")
 	if exist {
@@ -36,12 +39,12 @@ func (h *DatasourceHandler) Validate(resource grizzly.Resource) error {
 	return nil
 }
 
-// APIVersion returns group and version of the provider of this resource
+// APIVersion returns group and version of the provider of this resource.
 func (h *DatasourceHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-// GetExtension returns the file name extension for a datasource
+// GetExtension returns the file name extension for a data source.
 func (h *DatasourceHandler) GetExtension() string {
 	return "json"
 }
@@ -110,13 +113,13 @@ func (h *DatasourceHandler) GetUID(resource grizzly.Resource) (string, error) {
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	return getRemoteDatasource(UID)
+func (h *DatasourceHandler) GetByUID(uid string) (*grizzly.Resource, error) {
+	return h.getRemoteDatasource(uid)
 }
 
 // GetRemote retrieves a datasource as a Resource
 func (h *DatasourceHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
-	return getRemoteDatasource(resource.Name())
+	return h.getRemoteDatasource(resource.Name())
 }
 
 // ListRemote retrieves as list of UIDs of all remote resources
@@ -132,4 +135,29 @@ func (h *DatasourceHandler) Add(resource grizzly.Resource) error {
 // Update pushes a datasource to Grafana via the API
 func (h *DatasourceHandler) Update(existing, resource grizzly.Resource) error {
 	return putDatasource(resource)
+}
+
+func (h *DatasourceHandler) getRemoteDatasource(uid string) (*grizzly.Resource, error) {
+	ds, err := h.Provider.client.DataSourceByUID(uid)
+
+	var nf gapi.ErrNotFound
+	if err != nil && errors.As(err, &nf) {
+		ds, err = h.Provider.client.DataSourceByUID(uid) // TODO: Replace by DataSourceByName
+	}
+
+	if err != nil {
+		if errors.As(err, &nf) {
+			return nil, grizzly.ErrNotFound
+		}
+		return nil, err
+	}
+
+	spec, err := structToMap(ds)
+	if err != nil {
+		return nil, err
+	}
+
+	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
+
+	return &resource, nil
 }

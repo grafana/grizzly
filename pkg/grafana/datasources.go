@@ -11,60 +11,6 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
-func makeDatasourceRequest(url string) ([]byte, error) {
-	client := new(http.Client)
-	grafanaURL, err := getGrafanaURL(url)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", grafanaURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if grafanaToken, ok := getGrafanaToken(); ok {
-		req.Header.Set("Authorization", "Bearer "+grafanaToken)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	switch {
-	case resp.StatusCode == http.StatusNotFound:
-		return nil, grizzly.ErrNotFound
-	case resp.StatusCode >= 400:
-		return nil, errors.New(resp.Status)
-	}
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-// getRemoteDatasource retrieves a datasource object from Grafana
-func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
-	data, err := makeDatasourceRequest("api/datasources/uid/" + uid)
-	if errors.Is(err, grizzly.ErrNotFound) {
-		data, err = makeDatasourceRequest("api/datasources/name/" + uid)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	var d map[string]interface{}
-	if err := json.Unmarshal(data, &d); err != nil {
-		return nil, grizzly.APIErr{Err: err, Body: data}
-	}
-	handler := DatasourceHandler{}
-	resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), uid, d)
-	return &resource, nil
-}
-
 func getRemoteDatasourceList() ([]string, error) {
 	client := new(http.Client)
 	grafanaURL, err := getGrafanaURL("api/datasources")

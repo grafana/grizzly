@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"encoding/json"
+	gapi "github.com/grafana/grafana-api-golang-client"
 	"os"
 	"testing"
 
@@ -9,19 +10,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDatasources(t *testing.T) {
-	os.Setenv("GRAFANA_URL", getUrl())
+func TestDataSources(t *testing.T) {
+	client, err := gapi.New(getUrl(), gapi.Config{})
+	require.NoError(t, err)
 
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			&Provider{},
+			&Provider{client: client},
 		})
 
 	ticker := pingService(getUrl())
 	defer ticker.Stop()
 
+	handler, err := grizzly.Registry.GetHandler((&DatasourceHandler{}).Kind())
+	require.NoError(t, err)
+
 	t.Run("get remote datasource - success", func(t *testing.T) {
-		resource, err := getRemoteDatasource("AppDynamics")
+		resource, err := handler.GetByUID("AppDynamics")
 		require.NoError(t, err)
 
 		require.Equal(t, resource.APIVersion(), "grizzly.grafana.com/v1alpha1")
@@ -30,11 +35,11 @@ func TestDatasources(t *testing.T) {
 	})
 
 	t.Run("get remote datasource - not found", func(t *testing.T) {
-		_, err := getRemoteDatasource("dummy")
+		_, err := handler.GetByUID("dummy")
 		require.Equal(t, err, grizzly.ErrNotFound)
 	})
 
-	t.Run("get remote datasources list", func(t *testing.T) {
+	t.Run("get remote data sources list", func(t *testing.T) {
 		resources, err := getRemoteDatasourceList()
 		require.NoError(t, err)
 
@@ -54,7 +59,7 @@ func TestDatasources(t *testing.T) {
 		err = postDatasource(resource)
 		require.NoError(t, err)
 
-		ds, err := getRemoteDatasource("appdynamics")
+		ds, err := handler.GetByUID("appdynamics")
 		require.NoError(t, err)
 		require.NotNil(t, ds)
 		require.Equal(t, ds.Spec()["type"], "dlopes7-appdynamics-datasource")
@@ -65,7 +70,7 @@ func TestDatasources(t *testing.T) {
 			err := putDatasource(*ds)
 			require.NoError(t, err)
 
-			updatedDS, err := getRemoteDatasource("appdynamics")
+			updatedDS, err := handler.GetByUID("appdynamics")
 			require.NoError(t, err)
 
 			require.Equal(t, updatedDS.Spec()["type"], "new-type")
@@ -85,9 +90,9 @@ func TestDatasources(t *testing.T) {
 
 		err = postDatasource(resource)
 
-		grafanaErr := err.(ErrNon200Response)
-		require.Error(t, err)
-		require.Equal(t, grafanaErr.Response.StatusCode, 409)
+		var non200ResponseErr ErrNon200Response
+		require.ErrorAs(t, err, &non200ResponseErr)
+		require.Equal(t, non200ResponseErr.Response.StatusCode, 409)
 	})
 
 	t.Run("Check getUID is functioning correctly", func(t *testing.T) {
