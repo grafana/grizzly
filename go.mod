@@ -8,6 +8,7 @@ require (
 	github.com/go-clix/cli v0.2.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.20.0
+	github.com/grafana/grafana-api-golang-client v0.24.0
 	github.com/grafana/synthetic-monitoring-agent v0.16.5
 	github.com/grafana/synthetic-monitoring-api-go-client v0.7.0
 	github.com/grafana/tanka v0.25.0
@@ -32,6 +33,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
