@@ -11,6 +11,8 @@ import (
 )
 
 func TestDataSources(t *testing.T) {
+	os.Setenv("GRAFANA_URL", getUrl())
+
 	client, err := gapi.New(getUrl(), gapi.Config{})
 	require.NoError(t, err)
 
