@@ -13,8 +13,8 @@ type Opts struct {
 	Targets      []string
 
 	// Used for supporting commands that output dashboard JSON
-	Folder string
-	Legacy bool
+	Folder   string
+	JSONSpec bool
 }
 
 // PreviewOpts contains options to configure a preview

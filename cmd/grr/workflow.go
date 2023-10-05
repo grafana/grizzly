@@ -80,10 +80,15 @@ func pullDashboardCmd() *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	opts := grizzly.Opts{
-		Legacy: true,
+		JSONSpec: true,
 	}
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		ok := targetsOfKind("Dashboard", opts)
+		if !ok {
+			return fmt.Errorf("pull-dashboard only supports dashboards")
+		}
+
 		return grizzly.Pull(args[0], opts)
 	}
 	return initialiseCmd(cmd, &opts)
@@ -151,7 +156,7 @@ func applyDashboardCmd() *cli.Command {
 	}
 
 	opts := grizzly.Opts{
-		Legacy: true,
+		JSONSpec: true,
 	}
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
@@ -286,7 +291,7 @@ func providersCmd() *cli.Command {
 func initialiseCmd(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
 	cmd.Flags().BoolVarP(&opts.Directory, "directory", "d", false, "treat resource path as a directory")
 	cmd.Flags().StringSliceVarP(&opts.Targets, "target", "t", nil, "resources to target")
-	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "specify an additional library search dir (right-most wins)")
 	return initialiseLogging(cmd, &opts.LoggingOpts)
 }
 

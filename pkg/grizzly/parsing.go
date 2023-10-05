@@ -51,11 +51,7 @@ func FindResourceFiles(resourcePath string) ([]string, error) {
 }
 
 func ParseFile(opts Opts, resourceFile string) (Resources, error) {
-	if opts.Legacy && filepath.Ext(resourceFile) != ".json" {
-		return nil, fmt.Errorf("apply-dashboard command expects only json files as resources")
-	}
-
-	if opts.Legacy {
+	if opts.JSONSpec {
 		return ParseDashboardJSON(resourceFile, opts)
 	}
 
@@ -71,6 +67,10 @@ func ParseFile(opts Opts, resourceFile string) (Resources, error) {
 
 // ParseDashboardJSON parses a JSON file with a single dashboard object into a Resources (to align with ParseFile interface)
 func ParseDashboardJSON(jsonFile string, opts Opts) (Resources, error) {
+	if opts.JSONSpec && filepath.Ext(jsonFile) != ".json" {
+		return nil, fmt.Errorf("command expects only json files as resources") // TODO: when -J flag is passed
+	}
+
 	f, err := os.Open(jsonFile)
 	if err != nil {
 		return nil, err
