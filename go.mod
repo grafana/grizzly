@@ -8,7 +8,7 @@ require (
 	github.com/go-clix/cli v0.2.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.20.0
-	github.com/grafana/grafana-api-golang-client v0.24.1-0.20231004132047-393a4f4f259d
+	github.com/grafana/grafana-api-golang-client v0.24.1-0.20231006070647-c343a573f589
 	github.com/grafana/synthetic-monitoring-agent v0.16.5
 	github.com/grafana/synthetic-monitoring-api-go-client v0.7.0
 	github.com/grafana/tanka v0.25.0

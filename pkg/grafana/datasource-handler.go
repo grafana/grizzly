@@ -142,7 +142,7 @@ func (h *DatasourceHandler) getRemoteDatasource(uid string) (*grizzly.Resource, 
 
 	var nf gapi.ErrNotFound
 	if err != nil && errors.As(err, &nf) {
-		ds, err = h.Provider.client.DataSourceByUID(uid) // TODO: Replace by DataSourceByName
+		ds, err = h.Provider.client.DataSourceByName(uid)
 	}
 
 	if err != nil {

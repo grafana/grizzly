@@ -43,6 +43,8 @@ github.com/grafana/grafana-api-golang-client v0.24.0 h1:9cUvft7xCMnnL/Uscwy7eold
 github.com/grafana/grafana-api-golang-client v0.24.0/go.mod h1:24W29gPe9yl0/3A9X624TPkAOR8DpHno490cPwnkv8E=
 github.com/grafana/grafana-api-golang-client v0.24.1-0.20231004132047-393a4f4f259d h1:NZXiRx9LVGQUmrUPzchRuhQp9259xVIzL2h1gN08VTI=
 github.com/grafana/grafana-api-golang-client v0.24.1-0.20231004132047-393a4f4f259d/go.mod h1:24W29gPe9yl0/3A9X624TPkAOR8DpHno490cPwnkv8E=
+github.com/grafana/grafana-api-golang-client v0.24.1-0.20231006070647-c343a573f589 h1:2pICN+mZ2h1qAlSUgOsnN7IKHKhE6Ve7nxc9RsX6FLo=
+github.com/grafana/grafana-api-golang-client v0.24.1-0.20231006070647-c343a573f589/go.mod h1:24W29gPe9yl0/3A9X624TPkAOR8DpHno490cPwnkv8E=
 github.com/grafana/synthetic-monitoring-agent v0.16.5 h1:aKspOWUQyQAH1jfzTae8+Buks+TJR3IrhTLFhWRTmG8=
 github.com/grafana/synthetic-monitoring-agent v0.16.5/go.mod h1:nvUY4lgjsX9MQAbsYvIhWSECcpL6i7Ml/9PXkJj3KWw=
 github.com/grafana/synthetic-monitoring-api-go-client v0.7.0 h1:3ZfQzmXDBPcQTTgMAIIiTw5Dwxm/B4lzf34Sto0d0YY=
