@@ -33,7 +33,7 @@ func TestDataSources(t *testing.T) {
 
 		require.Equal(t, resource.APIVersion(), "grizzly.grafana.com/v1alpha1")
 		require.Equal(t, resource.Name(), "AppDynamics")
-		require.Len(t, resource.Spec(), 18)
+		require.Len(t, resource.Spec(), 13)
 	})
 
 	t.Run("get remote datasource - not found", func(t *testing.T) {
