@@ -8,7 +8,7 @@ type LoggingOpts struct {
 // Opts contains options for most Grizzly commands
 type Opts struct {
 	LoggingOpts
-	Directory    bool
+	Directory    bool // Deprecated: now is gathered with os.Stat(<resource-path>)
 	JsonnetPaths []string
 	Targets      []string
 }
