@@ -106,12 +106,12 @@ func ListRemote(opts Opts) error {
 // Pull pulls remote resources and stores them in the local file system.
 // The given resourcePath must be a directory, where all resources will be stored.
 func Pull(resourcePath string, opts Opts) error {
-	stat, err := os.Stat(resourcePath)
+	isFile, err := isFile(resourcePath)
 	if err != nil {
 		return err
 	}
 
-	if !stat.IsDir() {
+	if isFile {
 		return fmt.Errorf("pull <resource-path> must be a directory")
 	}
 
@@ -461,4 +461,16 @@ func Export(exportDir string, resources Resources) error {
 		}
 	}
 	return nil
+}
+
+func isFile(resourcePath string) (bool, error) {
+	stat, err := os.Stat(resourcePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return !stat.IsDir(), nil
 }

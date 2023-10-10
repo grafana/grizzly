@@ -6,18 +6,19 @@ import (
 	"testing"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDashboard(t *testing.T) {
-	os.Setenv("GRAFANA_URL", getUrl())
+	os.Setenv("GRAFANA_URL", GetUrl())
 
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
 			&Provider{},
 		})
 
-	ticker := pingService(getUrl())
+	ticker := PingService(GetUrl())
 	defer ticker.Stop()
 
 	t.Run("get remote dashboard - success", func(t *testing.T) {

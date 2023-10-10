@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFolders(t *testing.T) {
-	os.Setenv("GRAFANA_URL", getUrl())
+	os.Setenv("GRAFANA_URL", GetUrl())
 
-	ticker := pingService(getUrl())
+	ticker := PingService(GetUrl())
 	defer ticker.Stop()
 
 	t.Run("get remote folder - success", func(t *testing.T) {
