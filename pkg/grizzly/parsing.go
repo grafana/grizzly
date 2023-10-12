@@ -51,8 +51,19 @@ func FindResourceFiles(resourcePath string) ([]string, error) {
 }
 
 func ParseFile(opts Opts, resourceFile string) (Resources, error) {
-	if opts.JSONSpec {
-		return ParseDashboardJSON(resourceFile, opts)
+	if opts.JSONSpec && filepath.Ext(resourceFile) != ".json" {
+		return nil, fmt.Errorf("when -s flag is passed, command expects only json files as resources")
+	}
+
+	if filepath.Ext(resourceFile) == ".json" {
+		isManifest, err := manifestFile(resourceFile)
+		if err != nil {
+			return Resources{}, err
+		}
+
+		if opts.JSONSpec || !isManifest {
+			return ParseDashboardJSON(resourceFile, opts)
+		}
 	}
 
 	switch filepath.Ext(resourceFile) {
@@ -65,10 +76,34 @@ func ParseFile(opts Opts, resourceFile string) (Resources, error) {
 	}
 }
 
+func manifestFile(resourceFile string) (bool, error) {
+	if filepath.Ext(resourceFile) != ".json" {
+		return false, nil
+	}
+
+	m := map[string]interface{}{}
+
+	f, err := os.Open(resourceFile)
+	if err != nil {
+		return false, err
+	}
+
+	err = json.NewDecoder(f).Decode(&m)
+	if err != nil {
+		return false, err
+	}
+
+	if _, ok := m["spec"]; ok {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // ParseDashboardJSON parses a JSON file with a single dashboard object into a Resources (to align with ParseFile interface)
 func ParseDashboardJSON(jsonFile string, opts Opts) (Resources, error) {
 	if opts.JSONSpec && filepath.Ext(jsonFile) != ".json" {
-		return nil, fmt.Errorf("command expects only json files as resources") // TODO: when -J flag is passed
+		return nil, fmt.Errorf("when -s flag is passed, command expects only json files as resources")
 	}
 
 	f, err := os.Open(jsonFile)
@@ -88,7 +123,7 @@ func ParseDashboardJSON(jsonFile string, opts Opts) (Resources, error) {
 		"apiVersion": handler.APIVersion(),
 		"kind":       handler.Kind(),
 		"metadata": map[string]interface{}{
-			"folder": opts.Folder,
+			"folder": opts.FolderUID,
 			"name":   spec["uid"],
 		},
 		"spec": spec,

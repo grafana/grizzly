@@ -12,6 +12,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const generalFolderUID = "general"
+
 func getCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "get <resource-type>.<resource-uid>",
@@ -68,29 +70,14 @@ func pullCmd() *cli.Command {
 	var opts grizzly.Opts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		return grizzly.Pull(args[0], opts)
-	}
-	return initialiseCmd(cmd, &opts)
-}
-
-func pullDashboardCmd() *cli.Command {
-	cmd := &cli.Command{
-		Use:   "pull-dashboard <resource-path>",
-		Short: "Pulls remote dashboards and writes them to local source in JSON format",
-		Args:  cli.ArgsExact(1),
-	}
-	opts := grizzly.Opts{
-		JSONSpec: true,
-	}
-
-	cmd.Run = func(cmd *cli.Command, args []string) error {
-		ok := targetsOfKind("Dashboard", opts)
-		if !ok {
-			return fmt.Errorf("pull-dashboard only supports dashboards")
+		if err := checkDashboardTarget(opts); err != nil {
+			return err
 		}
 
 		return grizzly.Pull(args[0], opts)
 	}
+
+	cmd = initialiseSpecOnly(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
 
@@ -133,36 +120,14 @@ func diffCmd() *cli.Command {
 func applyCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "apply <resource-path>",
-		Short: "apply local resources to remote endpoints",
+		Short: "apply local resources to remote endpoints, -s flag is only applicable to dashboards",
 		Args:  cli.ArgsExact(1),
 	}
 	var opts grizzly.Opts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		resources, err := grizzly.Parse(args[0], opts)
-		if err != nil {
+		if err := checkDashboardTarget(opts); err != nil {
 			return err
-		}
-		return grizzly.Apply(resources)
-	}
-	return initialiseCmd(cmd, &opts)
-}
-
-func applyDashboardCmd() *cli.Command {
-	cmd := &cli.Command{
-		Use:   "apply-dashboard [-f <folder-name>] <resource-path>",
-		Short: "apply local dashboards to remote endpoints",
-		Args:  cli.ArgsExact(1),
-	}
-
-	opts := grizzly.Opts{
-		JSONSpec: true,
-	}
-
-	cmd.Run = func(cmd *cli.Command, args []string) error {
-		ok := targetsOfKind("Dashboard", opts)
-		if !ok {
-			return fmt.Errorf("apply-dashboard only supports dashboards")
 		}
 
 		resources, err := grizzly.Parse(args[0], opts)
@@ -172,20 +137,30 @@ func applyDashboardCmd() *cli.Command {
 		return grizzly.Apply(resources)
 	}
 
-	cmd.Flags().StringVarP(&opts.Folder, "folder", "f", "general", "folder to push dashboards to")
+	cmd.Flags().StringVarP(&opts.FolderUID, "folder", "f", generalFolderUID, "folder to push dashboards to")
+	cmd = initialiseSpecOnly(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
 
 // targetsOfKind checks if the specified targets are of certain kind
 func targetsOfKind(kind string, opts grizzly.Opts) bool {
 	for _, t := range opts.Targets {
-		// TODO: worth making target kinds case insensitive
 		if !(strings.Contains(t, "/") && strings.Split(t, "/")[0] == kind) {
 			return false
 		}
 	}
 
 	return true
+}
+
+// checkDashboardTarget ensures that the specified targets are of dashboards kind
+func checkDashboardTarget(opts grizzly.Opts) error {
+	ok := targetsOfKind("Dashboard", opts)
+	if opts.JSONSpec && !ok {
+		return fmt.Errorf("-s flag is only supported for dashboards")
+	}
+
+	return nil
 }
 
 type jsonnetWatchParser struct {
@@ -285,6 +260,7 @@ func providersCmd() *cli.Command {
 		}
 		return w.Flush()
 	}
+
 	return initialiseLogging(cmd, &opts)
 }
 
@@ -292,7 +268,13 @@ func initialiseCmd(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
 	cmd.Flags().BoolVarP(&opts.Directory, "directory", "d", false, "treat resource path as a directory")
 	cmd.Flags().StringSliceVarP(&opts.Targets, "target", "t", nil, "resources to target")
 	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "specify an additional library search dir (right-most wins)")
+
 	return initialiseLogging(cmd, &opts.LoggingOpts)
+}
+
+func initialiseSpecOnly(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
+	cmd.Flags().BoolVarP(&opts.JSONSpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
+	return cmd
 }
 
 func initialiseLogging(cmd *cli.Command, loggingOpts *grizzly.LoggingOpts) *cli.Command {
