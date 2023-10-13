@@ -103,13 +103,19 @@ func ListRemote(opts Opts) error {
 	return w.Flush()
 }
 
-// Pulls remote resources
+// Pull pulls remote resources and stores them in the local file system.
+// The given resourcePath must be a directory, where all resources will be stored.
 func Pull(resourcePath string, opts Opts) error {
-	log.Infof("Pulling resources from %s", resourcePath)
-
-	if !(opts.Directory) {
-		return fmt.Errorf("pull only works with -d option")
+	isFile, err := isFile(resourcePath)
+	if err != nil {
+		return err
 	}
+
+	if isFile {
+		return fmt.Errorf("pull <resource-path> must be a directory")
+	}
+
+	log.Infof("Pulling resources to %s", resourcePath)
 
 	for name, handler := range Registry.Handlers {
 		if !Registry.HandlerMatchesTarget(handler, opts.Targets) {
@@ -455,4 +461,16 @@ func Export(exportDir string, resources Resources) error {
 		}
 	}
 	return nil
+}
+
+func isFile(resourcePath string) (bool, error) {
+	stat, err := os.Stat(resourcePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return !stat.IsDir(), nil
 }

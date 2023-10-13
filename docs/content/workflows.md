@@ -16,7 +16,7 @@ Grafana instances. To pull dashboards and folders from one instance to another
 is as simple as:
 ```
 $ export GRAFANA_URL=<...source Grafana URL...>
-$ grr pull -d resources -t "Dashboard/*" -t "DashboardFolder/*"
+$ grr pull resources -t "Dashboard/*" -t "DashboardFolder/*"
 ```
 This asks Grizzly to pull all resources matching the `<kind>/<UID>` pattern for
 dashboards and folders into a directory called `resources`.
@@ -28,7 +28,7 @@ dashboards and folders into a directory called `resources`.
 To push them to a new Grafana instance:
 ```
 $ export GRAFANA_URL=<...destination Grafana URL...>
-$ grr apply -d resources
+$ grr apply resources
 ```
 
 ## Jsonnet

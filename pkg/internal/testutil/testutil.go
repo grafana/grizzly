@@ -1,4 +1,4 @@
-package grafana
+package testutil
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func getUrl() string {
+func GetUrl() string {
 	if os.Getenv("CI") != "" {
 		return "http://grizzly-grafana:3000/"
 	} else {
@@ -15,7 +15,7 @@ func getUrl() string {
 	}
 }
 
-func pingService(url string) *time.Ticker {
+func PingService(url string) *time.Ticker {
 	ticker := time.NewTicker(1 * time.Second)
 	timeoutExceeded := time.After(120 * time.Second)
 
@@ -23,7 +23,7 @@ func pingService(url string) *time.Ticker {
 	for !success {
 		select {
 		case <-timeoutExceeded:
-			panic("Unable to connect to grizzly-grafana:3000")
+			panic(fmt.Sprintf("Unable to connect to %s", url))
 
 		case <-ticker.C:
 			resp, _ := http.Get(url)
