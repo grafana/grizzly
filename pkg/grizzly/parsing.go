@@ -250,12 +250,12 @@ func MarshalYAML(resource Resource, filename string) error {
 	return writeFile(filename, []byte(y))
 }
 
-func MarshalJSON(resource Resource, filename string) error {
+func MarshalSpecToJSON(resource Resource, filename string) error {
 	j, err := json.MarshalIndent(resource.Spec(), "", "  ")
 	if err != nil {
 		return err
 	}
-	return writeFile(filename, []byte(j))
+	return writeFile(filename, j)
 }
 
 func writeFile(filename string, content []byte) error {

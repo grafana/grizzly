@@ -77,7 +77,7 @@ func pullCmd() *cli.Command {
 		return grizzly.Pull(args[0], opts)
 	}
 
-	cmd = initialiseSpecOnly(cmd, &opts)
+	cmd.Flags().BoolVarP(&opts.JSONSpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
 	return initialiseCmd(cmd, &opts)
 }
 
@@ -120,7 +120,7 @@ func diffCmd() *cli.Command {
 func applyCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "apply <resource-path>",
-		Short: "apply local resources to remote endpoints, -s flag is only applicable to dashboards",
+		Short: "apply local resources to remote endpoints",
 		Args:  cli.ArgsExact(1),
 	}
 	var opts grizzly.Opts
@@ -138,7 +138,7 @@ func applyCmd() *cli.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.FolderUID, "folder", "f", generalFolderUID, "folder to push dashboards to")
-	cmd = initialiseSpecOnly(cmd, &opts)
+	cmd.Flags().BoolVarP(&opts.JSONSpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
 	return initialiseCmd(cmd, &opts)
 }
 
@@ -270,11 +270,6 @@ func initialiseCmd(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
 	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "specify an additional library search dir (right-most wins)")
 
 	return initialiseLogging(cmd, &opts.LoggingOpts)
-}
-
-func initialiseSpecOnly(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
-	cmd.Flags().BoolVarP(&opts.JSONSpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
-	return cmd
 }
 
 func initialiseLogging(cmd *cli.Command, loggingOpts *grizzly.LoggingOpts) *cli.Command {
