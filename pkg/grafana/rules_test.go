@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -13,10 +14,14 @@ import (
 var errCortextoolClient = errors.New("error coming from cortextool client")
 
 func TestRules(t *testing.T) {
+	os.Setenv("GRAFANA_URL", GetUrl())
+
+	client, err := GetClient()
+	require.NoError(t, err)
 
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			&Provider{},
+			&Provider{client: client},
 		})
 
 	t.Run("get remote rule group", func(t *testing.T) {

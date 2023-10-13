@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 
+	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
@@ -47,7 +48,7 @@ func makeDatasourceRequest(url string) ([]byte, error) {
 }
 
 // getRemoteDatasource retrieves a datasource object from Grafana
-func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
+func getRemoteDatasource(client *gclient.GrafanaHTTPAPI, uid string) (*grizzly.Resource, error) {
 	data, err := makeDatasourceRequest("api/datasources/uid/" + uid)
 	if errors.Is(err, grizzly.ErrNotFound) {
 		data, err = makeDatasourceRequest("api/datasources/name/" + uid)
@@ -65,8 +66,8 @@ func getRemoteDatasource(uid string) (*grizzly.Resource, error) {
 	return &resource, nil
 }
 
-func getRemoteDatasourceList() ([]string, error) {
-	client := new(http.Client)
+func getRemoteDatasourceList(client *gclient.GrafanaHTTPAPI) ([]string, error) {
+	httpClient := new(http.Client)
 	grafanaURL, err := getGrafanaURL("api/datasources")
 	if err != nil {
 		return nil, err
@@ -81,7 +82,7 @@ func getRemoteDatasourceList() ([]string, error) {
 		req.Header.Set("Authorization", "Bearer "+grafanaToken)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +111,8 @@ func getRemoteDatasourceList() ([]string, error) {
 	return UIDs, nil
 }
 
-func postDatasource(resource grizzly.Resource) error {
-	client := new(http.Client)
+func postDatasource(client *gclient.GrafanaHTTPAPI, resource grizzly.Resource) error {
+	httpClient := new(http.Client)
 	grafanaURL, err := getGrafanaURL("api/datasources")
 	if err != nil {
 		return err
@@ -132,7 +133,7 @@ func postDatasource(resource grizzly.Resource) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -156,7 +157,7 @@ func postDatasource(resource grizzly.Resource) error {
 	return nil
 }
 
-func putDatasource(resource grizzly.Resource) error {
+func putDatasource(client *gclient.GrafanaHTTPAPI, resource grizzly.Resource) error {
 	spec := resource.Spec()
 	id := int64(spec["id"].(float64))
 	grafanaURL, err := getGrafanaURL(fmt.Sprintf("api/datasources/%d", id))
@@ -169,7 +170,7 @@ func putDatasource(resource grizzly.Resource) error {
 		return err
 	}
 
-	client, err := NewHttpClient()
+	httpClient, err := NewHttpClient()
 	if err != nil {
 		return err
 	}
@@ -180,7 +181,7 @@ func putDatasource(resource grizzly.Resource) error {
 		req.Header.Set("Authorization", "Bearer "+grafanaToken)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}

@@ -13,16 +13,19 @@ import (
 func TestDatasources(t *testing.T) {
 	os.Setenv("GRAFANA_URL", GetUrl())
 
+	client, err := GetClient()
+	require.NoError(t, err)
+
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			&Provider{},
+			&Provider{client: client},
 		})
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()
 
 	t.Run("get remote datasource - success", func(t *testing.T) {
-		resource, err := getRemoteDatasource("AppDynamics")
+		resource, err := getRemoteDatasource(client, "AppDynamics")
 		require.NoError(t, err)
 
 		require.Equal(t, resource.APIVersion(), "grizzly.grafana.com/v1alpha1")
@@ -31,12 +34,12 @@ func TestDatasources(t *testing.T) {
 	})
 
 	t.Run("get remote datasource - not found", func(t *testing.T) {
-		_, err := getRemoteDatasource("dummy")
+		_, err := getRemoteDatasource(client, "dummy")
 		require.Equal(t, err, grizzly.ErrNotFound)
 	})
 
 	t.Run("get remote datasources list", func(t *testing.T) {
-		resources, err := getRemoteDatasourceList()
+		resources, err := getRemoteDatasourceList(client)
 		require.NoError(t, err)
 
 		require.NotNil(t, resources)
@@ -52,10 +55,10 @@ func TestDatasources(t *testing.T) {
 		err = json.Unmarshal(datasource, &resource)
 		require.NoError(t, err)
 
-		err = postDatasource(resource)
+		err = postDatasource(client, resource)
 		require.NoError(t, err)
 
-		ds, err := getRemoteDatasource("appdynamics")
+		ds, err := getRemoteDatasource(client, "appdynamics")
 		require.NoError(t, err)
 		require.NotNil(t, ds)
 		require.Equal(t, ds.Spec()["type"], "dlopes7-appdynamics-datasource")
@@ -63,10 +66,10 @@ func TestDatasources(t *testing.T) {
 		t.Run("put remote datasource - update", func(t *testing.T) {
 			ds.SetSpecString("type", "new-type")
 
-			err := putDatasource(*ds)
+			err := putDatasource(client, *ds)
 			require.NoError(t, err)
 
-			updatedDS, err := getRemoteDatasource("appdynamics")
+			updatedDS, err := getRemoteDatasource(client, "appdynamics")
 			require.NoError(t, err)
 
 			require.Equal(t, updatedDS.Spec()["type"], "new-type")
@@ -84,7 +87,7 @@ func TestDatasources(t *testing.T) {
 
 		resource.SetSpecString("name", "AppDynamics")
 
-		err = postDatasource(resource)
+		err = postDatasource(client, resource)
 
 		grafanaErr := err.(ErrNon200Response)
 		require.Error(t, err)

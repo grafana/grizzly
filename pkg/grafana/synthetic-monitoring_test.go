@@ -11,9 +11,12 @@ import (
 
 func TestSyntheticMonitoring(t *testing.T) {
 
+	client, err := GetClient()
+	require.NoError(t, err)
+
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			&Provider{},
+			&Provider{client: client},
 		})
 
 	t.Run("Check getUID is functioning correctly", func(t *testing.T) {

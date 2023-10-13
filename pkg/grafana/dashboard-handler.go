@@ -94,7 +94,7 @@ func (h *DashboardHandler) GetUID(resource grizzly.Resource) (string, error) {
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	resource, err := getRemoteDashboard(UID)
+	resource, err := getRemoteDashboard(h.Provider.client, UID)
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving dashboard %s: %v", UID, err)
 	}
@@ -107,27 +107,27 @@ func (h *DashboardHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resour
 	if uid != resource.Name() {
 		return nil, fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
 	}
-	return getRemoteDashboard(resource.Name())
+	return getRemoteDashboard(h.Provider.client, resource.Name())
 }
 
 // ListRemote retrieves as list of UIDs of all remote resources
 func (h *DashboardHandler) ListRemote() ([]string, error) {
-	return getRemoteDashboardList()
+	return getRemoteDashboardList(h.Provider.client)
 }
 
 // Add pushes a new dashboard to Grafana via the API
 func (h *DashboardHandler) Add(resource grizzly.Resource) error {
-	return postDashboard(resource)
+	return postDashboard(h.Provider.client, resource)
 }
 
 // Update pushes a dashboard to Grafana via the API
 func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
-	return postDashboard(resource)
+	return postDashboard(h.Provider.client, resource)
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
 func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
-	s, err := postSnapshot(resource, opts)
+	s, err := postSnapshot(h.Provider.client, resource, opts)
 	if err != nil {
 		return err
 	}

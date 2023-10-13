@@ -8,18 +8,21 @@ import (
 	"io"
 	"net/http"
 
+	gclient "github.com/grafana/grafana-openapi-client-go/client"
+
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
 // getRemoteDashboard retrieves a dashboard object from Grafana
-func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
-	client := new(http.Client)
+func getRemoteDashboard(client *gclient.GrafanaHTTPAPI, uid string) (*grizzly.Resource, error) {
+	httpClient := new(http.Client)
 	grafanaURL, err := getGrafanaURL("api/dashboards/uid/" + uid)
 	if err != nil {
 		return nil, err
 	}
 
 	req, err := http.NewRequest("GET", grafanaURL, nil)
+
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +30,7 @@ func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	if grafanaToken, ok := getGrafanaToken(); ok {
 		req.Header.Set("Authorization", "Bearer "+grafanaToken)
 	}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -53,15 +56,15 @@ func getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	delete(d.Dashboard, "version")
 	h := DashboardHandler{}
 	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, d.Dashboard)
-	folderUid := extractFolderUID(d)
+	folderUid := extractFolderUID(client, d)
 	resource.SetMetadata("folder", folderUid)
 	return &resource, nil
 }
 
-func getRemoteDashboardList() ([]string, error) {
+func getRemoteDashboardList(client *gclient.GrafanaHTTPAPI) ([]string, error) {
 	batchSize := 500
 
-	client := new(http.Client)
+	httpClient := new(http.Client)
 	UIDs := []string{}
 	for page := 1; ; page++ {
 		grafanaURL, err := getGrafanaURL(fmt.Sprintf("/api/search?type=dash-db&limit=%d&page=%d", batchSize, page))
@@ -78,7 +81,7 @@ func getRemoteDashboardList() ([]string, error) {
 			req.Header.Set("Authorization", "Bearer "+grafanaToken)
 		}
 
-		resp, err := client.Do(req)
+		resp, err := httpClient.Do(req)
 		if err != nil {
 			return nil, err
 		}
@@ -109,8 +112,8 @@ func getRemoteDashboardList() ([]string, error) {
 
 }
 
-func postDashboard(resource grizzly.Resource) error {
-	client := new(http.Client)
+func postDashboard(client *gclient.GrafanaHTTPAPI, resource grizzly.Resource) error {
+	httpClient := new(http.Client)
 	grafanaURL, err := getGrafanaURL("api/dashboards/db")
 	if err != nil {
 		return err
@@ -119,7 +122,7 @@ func postDashboard(resource grizzly.Resource) error {
 	folderUID := resource.GetMetadata("folder")
 	var folderID int64
 	if !(folderUID == "General" || folderUID == "general") {
-		folder, err := getRemoteFolder(folderUID)
+		folder, err := getRemoteFolder(client, folderUID)
 		if err != nil {
 			if errors.Is(err, grizzly.ErrNotFound) {
 				return fmt.Errorf("Cannot upload dashboard %s as folder %s not found", resource.GetMetadata("name"), folderUID)
@@ -137,6 +140,7 @@ func postDashboard(resource grizzly.Resource) error {
 		FolderID:  folderID,
 		Overwrite: true,
 	}
+
 	wrappedJSON, err := wrappedBoard.toJSON()
 
 	req, err := http.NewRequest("POST", grafanaURL, bytes.NewBufferString(wrappedJSON))
@@ -149,7 +153,7 @@ func postDashboard(resource grizzly.Resource) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -180,8 +184,8 @@ type SnapshotResp struct {
 	URL       string `json:"url"`
 }
 
-func postSnapshot(resource grizzly.Resource, opts *grizzly.PreviewOpts) (*SnapshotResp, error) {
-	client := new(http.Client)
+func postSnapshot(client *gclient.GrafanaHTTPAPI, resource grizzly.Resource, opts *grizzly.PreviewOpts) (*SnapshotResp, error) {
+	httpClient := new(http.Client)
 	url, err := getGrafanaURL("api/snapshots")
 	if err != nil {
 		return nil, err
@@ -214,7 +218,7 @@ func postSnapshot(resource grizzly.Resource, opts *grizzly.PreviewOpts) (*Snapsh
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

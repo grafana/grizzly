@@ -13,16 +13,19 @@ import (
 func TestDashboard(t *testing.T) {
 	os.Setenv("GRAFANA_URL", GetUrl())
 
+	client, err := GetClient()
+	require.NoError(t, err)
+
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			&Provider{},
+			&Provider{client: client},
 		})
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()
 
 	t.Run("get remote dashboard - success", func(t *testing.T) {
-		resource, err := getRemoteDashboard("ReciqtgGk")
+		resource, err := getRemoteDashboard(client, "ReciqtgGk")
 		require.NoError(t, err)
 
 		require.Equal(t, resource.APIVersion(), "grizzly.grafana.com/v1alpha1")
@@ -31,12 +34,12 @@ func TestDashboard(t *testing.T) {
 	})
 
 	t.Run("get remote dashboard - not found", func(t *testing.T) {
-		_, err := getRemoteDashboard("dummy")
+		_, err := getRemoteDashboard(client, "dummy")
 		require.EqualError(t, err, "not found")
 	})
 
 	t.Run("get remote dashboard list - success", func(t *testing.T) {
-		list, err := getRemoteDashboardList()
+		list, err := getRemoteDashboardList(client)
 		require.NoError(t, err)
 
 		require.Len(t, list, 3)
@@ -52,10 +55,10 @@ func TestDashboard(t *testing.T) {
 		err = json.Unmarshal(dashboard, &resource)
 		require.NoError(t, err)
 
-		err = postDashboard(resource)
+		err = postDashboard(client, resource)
 		require.NoError(t, err)
 
-		dash, err := getRemoteDashboard("d4sHb0ard-")
+		dash, err := getRemoteDashboard(client, "d4sHb0ard-")
 		require.NoError(t, err)
 		require.NotNil(t, dash)
 
@@ -71,7 +74,7 @@ func TestDashboard(t *testing.T) {
 			},
 		}
 
-		err := postDashboard(resource)
+		err := postDashboard(client, resource)
 		require.EqualError(t, err, "Cannot upload dashboard dummy as folder dummy not found")
 	})
 
