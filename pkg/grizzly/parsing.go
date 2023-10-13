@@ -55,21 +55,12 @@ func ParseFile(opts Opts, resourceFile string) (Resources, error) {
 		return nil, fmt.Errorf("when -s flag is passed, command expects only json files as resources")
 	}
 
-	if filepath.Ext(resourceFile) == ".json" {
-		isManifest, err := manifestFile(resourceFile)
-		if err != nil {
-			return Resources{}, err
-		}
-
-		if opts.JSONSpec || !isManifest {
-			return ParseDashboardJSON(resourceFile, opts)
-		}
-	}
-
 	switch filepath.Ext(resourceFile) {
+	case ".json":
+		return ParseJSON(resourceFile, opts)
 	case ".yaml", ".yml":
 		return ParseYAML(resourceFile, opts)
-	case ".jsonnet", ".libsonnet", ".json":
+	case ".jsonnet", ".libsonnet":
 		return ParseJsonnet(resourceFile, opts)
 	default:
 		return nil, fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)
@@ -100,9 +91,28 @@ func manifestFile(resourceFile string) (bool, error) {
 	return false, nil
 }
 
+// ParseJSON evaluates a JSON file and parses it into resources
+func ParseJSON(resourceFile string, opts Opts) (Resources, error) {
+	if opts.JSONSpec {
+		return ParseDashboardJSON(resourceFile, opts)
+	}
+
+	isManifest, err := manifestFile(resourceFile)
+	if err != nil {
+		return Resources{}, err
+	}
+
+	// TODO: refactor, no need to read the file twice
+	if !isManifest {
+		return ParseDashboardJSON(resourceFile, opts)
+	}
+
+	return ParseJsonnet(resourceFile, opts)
+}
+
 // ParseDashboardJSON parses a JSON file with a single dashboard object into a Resources (to align with ParseFile interface)
 func ParseDashboardJSON(jsonFile string, opts Opts) (Resources, error) {
-	if opts.JSONSpec && filepath.Ext(jsonFile) != ".json" {
+	if filepath.Ext(jsonFile) != ".json" {
 		return nil, fmt.Errorf("when -s flag is passed, command expects only json files as resources")
 	}
 
