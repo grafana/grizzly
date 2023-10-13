@@ -20,14 +20,21 @@ import (
 )
 
 func Parse(resourcePath string, opts Opts) (Resources, error) {
-	if !(opts.Directory) {
+	stat, err := os.Stat(resourcePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if !stat.IsDir() {
 		return ParseFile(opts, resourcePath)
 	}
+
 	var resources Resources
 	files, err := FindResourceFiles(resourcePath)
 	if err != nil {
 		return nil, err
 	}
+
 	for _, file := range files {
 		r, err := ParseFile(opts, file)
 		if err != nil {
@@ -35,6 +42,7 @@ func Parse(resourcePath string, opts Opts) (Resources, error) {
 		}
 		resources = append(resources, r...)
 	}
+
 	return resources, nil
 }
 

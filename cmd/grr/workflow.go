@@ -265,9 +265,12 @@ func providersCmd() *cli.Command {
 }
 
 func initialiseCmd(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
+	// Keep the old flags for backwards compatibility
 	cmd.Flags().BoolVarP(&opts.Directory, "directory", "d", false, "treat resource path as a directory")
+	cmd.Flags().MarkDeprecated("directory", "now it is inferred from the operating system")
+
 	cmd.Flags().StringSliceVarP(&opts.Targets, "target", "t", nil, "resources to target")
-	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "specify an additional library search dir (right-most wins)")
+	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
 
 	return initialiseLogging(cmd, &opts.LoggingOpts)
 }

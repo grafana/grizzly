@@ -6,7 +6,8 @@ deleteDatasources:
     orgId: 1
 
 datasources:
-  - name: AppDynamics
+  - uid: 392IktgGk
+    name: AppDynamics
     type: dlopes7-appdynamics-datasource
     access: proxy
     basicAuth: true

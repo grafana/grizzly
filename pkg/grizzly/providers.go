@@ -140,7 +140,11 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 	dotKey := r.Key()
 	slashKey := fmt.Sprintf("%s/%s", r.Kind(), UID)
 	for _, target := range targets {
-		g := glob.MustCompile(target)
+		g, err := glob.Compile(target)
+		if err != nil {
+			continue
+		}
+
 		if g.Match(slashKey) || g.Match(dotKey) {
 			return true
 		}
