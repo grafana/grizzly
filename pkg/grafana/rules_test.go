@@ -16,12 +16,12 @@ var errCortextoolClient = errors.New("error coming from cortextool client")
 func TestRules(t *testing.T) {
 	os.Setenv("GRAFANA_URL", GetUrl())
 
-	client, err := GetClient()
+	grafanaClient, err := GetClient()
 	require.NoError(t, err)
 
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			&Provider{client: client},
+			NewProvider(grafanaClient),
 		})
 
 	t.Run("get remote rule group", func(t *testing.T) {

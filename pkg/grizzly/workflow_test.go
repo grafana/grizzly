@@ -15,9 +15,12 @@ import (
 func TestPull(t *testing.T) {
 	os.Setenv("GRAFANA_URL", GetUrl())
 
+	grafanaClient, err := grafana.GetClient()
+	require.NoError(t, err)
+
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			&grafana.Provider{},
+			grafana.NewProvider(grafanaClient),
 		})
 
 	ticker := PingService(GetUrl())
