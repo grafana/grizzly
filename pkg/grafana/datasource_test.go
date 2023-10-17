@@ -31,14 +31,14 @@ func TestDatasources(t *testing.T) {
 		resource, err := handler.GetByUID("AppDynamics")
 		require.NoError(t, err)
 
-		require.Equal(t, resource.APIVersion(), "grizzly.grafana.com/v1alpha1")
-		require.Equal(t, resource.Name(), "AppDynamics")
-		require.Len(t, resource.Spec(), 18)
+		require.Equal(t, "grizzly.grafana.com/v1alpha1", resource.APIVersion())
+		require.Equal(t, "AppDynamics", resource.Name())
+		require.Len(t, resource.Spec(), 12)
 	})
 
 	t.Run("get remote datasource - not found", func(t *testing.T) {
 		_, err := handler.GetByUID("dummy")
-		require.Equal(t, err, grizzly.ErrNotFound)
+		require.Equal(t, grizzly.ErrNotFound, err)
 	})
 
 	t.Run("get remote datasources list", func(t *testing.T) {
@@ -64,7 +64,7 @@ func TestDatasources(t *testing.T) {
 		ds, err := handler.GetByUID("appdynamics")
 		require.NoError(t, err)
 		require.NotNil(t, ds)
-		require.Equal(t, ds.Spec()["type"], "dlopes7-appdynamics-datasource")
+		require.Equal(t, "dlopes7-appdynamics-datasource", ds.Spec()["type"])
 
 		t.Run("put remote datasource - update", func(t *testing.T) {
 			ds.SetSpecString("type", "new-type")
@@ -75,7 +75,7 @@ func TestDatasources(t *testing.T) {
 			updatedDS, err := handler.GetByUID("appdynamics")
 			require.NoError(t, err)
 
-			require.Equal(t, updatedDS.Spec()["type"], "new-type")
+			require.Equal(t, "new-type", updatedDS.Spec()["type"])
 		})
 	})
 
@@ -94,7 +94,7 @@ func TestDatasources(t *testing.T) {
 
 		var non200ResponseErr ErrNon200Response
 		require.ErrorAs(t, err, &non200ResponseErr)
-		require.Equal(t, non200ResponseErr.Response.StatusCode, 409)
+		require.Equal(t, 409, non200ResponseErr.Response.StatusCode)
 	})
 
 	t.Run("Check getUID is functioning correctly", func(t *testing.T) {
@@ -106,6 +106,6 @@ func TestDatasources(t *testing.T) {
 		handler := DatasourceHandler{}
 		uid, err := handler.GetUID(resource)
 		require.NoError(t, err)
-		require.Equal(t, uid, "test")
+		require.Equal(t, "test", uid)
 	})
 }

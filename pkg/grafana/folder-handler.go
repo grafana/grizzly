@@ -89,7 +89,7 @@ func (h *FolderHandler) GetUID(resource grizzly.Resource) (string, error) {
 func (h *FolderHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	resource, err := getRemoteFolder(h.Provider.client, UID)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving dashboard folder %s: %v", UID, err)
+		return nil, fmt.Errorf("Error retrieving dashboard folder %s: %w", UID, err)
 	}
 
 	return resource, nil

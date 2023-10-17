@@ -3,9 +3,7 @@ package grafana
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
-	gerrors "github.com/go-openapi/errors"
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
 	"github.com/grafana/grafana-openapi-client-go/client/search"
@@ -26,8 +24,8 @@ func getRemoteDashboard(client *gclient.GrafanaHTTPAPI, uid string) (*grizzly.Re
 	params := dashboards.NewGetDashboardByUIDParams().WithUID(uid)
 	dashboardOk, err := client.Dashboards.GetDashboardByUID(params, nil)
 	if err != nil {
-		var gErr gerrors.Error
-		if errors.As(err, &gErr) && gErr.Code() == http.StatusNotFound {
+		var gErr *dashboards.GetDashboardByUIDNotFound
+		if errors.As(err, &gErr) {
 			return nil, grizzly.ErrNotFound
 		}
 		return nil, err

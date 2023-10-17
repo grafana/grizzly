@@ -92,7 +92,7 @@ func (h *DashboardHandler) GetUID(resource grizzly.Resource) (string, error) {
 func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	resource, err := getRemoteDashboard(h.Provider.client, UID)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving dashboard %s: %v", UID, err)
+		return nil, fmt.Errorf("Error retrieving dashboard %s: %w", UID, err)
 	}
 	return resource, nil
 }

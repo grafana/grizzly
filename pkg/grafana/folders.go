@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 
-	gerrors "github.com/go-openapi/errors"
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/folders"
 	"github.com/grafana/grafana-openapi-client-go/models"
@@ -28,9 +26,9 @@ func getRemoteFolder(client *gclient.GrafanaHTTPAPI, uid string) (*grizzly.Resou
 		params := folders.NewGetFolderByUIDParams().WithFolderUID(uid)
 		folderOk, err := client.Folders.GetFolderByUID(params, nil)
 		if err != nil {
-			var gErr gerrors.Error
-			if errors.As(err, &gErr) && gErr.Code() == http.StatusNotFound {
-				return nil, grizzly.ErrNotFound
+			var gErr *folders.GetFolderByUIDNotFound
+			if errors.As(err, &gErr) {
+				return nil, fmt.Errorf("couldn't fetch folder '%s' from remote: %w", uid, grizzly.ErrNotFound)
 			}
 			return nil, err
 		}

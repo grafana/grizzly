@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	gerrors "github.com/go-openapi/errors"
+	"github.com/go-openapi/runtime"
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/datasources"
 	"github.com/grafana/grafana-openapi-client-go/models"
@@ -23,12 +23,14 @@ func getRemoteDatasource(client *gclient.GrafanaHTTPAPI, uid string) (*grizzly.R
 	datasourceOk, err := client.Datasources.GetDataSourceByUID(params, nil)
 	var datasource *models.DataSource
 	if err != nil {
-		var gErr gerrors.Error
-		if errors.As(err, &gErr) && gErr.Code() == http.StatusNotFound {
+		var gErr *datasources.GetDataSourceByUIDNotFound
+		if errors.As(err, &gErr) {
 			params := datasources.NewGetDataSourceByNameParams().WithName(uid)
 			datasourceOk, err := client.Datasources.GetDataSourceByName(params, nil)
 			if err != nil {
-				if errors.As(err, &gErr) && gErr.Code() == http.StatusNotFound {
+				// OpenAPI definition does not define 404 for GetDataSourceByName, so falls though to runtime.APIError.
+				var gErr *runtime.APIError
+				if errors.As(err, &gErr) && gErr.IsCode(http.StatusNotFound) {
 					return nil, grizzly.ErrNotFound
 				}
 				return nil, err

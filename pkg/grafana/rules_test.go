@@ -113,7 +113,7 @@ func TestRules(t *testing.T) {
 		handler := RuleHandler{}
 		uid, err := handler.GetUID(resource)
 		require.NoError(t, err)
-		require.Equal(t, uid, "test_namespace.test")
+		require.Equal(t, "test_namespace.test", uid)
 	})
 }
 
