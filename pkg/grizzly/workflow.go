@@ -105,6 +105,7 @@ func ListRemote(opts Opts) error {
 
 // Pull pulls remote resources and stores them in the local file system.
 // The given resourcePath must be a directory, where all resources will be stored.
+// If opts.JSONSpec is true, which is only applicable for dashboards, saves the spec as a JSON file.
 func Pull(resourcePath string, opts Opts) error {
 	isFile, err := isFile(resourcePath)
 	if err != nil {
@@ -144,8 +145,14 @@ func Pull(resourcePath string, opts Opts) error {
 				return err
 			}
 
-			path := filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "yaml"))
-			err = MarshalYAML(*resource, path)
+			if opts.JSONSpec {
+				path := filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "json"))
+				err = MarshalSpecToJSON(*resource, path)
+			} else {
+				path := filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "yaml"))
+				err = MarshalYAML(*resource, path)
+			}
+
 			if err != nil {
 				return err
 			}

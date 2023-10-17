@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/go-clix/cli"
@@ -10,6 +11,8 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	log "github.com/sirupsen/logrus"
 )
+
+const generalFolderUID = "general"
 
 func getCmd() *cli.Command {
 	cmd := &cli.Command{
@@ -67,10 +70,17 @@ func pullCmd() *cli.Command {
 	var opts grizzly.Opts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		if err := checkDashboardTarget(opts); err != nil {
+			return err
+		}
+
 		return grizzly.Pull(args[0], opts)
 	}
+
+	cmd.Flags().BoolVarP(&opts.JSONSpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
 	return initialiseCmd(cmd, &opts)
 }
+
 func showCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "show <resource-path>",
@@ -116,13 +126,41 @@ func applyCmd() *cli.Command {
 	var opts grizzly.Opts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		if err := checkDashboardTarget(opts); err != nil {
+			return err
+		}
+
 		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
 			return err
 		}
 		return grizzly.Apply(resources)
 	}
+
+	cmd.Flags().StringVarP(&opts.FolderUID, "folder", "f", generalFolderUID, "folder to push dashboards to")
+	cmd.Flags().BoolVarP(&opts.JSONSpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
 	return initialiseCmd(cmd, &opts)
+}
+
+// targetsOfKind checks if the specified targets are of certain kind
+func targetsOfKind(kind string, opts grizzly.Opts) bool {
+	for _, t := range opts.Targets {
+		if !(strings.Contains(t, "/") && strings.Split(t, "/")[0] == kind) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// checkDashboardTarget ensures that the specified targets are of dashboards kind
+func checkDashboardTarget(opts grizzly.Opts) error {
+	ok := targetsOfKind("Dashboard", opts)
+	if opts.JSONSpec && !ok {
+		return fmt.Errorf("-s flag is only supported for dashboards")
+	}
+
+	return nil
 }
 
 type jsonnetWatchParser struct {
@@ -222,6 +260,7 @@ func providersCmd() *cli.Command {
 		}
 		return w.Flush()
 	}
+
 	return initialiseLogging(cmd, &opts)
 }
 

@@ -59,14 +59,95 @@ func FindResourceFiles(resourcePath string) ([]string, error) {
 }
 
 func ParseFile(opts Opts, resourceFile string) (Resources, error) {
+	if opts.JSONSpec && filepath.Ext(resourceFile) != ".json" {
+		return nil, fmt.Errorf("when -s flag is passed, command expects only json files as resources")
+	}
+
 	switch filepath.Ext(resourceFile) {
+	case ".json":
+		return ParseJSON(resourceFile, opts)
 	case ".yaml", ".yml":
 		return ParseYAML(resourceFile, opts)
-	case ".jsonnet", ".libsonnet", ".json":
+	case ".jsonnet", ".libsonnet":
 		return ParseJsonnet(resourceFile, opts)
 	default:
 		return nil, fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)
 	}
+}
+
+func manifestFile(resourceFile string) (bool, error) {
+	if filepath.Ext(resourceFile) != ".json" {
+		return false, nil
+	}
+
+	m := map[string]interface{}{}
+
+	f, err := os.Open(resourceFile)
+	if err != nil {
+		return false, err
+	}
+
+	err = json.NewDecoder(f).Decode(&m)
+	if err != nil {
+		return false, err
+	}
+
+	if _, ok := m["spec"]; ok {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// ParseJSON evaluates a JSON file and parses it into resources
+func ParseJSON(resourceFile string, opts Opts) (Resources, error) {
+	if opts.JSONSpec {
+		return ParseDashboardJSON(resourceFile, opts)
+	}
+
+	isManifest, err := manifestFile(resourceFile)
+	if err != nil {
+		return Resources{}, err
+	}
+
+	// TODO: refactor, no need to read the file twice
+	if !isManifest {
+		return ParseDashboardJSON(resourceFile, opts)
+	}
+
+	return ParseJsonnet(resourceFile, opts)
+}
+
+// ParseDashboardJSON parses a JSON file with a single dashboard object into a Resources (to align with ParseFile interface)
+func ParseDashboardJSON(jsonFile string, opts Opts) (Resources, error) {
+	if filepath.Ext(jsonFile) != ".json" {
+		return nil, fmt.Errorf("when -s flag is passed, command expects only json files as resources")
+	}
+
+	f, err := os.Open(jsonFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var spec map[string]interface{}
+	err = json.NewDecoder(f).Decode(&spec)
+	if err != nil {
+		return Resources{}, err
+	}
+
+	handler := Registry.Handlers["Dashboard"]
+
+	resource := Resource{
+		"apiVersion": handler.APIVersion(),
+		"kind":       handler.Kind(),
+		"metadata": map[string]interface{}{
+			"folder": opts.FolderUID,
+			"name":   spec["uid"],
+		},
+		"spec": spec,
+	}
+
+	return Resources{resource}, nil
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources
@@ -174,12 +255,24 @@ func MarshalYAML(resource Resource, filename string) error {
 	if err != nil {
 		return err
 	}
-	dir := filepath.Dir(filename)
-	err = os.MkdirAll(dir, 0755)
+	return writeFile(filename, []byte(y))
+}
+
+func MarshalSpecToJSON(resource Resource, filename string) error {
+	j, err := json.MarshalIndent(resource.Spec(), "", "  ")
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(filename, []byte(y), 0644)
+	return writeFile(filename, j)
+}
+
+func writeFile(filename string, content []byte) error {
+	dir := filepath.Dir(filename)
+	err := os.MkdirAll(dir, 0755)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filename, content, 0644)
 	if err != nil {
 		return err
 	}
