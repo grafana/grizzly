@@ -4,8 +4,17 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strconv"
+
+	"github.com/go-openapi/runtime"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
+
+	"github.com/grafana/grafana-openapi-client-go/client/datasources"
+	"github.com/grafana/grafana-openapi-client-go/models"
 )
 
 // DatasourceHandler is a Grizzly Handler for Grafana datasources
@@ -111,25 +120,127 @@ func (h *DatasourceHandler) GetUID(resource grizzly.Resource) (string, error) {
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	return getRemoteDatasource(h.Provider.client, UID)
+	return h.getRemoteDatasource(UID)
 }
 
 // GetRemote retrieves a datasource as a Resource
 func (h *DatasourceHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
-	return getRemoteDatasource(h.Provider.client, resource.Name())
+	return h.getRemoteDatasource(resource.Name())
 }
 
 // ListRemote retrieves as list of UIDs of all remote resources
 func (h *DatasourceHandler) ListRemote() ([]string, error) {
-	return getRemoteDatasourceList(h.Provider.client)
+	return h.getRemoteDatasourceList()
 }
 
 // Add pushes a datasource to Grafana via the API
 func (h *DatasourceHandler) Add(resource grizzly.Resource) error {
-	return postDatasource(h.Provider.client, resource)
+	return h.postDatasource(resource)
 }
 
 // Update pushes a datasource to Grafana via the API
 func (h *DatasourceHandler) Update(existing, resource grizzly.Resource) error {
-	return putDatasource(h.Provider.client, resource)
+	return h.putDatasource(resource)
+}
+
+// Losing a bunch of omitempty fields
+
+// getRemoteDatasource retrieves a datasource object from Grafana
+func (h *DatasourceHandler) getRemoteDatasource(uid string) (*grizzly.Resource, error) {
+	client := h.Provider.client
+
+	params := datasources.NewGetDataSourceByUIDParams().WithUID(uid)
+	datasourceOk, err := client.Datasources.GetDataSourceByUID(params, nil)
+	var datasource *models.DataSource
+	if err != nil {
+		var gErr *datasources.GetDataSourceByUIDNotFound
+		if errors.As(err, &gErr) {
+			params := datasources.NewGetDataSourceByNameParams().WithName(uid)
+			datasourceOk, err := client.Datasources.GetDataSourceByName(params, nil)
+			if err != nil {
+				// OpenAPI definition does not define 404 for GetDataSourceByName, so falls though to runtime.APIError.
+				var gErr *runtime.APIError
+				if errors.As(err, &gErr) && gErr.IsCode(http.StatusNotFound) {
+					return nil, grizzly.ErrNotFound
+				}
+				return nil, err
+			} else {
+				datasource = datasourceOk.GetPayload()
+			}
+		} else {
+			return nil, err
+		}
+	} else {
+		datasource = datasourceOk.GetPayload()
+	}
+
+	// TODO: Turn spec into a real models.Datasource object
+	spec, err := structToMap(datasource)
+	if err != nil {
+		return nil, err
+	}
+
+	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
+	return &resource, nil
+}
+
+func (h *DatasourceHandler) getRemoteDatasourceList() ([]string, error) {
+	client := h.Provider.client
+
+	params := datasources.NewGetDataSourcesParams()
+	datasourcesOk, err := client.Datasources.GetDataSources(params, nil)
+	if err != nil {
+		return nil, err
+	}
+	datasources := datasourcesOk.GetPayload()
+
+	uids := make([]string, len(datasources))
+	for i, datasource := range datasources {
+		uids[i] = datasource.UID
+	}
+	return uids, nil
+}
+
+func (h *DatasourceHandler) postDatasource(resource grizzly.Resource) error {
+	client := h.Provider.client
+
+	// TODO: Turn spec into a real models.DataSource object
+	data, err := json.Marshal(resource.Spec())
+	if err != nil {
+		return err
+	}
+
+	var datasource models.AddDataSourceCommand
+	err = json.Unmarshal(data, &datasource)
+	if err != nil {
+		return err
+	}
+	params := datasources.NewAddDataSourceParams().WithBody(&datasource)
+	_, err = client.Datasources.AddDataSource(params, nil)
+	return err
+}
+
+func (h *DatasourceHandler) putDatasource(resource grizzly.Resource) error {
+	client := h.Provider.client
+
+	// TODO: Turn spec into a real models.DataSource object
+	data, err := json.Marshal(resource.Spec())
+	if err != nil {
+		return err
+	}
+
+	var modelDatasource models.DataSource
+	err = json.Unmarshal(data, &modelDatasource)
+	if err != nil {
+		return err
+	}
+
+	var datasource models.UpdateDataSourceCommand
+	err = json.Unmarshal(data, &datasource)
+	if err != nil {
+		return err
+	}
+	params := datasources.NewUpdateDataSourceByIDParams().WithID(strconv.FormatInt(modelDatasource.ID, 10)).WithBody(&datasource)
+	_, err = client.Datasources.UpdateDataSourceByID(params, nil)
+	return err
 }
