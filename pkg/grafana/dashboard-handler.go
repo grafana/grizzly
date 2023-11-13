@@ -75,6 +75,8 @@ func (h *DashboardHandler) Parse(m manifest.Manifest) (grizzly.Resources, error)
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *DashboardHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
+	resource.DeleteSpecKey("id")
+	resource.DeleteSpecKey("version")
 	return &resource
 }
 
