@@ -66,7 +66,7 @@ func (h *FolderHandler) ResourceFilePath(resource grizzly.Resource, filetype str
 // Parse parses a manifest object into a struct for this resource type
 func (h *FolderHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 	resource := grizzly.Resource(m)
-	resource.SetSpecString("uid", resource.GetMetadata("name"))
+	resource.SetSpecString("uid", resource.Name())
 	return grizzly.Resources{resource}, nil
 }
 
@@ -87,9 +87,9 @@ func (h *FolderHandler) GetUID(resource grizzly.Resource) (string, error) {
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *FolderHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	resource, err := getRemoteFolder(UID)
+	resource, err := getRemoteFolder(h.Provider.client, UID)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving dashboard folder %s: %v", UID, err)
+		return nil, fmt.Errorf("Error retrieving dashboard folder %s: %w", UID, err)
 	}
 
 	return resource, nil
@@ -97,20 +97,20 @@ func (h *FolderHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 
 // GetRemote retrieves a folder as a resource
 func (h *FolderHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
-	return getRemoteFolder(resource.Name())
+	return getRemoteFolder(h.Provider.client, resource.Name())
 }
 
 // ListRemote retrieves as list of UIDs of all remote resources
 func (h *FolderHandler) ListRemote() ([]string, error) {
-	return getRemoteFolderList()
+	return getRemoteFolderList(h.Provider.client)
 }
 
 // Add pushes a new folder to Grafana via the API
 func (h *FolderHandler) Add(resource grizzly.Resource) error {
-	return postFolder(resource)
+	return postFolder(h.Provider.client, resource)
 }
 
 // Update pushes a folder to Grafana via the API
 func (h *FolderHandler) Update(existing, resource grizzly.Resource) error {
-	return putFolder(resource)
+	return putFolder(h.Provider.client, resource)
 }

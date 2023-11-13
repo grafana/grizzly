@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -13,10 +14,14 @@ import (
 var errCortextoolClient = errors.New("error coming from cortextool client")
 
 func TestRules(t *testing.T) {
+	os.Setenv("GRAFANA_URL", GetUrl())
+
+	grafanaClient, err := GetClient()
+	require.NoError(t, err)
 
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			&Provider{},
+			NewProvider(grafanaClient),
 		})
 
 	t.Run("get remote rule group", func(t *testing.T) {
@@ -108,7 +113,7 @@ func TestRules(t *testing.T) {
 		handler := RuleHandler{}
 		uid, err := handler.GetUID(resource)
 		require.NoError(t, err)
-		require.Equal(t, uid, "test_namespace.test")
+		require.Equal(t, "test_namespace.test", uid)
 	})
 }
 
@@ -127,17 +132,4 @@ func mockCortexTool(t *testing.T, file string, err error) {
 	t.Cleanup(func() {
 		cortexTool = origCorexTool
 	})
-}
-
-type mockCTClient struct {
-	rules []byte
-	err   error
-}
-
-func (m mockCTClient) listRules() ([]byte, error) {
-	return m.rules, m.err
-}
-
-func (m mockCTClient) writeRules(namespace, fileName string) error {
-	return m.err
 }

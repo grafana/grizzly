@@ -11,13 +11,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	cortexApiKey     = "CORTEX_API_KEY"
-	cortexAddress    = "CORTEX_ADDRESS"
-	cortexTenantID   = "CORTEX_TENANT_ID"
-	backenTypeCortex = "cortex"
-)
-
 var cortexTool = func(args ...string) ([]byte, error) {
 	path := os.Getenv("CORTEXTOOL_PATH")
 	if path == "" {

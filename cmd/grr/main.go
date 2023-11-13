@@ -20,9 +20,14 @@ func main() {
 		Version: Version,
 	}
 
+	gclient, err := grafana.GetClient()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			&grafana.Provider{},
+			grafana.NewProvider(gclient),
 		})
 
 	// workflow commands

@@ -78,7 +78,7 @@ func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.Resources, error
 		"withCredentials":   false,
 		"readOnly":          false,
 	}
-	spec := resource["spec"].(map[string]interface{})
+	spec := resource.Spec()
 	for k := range defaults {
 		_, ok := spec[k]
 		if !ok {
@@ -111,25 +111,25 @@ func (h *DatasourceHandler) GetUID(resource grizzly.Resource) (string, error) {
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	return getRemoteDatasource(UID)
+	return getRemoteDatasource(h.Provider.client, UID)
 }
 
 // GetRemote retrieves a datasource as a Resource
 func (h *DatasourceHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
-	return getRemoteDatasource(resource.Name())
+	return getRemoteDatasource(h.Provider.client, resource.Name())
 }
 
 // ListRemote retrieves as list of UIDs of all remote resources
 func (h *DatasourceHandler) ListRemote() ([]string, error) {
-	return getRemoteDatasourceList()
+	return getRemoteDatasourceList(h.Provider.client)
 }
 
 // Add pushes a datasource to Grafana via the API
 func (h *DatasourceHandler) Add(resource grizzly.Resource) error {
-	return postDatasource(resource)
+	return postDatasource(h.Provider.client, resource)
 }
 
 // Update pushes a datasource to Grafana via the API
 func (h *DatasourceHandler) Update(existing, resource grizzly.Resource) error {
-	return putDatasource(resource)
+	return putDatasource(h.Provider.client, resource)
 }
