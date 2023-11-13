@@ -19,6 +19,10 @@ type FolderHandler struct {
 	Provider Provider
 }
 
+type FolderExtractor interface {
+	getFolderById(folderId int64) (*models.Folder, error)
+}
+
 // NewFolderHandler returns configuration defining a new Grafana Folder Handler
 func NewFolderHandler(provider Provider) *FolderHandler {
 	return &FolderHandler{

@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
@@ -116,7 +115,7 @@ func TestExtractFolderUID(t *testing.T) {
 		dashboard := models.DashboardFullWithMeta{
 			Meta: &meta,
 		}
-		uid := h.extractFolderUID(client, dashboard)
+		uid := h.extractFolderUID(&mockFolderExtractor{}, dashboard)
 		require.Equal(t, "sample", uid)
 	})
 
@@ -127,7 +126,7 @@ func TestExtractFolderUID(t *testing.T) {
 		dashboard := models.DashboardFullWithMeta{
 			Meta: &meta,
 		}
-		uid := h.extractFolderUID(client, dashboard)
+		uid := h.extractFolderUID(&mockFolderExtractor{}, dashboard)
 		require.Equal(t, "sample", uid)
 	})
 
@@ -138,12 +137,16 @@ func TestExtractFolderUID(t *testing.T) {
 		dashboard := models.DashboardFullWithMeta{
 			Meta: &meta,
 		}
-		getFolderById = func(client *gclient.GrafanaHTTPAPI, folderId int64) (*models.Folder, error) {
-			return &models.Folder{
-				UID: "12345",
-			}, nil
-		}
-		uid := h.extractFolderUID(client, dashboard)
+
+		uid := h.extractFolderUID(&mockFolderExtractor{}, dashboard)
 		require.Equal(t, "12345", uid)
 	})
+}
+
+type mockFolderExtractor struct{}
+
+func (m *mockFolderExtractor) getFolderById(folderId int64) (*models.Folder, error) {
+	return &models.Folder{
+		UID: "12345",
+	}, nil
 }

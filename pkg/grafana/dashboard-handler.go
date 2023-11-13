@@ -11,7 +11,6 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 
-	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
 	"github.com/grafana/grafana-openapi-client-go/client/search"
 	"github.com/grafana/grafana-openapi-client-go/client/snapshots"
@@ -168,7 +167,9 @@ func (h *DashboardHandler) getRemoteDashboard(uid string) (*grizzly.Resource, er
 	}
 
 	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
-	folderUid := h.extractFolderUID(client, *dashboard)
+	folderHandler := NewFolderHandler(h.Provider)
+
+	folderUid := h.extractFolderUID(folderHandler, *dashboard)
 	resource.SetMetadata("folder", folderUid)
 	return &resource, nil
 }
@@ -248,7 +249,7 @@ func (h *DashboardHandler) postSnapshot(resource grizzly.Resource, opts *grizzly
 
 var folderURLRegex = regexp.MustCompile("/dashboards/f/([^/]+)")
 
-func (h *DashboardHandler) extractFolderUID(client *gclient.GrafanaHTTPAPI, d models.DashboardFullWithMeta) string {
+func (h *DashboardHandler) extractFolderUID(folderExtractor FolderExtractor, d models.DashboardFullWithMeta) string {
 	folderUid := d.Meta.FolderUID
 	if folderUid == "" {
 		urlPaths := folderURLRegex.FindStringSubmatch(d.Meta.FolderURL)
@@ -256,8 +257,7 @@ func (h *DashboardHandler) extractFolderUID(client *gclient.GrafanaHTTPAPI, d mo
 			if d.Meta.FolderID == generalFolderId {
 				return generalFolderUID
 			}
-			folderHandler := NewFolderHandler(h.Provider)
-			folder, err := folderHandler.getFolderById(d.Meta.FolderID)
+			folder, err := folderExtractor.getFolderById(d.Meta.FolderID)
 			if err != nil {
 				return ""
 			}
