@@ -19,15 +19,17 @@ func TestRules(t *testing.T) {
 	grafanaClient, err := GetClient()
 	require.NoError(t, err)
 
+	provider := NewProvider(grafanaClient)
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			NewProvider(grafanaClient),
+			provider,
 		})
+	handler := NewRuleHandler(*provider)
 
 	t.Run("get remote rule group", func(t *testing.T) {
 		mockCortexTool(t, "testdata/list_rules.yaml", nil)
 
-		res, err := getRemoteRuleGroup("first_rules.grizzly_alerts")
+		res, err := handler.getRemoteRuleGroup("first_rules.grizzly_alerts")
 		require.NoError(t, err)
 		handler := RuleHandler{}
 		uid, err := handler.GetUID(*res)
@@ -44,7 +46,7 @@ func TestRules(t *testing.T) {
 	t.Run("get remote rule group - error from cortextool client", func(t *testing.T) {
 		mockCortexTool(t, "", errCortextoolClient)
 
-		res, err := getRemoteRuleGroup("first_rules.grizzly_alerts")
+		res, err := handler.getRemoteRuleGroup("first_rules.grizzly_alerts")
 		require.Error(t, err)
 		require.Nil(t, res)
 	})
@@ -52,7 +54,7 @@ func TestRules(t *testing.T) {
 	t.Run("get remote rule group - return not found", func(t *testing.T) {
 		mockCortexTool(t, "testdata/list_rules.yaml", nil)
 
-		res, err := getRemoteRuleGroup("name.name")
+		res, err := handler.getRemoteRuleGroup("name.name")
 		require.Error(t, err)
 		require.Nil(t, res)
 	})
@@ -60,7 +62,7 @@ func TestRules(t *testing.T) {
 	t.Run("get remote rule group list", func(t *testing.T) {
 		mockCortexTool(t, "testdata/list_rules.yaml", nil)
 
-		res, err := getRemoteRuleGroupList()
+		res, err := handler.getRemoteRuleGroupList()
 		require.NoError(t, err)
 		require.Equal(t, "first_rules.grizzly_alerts", res[0])
 	})
@@ -68,7 +70,7 @@ func TestRules(t *testing.T) {
 	t.Run("get remote rule group list", func(t *testing.T) {
 		mockCortexTool(t, "", errCortextoolClient)
 
-		res, err := getRemoteRuleGroupList()
+		res, err := handler.getRemoteRuleGroupList()
 		require.Error(t, err)
 		require.Nil(t, res)
 	})
@@ -84,7 +86,7 @@ func TestRules(t *testing.T) {
 
 		resource := grizzly.NewResource("apiV", "kind", "name", spec)
 		resource.SetMetadata("namespace", "value")
-		err = writeRuleGroup(resource)
+		err = handler.writeRuleGroup(resource)
 		require.NoError(t, err)
 	})
 
@@ -99,7 +101,7 @@ func TestRules(t *testing.T) {
 
 		resource := grizzly.NewResource("apiV", "kind", "name", spec)
 		resource.SetMetadata("namespace", "value")
-		err = writeRuleGroup(resource)
+		err = handler.writeRuleGroup(resource)
 		require.Error(t, err)
 	})
 
