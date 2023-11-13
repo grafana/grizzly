@@ -3,6 +3,7 @@ package grafana
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 
 	"errors"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 
+	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
 	"github.com/grafana/grafana-openapi-client-go/client/search"
 	"github.com/grafana/grafana-openapi-client-go/client/snapshots"
@@ -166,7 +168,7 @@ func (h *DashboardHandler) getRemoteDashboard(uid string) (*grizzly.Resource, er
 	}
 
 	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
-	folderUid := extractFolderUID(client, *dashboard)
+	folderUid := h.extractFolderUID(client, *dashboard)
 	resource.SetMetadata("folder", folderUid)
 	return &resource, nil
 }
@@ -204,7 +206,8 @@ func (h *DashboardHandler) postDashboard(resource grizzly.Resource) error {
 	folderUID := resource.GetMetadata("folder")
 	var folderID int64
 	if !(folderUID == "General" || folderUID == "general") {
-		folder, err := getRemoteFolder(client, folderUID)
+		folderHandler := NewFolderHandler(h.Provider)
+		folder, err := folderHandler.getRemoteFolder(folderUID)
 		if err != nil {
 			if errors.Is(err, grizzly.ErrNotFound) {
 				return fmt.Errorf("cannot upload dashboard %s as folder %s not found", resource.Name(), folderUID)
@@ -241,4 +244,26 @@ func (h *DashboardHandler) postSnapshot(resource grizzly.Resource, opts *grizzly
 		return nil, err
 	}
 	return response.GetPayload(), nil
+}
+
+var folderURLRegex = regexp.MustCompile("/dashboards/f/([^/]+)")
+
+func (h *DashboardHandler) extractFolderUID(client *gclient.GrafanaHTTPAPI, d models.DashboardFullWithMeta) string {
+	folderUid := d.Meta.FolderUID
+	if folderUid == "" {
+		urlPaths := folderURLRegex.FindStringSubmatch(d.Meta.FolderURL)
+		if len(urlPaths) == 0 {
+			if d.Meta.FolderID == generalFolderId {
+				return generalFolderUID
+			}
+			folderHandler := NewFolderHandler(h.Provider)
+			folder, err := folderHandler.getFolderById(d.Meta.FolderID)
+			if err != nil {
+				return ""
+			}
+			return folder.UID
+		}
+		folderUid = urlPaths[1]
+	}
+	return folderUid
 }
