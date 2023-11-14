@@ -299,3 +299,22 @@ func initialiseLogging(cmd *cli.Command, loggingOpts *grizzly.LoggingOpts) *cli.
 func getDefaultJsonnetFolders() []string {
 	return []string{"vendor", "lib", "."}
 }
+
+func proxyCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "proxy <resources>",
+		Short: "Run debugging proxy",
+		Args:  cli.ArgsExact(1),
+	}
+	var opts grizzly.Opts
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		parser := &jsonnetWatchParser{
+			resourcePath: args[0],
+			opts:         opts,
+		}
+		return grizzly.Proxy(parser, args[0], opts)
+	}
+	cmd.Flags().BoolVarP(&opts.JSONSpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
+	return initialiseCmd(cmd, &opts)
+}
