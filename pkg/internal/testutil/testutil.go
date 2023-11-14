@@ -11,7 +11,7 @@ func GetUrl() string {
 	if os.Getenv("CI") != "" {
 		return "http://grizzly-grafana:3000/"
 	} else {
-		return "http://localhost:3000/"
+		return "http://localhost:3001/"
 	}
 }
 
