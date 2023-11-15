@@ -69,7 +69,7 @@ func TestDatasources(t *testing.T) {
 		t.Run("put remote datasource - update", func(t *testing.T) {
 			ds.SetSpecString("type", "new-type")
 
-			err := handler.Add(*ds)
+			err := handler.Update(nil, *ds)
 			require.NoError(t, err)
 
 			updatedDS, err := handler.GetByUID("appdynamics")

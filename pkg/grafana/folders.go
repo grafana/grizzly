@@ -118,7 +118,6 @@ func putFolder(client *gclient.GrafanaHTTPAPI, resource grizzly.Resource) error 
 
 	body := models.UpdateFolderCommand{
 		Title: folder.Title,
-		UID:   folder.UID,
 	}
 	params := folders.NewUpdateFolderParams().WithBody(&body)
 	_, err = client.Folders.UpdateFolder(params, nil)
