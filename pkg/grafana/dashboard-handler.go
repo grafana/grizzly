@@ -205,7 +205,8 @@ func (h *DashboardHandler) postDashboard(resource grizzly.Resource) error {
 	folderUID := resource.GetMetadata("folder")
 	var folderID int64
 	if !(folderUID == "General" || folderUID == "general") {
-		folder, err := getRemoteFolder(h.Provider.client, folderUID)
+		folderHandler := NewFolderHandler(h.Provider)
+		folder, err := folderHandler.getRemoteFolder(folderUID)
 		if err != nil {
 			if errors.Is(err, grizzly.ErrNotFound) {
 				return fmt.Errorf("cannot upload dashboard %s as folder %s not found", resource.Name(), folderUID)
