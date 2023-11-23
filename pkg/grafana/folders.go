@@ -26,9 +26,10 @@ func getRemoteFolder(client *gclient.GrafanaHTTPAPI, uid string) (*grizzly.Resou
 		params := folders.NewGetFolderByUIDParams().WithFolderUID(uid)
 		folderOk, err := client.Folders.GetFolderByUID(params, nil)
 		if err != nil {
-			var gErr *folders.GetFolderByUIDNotFound
-			if errors.As(err, &gErr) {
-				return nil, fmt.Errorf("couldn't fetch folder '%s' from remote: %w", uid, grizzly.ErrNotFound)
+			var gErrNotFound *folders.GetFolderByUIDNotFound
+			var gErrForbidden *folders.GetFolderByUIDForbidden
+			if errors.As(err, &gErrNotFound) || errors.As(err, &gErrForbidden) {
+				return nil, fmt.Errorf("Couldn't fetch folder '%s' from remote: %w", uid, grizzly.ErrNotFound)
 			}
 			return nil, err
 		}

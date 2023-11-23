@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-openapi/runtime"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
@@ -38,7 +39,7 @@ func TestFolders(t *testing.T) {
 
 	t.Run("get remote folder - not found", func(t *testing.T) {
 		_, err := handler.GetByUID("dummy")
-		require.ErrorContains(t, err, "couldn't fetch folder 'dummy' from remote: not found")
+		require.ErrorContains(t, err, "Couldn't fetch folder 'dummy' from remote: not found")
 	})
 
 	t.Run("get folders list", func(t *testing.T) {
@@ -66,16 +67,12 @@ func TestFolders(t *testing.T) {
 		require.NotNil(t, remoteFolder)
 		require.Equal(t, "/dashboards/f/newFolder/new-folder", remoteFolder.Spec()["url"])
 
-		t.Run("put remote folder - update uid", func(t *testing.T) {
+		t.Run("conflict: put remote folder - update uid", func(t *testing.T) {
 			remoteFolder.SetSpecString("uid", "dummyUid")
 
 			err := handler.Add(*remoteFolder)
-			require.NoError(t, err)
-
-			updatedFolder, err := handler.GetByUID("dummyUid")
-			require.NoError(t, err)
-
-			require.Equal(t, "dummyUid", updatedFolder.Spec()["uid"])
+			apiError := err.(APIResponse)
+			require.Equal(t, 409, apiError.Code())
 		})
 	})
 
@@ -91,8 +88,7 @@ func TestFolders(t *testing.T) {
 		resource.SetSpecString("title", "Azure Data Explorer")
 
 		err = handler.Add(resource)
-		var non200ResponseErr ErrNon200Response
-		require.ErrorAs(t, err, &non200ResponseErr)
-		require.Equal(t, 409, non200ResponseErr.Response.StatusCode)
+		apiError := err.(*runtime.APIError)
+		require.Equal(t, 412, apiError.Code)
 	})
 }

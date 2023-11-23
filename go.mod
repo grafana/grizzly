@@ -11,7 +11,7 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.20.0
 	github.com/gorilla/websocket v1.5.1
-	github.com/grafana/grafana-openapi-client-go v0.0.0-20231114144828-3badf606e950
+	github.com/grafana/grafana-openapi-client-go v0.0.0-20231123143558-91f2985bb3ef
 	github.com/grafana/synthetic-monitoring-agent v0.16.5
 	github.com/grafana/synthetic-monitoring-api-go-client v0.7.0
 	github.com/grafana/tanka v0.25.0

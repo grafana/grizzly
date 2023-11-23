@@ -121,6 +121,8 @@ github.com/gorilla/websocket v1.5.1 h1:gmztn0JnHVt9JZquRuzLw3g4wouNVzKL15iLr/zn/
 github.com/gorilla/websocket v1.5.1/go.mod h1:x3kM2JMyaluk02fnUJpQuwD2dCS5NDG2ZHL0uE0tcaY=
 github.com/grafana/grafana-openapi-client-go v0.0.0-20231114144828-3badf606e950 h1:StV8HNaV7hfX4cQVOVfn+WAbRZL9rROd/pejjvVg6FU=
 github.com/grafana/grafana-openapi-client-go v0.0.0-20231114144828-3badf606e950/go.mod h1:2vJ8YEgriYoHaNg5eijRU/q7eJTxT078VrGRSTTLeRk=
+github.com/grafana/grafana-openapi-client-go v0.0.0-20231123143558-91f2985bb3ef h1:wPNbC5nrNXSGIPctfmFhJNoBAhnCOe1aZm5ymiFzlKM=
+github.com/grafana/grafana-openapi-client-go v0.0.0-20231123143558-91f2985bb3ef/go.mod h1:2vJ8YEgriYoHaNg5eijRU/q7eJTxT078VrGRSTTLeRk=
 github.com/grafana/synthetic-monitoring-agent v0.16.5 h1:aKspOWUQyQAH1jfzTae8+Buks+TJR3IrhTLFhWRTmG8=
 github.com/grafana/synthetic-monitoring-agent v0.16.5/go.mod h1:nvUY4lgjsX9MQAbsYvIhWSECcpL6i7Ml/9PXkJj3KWw=
 github.com/grafana/synthetic-monitoring-api-go-client v0.7.0 h1:3ZfQzmXDBPcQTTgMAIIiTw5Dwxm/B4lzf34Sto0d0YY=
