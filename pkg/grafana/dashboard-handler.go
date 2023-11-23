@@ -4,10 +4,21 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"errors"
+
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
+
+	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
+	"github.com/grafana/grafana-openapi-client-go/client/search"
+	"github.com/grafana/grafana-openapi-client-go/client/snapshots"
+	"github.com/grafana/grafana-openapi-client-go/models"
 )
+
+// Moved from utils.go
+const generalFolderId = 0
+const generalFolderUID = "general"
 
 // DashboardHandler is a Grizzly Handler for Grafana dashboards
 type DashboardHandler struct {
@@ -92,7 +103,7 @@ func (h *DashboardHandler) GetUID(resource grizzly.Resource) (string, error) {
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	resource, err := getRemoteDashboard(h.Provider.client, UID)
+	resource, err := h.getRemoteDashboard(UID)
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving dashboard %s: %w", UID, err)
 	}
@@ -105,27 +116,27 @@ func (h *DashboardHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resour
 	if uid != resource.Name() {
 		return nil, fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
 	}
-	return getRemoteDashboard(h.Provider.client, resource.Name())
+	return h.getRemoteDashboard(resource.Name())
 }
 
 // ListRemote retrieves as list of UIDs of all remote resources
 func (h *DashboardHandler) ListRemote() ([]string, error) {
-	return getRemoteDashboardList(h.Provider.client)
+	return h.getRemoteDashboardList()
 }
 
 // Add pushes a new dashboard to Grafana via the API
 func (h *DashboardHandler) Add(resource grizzly.Resource) error {
-	return postDashboard(h.Provider.client, resource)
+	return h.postDashboard(resource)
 }
 
 // Update pushes a dashboard to Grafana via the API
 func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
-	return postDashboard(h.Provider.client, resource)
+	return h.postDashboard(resource)
 }
 
 // Preview renders Jsonnet then pushes them to the endpoint if previews are possible
 func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
-	s, err := postSnapshot(h.Provider.client, resource, opts)
+	s, err := h.postSnapshot(resource, opts)
 	if err != nil {
 		return err
 	}
@@ -136,4 +147,98 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.Prev
 		notifier.Error(resource, "delete: "+s.DeleteURL)
 	}
 	return nil
+}
+
+// getRemoteDashboard retrieves a dashboard object from Grafana
+func (h *DashboardHandler) getRemoteDashboard(uid string) (*grizzly.Resource, error) {
+	params := dashboards.NewGetDashboardByUIDParams().WithUID(uid)
+	dashboardOk, err := h.Provider.client.Dashboards.GetDashboardByUID(params, nil)
+	if err != nil {
+		var gErr *dashboards.GetDashboardByUIDNotFound
+		if errors.As(err, &gErr) {
+			return nil, grizzly.ErrNotFound
+		}
+		return nil, err
+	}
+	dashboard := dashboardOk.GetPayload()
+
+	// TODO: Turn spec into a real models.DashboardFullWithMeta object
+	spec, err := structToMap(dashboard.Dashboard)
+	if err != nil {
+		return nil, err
+	}
+
+	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
+	folderUid := extractFolderUID(h.Provider.client, *dashboard)
+	resource.SetMetadata("folder", folderUid)
+	return &resource, nil
+}
+
+func (h *DashboardHandler) getRemoteDashboardList() ([]string, error) {
+	var (
+		limit            = int64(1000)
+		searchType       = "dash-db"
+		page       int64 = 0
+		uids       []string
+	)
+
+	params := search.NewSearchParams().WithLimit(&limit).WithType(&searchType)
+	for {
+		page++
+		params.SetPage(&page)
+
+		searchOk, err := h.Provider.client.Search.Search(params, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, hit := range searchOk.GetPayload() {
+			uids = append(uids, hit.UID)
+		}
+		if int64(len(searchOk.GetPayload())) < *params.Limit {
+			return uids, nil
+		}
+	}
+}
+
+func (h *DashboardHandler) postDashboard(resource grizzly.Resource) error {
+	folderUID := resource.GetMetadata("folder")
+	var folderID int64
+	if !(folderUID == "General" || folderUID == "general") {
+		folder, err := getRemoteFolder(h.Provider.client, folderUID)
+		if err != nil {
+			if errors.Is(err, grizzly.ErrNotFound) {
+				return fmt.Errorf("cannot upload dashboard %s as folder %s not found", resource.Name(), folderUID)
+			} else {
+				return fmt.Errorf("cannot upload dashboard %s: %w", resource.Name(), err)
+			}
+		}
+		folderID = int64(folder.GetSpecValue("id").(float64))
+	} else {
+		folderID = generalFolderId
+	}
+
+	body := models.SaveDashboardCommand{
+		Dashboard: resource.Spec(),
+		FolderID:  folderID,
+		Overwrite: true,
+	}
+	params := dashboards.NewPostDashboardParams().WithBody(&body)
+	_, err := h.Provider.client.Dashboards.PostDashboard(params, nil)
+	return err
+}
+
+func (h *DashboardHandler) postSnapshot(resource grizzly.Resource, opts *grizzly.PreviewOpts) (*models.CreateDashboardSnapshotOKBody, error) {
+	body := models.CreateDashboardSnapshotCommand{
+		Dashboard: resource.Spec(),
+	}
+	if opts.ExpiresSeconds > 0 {
+		body.Expires = int64(opts.ExpiresSeconds)
+	}
+	params := snapshots.NewCreateDashboardSnapshotParams().WithBody(&body)
+	response, err := h.Provider.client.Snapshots.CreateDashboardSnapshot(params, nil)
+	if err != nil {
+		return nil, err
+	}
+	return response.GetPayload(), nil
 }
