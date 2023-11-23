@@ -33,7 +33,7 @@ func TestDatasources(t *testing.T) {
 
 		require.Equal(t, "grizzly.grafana.com/v1alpha1", resource.APIVersion())
 		require.Equal(t, "AppDynamics", resource.Name())
-		require.Len(t, resource.Spec(), 12)
+		require.Len(t, resource.Spec(), 13)
 	})
 
 	t.Run("get remote datasource - not found", func(t *testing.T) {
@@ -69,7 +69,7 @@ func TestDatasources(t *testing.T) {
 		t.Run("put remote datasource - update", func(t *testing.T) {
 			ds.SetSpecString("type", "new-type")
 
-			err := handler.Add(*ds)
+			err := handler.Update(nil, *ds)
 			require.NoError(t, err)
 
 			updatedDS, err := handler.GetByUID("appdynamics")
@@ -91,10 +91,9 @@ func TestDatasources(t *testing.T) {
 		resource.SetSpecString("name", "AppDynamics")
 
 		err = handler.Add(resource)
+		apiError := err.(APIResponse)
 
-		var non200ResponseErr ErrNon200Response
-		require.ErrorAs(t, err, &non200ResponseErr)
-		require.Equal(t, 409, non200ResponseErr.Response.StatusCode)
+		require.Equal(t, 409, apiError.Code())
 	})
 
 	t.Run("Check getUID is functioning correctly", func(t *testing.T) {

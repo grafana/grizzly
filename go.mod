@@ -5,11 +5,13 @@ go 1.20
 require (
 	github.com/fatih/color v1.15.0
 	github.com/gdamore/tcell v1.4.0
+	github.com/go-chi/chi v1.5.5
 	github.com/go-clix/cli v0.2.0
-	github.com/go-openapi/errors v0.20.4
+	github.com/go-openapi/runtime v0.26.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.20.0
-	github.com/grafana/grafana-openapi-client-go v0.0.0-20231016093917-88fc2f84f257
+	github.com/gorilla/websocket v1.5.1
+	github.com/grafana/grafana-openapi-client-go v0.0.0-20231123143558-91f2985bb3ef
 	github.com/grafana/synthetic-monitoring-agent v0.16.5
 	github.com/grafana/synthetic-monitoring-api-go-client v0.7.0
 	github.com/grafana/tanka v0.25.0
@@ -17,6 +19,7 @@ require (
 	github.com/rivo/tview v0.0.0-20200818120338-53d50e499bf9
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
+	github.com/unknwon/log v0.0.0-20200308114134-929b1006e34a
 	golang.org/x/crypto v0.14.0
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/yaml.v3 v3.0.1
@@ -34,10 +37,10 @@ require (
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v0.21.4 // indirect
+	github.com/go-openapi/errors v0.20.4 // indirect
 	github.com/go-openapi/jsonpointer v0.20.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/loads v0.21.2 // indirect
-	github.com/go-openapi/runtime v0.26.0 // indirect
 	github.com/go-openapi/spec v0.20.9 // indirect
 	github.com/go-openapi/strfmt v0.21.7 // indirect
 	github.com/go-openapi/swag v0.22.4 // indirect
@@ -46,7 +49,6 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
@@ -64,6 +66,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/rivo/uniseg v0.1.0 // indirect
+	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/rs/zerolog v1.29.1 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
