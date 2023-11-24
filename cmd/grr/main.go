@@ -4,6 +4,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/go-clix/cli"
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -20,7 +21,10 @@ func main() {
 		Version: Version,
 	}
 
-	gclient, err := grafana.GetClient()
+	config, err := config.Load()
+	context := config.Current()
+
+	gclient, err := grafana.GetClient(context.Grafana)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -42,6 +46,7 @@ func main() {
 		exportCmd(),
 		previewCmd(),
 		providersCmd(),
+		configCmd(),
 	)
 
 	// Run!

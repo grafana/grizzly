@@ -3,15 +3,20 @@ package grafana
 import (
 	"testing"
 
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
+	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSyntheticMonitoring(t *testing.T) {
+	conf := config.GrafanaConfig{
+		URL: GetUrl(),
+	}
 
-	client, err := GetClient()
+	client, err := GetClient(conf)
 	require.NoError(t, err)
 
 	grizzly.ConfigureProviderRegistry(

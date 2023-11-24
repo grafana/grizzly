@@ -1,20 +1,21 @@
 package grafana
 
 import (
-	"os"
 	"testing"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/models"
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestExtractFolderUID(t *testing.T) {
-	os.Setenv("GRAFANA_URL", GetUrl())
-
-	client, err := GetClient()
+	conf := config.GrafanaConfig{
+		URL: GetUrl(),
+	}
+	client, err := GetClient(conf)
 	require.NoError(t, err)
 
 	grizzly.ConfigureProviderRegistry(

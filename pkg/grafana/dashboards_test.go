@@ -5,15 +5,17 @@ import (
 	"os"
 	"testing"
 
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDashboard(t *testing.T) {
-	os.Setenv("GRAFANA_URL", GetUrl())
-
-	grafanaClient, err := GetClient()
+	conf := config.GrafanaConfig{
+		URL: GetUrl(),
+	}
+	grafanaClient, err := GetClient(conf)
 	require.NoError(t, err)
 
 	grizzly.ConfigureProviderRegistry(

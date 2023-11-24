@@ -6,15 +6,18 @@ import (
 	"testing"
 
 	"github.com/go-openapi/runtime"
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFolders(t *testing.T) {
-	os.Setenv("GRAFANA_URL", GetUrl())
+	conf := config.GrafanaConfig{
+		URL: GetUrl(),
+	}
 
-	grafanaClient, err := GetClient()
+	grafanaClient, err := GetClient(conf)
 	require.NoError(t, err)
 
 	grizzly.ConfigureProviderRegistry(
