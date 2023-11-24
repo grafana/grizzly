@@ -2,12 +2,27 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/kirsle/configdir"
 	"gopkg.in/yaml.v3"
 )
+
+func Init() error {
+	exists, err := Exists()
+	if err != nil {
+		return err
+	}
+	if exists {
+		notifier.Warn(nil, "Configuration already exists")
+	}
+	conf := Config{}
+	return Save(&conf)
+}
 
 func Exists() (bool, error) {
 	configPath := configdir.LocalConfig("grizzly")
@@ -97,4 +112,29 @@ func CurrentContext() error {
 	}
 	fmt.Println(conf.CurrentContext)
 	return nil
+}
+
+func Set(path string, value string) error {
+	parts := strings.SplitN(path, ".", 2)
+	y := fmt.Sprintf("%s:\n  %s: '%s'", parts[0], parts[1], value)
+
+	conf, err := Load()
+	if err != nil {
+		return err
+	}
+	for i, context := range conf.Contexts {
+		if context.Name == conf.CurrentContext {
+			before, _ := yaml.Marshal(context)
+			yaml.Unmarshal([]byte(y), &context)
+			after, _ := yaml.Marshal(context)
+			log.Printf("BEFORE: %s\nAFTER: %s\n", string(before), string(after))
+			if string(before) == string(after) {
+				return fmt.Errorf("Setting %s not recognised", path)
+			}
+			conf.Contexts[i] = context
+			notifier.Info(nil, fmt.Sprintf("Setting %s set to %s", path, value))
+			return nil
+		}
+	}
+	return fmt.Errorf("Current context %s not found", conf.CurrentContext)
 }

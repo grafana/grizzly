@@ -10,7 +10,12 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 )
 
+var client *gclient.GrafanaHTTPAPI
+
 func GetClient(conf config.GrafanaConfig) (*gclient.GrafanaHTTPAPI, error) {
+	if client != nil {
+		return client, nil
+	}
 	exists, err := config.Exists()
 	if err != nil {
 		return nil, fmt.Errorf("Error locating configuration file: %v", err)
@@ -52,6 +57,7 @@ func GetClient(conf config.GrafanaConfig) (*gclient.GrafanaHTTPAPI, error) {
 		}
 		notifier.Warn(nil, "Using environment variables for configuration is deprecated. Please use grr config to configure contexts.")
 		grafanaClient := gclient.NewHTTPClientWithConfig(nil, transportConfig)
+		client = grafanaClient
 		return grafanaClient, nil
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
@@ -13,7 +14,7 @@ type Provider struct {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(client *gclient.GrafanaHTTPAPI) *Provider {
+func NewProvider() *Provider {
 	return &Provider{
 		client: client,
 	}
@@ -27,6 +28,21 @@ func (p Provider) Group() string {
 // Version returns the version of this provider
 func (p Provider) Version() string {
 	return "v1alpha1"
+}
+
+func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
+	if p.client != nil {
+		return p.client, nil
+	}
+	config, err := config.Load()
+	context := config.Current()
+
+	gclient, err := GetClient(context.Grafana)
+	if err != nil {
+		return nil, err
+	}
+	p.client = gclient
+	return gclient, nil
 }
 
 // APIVersion returns the group and version of this provider

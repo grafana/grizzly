@@ -272,7 +272,9 @@ func configCmd() *cli.Command {
 	}
 	cmd.AddCommand(currentContextCmd())
 	cmd.AddCommand(useContextCmd())
-	cmd.AddCommand(GetContextsCmd())
+	cmd.AddCommand(getContextsCmd())
+	cmd.AddCommand(configInitCmd())
+	cmd.AddCommand(setCmd())
 	return cmd
 }
 

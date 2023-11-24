@@ -6,6 +6,19 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
+func configInitCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "init configuration",
+		Short: "Initialise Grizzly configuration file",
+		Args:  cli.ArgsExact(0),
+	}
+	var opts grizzly.LoggingOpts
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		return config.Init()
+	}
+	return initialiseLogging(cmd, &opts)
+}
 func currentContextCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "current-context",
@@ -35,16 +48,30 @@ func useContextCmd() *cli.Command {
 	return initialiseLogging(cmd, &opts)
 }
 
-func GetContextsCmd() *cli.Command {
+func getContextsCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "get-contexts",
 		Short: "list configured contexts",
 		Args:  cli.ArgsRange(0, 1),
 	}
-	var opts grizzly.Opts
+	var opts grizzly.LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		return config.GetContexts()
 	}
-	return initialiseCmd(cmd, &opts)
+	return initialiseLogging(cmd, &opts)
+}
+
+func setCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "set configuration value",
+		Short: "set a configuration value",
+		Args:  cli.ArgsExact(2),
+	}
+	var opts grizzly.LoggingOpts
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		return config.Set(args[0], args[1])
+	}
+	return initialiseLogging(cmd, &opts)
 }
