@@ -33,8 +33,12 @@ type Config struct {
 }
 
 func (c Config) Current() *Context {
+	return c.GetContext(c.CurrentContext)
+}
+
+func (c Config) GetContext(name string) *Context {
 	for _, context := range c.Contexts {
-		if context.Name == c.CurrentContext {
+		if context.Name == name {
 			return &context
 		}
 	}

@@ -75,3 +75,17 @@ func setCmd() *cli.Command {
 	}
 	return initialiseLogging(cmd, &opts)
 }
+
+func createContextCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "create context",
+		Short: "Create a configuration context",
+		Args:  cli.ArgsExact(1),
+	}
+	var opts grizzly.LoggingOpts
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		return config.CreateContext(args[0])
+	}
+	return initialiseLogging(cmd, &opts)
+}

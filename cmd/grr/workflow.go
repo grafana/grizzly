@@ -275,6 +275,7 @@ func configCmd() *cli.Command {
 	cmd.AddCommand(getContextsCmd())
 	cmd.AddCommand(configInitCmd())
 	cmd.AddCommand(setCmd())
+	cmd.AddCommand(createContextCmd())
 	return cmd
 }
 

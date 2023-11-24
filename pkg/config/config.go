@@ -20,19 +20,25 @@ func Init() error {
 	if exists {
 		notifier.Warn(nil, "Configuration already exists")
 	}
-	conf := Config{}
+	conf := Config{
+		ApiVersion: "v1alpha1",
+		Contexts: []Context{
+			{
+				Name: "default",
+			},
+		},
+		CurrentContext: "default",
+	}
 	return Save(&conf)
 }
 
 func Exists() (bool, error) {
-	configPath := configdir.LocalConfig("grizzly")
-	err := configdir.MakePath(configPath)
+	configFile, err := configPath()
 	if err != nil {
 		return false, err
 	}
-	configFile := filepath.Join(configPath, "settings.yaml")
 	_, err = os.Stat(configFile)
-	return os.IsNotExist(err), nil
+	return !os.IsNotExist(err), nil
 }
 
 func configPath() (string, error) {
@@ -133,10 +139,30 @@ func Set(path string, value string) error {
 			}
 			conf.Contexts[i] = context
 			notifier.Info(nil, fmt.Sprintf("Setting %s set to %s", path, value))
-			return nil
+			err = Save(conf)
+			return err
 		}
 	}
 	return fmt.Errorf("Current context %s not found", conf.CurrentContext)
+}
+
+func CreateContext(name string) error {
+	conf, err := Load()
+	if err != nil {
+		return err
+	}
+	context := conf.GetContext(name)
+	if context != nil {
+		return fmt.Errorf("Context exists")
+	}
+	context = &Context{
+		Name: name,
+	}
+	conf.Contexts = append(conf.Contexts, *context)
+	conf.CurrentContext = name
+
+	err = Save(conf)
+	return err
 }
 
 func FromEnvironment() (*Config, error) {
