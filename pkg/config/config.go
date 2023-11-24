@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
@@ -179,11 +180,25 @@ func FromEnvironment() (*Config, error) {
 		User:  user,
 	}
 
+	apiToken, _ := os.LookupEnv("GRAFANA_SM_TOKEN")
+	stackID, _ := strconv.Atoi(os.Getenv("GRAFANA_SM_STACK_ID"))
+	metricsInstanceID, _ := strconv.Atoi(os.Getenv("GRAFANA_SM_METRICS_ID"))
+	logsInstanceID, _ := strconv.Atoi(os.Getenv("GRAFANA_SM_LOGS_ID"))
+	var syntheticMonitoringConfig SyntheticMonitoringConfig
+	if apiToken != "" {
+		syntheticMonitoringConfig = SyntheticMonitoringConfig{
+			Token:     apiToken,
+			StackID:   int64(stackID),
+			MetricsID: int64(metricsInstanceID),
+			LogsID:    int64(logsInstanceID),
+		}
+	}
 	conf := Config{
 		Contexts: []Context{
 			{
-				Name:    "default",
-				Grafana: grafanaConfig,
+				Name:                "default",
+				Grafana:             grafanaConfig,
+				SyntheticMonitoring: syntheticMonitoringConfig,
 			},
 		},
 		CurrentContext: "default",

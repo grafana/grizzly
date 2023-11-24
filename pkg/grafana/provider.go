@@ -18,6 +18,7 @@ type Provider struct {
 
 type ClientProvider interface {
 	Client() (*gclient.GrafanaHTTPAPI, error)
+	Current() (*config.Context, error)
 }
 
 // NewProvider instantiates a new Provider.
@@ -42,11 +43,7 @@ func (p *Provider) Version() string {
 	return "v1alpha1"
 }
 
-func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
-	if p.client != nil {
-		return p.client, nil
-	}
-
+func (p *Provider) Current() (*config.Context, error) {
 	if p.context == nil {
 		exists, err := config.Exists()
 		if err != nil {
@@ -66,7 +63,18 @@ func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
 			p.context = conf.Current()
 		}
 	}
+	return p.context, nil
 
+}
+func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
+	if p.client != nil {
+		return p.client, nil
+	}
+
+	_, err := p.Current()
+	if err != nil {
+		return nil, err
+	}
 	parsedUrl, err := url.Parse(p.context.Grafana.URL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid Grafana URL")
