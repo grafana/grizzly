@@ -2,13 +2,11 @@ package grafana
 
 import (
 	"errors"
-	"log"
 	"os"
 	"testing"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
-	"github.com/kr/pretty"
 	"github.com/stretchr/testify/require"
 
 	"gopkg.in/yaml.v3"
@@ -27,9 +25,6 @@ func TestRules(t *testing.T) {
 	t.Run("get remote rule group", func(t *testing.T) {
 		mockCortexTool(t, "testdata/list_rules.yaml", nil)
 
-		log.Print("H:")
-		pretty.Println(h)
-		log.Print(h.Provider.APIVersion())
 		res, err := h.getRemoteRuleGroup("first_rules.grizzly_alerts")
 		require.NoError(t, err)
 		uid, err := h.GetUID(*res)

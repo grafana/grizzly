@@ -11,7 +11,6 @@ import (
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
-	"github.com/kr/pretty"
 	"gopkg.in/yaml.v3"
 )
 
@@ -45,7 +44,6 @@ func (h *RuleHandler) Validate(resource grizzly.Resource) error {
 
 // APIVersion returns the group and version for the provider of which this handler is a part
 func (h *RuleHandler) APIVersion() string {
-	pretty.Println(h.Provider)
 	return h.Provider.APIVersion()
 }
 
