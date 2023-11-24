@@ -81,9 +81,10 @@ func TestSyntheticMonitoringCheckUID(t *testing.T) {
 		},
 	}
 
+	h := SyntheticMonitoringHandler{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.expectedUID, getUID(tc.check))
+			assert.Equal(t, tc.expectedUID, h.getUID(tc.check))
 		})
 	}
 }

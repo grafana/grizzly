@@ -4,8 +4,17 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"context"
+	"encoding/json"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
+
+	smapi "github.com/grafana/synthetic-monitoring-api-go-client"
 )
 
 /*
@@ -18,7 +27,17 @@ import (
  * 3. This means pre-retrieving the check *twice*, once to establish
  *    whether this resource has changed or not (within Grizzly ifself)
  *    and again within this provider to retrieve IDs. Not ideal.
+ * 4. The API expects probes to be specified by ID. This is not
+ *    user-friendly. This code therefore takes in strings, and converts
+ *    them to IDs, having requested an ID<->string mapping from the API.
  */
+
+const smBaseURL = "https://synthetic-monitoring-api.grafana.net"
+
+type Probes struct {
+	ByID   map[int64]synthetic_monitoring.Probe
+	ByName map[string]synthetic_monitoring.Probe
+}
 
 // SyntheticMonitoringHandler is a Grizzly Handler for Grafana Synthetic Monitoring
 type SyntheticMonitoringHandler struct {
@@ -111,26 +130,260 @@ func (h *SyntheticMonitoringHandler) GetUID(resource grizzly.Resource) (string, 
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	return getRemoteCheck(UID)
+	return h.getRemoteCheck(UID)
 }
 
 // GetRemote retrieves a datasource as a Resource
 func (h *SyntheticMonitoringHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
 	uid := fmt.Sprintf("%s.%s", resource.GetMetadata("type"), resource.Name())
-	return getRemoteCheck(uid)
+	return h.getRemoteCheck(uid)
 }
 
 // ListRemote retrieves as list of UIDs of all remote resources
 func (h *SyntheticMonitoringHandler) ListRemote() ([]string, error) {
-	return getRemoteCheckList()
+	return h.getRemoteCheckList()
 }
 
 // Add adds a new check to the SyntheticMonitoring endpoint
 func (h *SyntheticMonitoringHandler) Add(resource grizzly.Resource) error {
-	return addCheck(resource)
+	return h.addCheck(resource)
 }
 
 // Update pushes an updated check to the SyntheticMonitoring endpoing
 func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource) error {
-	return updateCheck(resource)
+	return h.updateCheck(resource)
+}
+
+// NewSyntheticMonitoringClient creates a new client for synthetic monitoring go client
+func NewSyntheticMonitoringClient() (*smapi.Client, error) {
+	client, err := NewHttpClient()
+	if err != nil {
+		return nil, err
+	}
+
+	smClient := smapi.NewClient(smBaseURL, "", client)
+
+	apiToken, ok := os.LookupEnv("GRAFANA_SM_TOKEN")
+	if !ok {
+		return nil, fmt.Errorf("GRAFANA_SM_TOKEN environment variable must be set")
+	}
+
+	stackID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_STACK_ID"))
+	if err != nil {
+		return nil, fmt.Errorf("GRAFANA_SM_STACK_ID environment variable must be set")
+	}
+	metricsInstanceID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_METRICS_ID"))
+	if err != nil {
+		return nil, fmt.Errorf("GRAFANA_SM_METRICS_ID environment variable must be set")
+	}
+	logsInstanceID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_LOGS_ID"))
+	if err != nil {
+		return nil, fmt.Errorf("GRAFANA_SM_LOGS_ID environment variable must be set")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err = smClient.Install(ctx, int64(stackID), int64(metricsInstanceID), int64(logsInstanceID), apiToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to install synthetic monitoring client : %v", err)
+	}
+
+	return smClient, nil
+}
+
+// getProbeList retrieves the list of probe and grouped by id and name
+func (h *SyntheticMonitoringHandler) getProbeList() (Probes, error) {
+	smClient, err := NewSyntheticMonitoringClient()
+	if err != nil {
+		return Probes{}, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	probeList, err := smClient.ListProbes(ctx)
+	if err != nil {
+		return Probes{}, fmt.Errorf("failed to initialize probes list: %v", err)
+	}
+
+	probes := Probes{
+		ByID:   map[int64]synthetic_monitoring.Probe{},
+		ByName: map[string]synthetic_monitoring.Probe{},
+	}
+
+	for _, probe := range probeList {
+		if probe.Online && probe.Public {
+			probes.ByID[probe.Id] = probe
+			probes.ByName[probe.Name] = probe
+		}
+	}
+	return probes, nil
+}
+
+// getRemoteCheck retrieves a check object from SM
+func (h *SyntheticMonitoringHandler) getRemoteCheckList() ([]string, error) {
+	smClient, err := NewSyntheticMonitoringClient()
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	checks, err := smClient.ListChecks(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get checks list: %v", err)
+	}
+	var checkIDs []string
+
+	for _, check := range checks {
+		checkIDs = append(checkIDs, h.getUID(check))
+	}
+	return checkIDs, nil
+}
+
+// getRemoteCheck retrieves a check object from SM
+func (h *SyntheticMonitoringHandler) getRemoteCheck(uid string) (*grizzly.Resource, error) {
+	smClient, err := NewSyntheticMonitoringClient()
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	checkList, err := smClient.ListChecks(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get checks list: %v", err)
+	}
+
+	probes, err := h.getProbeList()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, check := range checkList {
+		if h.getUID(check) == uid {
+			var probeNames []string
+			for _, probeID := range check.Probes {
+				probeNames = append(probeNames, probes.ByID[probeID].Name)
+			}
+			handler := SyntheticMonitoringHandler{}
+			data, err := json.Marshal(check)
+			if err != nil {
+				return nil, err
+			}
+			var specmap map[string]interface{}
+			err = json.Unmarshal(data, &specmap)
+			if err != nil {
+				return nil, err
+			}
+			specmap["probes"] = probeNames
+			resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), check.Job, specmap)
+			resource.SetMetadata("type", h.getType(check))
+			return &resource, nil
+		}
+	}
+	return nil, grizzly.ErrNotFound
+}
+
+func (h *SyntheticMonitoringHandler) convertProbeNameToID(resource *grizzly.Resource) error {
+	probes, err := h.getProbeList()
+	if err != nil {
+		return err
+	}
+	var probeIDs []int64
+
+	for _, probename := range (*resource).GetSpecValue("probes").([]interface{}) {
+		probeName := probename.(string)
+		id := probes.ByName[probeName].Id
+		probeIDs = append(probeIDs, id)
+	}
+	(*resource).SetSpecValue("probes", probeIDs)
+	return nil
+}
+
+func (h *SyntheticMonitoringHandler) addCheck(resource grizzly.Resource) error {
+	smClient, err := NewSyntheticMonitoringClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = h.convertProbeNameToID(&resource)
+	if err != nil {
+		return err
+	}
+
+	theCheck, err := h.SpecToCheck(&resource)
+	if err != nil {
+		return fmt.Errorf("input file is invalid: %v", err)
+	}
+	_, err = smClient.AddCheck(ctx, theCheck)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *SyntheticMonitoringHandler) updateCheck(resource grizzly.Resource) error {
+	smClient, err := NewSyntheticMonitoringClient()
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = h.convertProbeNameToID(&resource)
+	if err != nil {
+		return err
+	}
+
+	theCheck, err := h.SpecToCheck(&resource)
+	if err != nil {
+		return fmt.Errorf("input file is invalid: %v", err)
+	}
+	_, err = smClient.UpdateCheck(ctx, theCheck)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *SyntheticMonitoringHandler) SpecToCheck(r *grizzly.Resource) (synthetic_monitoring.Check, error) {
+	var smCheck synthetic_monitoring.Check
+	data, err := json.Marshal((*r)["spec"])
+	if err != nil {
+		return synthetic_monitoring.Check{}, nil
+	}
+
+	err = json.Unmarshal(data, &smCheck)
+	if err != nil {
+		return synthetic_monitoring.Check{}, nil
+	}
+
+	return smCheck, nil
+}
+
+// Probes allows accessing Probe objects by ID and by name
+func (h *SyntheticMonitoringHandler) getType(check synthetic_monitoring.Check) string {
+	if check.Settings.Ping != nil {
+		return "ping"
+	}
+	if check.Settings.Http != nil {
+		return "http"
+	}
+	if check.Settings.Tcp != nil {
+		return "tcp"
+	}
+	if check.Settings.Dns != nil {
+		return "dns"
+	}
+	return ""
+}
+
+func (h *SyntheticMonitoringHandler) getUID(check synthetic_monitoring.Check) string {
+	return fmt.Sprintf("%s.%s", h.getType(check), check.Job)
 }
