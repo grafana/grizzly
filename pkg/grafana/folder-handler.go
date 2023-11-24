@@ -17,11 +17,11 @@ import (
 
 // FolderHandler is a Grizzly Handler for Grafana dashboard folders
 type FolderHandler struct {
-	Provider Provider
+	Provider grizzly.Provider
 }
 
 // NewFolderHandler returns configuration defining a new Grafana Folder Handler
-func NewFolderHandler(provider Provider) *FolderHandler {
+func NewFolderHandler(provider grizzly.Provider) *FolderHandler {
 	return &FolderHandler{
 		Provider: provider,
 	}
@@ -133,8 +133,13 @@ func (h *FolderHandler) getRemoteFolder(uid string) (*grizzly.Resource, error) {
 			// URL: ??
 		}
 	} else {
+		client, err := h.Provider.(ClientProvider).Client()
+		if err != nil {
+			return nil, err
+		}
+
 		params := folders.NewGetFolderByUIDParams().WithFolderUID(uid)
-		folderOk, err := h.Provider.client.Folders.GetFolderByUID(params, nil)
+		folderOk, err := client.Folders.GetFolderByUID(params, nil)
 		if err != nil {
 			var gErrNotFound *folders.GetFolderByUIDNotFound
 			var gErrForbidden *folders.GetFolderByUIDForbidden
@@ -163,11 +168,16 @@ func (h *FolderHandler) getRemoteFolderList() ([]string, error) {
 		uids  []string
 	)
 	params := folders.NewGetFoldersParams().WithLimit(&limit)
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return nil, err
+	}
+
 	for {
 		page++
 		params.SetPage(&page)
 
-		foldersOk, err := h.Provider.client.Folders.GetFolders(params, nil)
+		foldersOk, err := client.Folders.GetFolders(params, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -206,8 +216,13 @@ func (h *FolderHandler) postFolder(resource grizzly.Resource) error {
 		Title: folder.Title,
 		UID:   folder.UID,
 	}
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return err
+	}
+
 	params := folders.NewCreateFolderParams().WithBody(&body)
-	_, err = h.Provider.client.Folders.CreateFolder(params, nil)
+	_, err = client.Folders.CreateFolder(params, nil)
 	return err
 }
 
@@ -230,8 +245,13 @@ func (h *FolderHandler) putFolder(resource grizzly.Resource) error {
 	body := models.UpdateFolderCommand{
 		Title: folder.Title,
 	}
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return err
+	}
+
 	params := folders.NewUpdateFolderParams().WithBody(&body)
-	_, err = h.Provider.client.Folders.UpdateFolder(params, nil)
+	_, err = client.Folders.UpdateFolder(params, nil)
 	return err
 }
 

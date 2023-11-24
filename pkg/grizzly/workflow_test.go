@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
@@ -14,16 +13,10 @@ import (
 )
 
 func TestPull(t *testing.T) {
-	conf := config.GrafanaConfig{
-		URL: GetUrl(),
-	}
-
-	grafanaClient, err := grafana.GetClient(conf)
-	require.NoError(t, err)
-
+	provider := grafana.NewProviderWithConfig(GetTestConfig())
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			grafana.NewProvider(grafanaClient),
+			provider,
 		})
 
 	ticker := PingService(GetUrl())

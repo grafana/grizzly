@@ -41,11 +41,11 @@ type Probes struct {
 
 // SyntheticMonitoringHandler is a Grizzly Handler for Grafana Synthetic Monitoring
 type SyntheticMonitoringHandler struct {
-	Provider Provider
+	Provider grizzly.Provider
 }
 
 // NewSyntheticMonitoringHandler returns a Grizzly Handler for Grafana Synthetic Monitoring
-func NewSyntheticMonitoringHandler(provider Provider) *SyntheticMonitoringHandler {
+func NewSyntheticMonitoringHandler(provider grizzly.Provider) *SyntheticMonitoringHandler {
 	return &SyntheticMonitoringHandler{
 		Provider: provider,
 	}

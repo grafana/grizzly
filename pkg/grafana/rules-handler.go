@@ -11,16 +11,17 @@ import (
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
+	"github.com/kr/pretty"
 	"gopkg.in/yaml.v3"
 )
 
 // RuleHandler is a Grizzly Handler for Prometheus Rules
 type RuleHandler struct {
-	Provider Provider
+	Provider grizzly.Provider
 }
 
 // NewRuleHandler returns a new Grizzly Handler for Prometheus Rules
-func NewRuleHandler(provider Provider) *RuleHandler {
+func NewRuleHandler(provider grizzly.Provider) *RuleHandler {
 	return &RuleHandler{
 		Provider: provider,
 	}
@@ -44,6 +45,7 @@ func (h *RuleHandler) Validate(resource grizzly.Resource) error {
 
 // APIVersion returns the group and version for the provider of which this handler is a part
 func (h *RuleHandler) APIVersion() string {
+	pretty.Println(h.Provider)
 	return h.Provider.APIVersion()
 }
 
@@ -153,8 +155,7 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 					spec := map[string]interface{}{
 						"rules": group.Rules,
 					}
-					handler := RuleHandler{}
-					resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), group.Name, spec)
+					resource := grizzly.NewResource(h.APIVersion(), h.Kind(), group.Name, spec)
 					resource.SetMetadata("namespace", namespace)
 					return &resource, nil
 				}

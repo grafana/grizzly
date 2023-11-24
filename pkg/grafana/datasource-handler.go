@@ -19,11 +19,11 @@ import (
 
 // DatasourceHandler is a Grizzly Handler for Grafana datasources
 type DatasourceHandler struct {
-	Provider Provider
+	Provider grizzly.Provider
 }
 
 // NewDatasourceHandler returns a new Grizzly Handler for Grafana datasources
-func NewDatasourceHandler(provider Provider) *DatasourceHandler {
+func NewDatasourceHandler(provider grizzly.Provider) *DatasourceHandler {
 	return &DatasourceHandler{
 		Provider: provider,
 	}
@@ -145,15 +145,19 @@ func (h *DatasourceHandler) Update(existing, resource grizzly.Resource) error {
 
 // getRemoteDatasource retrieves a datasource object from Grafana
 func (h *DatasourceHandler) getRemoteDatasource(uid string) (*grizzly.Resource, error) {
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return nil, err
+	}
 
 	params := datasources.NewGetDataSourceByUIDParams().WithUID(uid)
-	datasourceOk, err := h.Provider.client.Datasources.GetDataSourceByUID(params, nil)
+	datasourceOk, err := client.Datasources.GetDataSourceByUID(params, nil)
 	var datasource *models.DataSource
 	if err != nil {
 		var gErr *datasources.GetDataSourceByUIDNotFound
 		if errors.As(err, &gErr) {
 			params := datasources.NewGetDataSourceByNameParams().WithName(uid)
-			datasourceOk, err := h.Provider.client.Datasources.GetDataSourceByName(params, nil)
+			datasourceOk, err := client.Datasources.GetDataSourceByName(params, nil)
 			if err != nil {
 				// OpenAPI definition does not define 404 for GetDataSourceByName, so falls though to runtime.APIError.
 				var gErr *runtime.APIError
@@ -183,7 +187,12 @@ func (h *DatasourceHandler) getRemoteDatasource(uid string) (*grizzly.Resource, 
 
 func (h *DatasourceHandler) getRemoteDatasourceList() ([]string, error) {
 	params := datasources.NewGetDataSourcesParams()
-	datasourcesOk, err := h.Provider.client.Datasources.GetDataSources(params, nil)
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return nil, err
+	}
+
+	datasourcesOk, err := client.Datasources.GetDataSources(params, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -208,8 +217,12 @@ func (h *DatasourceHandler) postDatasource(resource grizzly.Resource) error {
 	if err != nil {
 		return err
 	}
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return err
+	}
 	params := datasources.NewAddDataSourceParams().WithBody(&datasource)
-	_, err = h.Provider.client.Datasources.AddDataSource(params, nil)
+	_, err = client.Datasources.AddDataSource(params, nil)
 	return err
 }
 
@@ -231,7 +244,12 @@ func (h *DatasourceHandler) putDatasource(resource grizzly.Resource) error {
 	if err != nil {
 		return err
 	}
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return err
+	}
+
 	params := datasources.NewUpdateDataSourceByIDParams().WithID(strconv.FormatInt(modelDatasource.ID, 10)).WithBody(&datasource)
-	_, err = h.Provider.client.Datasources.UpdateDataSourceByID(params, nil)
+	_, err = client.Datasources.UpdateDataSourceByID(params, nil)
 	return err
 }

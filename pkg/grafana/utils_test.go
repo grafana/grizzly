@@ -5,17 +5,15 @@ import (
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/models"
-	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestExtractFolderUID(t *testing.T) {
-	conf := config.GrafanaConfig{
-		URL: GetUrl(),
-	}
-	client, err := GetClient(conf)
+	provider := NewProviderWithConfig(GetTestConfig())
+
+	client, err := provider.Client()
 	require.NoError(t, err)
 
 	grizzly.ConfigureProviderRegistry(

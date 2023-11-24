@@ -6,30 +6,16 @@ import (
 	"testing"
 
 	"github.com/go-openapi/runtime"
-	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFolders(t *testing.T) {
-	conf := config.GrafanaConfig{
-		URL: GetUrl(),
-	}
-
-	grafanaClient, err := GetClient(conf)
-	require.NoError(t, err)
-
-	grizzly.ConfigureProviderRegistry(
-		[]grizzly.Provider{
-			NewProvider(grafanaClient),
-		})
+	handler := NewFolderHandler(NewProviderWithConfig(GetTestConfig()))
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()
-
-	handler, err := grizzly.Registry.GetHandler((&FolderHandler{}).Kind())
-	require.NoError(t, err)
 
 	t.Run("get remote folder - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("abcdefghi")

@@ -5,29 +5,16 @@ import (
 	"os"
 	"testing"
 
-	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDashboard(t *testing.T) {
-	conf := config.GrafanaConfig{
-		URL: GetUrl(),
-	}
-	grafanaClient, err := GetClient(conf)
-	require.NoError(t, err)
-
-	grizzly.ConfigureProviderRegistry(
-		[]grizzly.Provider{
-			NewProvider(grafanaClient),
-		})
+	handler := NewDashboardHandler(NewProviderWithConfig(GetTestConfig()))
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()
-
-	handler, err := grizzly.Registry.GetHandler((&DashboardHandler{}).Kind())
-	require.NoError(t, err)
 
 	t.Run("get remote dashboard - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("ReciqtgGk")

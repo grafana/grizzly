@@ -138,3 +138,29 @@ func Set(path string, value string) error {
 	}
 	return fmt.Errorf("Current context %s not found", conf.CurrentContext)
 }
+
+func FromEnvironment() (*Config, error) {
+	grafanaURL, exists := os.LookupEnv("GRAFANA_URL")
+	if !exists {
+		return nil, fmt.Errorf("Please configure Grizzly using grr config")
+	}
+	token, _ := os.LookupEnv("GRAFANA_TOKEN")
+	user, _ := os.LookupEnv("GRAFANA_USER")
+
+	grafanaConfig := GrafanaConfig{
+		URL:   grafanaURL,
+		Token: token,
+		User:  user,
+	}
+
+	conf := Config{
+		Contexts: []Context{
+			{
+				Name:    "default",
+				Grafana: grafanaConfig,
+			},
+		},
+		CurrentContext: "default",
+	}
+	return &conf, nil
+}
