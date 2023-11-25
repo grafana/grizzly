@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"gopkg.in/yaml.v3"
@@ -118,7 +119,7 @@ func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
 	return h.writeRuleGroup(resource)
 }
 
-var cortexTool = func(args ...string) ([]byte, error) {
+var cortexTool = func(mimirConfig *config.MimirConfig, args ...string) ([]byte, error) {
 	path := os.Getenv("CORTEXTOOL_PATH")
 	if path == "" {
 		var err error
@@ -129,6 +130,10 @@ var cortexTool = func(args ...string) ([]byte, error) {
 			return nil, fmt.Errorf("cortextool not found")
 		}
 	}
+	cmd := exec.Command(path, args...)
+	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_ADDRESS=%s", mimirConfig.Address))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_TENANT_ID=%d", mimirConfig.TenantID))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_API_KEY=%s", mimirConfig.ApiKey))
 	return exec.Command(path, args...).Output()
 }
 
@@ -137,7 +142,13 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 	parts := strings.SplitN(uid, ".", 2)
 	namespace := parts[0]
 	name := parts[1]
-	out, err := cortexTool("rules", "print", "--disable-color")
+	grizzlyContext, err := h.Provider.(ClientProvider).Current()
+	if err != nil {
+		return nil, err
+	}
+	mimirConfig := grizzlyContext.Mimir
+
+	out, err := cortexTool(&mimirConfig, "rules", "print", "--disable-color")
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +176,13 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 
 // getRemoteRuleGroupList retrieves a datasource object from Grafana
 func (h *RuleHandler) getRemoteRuleGroupList() ([]string, error) {
-	out, err := cortexTool("rules", "print", "--disable-color")
+	grizzlyContext, err := h.Provider.(ClientProvider).Current()
+	if err != nil {
+		return nil, err
+	}
+	mimirConfig := grizzlyContext.Mimir
+
+	out, err := cortexTool(&mimirConfig, "rules", "print", "--disable-color")
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +239,13 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 		return err
 	}
 	os.WriteFile(tmpfile.Name(), out, 0644)
-	output, err := cortexTool("rules", "load", tmpfile.Name())
+	grizzlyContext, err := h.Provider.(ClientProvider).Current()
+	if err != nil {
+		return err
+	}
+	mimirConfig := grizzlyContext.Mimir
+
+	output, err := cortexTool(&mimirConfig, "rules", "load", tmpfile.Name())
 	if err != nil {
 		log.Println("OUTPUT", output)
 		return err

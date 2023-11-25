@@ -64,8 +64,8 @@ func (p *Provider) Current() (*config.Context, error) {
 		}
 	}
 	return p.context, nil
-
 }
+
 func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
 	if p.client != nil {
 		return p.client, nil

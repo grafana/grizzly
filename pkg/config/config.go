@@ -171,8 +171,8 @@ func FromEnvironment() (*Config, error) {
 	if !exists {
 		return nil, fmt.Errorf("Please configure Grizzly using grr config")
 	}
-	token, _ := os.LookupEnv("GRAFANA_TOKEN")
-	user, _ := os.LookupEnv("GRAFANA_USER")
+	token := os.Getenv("GRAFANA_TOKEN")
+	user := os.Getenv("GRAFANA_USER")
 
 	grafanaConfig := GrafanaConfig{
 		URL:   grafanaURL,
@@ -180,7 +180,7 @@ func FromEnvironment() (*Config, error) {
 		User:  user,
 	}
 
-	apiToken, _ := os.LookupEnv("GRAFANA_SM_TOKEN")
+	apiToken := os.Getenv("GRAFANA_SM_TOKEN")
 	stackID, _ := strconv.Atoi(os.Getenv("GRAFANA_SM_STACK_ID"))
 	metricsInstanceID, _ := strconv.Atoi(os.Getenv("GRAFANA_SM_METRICS_ID"))
 	logsInstanceID, _ := strconv.Atoi(os.Getenv("GRAFANA_SM_LOGS_ID"))
@@ -193,12 +193,24 @@ func FromEnvironment() (*Config, error) {
 			LogsID:    int64(logsInstanceID),
 		}
 	}
+	cortexAddress := os.Getenv("CORTEX_ADDRESS")
+	cortexTenantId, _ := strconv.Atoi(os.Getenv("CORTEX_TENANT_ID"))
+	cortexApiKey := os.Getenv("CORTEX_API_KEY")
+	var mimirConfig MimirConfig
+	if cortexAddress != "" {
+		mimirConfig = MimirConfig{
+			Address:  cortexAddress,
+			TenantID: int64(cortexTenantId),
+			ApiKey:   cortexApiKey,
+		}
+	}
 	conf := Config{
 		Contexts: []Context{
 			{
 				Name:                "default",
 				Grafana:             grafanaConfig,
 				SyntheticMonitoring: syntheticMonitoringConfig,
+				Mimir:               mimirConfig,
 			},
 		},
 		CurrentContext: "default",

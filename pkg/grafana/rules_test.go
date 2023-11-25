@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
@@ -115,7 +116,7 @@ func TestRules(t *testing.T) {
 
 func mockCortexTool(t *testing.T, file string, err error) {
 	origCorexTool := cortexTool
-	cortexTool = func(args ...string) ([]byte, error) {
+	cortexTool = func(mimirConfig *config.MimirConfig, args ...string) ([]byte, error) {
 		if file != "" {
 			bytes, errFile := os.ReadFile("testdata/list_rules.yaml")
 			require.NoError(t, errFile)
