@@ -5,47 +5,81 @@ title: "Authentication"
 
 # Authentication and Configuration
 
-Each system handles authentication differently. Authentication must be configured
-if resources are provided for a system.
+## Introducing Contexts
+Grizzly supports 'contexts' (much like `kubectl` contexts), allowing users to maintain
+configuration for multiple Grafana (and Mimir and Synthetic Monitoring) systems.
+
+By default, the `default` context is used. We will discuss how to use the default
+context first, then explain how to use multiple contexts thereafter.
+
+## Settings
+
+Settings can be configured via Grizzly itself, using `grr config set`. They are stored
+in an OS specific location.
 
 ## Grafana Itself
+
 This tool interacts with Grafana via its REST API. For this, you will need to
-establish authentication credentials. These are provided to `grr` via
-environment variables.
+establish authentication credentials.
 
-| Name | Description | Required | Default |
-| --- | --- | --- | --- |
-| `GRAFANA_URL` | Fully qualified domain name of your Grafana instance. | true | - |
-| `GRAFANA_USER` | Basic auth username if applicable. | false | `api_key` |
-| `GRAFANA_TOKEN` | Basic auth password or API token. | false | - |
-
-See Grafana's [Authentication API
-docs](https://grafana.com/docs/grafana/latest/http_api/auth/) for more info.
+```sh
+grr config set grafana.url http://localhost:3000 # URL for the root of your Grafana instance
+grr config set grafana.user admin # Optional: Username if using basic auth
+grr config set grafana.token abcd12345 # Service account token (or basic auth password)
+```
 
 ## Grafana Cloud Prometheus
-To interact with Grafana Cloud Prometheus, you must have these environment variables set:
+To interact with Grafana Cloud Prometheus (aka Mimir), use these settings:
 
-| Name | Description | Required |
-| --- | --- | --- |
-| `CORTEX_ADDRESS` | URL for Grafana Cloud Prometheus instance | true |
-| `CORTEX_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true |
-| `CORTEX_API_KEY` | Authentication token/api key | true |
+```sh
+grr config set mimir.address https://mimir.example.com # URL for Grafana Cloud Prometheus instance
+grr config set mimir.tenant-id 1234567 # Tenant ID for your Grafana Cloud Prometheus account
+grr config set mimir.api-key abcdef12345 # Authentication token
+```
 
-Note, this will also work with other Cortex installations, alongside Grafana Cloud Prometheus.
+Note, this will also work with other Cortex installations, alongside Grafana Cloud Prometheus/Mimir.
 
 ## Grafana Synthetic Monitoring
-To interact with Grafana Synthetic Monitoring, you must have these environment variable set:
+To interact with Grafana Synthetic Monitoring, you must configure the below settings:
 
-| Name | Description | Required |
-| --- | --- | --- |
-| `GRAFANA_SM_TOKEN` | Authentication token/api key (must have MetricsPublisher permissions) | true |
-| `GRAFANA_SM_STACK_ID` | Grafana instance/stack ID | true |
-| `GRAFANA_SM_LOGS_ID` | Logs instance ID | true |
-| `GRAFANA_SM_METRICS_ID` | Metrics instance ID | true |
-
+```sh
+grr config set synthetic-monitoring token abcdef123456 # API key (must have MetricsPublisher permissions)
+grr config set synthetic-monitoring stack-id # Grafana stack ID
+grr config set synthetic-monitoring metrics-id # Logs instance ID
+grr config set synthetic-monitoring logs-id # Metrics instance ID
+```
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
 
-# Timeouts
+# Contexts
+Grizzly supports multiple contexts allowing easy swapping between instances. By default, Grizzly uses the `default`
+context.
+
+Create a new context with:
+```sh
+grr config create production
+```
+
+To list existing contexts:
+```sh
+grr config get-contexts
+```
+
+To show the currently selected context:
+```sh
+grr config current-context
+```
+
+To switch to a different context:
+```sh
+grr config use-context staging
+```
+
+After selecting a different context, all future `grr` invocations will use the credentials and settings in this
+new context, whether `grr apply` to apply resources or `grr config set` to set configuration values.
+
+# Other Configurations
+
+## Timeouts
 
 Grizzly has a 10 second timeout on some HTTP calls. To override this behavior, use the `GRIZZLY_HTTP_TIMEOUT=<seconds>` environment variable.
 
@@ -55,4 +89,3 @@ To use a proxy with Grizzly, you must have the following environment variable se
 | Name | Description | Required |
 | --- | --- | --- |
 | `HTTPS_PROXY` | This should be the full url/port of your proxy https://proxy:8080 | true |
-
