@@ -15,7 +15,7 @@ context first, then explain how to use multiple contexts thereafter.
 ## Settings
 
 > **NOTE**: If you have used Grizzly previously with environment variables, you can
-  initialise the `default` context from your environment simply with `grr config init`.
+  initialise the `default` context from your environment simply with `grr config import`.
 
 Settings can be configured via Grizzly itself, using `grr config set`. They are stored
 in an OS specific location.
@@ -57,10 +57,10 @@ Your stack ID is the number at the end of the url when you view your Grafana ins
 Grizzly supports multiple contexts allowing easy swapping between instances. By default, Grizzly uses the `default`
 context.
 
-Initialise the current context from (legacy) environment variables with:
+[Optional] If you have environment variables configured, you can import these into the `default` context like so:
 
 ```sh
-grr config init
+grr config import
 ```
 
 Create a new context with:

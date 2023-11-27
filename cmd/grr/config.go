@@ -6,16 +6,16 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
-func configInitCmd() *cli.Command {
+func configImportCmd() *cli.Command {
 	cmd := &cli.Command{
-		Use:   "init configuration",
-		Short: "Initialise Grizzly configuration file",
+		Use:   "import configuration",
+		Short: "Initialise Grizzly configuration file from environment variables",
 		Args:  cli.ArgsExact(0),
 	}
 	var opts grizzly.LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		return config.Init()
+		return config.Import()
 	}
 	return initialiseLogging(cmd, &opts)
 }

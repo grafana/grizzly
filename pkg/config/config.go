@@ -14,7 +14,7 @@ import (
 
 const apiVersion = "v1alpha1"
 
-func Init() error {
+func Import() error {
 	exists, err := Exists()
 	if err != nil {
 		return err
