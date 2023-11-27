@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -13,6 +12,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const apiVersion = "v1alpha1"
+
 func Init() error {
 	exists, err := Exists()
 	if err != nil {
@@ -21,16 +22,9 @@ func Init() error {
 	if exists {
 		notifier.Warn(nil, "Configuration already exists")
 	}
-	conf := Config{
-		ApiVersion: "v1alpha1",
-		Contexts: []Context{
-			{
-				Name: "default",
-			},
-		},
-		CurrentContext: "default",
-	}
-	return Save(&conf)
+
+	conf, err := FromEnvironment()
+	return Save(conf)
 }
 
 func Exists() (bool, error) {
@@ -53,6 +47,17 @@ func configPath() (string, error) {
 	return configFile, nil
 }
 
+func NewConfig() *Config {
+	return &Config{
+		ApiVersion: apiVersion,
+		Contexts: []Context{
+			{
+				Name: "default",
+			},
+		},
+		CurrentContext: "default",
+	}
+}
 func Load() (*Config, error) {
 	configFile, err := configPath()
 	if err != nil {
@@ -60,8 +65,8 @@ func Load() (*Config, error) {
 	}
 
 	if _, err = os.Stat(configFile); os.IsNotExist(err) {
-		config := Config{}
-		Save(&config)
+		config := NewConfig()
+		Save(config)
 	}
 
 	fh, err := os.Open(configFile)
@@ -134,7 +139,6 @@ func Set(path string, value string) error {
 			before, _ := yaml.Marshal(context)
 			yaml.Unmarshal([]byte(y), &context)
 			after, _ := yaml.Marshal(context)
-			log.Printf("BEFORE: %s\nAFTER: %s\n", string(before), string(after))
 			if string(before) == string(after) {
 				return fmt.Errorf("Setting %s not recognised", path)
 			}
@@ -205,6 +209,7 @@ func FromEnvironment() (*Config, error) {
 		}
 	}
 	conf := Config{
+		ApiVersion: apiVersion,
 		Contexts: []Context{
 			{
 				Name:                "default",
