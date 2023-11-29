@@ -11,7 +11,8 @@ import (
 )
 
 func TestDatasources(t *testing.T) {
-	handler := NewDatasourceHandler(NewProviderWithConfig(GetTestConfig()))
+	InitialiseTestConfig()
+	handler := NewDatasourceHandler(NewProvider())
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()

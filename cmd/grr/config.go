@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -28,7 +30,12 @@ func currentContextCmd() *cli.Command {
 	var opts grizzly.LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		return config.CurrentContext()
+		conf, err := config.CurrentContext()
+		if err != nil {
+			return err
+		}
+		fmt.Println(conf.Name)
+		return nil
 	}
 	return initialiseLogging(cmd, &opts)
 }

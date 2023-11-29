@@ -2,38 +2,67 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
-	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/kirsle/configdir"
-	"gopkg.in/yaml.v3"
+	"github.com/spf13/viper"
 )
 
-const apiVersion = "v1alpha1"
+const (
+	API_VERSION     = "v1alpha1"
+	CURRENT_CONTEXT = "currentContext"
+)
 
-func Import() error {
-	exists, err := Exists()
-	if err != nil {
-		return err
-	}
-	if exists {
-		notifier.Warn(nil, "Configuration already exists")
-	}
+func Initialise() {
+	viper.SetConfigName("settings")
+	viper.SetConfigType("yaml")
 
-	conf, err := FromEnvironment()
-	return Save(conf)
+	viper.AddConfigPath(configdir.LocalConfig("grizzly"))
+	viper.AddConfigPath(".")
+
+	viper.BindEnv("overrides.grafana.url", "GRAFANA_URL")
+	viper.BindEnv("overrides.grafana.user", "GRAFANA_USER")
+	viper.BindEnv("overrides.grafana.token", "GRAFANA_TOKEN")
+
+	viper.BindEnv("overrides.synthetic-monitoring.token", "GRAFANA_SM_TOKEN")
+	viper.BindEnv("overrides.synthetic-monitoring.stack-id", "GRAFANA_SM_STACK_ID")
+	viper.BindEnv("overrides.synthetic-monitoring.logs-id", "GRAFANA_SM_METRICS_ID")
+	viper.BindEnv("overrides.synthetic-monitoring.metrics-id", "GRAFANA_SM_LOGS_ID")
+
+	viper.BindEnv("overrides.mimir.address", "CORTEX_ADDRESS")
+	viper.BindEnv("overrides.mimir.tenant-id", "CORTEX_TENANT_ID")
+	viper.BindEnv("overrides.mimir.api-key", "CORTEX_API_KEY")
 }
 
-func Exists() (bool, error) {
-	configFile, err := configPath()
+func Read() error {
+	err := viper.ReadInConfig()
 	if err != nil {
-		return false, err
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			NewConfig()
+		} else {
+			return err
+		}
 	}
-	_, err = os.Stat(configFile)
-	return !os.IsNotExist(err), nil
+	return nil
+}
+
+func Mock(values map[string]interface{}) {
+	for k, v := range values {
+		viper.Set(k, v)
+	}
+}
+
+func Import() error {
+	name := viper.GetString(CURRENT_CONTEXT)
+	contextPath := fmt.Sprintf("contexts.%s", name)
+	ctx := viper.Sub(contextPath)
+	overrides := viper.Sub("overrides")
+	for key, value := range overrides.AllSettings() {
+		ctx.Set(key, value)
+	}
+	err := Write()
+	return err
 }
 
 func configPath() (string, error) {
@@ -47,178 +76,72 @@ func configPath() (string, error) {
 	return configFile, nil
 }
 
-func NewConfig() *Config {
-	return &Config{
-		ApiVersion: apiVersion,
-		Contexts: []Context{
-			{
-				Name: "default",
-			},
-		},
-		CurrentContext: "default",
-	}
-}
-func Load() (*Config, error) {
-	configFile, err := configPath()
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err = os.Stat(configFile); os.IsNotExist(err) {
-		config := NewConfig()
-		Save(config)
-	}
-
-	fh, err := os.Open(configFile)
-	if err != nil {
-		return nil, err
-	}
-	defer fh.Close()
-
-	var config Config
-	decoder := yaml.NewDecoder(fh)
-	decoder.Decode(&config)
-	return &config, nil
-}
-
-func Save(config *Config) error {
-	configFile, err := configPath()
-	if err != nil {
-		return err
-	}
-
-	fh, err := os.Create(configFile)
-	if err != nil {
-		return err
-	}
-	defer fh.Close()
-
-	encoder := yaml.NewEncoder(fh)
-	return encoder.Encode(config)
+func NewConfig() {
+	viper.Set("apiVersion", "v1alpha1")
+	viper.Set("currentContext", "default")
+	viper.Set("contexts.default.name", "default")
 }
 
 func GetContexts() error {
-	conf, err := Load()
-	if err != nil {
-		return err
-	}
-	for _, context := range conf.Contexts {
-		fmt.Println(context.Name)
+	contexts := map[string]interface{}{}
+	viper.UnmarshalKey("contexts", &contexts)
+	for k := range contexts {
+		fmt.Printf("  %s\n", k)
 	}
 	return nil
 }
 
 func UseContext(context string) error {
-	conf, err := Load()
-	if err != nil {
-		return err
-	}
-	conf.CurrentContext = context
-	return Save(conf)
+	viper.Set(CURRENT_CONTEXT, context)
+	return Write()
 }
 
-func CurrentContext() error {
-	conf, err := Load()
-	if err != nil {
-		return err
+func CurrentContext() (*Context, error) {
+	name := viper.GetString(CURRENT_CONTEXT)
+	contextPath := fmt.Sprintf("contexts.%s", name)
+	ctx := viper.Sub(contextPath)
+	overrides := viper.Sub("overrides")
+	if overrides != nil {
+		for key, value := range overrides.AllSettings() {
+			ctx.Set(key, value)
+		}
 	}
-	fmt.Println(conf.CurrentContext)
-	return nil
+	var context Context
+	ctx.Unmarshal(&context)
+	context.Name = name
+	return &context, nil
 }
 
 func Set(path string, value string) error {
-	parts := strings.SplitN(path, ".", 2)
-	y := fmt.Sprintf("%s:\n  %s: '%s'", parts[0], parts[1], value)
-
-	conf, err := Load()
-	if err != nil {
-		return err
-	}
-	for i, context := range conf.Contexts {
-		if context.Name == conf.CurrentContext {
-			before, _ := yaml.Marshal(context)
-			yaml.Unmarshal([]byte(y), &context)
-			after, _ := yaml.Marshal(context)
-			if string(before) == string(after) {
-				return fmt.Errorf("Setting %s not recognised", path)
-			}
-			conf.Contexts[i] = context
-			notifier.Info(nil, fmt.Sprintf("Setting %s set to %s", path, value))
-			err = Save(conf)
-			return err
-		}
-	}
-	return fmt.Errorf("Current context %s not found", conf.CurrentContext)
+	ctx := viper.GetString(CURRENT_CONTEXT)
+	fullPath := fmt.Sprintf("contexts.%s.%s", ctx, path)
+	viper.Set(fullPath, value)
+	return Write()
 }
 
 func CreateContext(name string) error {
-	conf, err := Load()
+	viper.Set(CURRENT_CONTEXT, name)
+	viper.Set("contexts.default.name", name)
+	return Write()
+}
+
+func Write() error {
+	configpath, err := configPath()
 	if err != nil {
 		return err
 	}
-	context := conf.GetContext(name)
-	if context != nil {
-		return fmt.Errorf("Context exists")
+	writeConfigs := viper.New()
+	for key, value := range viper.AllSettings() {
+		if !strings.HasPrefix(key, "overrides") {
+			writeConfigs.Set(key, value)
+		}
 	}
-	context = &Context{
-		Name: name,
+	err = writeConfigs.WriteConfig()
+	if err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			NewConfig()
+			return writeConfigs.WriteConfigAs(configpath)
+		}
 	}
-	conf.Contexts = append(conf.Contexts, *context)
-	conf.CurrentContext = name
-
-	err = Save(conf)
 	return err
-}
-
-func FromEnvironment() (*Config, error) {
-	grafanaURL, exists := os.LookupEnv("GRAFANA_URL")
-	if !exists {
-		return nil, fmt.Errorf("Please configure Grizzly using grr config")
-	}
-	token := os.Getenv("GRAFANA_TOKEN")
-	user := os.Getenv("GRAFANA_USER")
-
-	grafanaConfig := GrafanaConfig{
-		URL:   grafanaURL,
-		Token: token,
-		User:  user,
-	}
-
-	apiToken := os.Getenv("GRAFANA_SM_TOKEN")
-	stackID, _ := strconv.Atoi(os.Getenv("GRAFANA_SM_STACK_ID"))
-	metricsInstanceID, _ := strconv.Atoi(os.Getenv("GRAFANA_SM_METRICS_ID"))
-	logsInstanceID, _ := strconv.Atoi(os.Getenv("GRAFANA_SM_LOGS_ID"))
-	var syntheticMonitoringConfig SyntheticMonitoringConfig
-	if apiToken != "" {
-		syntheticMonitoringConfig = SyntheticMonitoringConfig{
-			Token:     apiToken,
-			StackID:   int64(stackID),
-			MetricsID: int64(metricsInstanceID),
-			LogsID:    int64(logsInstanceID),
-		}
-	}
-	cortexAddress := os.Getenv("CORTEX_ADDRESS")
-	cortexTenantId, _ := strconv.Atoi(os.Getenv("CORTEX_TENANT_ID"))
-	cortexApiKey := os.Getenv("CORTEX_API_KEY")
-	var mimirConfig MimirConfig
-	if cortexAddress != "" {
-		mimirConfig = MimirConfig{
-			Address:  cortexAddress,
-			TenantID: int64(cortexTenantId),
-			ApiKey:   cortexApiKey,
-		}
-	}
-	conf := Config{
-		ApiVersion: apiVersion,
-		Contexts: []Context{
-			{
-				Name:                "default",
-				Grafana:             grafanaConfig,
-				SyntheticMonitoring: syntheticMonitoringConfig,
-				Mimir:               mimirConfig,
-			},
-		},
-		CurrentContext: "default",
-	}
-	return &conf, nil
 }

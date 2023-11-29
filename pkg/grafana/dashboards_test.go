@@ -11,7 +11,8 @@ import (
 )
 
 func TestDashboard(t *testing.T) {
-	handler := NewDashboardHandler(NewProviderWithConfig(GetTestConfig()))
+	InitialiseTestConfig()
+	handler := NewDashboardHandler(NewProvider())
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()

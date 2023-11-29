@@ -13,7 +13,8 @@ import (
 )
 
 func TestPull(t *testing.T) {
-	provider := grafana.NewProviderWithConfig(GetTestConfig())
+	InitialiseTestConfig()
+	provider := grafana.NewProvider()
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
 			provider,

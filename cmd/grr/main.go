@@ -4,6 +4,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/go-clix/cli"
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -18,6 +19,12 @@ func main() {
 		Use:     "grr",
 		Short:   "Grizzly",
 		Version: Version,
+	}
+
+	config.Initialise()
+	err := config.Read()
+	if err != nil {
+		log.Fatalln(err)
 	}
 
 	grizzly.ConfigureProviderRegistry(
@@ -41,7 +48,7 @@ func main() {
 	)
 
 	// Run!
-	if err := rootCmd.Execute(); err != nil {
+	if err = rootCmd.Execute(); err != nil {
 		log.Fatalln(err)
 	}
 }

@@ -16,7 +16,8 @@ import (
 var errCortextoolClient = errors.New("error coming from cortextool client")
 
 func TestRules(t *testing.T) {
-	provider := NewProviderWithConfig(GetTestConfig())
+	InitialiseTestConfig()
+	provider := NewProvider()
 	h := NewRuleHandler(provider)
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{

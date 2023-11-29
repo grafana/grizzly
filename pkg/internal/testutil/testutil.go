@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/grafana/grizzly/pkg/config"
+	"github.com/spf13/viper"
 )
 
 func GetUrl() string {
@@ -17,18 +17,10 @@ func GetUrl() string {
 	}
 }
 
-func GetTestConfig() *config.Config {
-	return &config.Config{
-		Contexts: []config.Context{
-			{
-				Name: "test",
-				Grafana: config.GrafanaConfig{
-					URL: GetUrl(),
-				},
-			},
-		},
-		CurrentContext: "test",
-	}
+func InitialiseTestConfig() {
+	viper.Set("currentContext", "test")
+	viper.Set("contexts.test.grafana.name", "test")
+	viper.Set("contexts.test.grafana.url", GetUrl())
 }
 
 // PingService checks whether a URL is available before tests begin

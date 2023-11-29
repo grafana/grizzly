@@ -12,7 +12,8 @@ import (
 )
 
 func TestFolders(t *testing.T) {
-	handler := NewFolderHandler(NewProviderWithConfig(GetTestConfig()))
+	InitialiseTestConfig()
+	handler := NewFolderHandler(NewProvider())
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()

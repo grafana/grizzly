@@ -20,7 +20,8 @@ func TestSyntheticMonitoring(t *testing.T) {
 				"type": "http",
 			},
 		}
-		handler := NewSyntheticMonitoringHandler(NewProviderWithConfig(GetTestConfig()))
+		InitialiseTestConfig()
+		handler := NewSyntheticMonitoringHandler(NewProvider())
 
 		uid, err := handler.GetUID(resource)
 		require.NoError(t, err)
@@ -76,7 +77,8 @@ func TestSyntheticMonitoringCheckUID(t *testing.T) {
 		},
 	}
 
-	h := NewSyntheticMonitoringHandler(NewProviderWithConfig(GetTestConfig()))
+	InitialiseTestConfig()
+	h := NewSyntheticMonitoringHandler(NewProvider())
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.expectedUID, h.getUID(tc.check))

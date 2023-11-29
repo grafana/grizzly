@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -154,7 +155,7 @@ func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource)
 
 // NewSyntheticMonitoringClient creates a new client for synthetic monitoring go client
 func (h *SyntheticMonitoringHandler) NewSyntheticMonitoringClient() (*smapi.Client, error) {
-	grizzlyContext, err := h.Provider.(ClientProvider).Current()
+	grizzlyContext, err := config.CurrentContext()
 	if err != nil {
 		return nil, err
 	}

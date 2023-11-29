@@ -31,16 +31,3 @@ type Config struct {
 	Contexts       []Context `yaml:"contexts"`
 	CurrentContext string    `yaml:"current-context"`
 }
-
-func (c Config) Current() *Context {
-	return c.GetContext(c.CurrentContext)
-}
-
-func (c Config) GetContext(name string) *Context {
-	for _, context := range c.Contexts {
-		if context.Name == name {
-			return &context
-		}
-	}
-	return nil
-}
