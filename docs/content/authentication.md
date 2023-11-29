@@ -5,13 +5,19 @@ title: "Authentication"
 
 # Authentication and Configuration
 
-Grizzly supports 'contexts' (much like `kubectl` contexts), allowing users to maintain
-configuration for multiple Grafana (and Mimir and Synthetic Monitoring) systems.
+Authentication for Grizzly can be configured in two ways: using environment variables
+and through Grizzly's own 'context' support (much like `kubectl` contexts).
+
+Environment variables are suitable for use against a single system, and best suited
+to CI and automation scenarios.
+
+Grizzly contexts allow easy switching between multiple configurations and are best
+suited to workstation use.
+
+# Using Grizzly Contexts
 
 By default, the `default` context is used. We will discuss how to use the default
 context first, then explain how to use multiple contexts thereafter.
-
-## Settings
 
 > **NOTE**: If you have used Grizzly previously with environment variables, you can
   initialise the `default` context from your environment simply with `grr config import`.
@@ -21,7 +27,7 @@ in an OS specific location.
 
 ## Grafana Itself
 
-This tool interacts with Grafana via its REST API. For this, you will need to
+Grizzly interacts with Grafana via its REST API. For this, you will need to
 establish authentication credentials.
 
 ```sh
@@ -88,7 +94,8 @@ new context, whether `grr apply` to apply resources or `grr config set` to set c
 # Configuring Grizzly with environment variables
 
 In some circumstances (e.g. when used within automated pipelines) it makes sense to configure Grizzly directly
-with environment variables as opposed to contexts. Below are the variables that can be used for this.
+with environment variables as opposed to contexts. Environment variables, when set, take precedence over
+Grizzly contexts as described above. Below are the variables that can be used for this.
 
 | Name | Description | Required | Default |
 | --- | --- | --- | --- |
