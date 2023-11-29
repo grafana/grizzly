@@ -80,7 +80,10 @@ func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
 		return nil, fmt.Errorf("invalid Grafana URL")
 	}
 
-	transportConfig := gclient.DefaultTransportConfig().WithHost(parsedUrl.Host).WithSchemes([]string{parsedUrl.Scheme})
+	transportConfig := gclient.DefaultTransportConfig().
+		WithHost(parsedUrl.Host).
+		WithSchemes([]string{parsedUrl.Scheme})
+
 	if p.context.Grafana.Token != "" {
 		if p.context.Grafana.User != "" {
 			transportConfig.BasicAuth = url.UserPassword(p.context.Grafana.User, p.context.Grafana.Token)

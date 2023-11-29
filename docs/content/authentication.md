@@ -5,7 +5,6 @@ title: "Authentication"
 
 # Authentication and Configuration
 
-## Introducing Contexts
 Grizzly supports 'contexts' (much like `kubectl` contexts), allowing users to maintain
 configuration for multiple Grafana (and Mimir and Synthetic Monitoring) systems.
 
