@@ -21,6 +21,8 @@ context first, then explain how to use multiple contexts thereafter.
 
 > **NOTE**: If you have used Grizzly previously with environment variables, you can
   initialise the `default` context from your environment simply with `grr config import`.
+  Also note, after importing, remember to unset your environment variables, as they
+  take precendence over contexts and will thus prevent access to your context configurations.
 
 Settings can be configured via Grizzly itself, using `grr config set`. They are stored
 in an OS specific location.
