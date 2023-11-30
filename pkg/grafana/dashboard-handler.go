@@ -22,11 +22,11 @@ const generalFolderUID = "general"
 
 // DashboardHandler is a Grizzly Handler for Grafana dashboards
 type DashboardHandler struct {
-	Provider Provider
+	Provider grizzly.Provider
 }
 
 // NewDashboardHandler returns configuration defining a new Grafana Dashboard Handler
-func NewDashboardHandler(provider Provider) *DashboardHandler {
+func NewDashboardHandler(provider grizzly.Provider) *DashboardHandler {
 	return &DashboardHandler{
 		Provider: provider,
 	}
@@ -152,7 +152,11 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.Prev
 // getRemoteDashboard retrieves a dashboard object from Grafana
 func (h *DashboardHandler) getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	params := dashboards.NewGetDashboardByUIDParams().WithUID(uid)
-	dashboardOk, err := h.Provider.client.Dashboards.GetDashboardByUID(params, nil)
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return nil, err
+	}
+	dashboardOk, err := client.Dashboards.GetDashboardByUID(params, nil)
 	if err != nil {
 		var gErr *dashboards.GetDashboardByUIDNotFound
 		if errors.As(err, &gErr) {
@@ -169,7 +173,7 @@ func (h *DashboardHandler) getRemoteDashboard(uid string) (*grizzly.Resource, er
 	}
 
 	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
-	folderUid := extractFolderUID(h.Provider.client, *dashboard)
+	folderUid := extractFolderUID(client, *dashboard)
 	resource.SetMetadata("folder", folderUid)
 	return &resource, nil
 }
@@ -182,12 +186,17 @@ func (h *DashboardHandler) getRemoteDashboardList() ([]string, error) {
 		uids       []string
 	)
 
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return nil, err
+	}
+
 	params := search.NewSearchParams().WithLimit(&limit).WithType(&searchType)
 	for {
 		page++
 		params.SetPage(&page)
 
-		searchOk, err := h.Provider.client.Search.Search(params, nil)
+		searchOk, err := client.Search.Search(params, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -224,8 +233,13 @@ func (h *DashboardHandler) postDashboard(resource grizzly.Resource) error {
 		FolderID:  folderID,
 		Overwrite: true,
 	}
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return err
+	}
+
 	params := dashboards.NewPostDashboardParams().WithBody(&body)
-	_, err := h.Provider.client.Dashboards.PostDashboard(params, nil)
+	_, err = client.Dashboards.PostDashboard(params, nil)
 	return err
 }
 
@@ -236,8 +250,13 @@ func (h *DashboardHandler) postSnapshot(resource grizzly.Resource, opts *grizzly
 	if opts.ExpiresSeconds > 0 {
 		body.Expires = int64(opts.ExpiresSeconds)
 	}
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return nil, err
+	}
+
 	params := snapshots.NewCreateDashboardSnapshotParams().WithBody(&body)
-	response, err := h.Provider.client.Snapshots.CreateDashboardSnapshot(params, nil)
+	response, err := client.Snapshots.CreateDashboardSnapshot(params, nil)
 	if err != nil {
 		return nil, err
 	}

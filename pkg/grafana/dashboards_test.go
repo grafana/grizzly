@@ -11,21 +11,11 @@ import (
 )
 
 func TestDashboard(t *testing.T) {
-	os.Setenv("GRAFANA_URL", GetUrl())
-
-	grafanaClient, err := GetClient()
-	require.NoError(t, err)
-
-	grizzly.ConfigureProviderRegistry(
-		[]grizzly.Provider{
-			NewProvider(grafanaClient),
-		})
+	InitialiseTestConfig()
+	handler := NewDashboardHandler(NewProvider())
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()
-
-	handler, err := grizzly.Registry.GetHandler((&DashboardHandler{}).Kind())
-	require.NoError(t, err)
 
 	t.Run("get remote dashboard - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("ReciqtgGk")

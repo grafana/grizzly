@@ -169,7 +169,6 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 		if err != nil {
 			return nil, err
 		}
-		log.Printf("Decoding %d", i)
 		manifests[strconv.Itoa(i)] = m
 		handler, err := Registry.GetHandler(m.Kind())
 		if err != nil {

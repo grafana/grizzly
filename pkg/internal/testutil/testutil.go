@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 func GetUrl() string {
@@ -15,6 +17,13 @@ func GetUrl() string {
 	}
 }
 
+func InitialiseTestConfig() {
+	viper.Set("currentContext", "test")
+	viper.Set("contexts.test.grafana.name", "test")
+	viper.Set("contexts.test.grafana.url", GetUrl())
+}
+
+// PingService checks whether a URL is available before tests begin
 func PingService(url string) *time.Ticker {
 	ticker := time.NewTicker(1 * time.Second)
 	timeoutExceeded := time.After(120 * time.Second)

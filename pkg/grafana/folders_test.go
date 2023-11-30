@@ -12,21 +12,11 @@ import (
 )
 
 func TestFolders(t *testing.T) {
-	os.Setenv("GRAFANA_URL", GetUrl())
-
-	grafanaClient, err := GetClient()
-	require.NoError(t, err)
-
-	grizzly.ConfigureProviderRegistry(
-		[]grizzly.Provider{
-			NewProvider(grafanaClient),
-		})
+	InitialiseTestConfig()
+	handler := NewFolderHandler(NewProvider())
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()
-
-	handler, err := grizzly.Registry.GetHandler((&FolderHandler{}).Kind())
-	require.NoError(t, err)
 
 	t.Run("get remote folder - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("abcdefghi")

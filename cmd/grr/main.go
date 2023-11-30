@@ -4,6 +4,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/go-clix/cli"
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -20,14 +21,15 @@ func main() {
 		Version: Version,
 	}
 
-	gclient, err := grafana.GetClient()
+	config.Initialise()
+	err := config.Read()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			grafana.NewProvider(gclient),
+			grafana.NewProvider(),
 		})
 
 	// workflow commands
@@ -42,10 +44,11 @@ func main() {
 		exportCmd(),
 		previewCmd(),
 		providersCmd(),
+		configCmd(),
 	)
 
 	// Run!
-	if err := rootCmd.Execute(); err != nil {
+	if err = rootCmd.Execute(); err != nil {
 		log.Fatalln(err)
 	}
 }

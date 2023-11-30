@@ -11,21 +11,11 @@ import (
 )
 
 func TestDatasources(t *testing.T) {
-	os.Setenv("GRAFANA_URL", GetUrl())
-
-	grafanaClient, err := GetClient()
-	require.NoError(t, err)
-
-	grizzly.ConfigureProviderRegistry(
-		[]grizzly.Provider{
-			NewProvider(grafanaClient),
-		})
+	InitialiseTestConfig()
+	handler := NewDatasourceHandler(NewProvider())
 
 	ticker := PingService(GetUrl())
 	defer ticker.Stop()
-
-	handler, err := grizzly.Registry.GetHandler((&DatasourceHandler{}).Kind())
-	require.NoError(t, err)
 
 	t.Run("get remote datasource - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("AppDynamics")

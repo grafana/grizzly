@@ -5,34 +5,31 @@ import (
 	"os"
 	"testing"
 
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
+
 	"gopkg.in/yaml.v3"
 )
 
 var errCortextoolClient = errors.New("error coming from cortextool client")
 
 func TestRules(t *testing.T) {
-	os.Setenv("GRAFANA_URL", GetUrl())
-
-	grafanaClient, err := GetClient()
-	require.NoError(t, err)
-
+	InitialiseTestConfig()
+	provider := NewProvider()
+	h := NewRuleHandler(provider)
 	grizzly.ConfigureProviderRegistry(
 		[]grizzly.Provider{
-			NewProvider(grafanaClient),
+			provider,
 		})
-
-	h := RuleHandler{}
 
 	t.Run("get remote rule group", func(t *testing.T) {
 		mockCortexTool(t, "testdata/list_rules.yaml", nil)
 
 		res, err := h.getRemoteRuleGroup("first_rules.grizzly_alerts")
 		require.NoError(t, err)
-		handler := RuleHandler{}
-		uid, err := handler.GetUID(*res)
+		uid, err := h.GetUID(*res)
 		require.NoError(t, err)
 		require.Equal(t, "grizzly_alerts", res.Name())
 		require.Equal(t, "first_rules.grizzly_alerts", uid)
@@ -112,8 +109,7 @@ func TestRules(t *testing.T) {
 				"namespace": "test_namespace",
 			},
 		}
-		handler := RuleHandler{}
-		uid, err := handler.GetUID(resource)
+		uid, err := h.GetUID(resource)
 		require.NoError(t, err)
 		require.Equal(t, "test_namespace.test", uid)
 	})
@@ -121,7 +117,7 @@ func TestRules(t *testing.T) {
 
 func mockCortexTool(t *testing.T, file string, err error) {
 	origCorexTool := cortexTool
-	cortexTool = func(args ...string) ([]byte, error) {
+	cortexTool = func(mimirConfig *config.MimirConfig, args ...string) ([]byte, error) {
 		if file != "" {
 			bytes, errFile := os.ReadFile("testdata/list_rules.yaml")
 			require.NoError(t, errFile)

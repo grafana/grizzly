@@ -6,10 +6,9 @@ import (
 
 	"context"
 	"encoding/json"
-	"os"
-	"strconv"
 	"time"
 
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -41,11 +40,11 @@ type Probes struct {
 
 // SyntheticMonitoringHandler is a Grizzly Handler for Grafana Synthetic Monitoring
 type SyntheticMonitoringHandler struct {
-	Provider Provider
+	Provider grizzly.Provider
 }
 
 // NewSyntheticMonitoringHandler returns a Grizzly Handler for Grafana Synthetic Monitoring
-func NewSyntheticMonitoringHandler(provider Provider) *SyntheticMonitoringHandler {
+func NewSyntheticMonitoringHandler(provider grizzly.Provider) *SyntheticMonitoringHandler {
 	return &SyntheticMonitoringHandler{
 		Provider: provider,
 	}
@@ -155,7 +154,12 @@ func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource)
 }
 
 // NewSyntheticMonitoringClient creates a new client for synthetic monitoring go client
-func NewSyntheticMonitoringClient() (*smapi.Client, error) {
+func (h *SyntheticMonitoringHandler) NewSyntheticMonitoringClient() (*smapi.Client, error) {
+	grizzlyContext, err := config.CurrentContext()
+	if err != nil {
+		return nil, err
+	}
+	smConfig := grizzlyContext.SyntheticMonitoring
 	client, err := NewHttpClient()
 	if err != nil {
 		return nil, err
@@ -163,28 +167,10 @@ func NewSyntheticMonitoringClient() (*smapi.Client, error) {
 
 	smClient := smapi.NewClient(smBaseURL, "", client)
 
-	apiToken, ok := os.LookupEnv("GRAFANA_SM_TOKEN")
-	if !ok {
-		return nil, fmt.Errorf("GRAFANA_SM_TOKEN environment variable must be set")
-	}
-
-	stackID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_STACK_ID"))
-	if err != nil {
-		return nil, fmt.Errorf("GRAFANA_SM_STACK_ID environment variable must be set")
-	}
-	metricsInstanceID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_METRICS_ID"))
-	if err != nil {
-		return nil, fmt.Errorf("GRAFANA_SM_METRICS_ID environment variable must be set")
-	}
-	logsInstanceID, err := strconv.Atoi(os.Getenv("GRAFANA_SM_LOGS_ID"))
-	if err != nil {
-		return nil, fmt.Errorf("GRAFANA_SM_LOGS_ID environment variable must be set")
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err = smClient.Install(ctx, int64(stackID), int64(metricsInstanceID), int64(logsInstanceID), apiToken)
+	_, err = smClient.Install(ctx, smConfig.StackID, smConfig.MetricsID, smConfig.LogsID, smConfig.Token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to install synthetic monitoring client : %v", err)
 	}
@@ -194,7 +180,7 @@ func NewSyntheticMonitoringClient() (*smapi.Client, error) {
 
 // getProbeList retrieves the list of probe and grouped by id and name
 func (h *SyntheticMonitoringHandler) getProbeList() (Probes, error) {
-	smClient, err := NewSyntheticMonitoringClient()
+	smClient, err := h.NewSyntheticMonitoringClient()
 	if err != nil {
 		return Probes{}, err
 	}
@@ -222,7 +208,7 @@ func (h *SyntheticMonitoringHandler) getProbeList() (Probes, error) {
 
 // getRemoteCheck retrieves a check object from SM
 func (h *SyntheticMonitoringHandler) getRemoteCheckList() ([]string, error) {
-	smClient, err := NewSyntheticMonitoringClient()
+	smClient, err := h.NewSyntheticMonitoringClient()
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +229,7 @@ func (h *SyntheticMonitoringHandler) getRemoteCheckList() ([]string, error) {
 
 // getRemoteCheck retrieves a check object from SM
 func (h *SyntheticMonitoringHandler) getRemoteCheck(uid string) (*grizzly.Resource, error) {
-	smClient, err := NewSyntheticMonitoringClient()
+	smClient, err := h.NewSyntheticMonitoringClient()
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +289,7 @@ func (h *SyntheticMonitoringHandler) convertProbeNameToID(resource *grizzly.Reso
 }
 
 func (h *SyntheticMonitoringHandler) addCheck(resource grizzly.Resource) error {
-	smClient, err := NewSyntheticMonitoringClient()
+	smClient, err := h.NewSyntheticMonitoringClient()
 	if err != nil {
 		return err
 	}
@@ -328,7 +314,7 @@ func (h *SyntheticMonitoringHandler) addCheck(resource grizzly.Resource) error {
 }
 
 func (h *SyntheticMonitoringHandler) updateCheck(resource grizzly.Resource) error {
-	smClient, err := NewSyntheticMonitoringClient()
+	smClient, err := h.NewSyntheticMonitoringClient()
 	if err != nil {
 		return err
 	}

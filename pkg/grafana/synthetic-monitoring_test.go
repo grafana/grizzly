@@ -4,20 +4,14 @@ import (
 	"testing"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/stretchr/testify/require"
 )
 
 func TestSyntheticMonitoring(t *testing.T) {
-
-	client, err := GetClient()
-	require.NoError(t, err)
-
-	grizzly.ConfigureProviderRegistry(
-		[]grizzly.Provider{
-			&Provider{client: client},
-		})
 
 	t.Run("Check getUID is functioning correctly", func(t *testing.T) {
 		resource := grizzly.Resource{
@@ -26,7 +20,9 @@ func TestSyntheticMonitoring(t *testing.T) {
 				"type": "http",
 			},
 		}
-		handler := SyntheticMonitoringHandler{}
+		InitialiseTestConfig()
+		handler := NewSyntheticMonitoringHandler(NewProvider())
+
 		uid, err := handler.GetUID(resource)
 		require.NoError(t, err)
 		require.Equal(t, "http.test", uid)
@@ -81,7 +77,8 @@ func TestSyntheticMonitoringCheckUID(t *testing.T) {
 		},
 	}
 
-	h := SyntheticMonitoringHandler{}
+	InitialiseTestConfig()
+	h := NewSyntheticMonitoringHandler(NewProvider())
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.expectedUID, h.getUID(tc.check))

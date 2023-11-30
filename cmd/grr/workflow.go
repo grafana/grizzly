@@ -264,6 +264,21 @@ func providersCmd() *cli.Command {
 	return initialiseLogging(cmd, &opts)
 }
 
+func configCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "config <sub-command>",
+		Short: "Show, select or configure configuration",
+		Args:  cli.ArgsExact(0),
+	}
+	cmd.AddCommand(currentContextCmd())
+	cmd.AddCommand(useContextCmd())
+	cmd.AddCommand(getContextsCmd())
+	cmd.AddCommand(configImportCmd())
+	cmd.AddCommand(setCmd())
+	cmd.AddCommand(createContextCmd())
+	return cmd
+}
+
 func initialiseCmd(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
 	// Keep the old flags for backwards compatibility
 	cmd.Flags().BoolVarP(&opts.Directory, "directory", "d", false, "treat resource path as a directory")
