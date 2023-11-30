@@ -19,10 +19,9 @@ func Initialise() {
 	viper.SetConfigName("settings")
 	viper.SetConfigType("yaml")
 
-	viper.AddConfigPath(configdir.LocalConfig("grizzly"))
 	viper.AddConfigPath(".")
+	viper.AddConfigPath(configdir.LocalConfig("grizzly"))
 }
-
 func override(v *viper.Viper) {
 	bindings := map[string]string{
 		"grafana.url":   "GRAFANA_URL",
@@ -97,6 +96,7 @@ func configPath() (string, error) {
 func NewConfig() {
 	viper.Set("apiVersion", "v1alpha1")
 	viper.Set(CURRENT_CONTEXT, "default")
+	viper.Set("contexts.default.name", "default")
 }
 
 func GetContexts() error {

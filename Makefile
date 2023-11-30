@@ -24,8 +24,8 @@ test-clean:
 test: run-test-image-locally
 	go test ./cmd/... /pkg/... || ( status=$$?; docker logs grizzly-grafana ; exit $$status )
 
-integration: run-test-image-locally
-	go test ./integration/... -v
+integration: run-test-image-locally dev
+	go test -v ./integration/...
 
 # Compilation
 dev:
