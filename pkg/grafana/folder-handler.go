@@ -138,8 +138,7 @@ func (h *FolderHandler) getRemoteFolder(uid string) (*grizzly.Resource, error) {
 			return nil, err
 		}
 
-		params := folders.NewGetFolderByUIDParams().WithFolderUID(uid)
-		folderOk, err := client.Folders.GetFolderByUID(params, nil)
+		folderOk, err := client.Folders.GetFolderByUID(uid)
 		if err != nil {
 			var gErrNotFound *folders.GetFolderByUIDNotFound
 			var gErrForbidden *folders.GetFolderByUIDForbidden
@@ -221,8 +220,7 @@ func (h *FolderHandler) postFolder(resource grizzly.Resource) error {
 		return err
 	}
 
-	params := folders.NewCreateFolderParams().WithBody(&body)
-	_, err = client.Folders.CreateFolder(params, nil)
+	_, err = client.Folders.CreateFolder(&body)
 	return err
 }
 
@@ -250,14 +248,12 @@ func (h *FolderHandler) putFolder(resource grizzly.Resource) error {
 		return err
 	}
 
-	params := folders.NewUpdateFolderParams().WithBody(&body)
-	_, err = client.Folders.UpdateFolder(params, nil)
+	_, err = client.Folders.UpdateFolder(resource.Name(), &body)
 	return err
 }
 
 var getFolderById = func(client *gclient.GrafanaHTTPAPI, folderId int64) (*models.Folder, error) {
-	params := folders.NewGetFolderByIDParams().WithFolderID(folderId)
-	folderOk, err := client.Folders.GetFolderByID(params, nil)
+	folderOk, err := client.Folders.GetFolderByID(folderId)
 	if err != nil {
 		return nil, err
 	}

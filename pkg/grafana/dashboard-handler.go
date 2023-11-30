@@ -12,7 +12,6 @@ import (
 
 	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
 	"github.com/grafana/grafana-openapi-client-go/client/search"
-	"github.com/grafana/grafana-openapi-client-go/client/snapshots"
 	"github.com/grafana/grafana-openapi-client-go/models"
 )
 
@@ -151,12 +150,11 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.Prev
 
 // getRemoteDashboard retrieves a dashboard object from Grafana
 func (h *DashboardHandler) getRemoteDashboard(uid string) (*grizzly.Resource, error) {
-	params := dashboards.NewGetDashboardByUIDParams().WithUID(uid)
 	client, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return nil, err
 	}
-	dashboardOk, err := client.Dashboards.GetDashboardByUID(params, nil)
+	dashboardOk, err := client.Dashboards.GetDashboardByUID(uid)
 	if err != nil {
 		var gErr *dashboards.GetDashboardByUIDNotFound
 		if errors.As(err, &gErr) {
@@ -238,8 +236,7 @@ func (h *DashboardHandler) postDashboard(resource grizzly.Resource) error {
 		return err
 	}
 
-	params := dashboards.NewPostDashboardParams().WithBody(&body)
-	_, err = client.Dashboards.PostDashboard(params, nil)
+	_, err = client.Dashboards.PostDashboard(&body)
 	return err
 }
 
@@ -255,8 +252,7 @@ func (h *DashboardHandler) postSnapshot(resource grizzly.Resource, opts *grizzly
 		return nil, err
 	}
 
-	params := snapshots.NewCreateDashboardSnapshotParams().WithBody(&body)
-	response, err := client.Snapshots.CreateDashboardSnapshot(params, nil)
+	response, err := client.Snapshots.CreateDashboardSnapshot(&body)
 	if err != nil {
 		return nil, err
 	}
