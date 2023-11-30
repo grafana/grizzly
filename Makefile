@@ -1,4 +1,4 @@
-.PHONY: dev lint test static install uninstall cross build-test-image run-test-image run-test-image-locally test-clean
+.PHONY: dev lint test integration static install uninstall cross build-test-image run-test-image run-test-image-locally test-clean
 VERSION := $(shell git describe --tags --dirty --always)
 BIN_DIR := $(GOPATH)/bin
 GOX := $(BIN_DIR)/gox
@@ -22,7 +22,10 @@ test-clean:
 	go clean -testcache
 
 test: run-test-image-locally
-	go test ./... || ( status=$$?; docker logs grizzly-grafana ; exit $$status )
+	go test ./cmd/... /pkg/... || ( status=$$?; docker logs grizzly-grafana ; exit $$status )
+
+integration: run-test-image-locally
+	go test ./integration/... -v
 
 # Compilation
 dev:
