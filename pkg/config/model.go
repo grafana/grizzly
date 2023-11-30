@@ -25,9 +25,3 @@ type Context struct {
 	Mimir               MimirConfig               `yaml:"mimir"`
 	SyntheticMonitoring SyntheticMonitoringConfig `yaml:"synthetic-monitoring"`
 }
-
-type Config struct {
-	ApiVersion     string    `yaml:"apiVersion"`
-	Contexts       []Context `yaml:"contexts"`
-	CurrentContext string    `yaml:"current-context"`
-}
