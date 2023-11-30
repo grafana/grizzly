@@ -176,7 +176,7 @@ func (h *FolderHandler) getRemoteFolderList() ([]string, error) {
 		page++
 		params.SetPage(&page)
 
-		foldersOk, err := client.Folders.GetFolders(params, nil)
+		foldersOk, err := client.Folders.GetFolders(params)
 		if err != nil {
 			return nil, err
 		}

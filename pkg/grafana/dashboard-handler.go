@@ -194,7 +194,7 @@ func (h *DashboardHandler) getRemoteDashboardList() ([]string, error) {
 		page++
 		params.SetPage(&page)
 
-		searchOk, err := client.Search.Search(params, nil)
+		searchOk, err := client.Search.Search(params)
 		if err != nil {
 			return nil, err
 		}
