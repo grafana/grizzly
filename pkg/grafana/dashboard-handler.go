@@ -126,6 +126,7 @@ func (h *DashboardHandler) ListRemote() ([]string, error) {
 
 // Add pushes a new dashboard to Grafana via the API
 func (h *DashboardHandler) Add(resource grizzly.Resource) error {
+	resource = *h.Unprepare(resource)
 	return h.postDashboard(resource)
 }
 
