@@ -243,14 +243,15 @@ func (h *FolderHandler) putFolder(resource grizzly.Resource) error {
 	}
 
 	body := models.UpdateFolderCommand{
-		Title: folder.Title,
+		Title:     folder.Title,
+		Overwrite: true,
 	}
 	client, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return err
 	}
 
-	params := folders.NewUpdateFolderParams().WithBody(&body)
+	params := folders.NewUpdateFolderParams().WithBody(&body).WithFolderUID(resource.UID())
 	_, err = client.Folders.UpdateFolder(params, nil)
 	return err
 }
