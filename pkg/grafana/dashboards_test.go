@@ -64,6 +64,7 @@ func TestDashboard(t *testing.T) {
 				"folder": "dummy",
 				"name":   "dummy",
 			},
+			"spec": map[string]interface{}{},
 		}
 
 		err := handler.Add(resource)
