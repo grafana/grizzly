@@ -1,0 +1,42 @@
+{
+  "apiVersion": "grizzly.grafana.com/v1alpha1",
+  "kind": "LibraryElement",
+  "metadata": {
+    "name": "example-panel"
+  },
+  "spec": {
+    "id": 3,
+    "kind": 1,
+    "model": {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-prom"
+      },
+      "description": "",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "Example Content",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.3.0-64167",
+      "title": "Example Panel",
+      "type": "text"
+    },
+    "name": "Example Panel",
+    "orgId": 1,
+    "type": "text",
+    "uid": "example-panel",
+    "version": 2
+  }
+}
