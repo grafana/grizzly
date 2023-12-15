@@ -11,7 +11,7 @@ import (
 
 const (
 	API_VERSION     = "v1alpha1"
-	CURRENT_CONTEXT = "currentContext"
+	CURRENT_CONTEXT = "current-context"
 )
 
 func Initialise() {
