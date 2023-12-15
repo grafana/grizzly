@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/spf13/viper"
 )
 
@@ -18,7 +19,7 @@ func GetUrl() string {
 }
 
 func InitialiseTestConfig() {
-	viper.Set("currentContext", "test")
+	viper.Set(config.CURRENT_CONTEXT, "test")
 	viper.Set("contexts.test.grafana.name", "test")
 	viper.Set("contexts.test.grafana.url", GetUrl())
 }
