@@ -58,8 +58,10 @@ func Import() error {
 	contextPath := fmt.Sprintf("contexts.%s", name)
 	ctx := viper.Sub(contextPath)
 	overrides := viper.Sub("overrides")
-	for key, value := range overrides.AllSettings() {
-		ctx.Set(key, value)
+	if overrides != nil {
+		for key, value := range overrides.AllSettings() {
+			ctx.Set(key, value)
+		}
 	}
 	err := Write()
 	return err
