@@ -114,7 +114,7 @@ func (h *AlertRuleGroupHandler) ListRemote() ([]string, error) {
 
 // Add pushes a alertRuleGroup to Grafana via the API
 func (h *AlertRuleGroupHandler) Add(resource grizzly.Resource) error {
-	return h.putAlertRuleGroup(resource)
+	return h.createAlertRuleGroup(resource)
 }
 
 // Update pushes a alertRuleGroup to Grafana via the API
@@ -147,7 +147,6 @@ func (h *AlertRuleGroupHandler) getRemoteAlertRuleGroup(uid string) (*grizzly.Re
 	}
 
 	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
-	resource.DeleteSpecKey("rules")
 	return &resource, nil
 }
 
@@ -177,7 +176,18 @@ func (h *AlertRuleGroupHandler) getRemoteAlertRuleGroupList() ([]string, error) 
 	return uids, nil
 }
 
-func (h *AlertRuleGroupHandler) putAlertRuleGroup(resource grizzly.Resource) error {
+func (h *AlertRuleGroupHandler) createAlertRule(rule *models.ProvisionedAlertRule) error {
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return err
+	}
+
+	stringtrue := "true"
+	params := provisioning.NewPostAlertRuleParams().WithBody(rule).WithXDisableProvenance(&stringtrue)
+	_, err = client.Provisioning.PostAlertRule(params, nil)
+	return err
+}
+func (h *AlertRuleGroupHandler) createAlertRuleGroup(resource grizzly.Resource) error {
 	// TODO: Turn spec into a real models.AlertRuleGroup object
 	data, err := json.Marshal(resource.Spec())
 	if err != nil {
@@ -186,13 +196,86 @@ func (h *AlertRuleGroupHandler) putAlertRuleGroup(resource grizzly.Resource) err
 	var group models.AlertRuleGroup
 	err = json.Unmarshal(data, &group)
 
+	for _, r := range group.Rules {
+		if err := h.createAlertRule(r); err != nil {
+			return fmt.Errorf("creating rule for group %s: %w", resource.UID(), err)
+		}
+	}
+
 	client, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return err
 	}
 
 	stringtrue := "true"
-	params := provisioning.NewPutAlertRuleGroupParams().WithBody(&group).WithGroup(group.Title).WithFolderUID(group.FolderUID).WithXDisableProvenance(&stringtrue)
+	params := provisioning.NewPutAlertRuleGroupParams().
+		WithBody(&group).
+		WithGroup(group.Title).
+		WithFolderUID(group.FolderUID).
+		WithXDisableProvenance(&stringtrue)
+	_, err = client.Provisioning.PutAlertRuleGroup(params)
+	return err
+}
+
+func (h *AlertRuleGroupHandler) updateAlertRule(rule *models.ProvisionedAlertRule) error {
+	rule.ID = 0 // ensure clear id, these should never be used as they are instance-local
+
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Provisioning.GetAlertRule(rule.UID)
+	if err != nil {
+		var gErr *provisioning.GetAlertRuleNotFound
+		if errors.As(err, &gErr) {
+			return h.createAlertRule(rule)
+		}
+		return fmt.Errorf("fetching alert rule: %w", err)
+	}
+
+	stringtrue := "true"
+	params := provisioning.NewPutAlertRuleParams().
+		WithUID(rule.UID).
+		WithBody(rule).
+		WithXDisableProvenance(&stringtrue)
+	_, err = client.Provisioning.PutAlertRule(params)
+	return err
+}
+
+func (h *AlertRuleGroupHandler) putAlertRuleGroup(resource grizzly.Resource) error {
+	// TODO: Turn spec into a real models.AlertRuleGroup object
+	data, err := json.Marshal(resource.Spec())
+	if err != nil {
+		return err
+	}
+	var group models.AlertRuleGroup
+	err = json.Unmarshal(data, &group)
+	if err != nil {
+		return err
+	}
+
+	for _, r := range group.Rules {
+		if err := h.updateAlertRule(r); err != nil {
+			return err
+		}
+	}
+
+	// clear rules as grafana will error if the spec contains more rules than are
+	// currently present
+	group.Rules = nil
+
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return err
+	}
+
+	stringtrue := "true"
+	params := provisioning.NewPutAlertRuleGroupParams().
+		WithBody(&group).
+		WithGroup(group.Title).
+		WithFolderUID(group.FolderUID).
+		WithXDisableProvenance(&stringtrue)
 	_, err = client.Provisioning.PutAlertRuleGroup(params, nil)
 	return err
 }
