@@ -82,5 +82,6 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 		NewAlertNotificationPolicyHandler(p),
 		NewRuleHandler(p),
 		NewSyntheticMonitoringHandler(p),
+		NewAlertContactPointHandler(p),
 	}
 }
