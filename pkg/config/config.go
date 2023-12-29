@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/kirsle/configdir"
 	"github.com/spf13/viper"
@@ -20,19 +20,29 @@ func Initialise() {
 
 	viper.AddConfigPath(configdir.LocalConfig("grizzly"))
 	viper.AddConfigPath(".")
+}
 
-	viper.BindEnv("overrides.grafana.url", "GRAFANA_URL")
-	viper.BindEnv("overrides.grafana.user", "GRAFANA_USER")
-	viper.BindEnv("overrides.grafana.token", "GRAFANA_TOKEN")
+func override(v *viper.Viper) {
+	bindings := map[string]string{
+		"grafana.url":   "GRAFANA_URL",
+		"grafana.user":  "GRAFANA_USER",
+		"grafana.token": "GRAFANA_TOKEN",
 
-	viper.BindEnv("overrides.synthetic-monitoring.token", "GRAFANA_SM_TOKEN")
-	viper.BindEnv("overrides.synthetic-monitoring.stack-id", "GRAFANA_SM_STACK_ID")
-	viper.BindEnv("overrides.synthetic-monitoring.logs-id", "GRAFANA_SM_METRICS_ID")
-	viper.BindEnv("overrides.synthetic-monitoring.metrics-id", "GRAFANA_SM_LOGS_ID")
+		"synthetic-monitoring.token":      "GRAFANA_SM_TOKEN",
+		"synthetic-monitoring.stack-id":   "GRAFANA_SM_STACK_ID",
+		"synthetic-monitoring.logs-id":    "GRAFANA_SM_METRICS_ID",
+		"synthetic-monitoring.metrics-id": "GRAFANA_SM_LOGS_ID",
 
-	viper.BindEnv("overrides.mimir.address", "CORTEX_ADDRESS")
-	viper.BindEnv("overrides.mimir.tenant-id", "CORTEX_TENANT_ID")
-	viper.BindEnv("overrides.mimir.api-key", "CORTEX_API_KEY")
+		"mimir.address":   "CORTEX_ADDRESS",
+		"mimir.tenant-id": "CORTEX_TENANT_ID",
+		"mimir.api-key":   "CORTEX_API_KEY",
+	}
+	for key, env := range bindings {
+		val := os.Getenv(env)
+		if val != "" {
+			v.Set(key, val)
+		}
+	}
 }
 
 func Read() error {
@@ -55,13 +65,18 @@ func Mock(values map[string]interface{}) {
 
 func Import() error {
 	name := viper.GetString(CURRENT_CONTEXT)
+	if name == "" {
+		NewConfig()
+		return Import()
+	}
 	contextPath := fmt.Sprintf("contexts.%s", name)
 	ctx := viper.Sub(contextPath)
-	overrides := viper.Sub("overrides")
-	if overrides != nil {
-		for key, value := range overrides.AllSettings() {
-			ctx.Set(key, value)
-		}
+	if ctx == nil {
+		ctx = viper.New()
+	}
+	override(ctx)
+	for k, v := range ctx.AllSettings() {
+		viper.Set(contextPath+"."+k, v)
 	}
 	err := Write()
 	return err
@@ -80,8 +95,7 @@ func configPath() (string, error) {
 
 func NewConfig() {
 	viper.Set("apiVersion", "v1alpha1")
-	viper.Set("currentContext", "default")
-	viper.Set("contexts.default.name", "default")
+	viper.Set(CURRENT_CONTEXT, "default")
 }
 
 func GetContexts() error {
@@ -100,14 +114,16 @@ func UseContext(context string) error {
 
 func CurrentContext() (*Context, error) {
 	name := viper.GetString(CURRENT_CONTEXT)
+	if name == "" {
+		NewConfig()
+		return CurrentContext()
+	}
 	contextPath := fmt.Sprintf("contexts.%s", name)
 	ctx := viper.Sub(contextPath)
-	overrides := viper.Sub("overrides")
-	if overrides != nil {
-		for key, value := range overrides.AllSettings() {
-			ctx.Set(key, value)
-		}
+	if ctx == nil {
+		ctx = viper.New()
 	}
+	override(ctx)
 	var context Context
 	ctx.Unmarshal(&context)
 	context.Name = name
@@ -128,21 +144,14 @@ func CreateContext(name string) error {
 }
 
 func Write() error {
-	configpath, err := configPath()
-	if err != nil {
-		return err
-	}
-	writeConfigs := viper.New()
-	for key, value := range viper.AllSettings() {
-		if !strings.HasPrefix(key, "overrides") {
-			writeConfigs.Set(key, value)
-		}
-	}
-	err = writeConfigs.WriteConfig()
+	err := viper.WriteConfig()
 	if err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			NewConfig()
-			return writeConfigs.WriteConfigAs(configpath)
+			configpath, err := configPath()
+			if err != nil {
+				return err
+			}
+			return viper.WriteConfigAs(configpath)
 		}
 	}
 	return err
