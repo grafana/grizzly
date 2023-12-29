@@ -4,9 +4,9 @@ local volumes = [{ name: 'docker', host: { path: '/var/run/docker.sock' } }, { n
 local mounts = [{ name: 'gopath', path: '/go' }, { name: 'docker', path: '/var/run/docker.sock' }];
 
 local constraints = {
-  onlyTagOrMaster: { trigger: {
+  onlyTagOrMain: { trigger: {
     ref: [
-      'refs/heads/master',
+      'refs/heads/main',
       'refs/heads/docker',
       'refs/tags/v*',
     ],
@@ -102,9 +102,8 @@ local vault_secret(name, vault_path, key) = {
     ],
   } + { depends_on: ['check'] } + constraints.onlyTags,
 
-  docker('amd64') { depends_on: ['check'] } + constraints.onlyTagOrMaster,
-  docker('arm') { depends_on: ['check'] } + constraints.onlyTagOrMaster,
-  docker('arm64') { depends_on: ['check'] } + constraints.onlyTagOrMaster,
+  docker('amd64') { depends_on: ['check'] } + constraints.onlyTagOrMain,
+  docker('arm64') { depends_on: ['check'] } + constraints.onlyTagOrMain,
 
   pipeline('manifest') {
     steps: [{
@@ -121,10 +120,9 @@ local vault_secret(name, vault_path, key) = {
   } + {
     depends_on: [
       'docker-amd64',
-      'docker-arm',
       'docker-arm64',
     ],
-  } + constraints.onlyTagOrMaster,
+  } + constraints.onlyTagOrMain,
 ]
 + [
   vault_secret('github_token', 'infra/data/ci/github/grafanabot', 'pat'),
