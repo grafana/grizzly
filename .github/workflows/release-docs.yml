@@ -1,12 +1,8 @@
-name: github pages
+name: deploy GH pages
 
 on:
-  push:
-    branches:
-      - master  # Set a branch to deploy
-    paths:
-      - 'docs/**'
-  pull_request:
+  release:
+    types: [published]
 
 jobs:
   deploy:
@@ -21,7 +17,6 @@ jobs:
         uses: peaceiris/actions-hugo@v2
         with:
           hugo-version: '0.84.2'
-          # extended: true
 
       - name: Build
         working-directory: ./docs
@@ -29,7 +24,6 @@ jobs:
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/master'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/public
