@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"encoding/json"
@@ -58,7 +59,13 @@ const (
 
 // FindResourceFiles identifies files within a directory that this handler can process
 func (h *AlertNotificationPolicyHandler) FindResourceFiles(dir string) ([]string, error) {
-	return []string{filepath.Join(dir, alertNotificationPolicyFile)}, nil
+	p := filepath.Join(dir, alertNotificationPolicyFile)
+	_, err := os.Stat(p)
+	if err == nil {
+		return []string{p}, nil
+	}
+	// just return empty, ignore error
+	return nil, nil
 }
 
 // ResourceFilePath returns the location on disk where a resource should be updated
