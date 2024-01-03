@@ -130,7 +130,29 @@ func CurrentContext() (*Context, error) {
 	return &context, nil
 }
 
+var acceptableKeys = []string{
+	"grafana.url",
+	"grafana.token",
+	"grafana.user",
+	"mimir.address",
+	"mimir.tenant-id",
+	"mimir.api-key",
+	"synthetic-monitoring.token",
+	"synthetic-monitoring.stack-id",
+	"synthetic-monitoring.metrics-id",
+	"synthetic-monitoring.logs-id",
+}
+
 func Set(path string, value string) error {
+	found := false
+	for _, key := range acceptableKeys {
+		if path == key {
+			found = true
+		}
+	}
+	if !found {
+		return fmt.Errorf("Key not recognised: %s", path)
+	}
 	ctx := viper.GetString(CURRENT_CONTEXT)
 	fullPath := fmt.Sprintf("contexts.%s.%s", ctx, path)
 	viper.Set(fullPath, value)
