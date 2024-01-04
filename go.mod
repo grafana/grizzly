@@ -8,6 +8,7 @@ require (
 	github.com/go-clix/cli v0.2.0
 	github.com/go-openapi/runtime v0.26.2
 	github.com/gobwas/glob v0.2.3
+	github.com/goccy/go-yaml v1.11.2
 	github.com/google/go-jsonnet v0.20.0
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20231219151618-11c46332acad
 	github.com/grafana/synthetic-monitoring-agent v0.16.5
@@ -89,6 +90,7 @@ require (
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/term v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	google.golang.org/grpc v1.58.3 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect

@@ -2,7 +2,6 @@ package grizzly
 
 import (
 	"bufio"
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,12 +10,9 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/google/go-jsonnet"
-	"github.com/grafana/tanka/pkg/jsonnet/native"
+	"github.com/grafana/grizzly/pkg/encoding"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
-	"github.com/grafana/tanka/pkg/process"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 )
 
 func Parse(resourcePath string, opts Opts) (Resources, error) {
@@ -157,7 +153,7 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 		return nil, err
 	}
 	reader := bufio.NewReader(f)
-	decoder := yaml.NewDecoder(reader)
+	decoder := encoding.NewYAMLDecoder(reader)
 	manifests := map[string]manifest.Manifest{}
 	var m manifest.Manifest
 	var resources Resources
@@ -188,42 +184,11 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 	return resources, nil
 }
 
-//go:embed grizzly.jsonnet
-var script string
-
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree
 func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 
-	if _, err := os.Stat(jsonnetFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("file does not exist: %s", jsonnetFile)
-	}
-	script := fmt.Sprintf(script, jsonnetFile)
-	vm := jsonnet.MakeVM()
-	currentWorkingDirectory, err := os.Getwd()
+	extracted, err := encoding.ParseJsonnet(jsonnetFile, opts.JsonnetPaths)
 	if err != nil {
-		return nil, err
-	}
-	vm.Importer(newExtendedImporter(jsonnetFile, currentWorkingDirectory, opts.JsonnetPaths))
-	for _, nf := range native.Funcs() {
-		vm.NativeFunction(nf)
-	}
-
-	result, err := vm.EvaluateSnippet(jsonnetFile, script)
-	if err != nil {
-		return nil, err
-	}
-	var data interface{}
-	if err := json.Unmarshal([]byte(result), &data); err != nil {
-		return nil, err
-	}
-
-	extracted, err := process.Extract(data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unwrap *List types
-	if err := process.Unwrap(extracted); err != nil {
 		return nil, err
 	}
 
@@ -246,34 +211,4 @@ func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 	}
 	sort.Sort(resources)
 	return resources, nil
-}
-
-// MarshalYAML takes a resource and renders it to a source file as a YAML string
-func MarshalYAML(resource Resource, filename string) error {
-	y, err := resource.YAML()
-	if err != nil {
-		return err
-	}
-	return writeFile(filename, []byte(y))
-}
-
-func MarshalSpecToJSON(resource Resource, filename string) error {
-	j, err := json.MarshalIndent(resource.Spec(), "", "  ")
-	if err != nil {
-		return err
-	}
-	return writeFile(filename, j)
-}
-
-func writeFile(filename string, content []byte) error {
-	dir := filepath.Dir(filename)
-	err := os.MkdirAll(dir, 0755)
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(filename, content, 0644)
-	if err != nil {
-		return err
-	}
-	return nil
 }

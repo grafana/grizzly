@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/gobwas/glob"
+	"github.com/grafana/grizzly/pkg/encoding"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
-	"gopkg.in/yaml.v3"
 )
 
 // Resource represents a single Resource destined for a single endpoint
@@ -124,11 +124,7 @@ func (r *Resource) SpecAsJSON() (string, error) {
 
 // YAML Gets the string representation for this resource
 func (r *Resource) YAML() (string, error) {
-	y, err := yaml.Marshal(*r)
-	if err != nil {
-		return "", err
-	}
-	return string(y), nil
+	return encoding.MarshalYAML(*r)
 }
 
 // MatchesTarget identifies whether a resource is in a target list

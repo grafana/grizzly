@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/grafana/grizzly/pkg/config"
+	"github.com/grafana/grizzly/pkg/encoding"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
-	"gopkg.in/yaml.v3"
 )
 
 // RuleHandler is a Grizzly Handler for Prometheus Rules
@@ -153,7 +153,7 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 		return nil, err
 	}
 	groupings := map[string][]PrometheusRuleGroup{}
-	err = yaml.Unmarshal(out, &groupings)
+	err = encoding.UnmarshalYAML(out, &groupings)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (h *RuleHandler) getRemoteRuleGroupList() ([]string, error) {
 		return nil, err
 	}
 	groupings := map[string][]PrometheusRuleGroup{}
-	err = yaml.Unmarshal(out, &groupings)
+	err = encoding.UnmarshalYAML(out, &groupings)
 	if err != nil {
 		return nil, err
 	}
@@ -234,11 +234,11 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 		Namespace: resource.GetMetadata("namespace"),
 		Groups:    []PrometheusRuleGroup{newGroup},
 	}
-	out, err := yaml.Marshal(grouping)
+	out, err := encoding.MarshalYAML(grouping)
 	if err != nil {
 		return err
 	}
-	os.WriteFile(tmpfile.Name(), out, 0644)
+	os.WriteFile(tmpfile.Name(), []byte(out), 0644)
 	grizzlyContext, err := config.CurrentContext()
 	if err != nil {
 		return err

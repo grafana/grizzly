@@ -6,11 +6,10 @@ import (
 	"testing"
 
 	"github.com/grafana/grizzly/pkg/config"
+	"github.com/grafana/grizzly/pkg/encoding"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/internal/testutil"
 	"github.com/stretchr/testify/require"
-
-	"gopkg.in/yaml.v3"
 )
 
 var errCortextoolClient = errors.New("error coming from cortextool client")
@@ -78,7 +77,7 @@ func TestRules(t *testing.T) {
 		spec := make(map[string]interface{})
 		file, err := os.ReadFile("testdata/rules.yaml")
 		require.NoError(t, err)
-		err = yaml.Unmarshal(file, &spec)
+		err = encoding.UnmarshalYAML(file, &spec)
 		require.NoError(t, err)
 
 		resource := grizzly.NewResource("apiV", "kind", "name", spec)
@@ -93,7 +92,7 @@ func TestRules(t *testing.T) {
 		spec := make(map[string]interface{})
 		file, err := os.ReadFile("testdata/rules.yaml")
 		require.NoError(t, err)
-		err = yaml.Unmarshal(file, &spec)
+		err = encoding.UnmarshalYAML(file, &spec)
 		require.NoError(t, err)
 
 		resource := grizzly.NewResource("apiV", "kind", "name", spec)
