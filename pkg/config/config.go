@@ -108,8 +108,15 @@ func GetContexts() error {
 }
 
 func UseContext(context string) error {
-	viper.Set(CURRENT_CONTEXT, context)
-	return Write()
+	contexts := map[string]interface{}{}
+	viper.UnmarshalKey("contexts", &contexts)
+	for k := range contexts {
+		if k == context {
+			viper.Set(CURRENT_CONTEXT, context)
+			return Write()
+		}
+	}
+	return fmt.Errorf("Context %s not found", context)
 }
 
 func CurrentContext() (*Context, error) {
