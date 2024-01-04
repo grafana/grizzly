@@ -1,6 +1,23 @@
 # Changelog
 
-## 0.2.1 (2023-01-12)
+## 0.3.0 (2023-01-04)
+Feature improvements:
+* Add notification policies (#290)
+* Add contact points (#289)
+* Add basic alerting resources (#286)
+* Add support for library panels (#282)
+* Major new way of specifying creds for multiple Grafana instances: contexts (#271)
+* -d no longer required for directories (Grizzly can work it out) (#259)
+* Uses new Grafana OpenAPI golang client (#262)
+
+Bug fixes:
+* Only publish documentation on releases (#292)
+* Unprepare dashboards on create (#281)
+* Update folders unconditionally (#280)
+* Invalid target (-t) should not panic (#254)
+* Don't swallow YAML parse errors (#246)
+
+## 0.2.1 (2023-02-17)
 This release is resolves a number of security vulnerabilities.
 * Updates to Golang 1.19.1 (#224) thanks @rhowe!
 * Update Jsonnet/Jsonnet Bundler versions (#231)
