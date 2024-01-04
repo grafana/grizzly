@@ -35,5 +35,129 @@ metadata:
 spec:
     access: proxy
     url: http://localhost/prometheus/
+</code></pre><h2 id=library-elements>Library Elements</h2><p>Library Elements (currently Panels and Variables) are structured like this:</p><pre><code class=language-yaml>apiVersion: grizzly.grafana.com/v1alpha1
+kind: LibraryElement
+metadata:
+    name: bcb6ec8a-8a64-4fa6-a490-68b8e73bee16
+spec:
+    kind: 1 # 1 = Panel, 2 = Variable
+    model:
+        datasource:
+            type: prometheus
+            uid: grafanacloud-prom
+        description: &quot;&quot;
+        gridPos:
+            h: 8
+            w: 12
+            x: 0
+            &quot;y&quot;: 0
+        id: 1
+        options:
+            code:
+                language: plaintext
+                showLineNumbers: false
+                showMiniMap: false
+            content: Example Content
+            mode: markdown
+        title: Example Panel
+        type: text
+    name: Example Panel
+    orgId: 1
+    type: text
+</code></pre><h2 id=alertrulegroup>AlertRuleGroup</h2><p>AlertRuleGroups are sets of rules evaluated at the same interval.
+The easiest way to build alert rules is using the &ldquo;Modify export&rdquo; functionality in Grafana.</p><p>The resulting resource looks like this:</p><pre><code class=language-yaml>apiVersion: grizzly.grafana.com/v1alpha1
+kind: AlertRuleGroup
+metadata:
+    name: fee4037a-b193-4e28-9330-2cc9028b048c.d
+spec:
+    folderUid: fee4037a-b193-4e28-9330-2cc9028b048c
+    interval: 180 # in seconds
+    rules:
+        - condition: B
+          data:
+            - datasourceUid: grafanacloud-demoinfra-prom
+              model:
+                datasource:
+                    type: prometheus
+                    uid: grafanacloud-demoinfra-prom
+                editorMode: code
+                expr: weather_temp_c{location=&quot;Vienna&quot;}
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+              refId: A
+              relativeTimeRange:
+                from: 600
+            - datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 30
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: B
+                type: threshold
+              refId: B
+              relativeTimeRange:
+                from: 600
+          execErrState: Error
+          folderUID: fee4037a-b193-4e28-9330-2cc9028b048c
+          for: 5m0s
+          id: 3
+          noDataState: NoData
+          orgID: 1
+          ruleGroup: d
+          title: Temperature high
+          uid: d4231da1-2456-4741-8a81-527167a96b69
+    title: Alert Group Europe
+</code></pre><h2 id=contact-points>Contact Points</h2><p>To provision contact points, use the following structure:</p><pre><code class=language-yaml>apiVersion: grizzly.grafana.com/v1alpha1
+kind: AlertContactPoint
+metadata:
+    name: eaae236a-7be9-4748-a08e-54b92ffb2e60
+spec:
+    name: grafana-default-email
+    settings:
+        addresses: &lt;example@email.com&gt;
+        singleEmail: false
+    type: email
+    uid: eaae236a-7be9-4748-a08e-54b92ffb2e60
+</code></pre><p>If the contact point contains credentials, grizzly will always report a change
+as Grafana will not expose the credentials via the API.</p><h2 id=notification-policy>Notification Policy</h2><p>As the Notification Policy is stored as a single resource in Grafana, you can
+only have a single <code>AlertNotificationPolicy</code> specified. It needs to have the
+name <code>global</code>:</p><pre><code class=language-yaml>apiVersion: grizzly.grafana.com/v1alpha1
+kind: AlertNotificationPolicy
+metadata:
+    name: global
+spec:
+    group_by:
+        - grafana_folder
+        - alertname
+    receiver: grafana-default-email
+    routes:
+        - group_by:
+            - region
+          object_matchers:
+            - - foo
+              - =
+              - bar
+          receiver: grafana-oncall
 </code></pre></main><footer role=contentinfo><div style=display:none><label for=themer>dark theme: <input type=checkbox id=themer class=vh>
 <span aria-hidden=true></span></label></div></footer></div></div></div><script src=/grizzly/js/dom-scripts.js></script><script src=/grizzly/js/prism.js></script><script src=/grizzly/js/search.7aef046a0cc8b0c532f1d20087b920459bc868c936bb48a6ae221eceefca2d07.js></script><link rel=stylesheet href=/grizzly/css/search.fe0cd54a21628574bff49d721c827d1bb165ab56b0f22dd55ae78addbe61c309.css></link></body></html>

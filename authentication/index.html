@@ -23,7 +23,7 @@ grr config set synthetic-monitoring.metrics-id # Logs instance ID
 grr config set synthetic-monitoring.logs-id # Metrics instance ID
 </code></pre><p>Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. <code>grafana.com/orgs/myorg/stacks/123456</code> would be <code>123456</code>. Your metrics and logs ID&rsquo;s are the <code>User</code> when you view your Prometheus or Loki instance details in Grafana Cloud.</p><h1 id=contexts>Contexts</h1><p>Grizzly supports multiple contexts allowing easy swapping between instances. By default, Grizzly uses the <code>default</code>
 context.</p><p>[Optional] If you have environment variables configured, you can import these into the <code>default</code> context like so:</p><pre><code class=language-sh>grr config import
-</code></pre><p>Create a new context with:</p><pre><code class=language-sh>grr config create production
+</code></pre><p>Create a new context with:</p><pre><code class=language-sh>grr config create-context production
 </code></pre><p>To list existing contexts:</p><pre><code class=language-sh>grr config get-contexts
 </code></pre><p>To show the currently selected context:</p><pre><code class=language-sh>grr config current-context
 </code></pre><p>To switch to a different context:</p><pre><code class=language-sh>grr config use-context staging
