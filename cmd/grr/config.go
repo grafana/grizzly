@@ -85,7 +85,7 @@ func setCmd() *cli.Command {
 
 func createContextCmd() *cli.Command {
 	cmd := &cli.Command{
-		Use:   "create context",
+		Use:   "create-context",
 		Short: "Create a configuration context",
 		Args:  cli.ArgsExact(1),
 	}

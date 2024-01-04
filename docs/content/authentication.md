@@ -72,7 +72,7 @@ grr config import
 
 Create a new context with:
 ```sh
-grr config create production
+grr config create-context production
 ```
 
 To list existing contexts:
