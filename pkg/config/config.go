@@ -168,7 +168,7 @@ func Set(path string, value string) error {
 
 func CreateContext(name string) error {
 	viper.Set(CURRENT_CONTEXT, name)
-	viper.Set("contexts.default.name", name)
+	viper.Set(fmt.Sprintf("contexts.%s.name", name), name)
 	return Write()
 }
 
