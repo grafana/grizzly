@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 (2023-01-04)
+## 0.3.0 (2024-01-04)
 Feature improvements:
 * Add notification policies (#290)
 * Add contact points (#289)
