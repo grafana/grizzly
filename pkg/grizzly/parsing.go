@@ -12,6 +12,7 @@ import (
 	"strconv"
 
 	"github.com/google/go-jsonnet"
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/tanka/pkg/jsonnet/native"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"github.com/grafana/tanka/pkg/process"
@@ -167,7 +168,7 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Error decoding %s: %v", yamlFile, err)
 		}
 		manifests[strconv.Itoa(i)] = m
 		handler, err := Registry.GetHandler(m.Kind())
@@ -176,10 +177,15 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 		}
 		parsedResources, err := handler.Parse(m)
 		if err != nil {
+			return nil, fmt.Errorf("Error parsing %s: %v", yamlFile, err)
+		}
+		currentContext, err := config.CurrentContext()
+		if err != nil {
 			return nil, err
 		}
+		targets := currentContext.GetTargets(opts.Targets)
 		for _, parsedResource := range parsedResources {
-			if parsedResource.MatchesTarget(opts.Targets) {
+			if parsedResource.MatchesTarget(targets) {
 				resources = append(resources, parsedResource)
 			}
 		}
@@ -226,7 +232,11 @@ func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 	if err := process.Unwrap(extracted); err != nil {
 		return nil, err
 	}
-
+	currentContext, err := config.CurrentContext()
+	if err != nil {
+		return nil, err
+	}
+	targets := currentContext.GetTargets(opts.Targets)
 	resources := Resources{}
 	for _, m := range extracted {
 		handler, err := Registry.GetHandler(m.Kind())
@@ -239,7 +249,7 @@ func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 			return nil, err
 		}
 		for _, parsedResource := range parsedResources {
-			if parsedResource.MatchesTarget(opts.Targets) {
+			if parsedResource.MatchesTarget(targets) {
 				resources = append(resources, parsedResource)
 			}
 		}

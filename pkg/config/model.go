@@ -24,4 +24,5 @@ type Context struct {
 	Grafana             GrafanaConfig             `yaml:"grafana"`
 	Mimir               MimirConfig               `yaml:"mimir"`
 	SyntheticMonitoring SyntheticMonitoringConfig `yaml:"synthetic-monitoring"`
+	Targets             []string                  `yaml:"targets"`
 }

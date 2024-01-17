@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/grizzly/pkg/term"
 	"github.com/pmezard/go-difflib/difflib"
@@ -84,9 +85,14 @@ func ListRemote(opts Opts) error {
 	f := "%s\t%s\t%s\n"
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
+	currentContext, err := config.CurrentContext()
+	if err != nil {
+		return err
+	}
+	targets := currentContext.GetTargets(opts.Targets)
 	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
 	for name, handler := range Registry.Handlers {
-		if !Registry.HandlerMatchesTarget(handler, opts.Targets) {
+		if !Registry.HandlerMatchesTarget(handler, targets) {
 			continue
 		}
 		log.Debugf("Listing remote values for handler %s", name)
@@ -95,7 +101,7 @@ func ListRemote(opts Opts) error {
 			return err
 		}
 		for _, id := range IDs {
-			if Registry.ResourceMatchesTarget(handler, id, opts.Targets) {
+			if Registry.ResourceMatchesTarget(handler, id, targets) {
 				fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), id)
 			}
 		}
@@ -118,8 +124,13 @@ func Pull(resourcePath string, opts Opts) error {
 
 	log.Infof("Pulling resources to %s", resourcePath)
 
+	currentContext, err := config.CurrentContext()
+	if err != nil {
+		return err
+	}
+	targets := currentContext.GetTargets(opts.Targets)
 	for name, handler := range Registry.Handlers {
-		if !Registry.HandlerMatchesTarget(handler, opts.Targets) {
+		if !Registry.HandlerMatchesTarget(handler, targets) {
 			notifier.Info(notifier.SimpleString(handler.Kind()), "skipped")
 			continue
 		}
@@ -133,7 +144,7 @@ func Pull(resourcePath string, opts Opts) error {
 		}
 		notifier.Warn(nil, fmt.Sprintf("Pulling %d resources", len(UIDs)))
 		for _, UID := range UIDs {
-			if !Registry.ResourceMatchesTarget(handler, UID, opts.Targets) {
+			if !Registry.ResourceMatchesTarget(handler, UID, targets) {
 				continue
 			}
 			resource, err := handler.GetByUID(UID)
