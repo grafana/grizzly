@@ -3,6 +3,7 @@ package grizzly
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/gobwas/glob"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
@@ -139,13 +140,18 @@ func (r *Resource) MatchesTarget(targets []string) bool {
 	UID := r.UID()
 	dotKey := r.Key()
 	slashKey := fmt.Sprintf("%s/%s", r.Kind(), UID)
+	kind := strings.ToLower(r.Kind())
 	for _, target := range targets {
-		g, err := glob.Compile(target)
-		if err != nil {
-			continue
-		}
+		if strings.Contains(target, ".") {
+			g, err := glob.Compile(target)
+			if err != nil {
+				continue
+			}
 
-		if g.Match(slashKey) || g.Match(dotKey) {
+			if g.Match(slashKey) || g.Match(dotKey) {
+				return true
+			}
+		} else if strings.ToLower(target) == kind {
 			return true
 		}
 	}
