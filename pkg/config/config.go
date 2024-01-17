@@ -101,9 +101,14 @@ func NewConfig() {
 
 func GetContexts() error {
 	contexts := map[string]interface{}{}
+	currentContext := viper.GetString(CURRENT_CONTEXT)
 	viper.UnmarshalKey("contexts", &contexts)
 	for k := range contexts {
-		fmt.Printf("  %s\n", k)
+		if k == currentContext {
+			fmt.Printf("* %s\n", k)
+		} else {
+			fmt.Printf("  %s\n", k)
+		}
 	}
 	return nil
 }
