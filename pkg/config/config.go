@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/kirsle/configdir"
 	"github.com/spf13/viper"
@@ -137,33 +138,37 @@ func CurrentContext() (*Context, error) {
 	return &context, nil
 }
 
-var acceptableKeys = []string{
-	"grafana.url",
-	"grafana.token",
-	"grafana.user",
-	"mimir.address",
-	"mimir.tenant-id",
-	"mimir.api-key",
-	"synthetic-monitoring.token",
-	"synthetic-monitoring.stack-id",
-	"synthetic-monitoring.metrics-id",
-	"synthetic-monitoring.logs-id",
+var acceptableKeys = map[string]string{
+	"grafana.url":                     "string",
+	"grafana.token":                   "string",
+	"grafana.user":                    "string",
+	"mimir.address":                   "string",
+	"mimir.tenant-id":                 "string",
+	"mimir.api-key":                   "string",
+	"synthetic-monitoring.token":      "string",
+	"synthetic-monitoring.stack-id":   "string",
+	"synthetic-monitoring.metrics-id": "string",
+	"synthetic-monitoring.logs-id":    "string",
+	"targets":                         "[]string",
 }
 
 func Set(path string, value string) error {
-	found := false
-	for _, key := range acceptableKeys {
+	for key, typ := range acceptableKeys {
 		if path == key {
-			found = true
+			ctx := viper.GetString(CURRENT_CONTEXT)
+			fullPath := fmt.Sprintf("contexts.%s.%s", ctx, path)
+			var val any
+			switch typ {
+			case "string":
+				val = value
+			case "[]string":
+				val = strings.Split(value, ",")
+			}
+			viper.Set(fullPath, val)
+			return Write()
 		}
 	}
-	if !found {
-		return fmt.Errorf("Key not recognised: %s", path)
-	}
-	ctx := viper.GetString(CURRENT_CONTEXT)
-	fullPath := fmt.Sprintf("contexts.%s.%s", ctx, path)
-	viper.Set(fullPath, value)
-	return Write()
+	return fmt.Errorf("Key not recognised: %s", path)
 }
 
 func CreateContext(name string) error {
@@ -184,4 +189,8 @@ func Write() error {
 		}
 	}
 	return err
+}
+
+func (c *Context) GetTargets(extraTargets []string) []string {
+	return append(c.Targets, extraTargets...)
 }
