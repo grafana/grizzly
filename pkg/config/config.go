@@ -196,6 +196,9 @@ func Write() error {
 	return err
 }
 
-func (c *Context) GetTargets(extraTargets []string) []string {
-	return append(c.Targets, extraTargets...)
+func (c *Context) GetTargets(overrides []string) []string {
+	if len(overrides) > 0 {
+		return overrides
+	}
+	return c.Targets
 }
