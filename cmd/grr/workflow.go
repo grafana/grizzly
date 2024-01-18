@@ -119,9 +119,10 @@ func diffCmd() *cli.Command {
 
 func applyCmd() *cli.Command {
 	cmd := &cli.Command{
-		Use:   "apply <resource-path>",
-		Short: "apply local resources to remote endpoints",
-		Args:  cli.ArgsExact(1),
+		Use:     "apply <resource-path>",
+		Aliases: []string{"push"},
+		Short:   "apply local resources to remote endpoints",
+		Args:    cli.ArgsExact(1),
 	}
 	var opts grizzly.Opts
 
