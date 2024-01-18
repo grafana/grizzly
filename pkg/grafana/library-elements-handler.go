@@ -50,11 +50,6 @@ func (h *LibraryElementHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-// GetExtension returns the file name extension for a library element
-func (h *LibraryElementHandler) GetExtension() string {
-	return "json"
-}
-
 const (
 	libraryElementGlob    = "library-elements/*-*"
 	libraryElementPattern = "library-elements/%s-%s.%s"

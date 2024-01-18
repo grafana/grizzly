@@ -155,6 +155,7 @@ var acceptableKeys = map[string]string{
 	"synthetic-monitoring.metrics-id": "string",
 	"synthetic-monitoring.logs-id":    "string",
 	"targets":                         "[]string",
+	"output-format":                   "string",
 }
 
 func Set(path string, value string) error {
@@ -201,4 +202,18 @@ func (c *Context) GetTargets(overrides []string) []string {
 		return overrides
 	}
 	return c.Targets
+}
+
+func GetOutputFormat(override string) (string, error) {
+	context, err := CurrentContext()
+	if err != nil {
+		return "", err
+	}
+	if override != "" {
+		return override, nil
+	}
+	if context.OutputFormat != "" {
+		return context.OutputFormat, nil
+	}
+	return "yaml", nil
 }

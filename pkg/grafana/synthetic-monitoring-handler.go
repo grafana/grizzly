@@ -60,11 +60,6 @@ func (h *SyntheticMonitoringHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-// GetExtension returns the file name extension for a check
-func (h *SyntheticMonitoringHandler) GetExtension() string {
-	return "json"
-}
-
 const (
 	syntheticMonitoringCheckGlob = "synthetic-monitoring/check-*"
 	syntheticMonitoringPattern   = "synthetic-monitoring/check-%s.%s"

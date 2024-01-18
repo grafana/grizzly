@@ -11,6 +11,7 @@ type Opts struct {
 	Directory    bool // Deprecated: now is gathered with os.Stat(<resource-path>)
 	JsonnetPaths []string
 	Targets      []string
+	OutputFormat string
 
 	// Used for supporting commands that output dashboard JSON
 	FolderUID string

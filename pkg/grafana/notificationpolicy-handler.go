@@ -48,11 +48,6 @@ func (h *AlertNotificationPolicyHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-// GetExtension returns the file name extension for a alertNotificationPolicy
-func (h *AlertNotificationPolicyHandler) GetExtension() string {
-	return "json"
-}
-
 const (
 	alertNotificationPolicyFile = "alertNotificationPolicy.yaml"
 )

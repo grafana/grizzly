@@ -20,13 +20,13 @@ func getCmd() *cli.Command {
 		Short: "retrieve resource",
 		Args:  cli.ArgsExact(1),
 	}
-	var opts grizzly.LoggingOpts
+	var opts grizzly.Opts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		uid := args[0]
-		return grizzly.Get(uid)
+		return grizzly.Get(uid, opts)
 	}
-	return initialiseLogging(cmd, &opts)
+	return initialiseCmd(cmd, &opts)
 }
 
 func listCmd() *cli.Command {
@@ -94,7 +94,7 @@ func showCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Show(resources)
+		return grizzly.Show(resources, opts)
 	}
 	return initialiseCmd(cmd, &opts)
 }
@@ -112,7 +112,7 @@ func diffCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Diff(resources)
+		return grizzly.Diff(resources, opts)
 	}
 	return initialiseCmd(cmd, &opts)
 }
@@ -236,7 +236,7 @@ func exportCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Export(dashboardDir, resources)
+		return grizzly.Export(dashboardDir, resources, opts)
 	}
 	return initialiseCmd(cmd, &opts)
 }
@@ -287,6 +287,7 @@ func initialiseCmd(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
 
 	cmd.Flags().StringSliceVarP(&opts.Targets, "target", "t", nil, "resources to target")
 	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+	cmd.Flags().StringVarP(&opts.OutputFormat, "output", "o", "", "Output format")
 
 	return initialiseLogging(cmd, &opts.LoggingOpts)
 }

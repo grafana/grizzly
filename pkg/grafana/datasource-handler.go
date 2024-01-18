@@ -50,11 +50,6 @@ func (h *DatasourceHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-// GetExtension returns the file name extension for a datasource
-func (h *DatasourceHandler) GetExtension() string {
-	return "json"
-}
-
 const (
 	datasourceGlob    = "datasources/datasource-*"
 	datasourcePattern = "datasources/datasource-%s.%s"

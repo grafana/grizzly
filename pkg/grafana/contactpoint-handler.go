@@ -46,11 +46,6 @@ func (h *AlertContactPointHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-// GetExtension returns the file name extension for a contactPoint
-func (h *AlertContactPointHandler) GetExtension() string {
-	return "json"
-}
-
 const (
 	contactPointGlob    = "alert-contact-points/contactPoint-*"
 	contactPointPattern = "alert-contact-points/contactPoint-%s.%s"

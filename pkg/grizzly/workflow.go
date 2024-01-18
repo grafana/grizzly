@@ -22,7 +22,7 @@ import (
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 // Get retrieves a resource from a remote endpoint using its UID
-func Get(UID string) error {
+func Get(UID string, opts Opts) error {
 	log.Info("Getting ", UID)
 
 	count := strings.Count(UID, ".")
@@ -51,12 +51,16 @@ func Get(UID string) error {
 	}
 
 	resource = handler.Unprepare(*resource)
-	rep, err := resource.YAML()
+	format, err := config.GetOutputFormat(opts.OutputFormat)
+	if err != nil {
+		return err
+	}
+	content, _, _, err := Format("", resource, format)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(rep)
+	fmt.Println(string(content))
 	return nil
 }
 
@@ -134,6 +138,11 @@ func Pull(resourcePath string, opts Opts) error {
 			notifier.Info(notifier.SimpleString(handler.Kind()), "skipped")
 			continue
 		}
+
+		format, err := config.GetOutputFormat(opts.OutputFormat)
+		if err != nil {
+			return err
+		}
 		log.Debugf("Listing remote values for handler %s", name)
 		UIDs, err := handler.ListRemote()
 		if err != nil {
@@ -156,14 +165,11 @@ func Pull(resourcePath string, opts Opts) error {
 				return err
 			}
 
-			if opts.JSONSpec {
-				path := filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "json"))
-				err = MarshalSpecToJSON(*resource, path)
-			} else {
-				path := filepath.Join(resourcePath, handler.ResourceFilePath(*resource, "yaml"))
-				err = MarshalYAML(*resource, path)
+			content, filename, _, err := Format(resourcePath, resource, format)
+			if err != nil {
+				return err
 			}
-
+			err = WriteFile(filename, content)
 			if err != nil {
 				return err
 			}
@@ -174,7 +180,7 @@ func Pull(resourcePath string, opts Opts) error {
 }
 
 // Show displays resources
-func Show(resources Resources) error {
+func Show(resources Resources, opts Opts) error {
 	log.Infof("Showing %d resources", resources.Len())
 
 	var items []term.PageItem
@@ -185,18 +191,23 @@ func Show(resources Resources) error {
 		}
 		resource = *(handler.Unprepare(resource))
 
-		rep, err := resource.YAML()
+		format, err := config.GetOutputFormat(opts.OutputFormat)
 		if err != nil {
 			return err
 		}
+		content, _, _, err := Format("", &resource, format)
+		if err != nil {
+			return err
+		}
+
 		if interactive {
 			items = append(items, term.PageItem{
 				Name:    fmt.Sprintf("%s.%s", resource.Kind(), resource.Name()),
-				Content: rep,
+				Content: string(content),
 			})
 		} else {
 			fmt.Printf("%s.%s:\n", resource.Kind(), resource.Name())
-			fmt.Println(rep)
+			fmt.Println(string(content))
 		}
 	}
 	if interactive {
@@ -206,7 +217,7 @@ func Show(resources Resources) error {
 }
 
 // Diff compares resources to those at the endpoints
-func Diff(resources Resources) error {
+func Diff(resources Resources, opts Opts) error {
 	log.Infof("Diff-ing %d resources", resources.Len())
 
 	for _, resource := range resources {
@@ -215,7 +226,11 @@ func Diff(resources Resources) error {
 			return err
 		}
 
-		local, err := resource.YAML()
+		format, err := config.GetOutputFormat(opts.OutputFormat)
+		if err != nil {
+			return err
+		}
+		local, _, _, err := Format("", &resource, format)
 		if err != nil {
 			return err
 		}
@@ -235,17 +250,18 @@ func Diff(resources Resources) error {
 		}
 
 		remote = handler.Unprepare(*remote)
-		remoteRepresentation, err := (*remote).YAML()
+
+		remoteRepresentation, _, _, err := Format("", &resource, format)
 		if err != nil {
 			return err
 		}
 
-		if local == remoteRepresentation {
+		if string(local) == string(remoteRepresentation) {
 			notifier.NoChanges(resource)
 		} else {
 			diff := difflib.UnifiedDiff{
-				A:        difflib.SplitLines(remoteRepresentation),
-				B:        difflib.SplitLines(local),
+				A:        difflib.SplitLines(string(remoteRepresentation)),
+				B:        difflib.SplitLines(string(local)),
 				FromFile: "Remote",
 				ToFile:   "Local",
 				Context:  3,
@@ -431,7 +447,7 @@ func Listen(UID, filename string) error {
 }
 
 // Export renders Jsonnet resources then saves them to a directory
-func Export(exportDir string, resources Resources) error {
+func Export(exportDir string, resources Resources, opts Opts) error {
 	if _, err := os.Stat(exportDir); os.IsNotExist(err) {
 		err = os.Mkdir(exportDir, 0755)
 		if err != nil {
@@ -440,15 +456,15 @@ func Export(exportDir string, resources Resources) error {
 	}
 
 	for _, resource := range resources {
-		handler, err := Registry.GetHandler(resource.Kind())
+		format, err := config.GetOutputFormat(opts.OutputFormat)
 		if err != nil {
 			return err
 		}
-		updatedResource, err := resource.YAML()
+		updatedResourceBytes, _, extension, err := Format("", &resource, format)
 		if err != nil {
 			return err
 		}
-		extension := handler.GetExtension()
+
 		dir := fmt.Sprintf("%s/%s", exportDir, resource.Kind())
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
 			err = os.Mkdir(dir, 0755)
@@ -463,6 +479,7 @@ func Export(exportDir string, resources Resources) error {
 		if err != nil && !isNotExist {
 			return err
 		}
+		updatedResource := string(updatedResourceBytes)
 		existingResource := string(existingResourceBytes)
 		if existingResource == updatedResource {
 			notifier.NoChanges(resource)

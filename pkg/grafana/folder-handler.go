@@ -49,11 +49,6 @@ func (h *FolderHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-// GetExtension returns the file name extension for a dashboard
-func (h *FolderHandler) GetExtension() string {
-	return "json"
-}
-
 const (
 	folderGlob    = "folders/folder-*"
 	folderPattern = "folders/folder-%s.%s"
