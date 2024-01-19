@@ -51,11 +51,11 @@ func Get(UID string, opts Opts) error {
 	}
 
 	resource = handler.Unprepare(*resource)
-	format, err := config.GetOutputFormat(opts.OutputFormat)
+	format, onlySpec, err := getOutputFormat(opts)
 	if err != nil {
 		return err
 	}
-	content, _, _, err := Format("", resource, format)
+	content, _, _, err := Format("", resource, format, onlySpec)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func Pull(resourcePath string, opts Opts) error {
 			continue
 		}
 
-		format, err := config.GetOutputFormat(opts.OutputFormat)
+		format, onlySpec, err := getOutputFormat(opts)
 		if err != nil {
 			return err
 		}
@@ -165,7 +165,7 @@ func Pull(resourcePath string, opts Opts) error {
 				return err
 			}
 
-			content, filename, _, err := Format(resourcePath, resource, format)
+			content, filename, _, err := Format(resourcePath, resource, format, onlySpec)
 			if err != nil {
 				return err
 			}
@@ -191,11 +191,11 @@ func Show(resources Resources, opts Opts) error {
 		}
 		resource = *(handler.Unprepare(resource))
 
-		format, err := config.GetOutputFormat(opts.OutputFormat)
+		format, onlySpec, err := getOutputFormat(opts)
 		if err != nil {
 			return err
 		}
-		content, _, _, err := Format("", &resource, format)
+		content, _, _, err := Format("", &resource, format, onlySpec)
 		if err != nil {
 			return err
 		}
@@ -226,11 +226,11 @@ func Diff(resources Resources, opts Opts) error {
 			return err
 		}
 
-		format, err := config.GetOutputFormat(opts.OutputFormat)
+		format, onlySpec, err := getOutputFormat(opts)
 		if err != nil {
 			return err
 		}
-		local, _, _, err := Format("", &resource, format)
+		local, _, _, err := Format("", &resource, format, onlySpec)
 		if err != nil {
 			return err
 		}
@@ -251,7 +251,7 @@ func Diff(resources Resources, opts Opts) error {
 
 		remote = handler.Unprepare(*remote)
 
-		remoteRepresentation, _, _, err := Format("", &resource, format)
+		remoteRepresentation, _, _, err := Format("", &resource, format, onlySpec)
 		if err != nil {
 			return err
 		}
@@ -456,11 +456,11 @@ func Export(exportDir string, resources Resources, opts Opts) error {
 	}
 
 	for _, resource := range resources {
-		format, err := config.GetOutputFormat(opts.OutputFormat)
+		format, onlySpec, err := getOutputFormat(opts)
 		if err != nil {
 			return err
 		}
-		updatedResourceBytes, _, extension, err := Format("", &resource, format)
+		updatedResourceBytes, _, extension, err := Format("", &resource, format, onlySpec)
 		if err != nil {
 			return err
 		}
@@ -508,4 +508,23 @@ func isFile(resourcePath string) (bool, error) {
 	}
 
 	return !stat.IsDir(), nil
+}
+
+func getOutputFormat(opts Opts) (string, bool, error) {
+	var onlySpec bool
+	context, err := config.CurrentContext()
+	if err != nil {
+		return "", false, err
+	}
+	if opts.HasOnlySpec {
+		onlySpec = opts.OnlySpec
+	} else {
+		onlySpec = context.OnlySpec
+	}
+	if opts.OutputFormat != "" {
+		return opts.OutputFormat, onlySpec, nil
+	} else if context.OutputFormat != "" {
+		return context.OutputFormat, onlySpec, nil
+	}
+	return "yaml", onlySpec, nil
 }

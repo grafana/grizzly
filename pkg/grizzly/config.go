@@ -14,8 +14,9 @@ type Opts struct {
 	OutputFormat string
 
 	// Used for supporting commands that output dashboard JSON
-	FolderUID string
-	JSONSpec  bool
+	FolderUID   string
+	OnlySpec    bool
+	HasOnlySpec bool
 }
 
 // PreviewOpts contains options to configure a preview

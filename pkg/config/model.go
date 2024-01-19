@@ -26,4 +26,5 @@ type Context struct {
 	SyntheticMonitoring SyntheticMonitoringConfig `yaml:"synthetic-monitoring" mapstructure:"synthetic-monitoring"`
 	Targets             []string                  `yaml:"targets" mapstructure:"targets"`
 	OutputFormat        string                    `yaml:"output-format" mapstructure:"output-format"`
+	OnlySpec            bool                      `yaml:"only-spec" mapstructure:"only-spec"`
 }

@@ -156,6 +156,7 @@ var acceptableKeys = map[string]string{
 	"synthetic-monitoring.logs-id":    "string",
 	"targets":                         "[]string",
 	"output-format":                   "string",
+	"only-spec":                       "bool",
 }
 
 func Set(path string, value string) error {
@@ -169,6 +170,10 @@ func Set(path string, value string) error {
 				val = value
 			case "[]string":
 				val = strings.Split(value, ",")
+			case "bool":
+				val = strings.ToLower(value) == "true"
+			default:
+				return fmt.Errorf("Unknown config key type %s for key %s", typ, key)
 			}
 			viper.Set(fullPath, val)
 			return Write()
@@ -202,18 +207,4 @@ func (c *Context) GetTargets(overrides []string) []string {
 		return overrides
 	}
 	return c.Targets
-}
-
-func GetOutputFormat(override string) (string, error) {
-	context, err := CurrentContext()
-	if err != nil {
-		return "", err
-	}
-	if override != "" {
-		return override, nil
-	}
-	if context.OutputFormat != "" {
-		return context.OutputFormat, nil
-	}
-	return "yaml", nil
 }
