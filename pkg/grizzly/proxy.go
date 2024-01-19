@@ -1,6 +1,7 @@
 package grizzly
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
+	"github.com/grafana/grizzly/pkg/config"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,6 +21,7 @@ type ProxyServer struct {
 	proxy        *httputil.ReverseProxy
 	parser       WatchParser
 	url          string
+	user         string
 	token        string
 	userAgent    string
 	resourcePath string
@@ -38,24 +41,29 @@ func NewProxyServer(parser WatchParser, resourcePath string, isLegacyJSON bool) 
 		isLegacy:     isLegacyJSON,
 		resourcePath: resourcePath,
 	}
-	URL, err := server.GetGrafanaURL()
+	context, err := config.CurrentContext()
 	if err != nil {
 		return nil, err
 	}
-	server.url = URL
-	server.token = server.GetGrafanaToken()
+	server.url = context.Grafana.URL
+	server.user = context.Grafana.User
+	server.token = context.Grafana.Token
 	u, err := url.Parse(server.url)
 	if err != nil {
 		return nil, err
 	}
-	token := ""
-	userAgent := ""
 	server.proxy = &httputil.ReverseProxy{
 		Rewrite: func(r *httputil.ProxyRequest) {
 			r.SetURL(u)
 			r.Out.Host = r.In.Host // if desired
-			r.Out.Header.Set("Authorization", "Bearer "+token)
-			r.Out.Header.Set("User-Agent", userAgent)
+			if server.user != "" {
+				header := fmt.Sprintf("%s:%s", server.user, server.token)
+				encoded := base64.StdEncoding.EncodeToString([]byte(header))
+				r.Out.Header.Set("Authorization", "Bearer "+encoded)
+			} else {
+				r.Out.Header.Set("Authorization", "Bearer "+server.token)
+			}
+			r.Out.Header.Set("User-Agent", "Grizzly Proxy Server")
 		},
 	}
 	return &server, nil
@@ -307,23 +315,3 @@ func (p *ProxyServer) DashboardJSONPostHandler(w http.ResponseWriter, r *http.Re
     res.write(content);
   };
   **/
-
-func (p *ProxyServer) GetGrafanaURL() (string, error) {
-	grafanaURL, exists := os.LookupEnv("GRAFANA_URL")
-	if !exists {
-		return "", fmt.Errorf("require GRAFANA_URL (optionally GRAFANA_TOKEN & GRAFANA_USER)")
-	}
-	_, err := url.Parse(grafanaURL)
-	if err != nil {
-		return "", fmt.Errorf("invalid Grafana URL")
-	}
-	return grafanaURL, nil
-}
-
-func (p *ProxyServer) GetGrafanaToken() string {
-
-	if token, exists := os.LookupEnv("GRAFANA_TOKEN"); exists {
-		return token
-	}
-	return ""
-}
