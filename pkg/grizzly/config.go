@@ -19,6 +19,7 @@ type Opts struct {
 	HasOnlySpec  bool
 	FolderUID    string
 	ResourceKind string
+	OpenBrowser  bool
 }
 
 // PreviewOpts contains options to configure a preview

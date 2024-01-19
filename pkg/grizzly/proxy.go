@@ -152,6 +152,7 @@ func (p *ProxyServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	p.proxy.ServeHTTP(w, r)
 }
+
 func (p *ProxyServer) RootHandler(w http.ResponseWriter, r *http.Request) {
 	resources, err := p.parser.Parse()
 	if err != nil {
@@ -170,8 +171,8 @@ func (p *ProxyServer) RootHandler(w http.ResponseWriter, r *http.Request) {
 
 /*
 * Note, this method avoids using `proxy.web`, implementing its own proxy
-* event using Axios. This is because Grafana returns `X-Frame-Options: deny`
-* which breaks our ability to place Grafana inside an iframe. `http-proxy`
+* event. This is because Grafana returns `X-Frame-Options: deny`
+* which breaks our ability to place Grafana inside an iframe. Proxies typically
 * will not remove that header once it is added. Therefore we need a different
 * form of proxy.
 *

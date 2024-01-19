@@ -418,7 +418,7 @@ func Proxy(parser WatchParser, resourcePath string, opts Opts) error {
 	if err != nil {
 		return err
 	}
-	return proxy.Start()
+	return proxy.Start(opts.OpenBrowser)
 }
 
 // Listen waits for remote changes to a resource and saves them to disk
