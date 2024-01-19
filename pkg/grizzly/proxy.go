@@ -186,7 +186,7 @@ func (p *ProxyServer) RootHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("<h1>Available dashboards</h1><ul>"))
 	for _, resource := range resources {
 		if resource.Kind() == "Dashboard" {
-			w.Write([]byte(fmt.Sprintf(`<li><a href="%s/d/%s/slug">%s</a></li>`, "http://localhost:8080", resource.Name(), resource.Name())))
+			w.Write([]byte(fmt.Sprintf(`<li><a href="%s/d/%s/slug">%s</a></li>`, "http://localhost:8080", resource.Name(), resource.Spec()["title"])))
 		}
 	}
 	w.Write([]byte("</ul>"))
