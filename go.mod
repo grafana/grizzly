@@ -5,10 +5,12 @@ go 1.21
 require (
 	github.com/fatih/color v1.15.0
 	github.com/gdamore/tcell v1.4.0
+	github.com/go-chi/chi v1.5.5
 	github.com/go-clix/cli v0.2.0
 	github.com/go-openapi/runtime v0.27.1
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.20.0
+	github.com/gorilla/websocket v1.5.1
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20240131162504-9263d72bd697
 	github.com/grafana/synthetic-monitoring-agent v0.16.5
 	github.com/grafana/synthetic-monitoring-api-go-client v0.7.0
@@ -34,8 +36,6 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
-	github.com/go-chi/chi v1.5.5 // indirect
-	github.com/go-chi/chi/v5 v5.0.10 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v0.22.0 // indirect
 	github.com/go-openapi/errors v0.21.0 // indirect
