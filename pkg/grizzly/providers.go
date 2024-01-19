@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/gobwas/glob"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"gopkg.in/yaml.v3"
 )
@@ -129,27 +128,6 @@ func (r *Resource) YAML() (string, error) {
 		return "", err
 	}
 	return string(y), nil
-}
-
-// MatchesTarget identifies whether a resource is in a target list
-func (r *Resource) MatchesTarget(targets []string) bool {
-	if len(targets) == 0 {
-		return true
-	}
-	UID := r.UID()
-	dotKey := r.Key()
-	slashKey := fmt.Sprintf("%s/%s", r.Kind(), UID)
-	for _, target := range targets {
-		g, err := glob.Compile(target)
-		if err != nil {
-			continue
-		}
-
-		if g.Match(slashKey) || g.Match(dotKey) {
-			return true
-		}
-	}
-	return false
 }
 
 // Resources represents a set of resources

@@ -185,7 +185,7 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 		}
 		targets := currentContext.GetTargets(opts.Targets)
 		for _, parsedResource := range parsedResources {
-			if parsedResource.MatchesTarget(targets) {
+			if Registry.ResourceMatchesTarget(handler, parsedResource.UID(), targets) {
 				resources = append(resources, parsedResource)
 			}
 		}
@@ -249,7 +249,7 @@ func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 			return nil, err
 		}
 		for _, parsedResource := range parsedResources {
-			if parsedResource.MatchesTarget(targets) {
+			if Registry.ResourceMatchesTarget(handler, parsedResource.UID(), targets) {
 				resources = append(resources, parsedResource)
 			}
 		}

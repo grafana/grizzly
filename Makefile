@@ -1,4 +1,4 @@
-.PHONY: lint test static install uninstall cross build-test-image run-test-image run-test-image-locally test-clean
+.PHONY: dev lint test static install uninstall cross build-test-image run-test-image run-test-image-locally test-clean
 VERSION := $(shell git describe --tags --dirty --always)
 BIN_DIR := $(GOPATH)/bin
 GOX := $(BIN_DIR)/gox
