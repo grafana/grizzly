@@ -9,6 +9,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"os/exec"
+	"runtime"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -108,7 +110,7 @@ var blockJSONpost = map[string]string{
 	"/api/ma/events":        "null",
 }
 
-func (p *ProxyServer) Start() error {
+func (p *ProxyServer) Start(openBrowser bool) error {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/d/{uid}/{slug}", p.RootDashboardPageHandler)
@@ -130,7 +132,28 @@ func (p *ProxyServer) Start() error {
 
 	r.Get("/api/live/ws", p.wsHandler)
 	fmt.Printf("Listening on http://localhost:8080\n")
+	if openBrowser {
+		p.openBrowser("http://localhost:8080")
+	}
 	return http.ListenAndServe(":8080", r)
+}
+
+func (p *ProxyServer) openBrowser(url string) {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (p *ProxyServer) blockHandler(response string) func(w http.ResponseWriter, r *http.Request) {
