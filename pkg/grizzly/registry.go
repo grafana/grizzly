@@ -78,7 +78,7 @@ func (r *registry) ResourceMatchesTarget(handler Handler, UID string, targets []
 	slashKey := fmt.Sprintf("%s/%s", kind, UID)
 	dotKey := fmt.Sprintf("%s.%s", kind, UID)
 	for _, target := range targets {
-		if strings.Contains(target, ".") {
+		if strings.Contains(target, ".") || strings.Contains(target, "/") {
 			g, err := glob.Compile(target)
 			if err != nil {
 				continue
