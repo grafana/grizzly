@@ -60,6 +60,37 @@ grr config set synthetic-monitoring.logs-id # Metrics instance ID
 ```
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
 
+## Configuring Targets
+Grizzly supports a number of resource types (`grr providers` will list those supported). Often, however, we do not
+wish to use all of these types. It is possible to set a list of "target" resource types that Grizzly should interact
+with:
+
+```
+grr config set targets Dashboards,DashboardFolders
+```
+
+These can be overriden on the command line with the `-t` or `--target` flag.
+
+## Configuring Output Formats
+Grizzly, when retrieving resources from Grafana, can present them in a range of formats. Currently, it supports
+YAML and JSON. Default is YAML. It can be configured in contexts:
+
+```
+grr config set output-format json
+```
+
+This can be overridden on the command line with `-o` or `--output`.
+
+Also, Grizzly wraps resources into an "envelope" that provides a consistent way of specifying typing and metadata,
+following Kubernetes' lead. This envelope can be removed with the `only-spec` setting:
+
+```
+grr config set only-spec true
+```
+
+This can be overridden on the command line with `-s` (to only include the spec component) or `--only-spec=false` to
+disable this setting (if currently set in the context).
+
 # Contexts
 Grizzly supports multiple contexts allowing easy swapping between instances. By default, Grizzly uses the `default`
 context.

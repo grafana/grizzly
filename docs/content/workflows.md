@@ -15,8 +15,12 @@ With `grr pull -d` and `grr apply -d` it is possible to migrate dashboards betwe
 Grafana instances. To pull dashboards and folders from one instance to another
 is as simple as:
 ```
-$ export GRAFANA_URL=<...source Grafana URL...>
-$ grr pull resources -t "Dashboard/*" -t "DashboardFolder/*"
+$ grr config create-context source
+$ grr config set grafana.url <...source Grafana URL...>
+$ grr config set grafana.token <...source Grafana service account token...>
+$ grr config set targets Dashboard,Dashboardfolder
+$ grr config set output-format json
+$ grr pull resources
 ```
 This asks Grizzly to pull all resources matching the `<kind>/<UID>` pattern for
 dashboards and folders into a directory called `resources`.
@@ -27,8 +31,12 @@ dashboards and folders into a directory called `resources`.
 
 To push them to a new Grafana instance:
 ```
-$ export GRAFANA_URL=<...destination Grafana URL...>
-$ grr apply resources
+$ grr config create-context source
+$ grr config set grafana.url <...destination Grafana URL...>
+$ grr config set grafana.token <...destination Grafana service account token...>
+$ grr config set targets Dashboard,Dashboardfolder
+$ grr config set output-format json
+$ grr push resources
 ```
 
 ## Jsonnet
@@ -76,6 +84,9 @@ Uploads each dashboard rendered by the mixin to Grafana
 $ grr apply my-lib.libsonnet
 ```
 
+### grr push
+"Push" is an alias for `apply`, above.
+
 ### grr watch
 Watches a directory for changes. When changes are identified, the
 jsonnet is executed and changes are pushed to remote systems.
@@ -119,7 +130,10 @@ Grafana snapshots by default do not expire. Expiration can be set via the
 
 ### `-t, --target strings`
 
-It allows the targeting of resources by key, where key is in the form `<type>/<uid>`.
+It allows the targeting of resources by key, where key is in the form `<type>.<uid>`.
+
+Targets can also be wildcards, e.g. `Dashboard.*`. If no `.` character is provided, then the target will
+be matched against the resource type only (e.g. `Dashboard`). In such a case, lower case names are allowed.
 
 Run `grr list` to get a list of resource keys in your code.
 
