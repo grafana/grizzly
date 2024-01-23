@@ -20,13 +20,14 @@ func getCmd() *cli.Command {
 		Short: "retrieve resource",
 		Args:  cli.ArgsExact(1),
 	}
-	var opts grizzly.LoggingOpts
+	var opts grizzly.Opts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		uid := args[0]
-		return grizzly.Get(uid)
+		return grizzly.Get(uid, opts)
 	}
-	return initialiseLogging(cmd, &opts)
+	cmd = initialiseOnlySpec(cmd, &opts)
+	return initialiseCmd(cmd, &opts)
 }
 
 func listCmd() *cli.Command {
@@ -77,7 +78,7 @@ func pullCmd() *cli.Command {
 		return grizzly.Pull(args[0], opts)
 	}
 
-	cmd.Flags().BoolVarP(&opts.JSONSpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
+	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
 
@@ -94,7 +95,7 @@ func showCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Show(resources)
+		return grizzly.Show(resources, opts)
 	}
 	return initialiseCmd(cmd, &opts)
 }
@@ -112,7 +113,7 @@ func diffCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Diff(resources)
+		return grizzly.Diff(resources, opts)
 	}
 	return initialiseCmd(cmd, &opts)
 }
@@ -139,7 +140,7 @@ func applyCmd() *cli.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.FolderUID, "folder", "f", generalFolderUID, "folder to push dashboards to")
-	cmd.Flags().BoolVarP(&opts.JSONSpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
+	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
 
@@ -157,7 +158,7 @@ func targetsOfKind(kind string, opts grizzly.Opts) bool {
 // checkDashboardTarget ensures that the specified targets are of dashboards kind
 func checkDashboardTarget(opts grizzly.Opts) error {
 	ok := targetsOfKind("Dashboard", opts)
-	if opts.JSONSpec && !ok {
+	if opts.OnlySpec && !ok {
 		return fmt.Errorf("-s flag is only supported for dashboards")
 	}
 
@@ -236,7 +237,7 @@ func exportCmd() *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Export(dashboardDir, resources)
+		return grizzly.Export(dashboardDir, resources, opts)
 	}
 	return initialiseCmd(cmd, &opts)
 }
@@ -287,8 +288,20 @@ func initialiseCmd(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
 
 	cmd.Flags().StringSliceVarP(&opts.Targets, "target", "t", nil, "resources to target")
 	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
+	cmd.Flags().StringVarP(&opts.OutputFormat, "output", "o", "", "Output format")
 
 	return initialiseLogging(cmd, &opts.LoggingOpts)
+}
+
+func initialiseOnlySpec(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
+	cmd.Flags().BoolVarP(&opts.OnlySpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
+	cmdRun := cmd.Run
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		opts.HasOnlySpec = cmd.Flags().Changed("only-spec")
+		return cmdRun(cmd, args)
+	}
+
+	return cmd
 }
 
 func initialiseLogging(cmd *cli.Command, loggingOpts *grizzly.LoggingOpts) *cli.Command {

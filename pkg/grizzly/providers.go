@@ -113,7 +113,7 @@ func (r *Resource) Spec() map[string]interface{} {
 }
 
 func (r *Resource) SpecAsJSON() (string, error) {
-	j, err := json.Marshal(r.Spec())
+	j, err := json.MarshalIndent(r.Spec(), "", "  ")
 	if err != nil {
 		return "", err
 	}
@@ -128,6 +128,15 @@ func (r *Resource) YAML() (string, error) {
 		return "", err
 	}
 	return string(y), nil
+}
+
+// JSON Gets the string representation for this resource
+func (r *Resource) JSON() (string, error) {
+	j, err := json.MarshalIndent(*r, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(j), nil
 }
 
 // Resources represents a set of resources
@@ -153,7 +162,6 @@ func (r Resources) Swap(i, j int) {
 type Handler interface {
 	APIVersion() string
 	Kind() string
-	GetExtension() string
 
 	// FindResourceFiles identifies files within a directory that this handler can process
 	FindResourceFiles(dir string) ([]string, error)

@@ -60,7 +60,7 @@ func FindResourceFiles(resourcePath string) ([]string, error) {
 }
 
 func ParseFile(opts Opts, resourceFile string) (Resources, error) {
-	if opts.JSONSpec && filepath.Ext(resourceFile) != ".json" {
+	if opts.OnlySpec && filepath.Ext(resourceFile) != ".json" {
 		return nil, fmt.Errorf("when -s flag is passed, command expects only json files as resources")
 	}
 
@@ -102,7 +102,7 @@ func manifestFile(resourceFile string) (bool, error) {
 
 // ParseJSON evaluates a JSON file and parses it into resources
 func ParseJSON(resourceFile string, opts Opts) (Resources, error) {
-	if opts.JSONSpec {
+	if opts.OnlySpec {
 		return ParseDashboardJSON(resourceFile, opts)
 	}
 
@@ -256,34 +256,4 @@ func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 	}
 	sort.Sort(resources)
 	return resources, nil
-}
-
-// MarshalYAML takes a resource and renders it to a source file as a YAML string
-func MarshalYAML(resource Resource, filename string) error {
-	y, err := resource.YAML()
-	if err != nil {
-		return err
-	}
-	return writeFile(filename, []byte(y))
-}
-
-func MarshalSpecToJSON(resource Resource, filename string) error {
-	j, err := json.MarshalIndent(resource.Spec(), "", "  ")
-	if err != nil {
-		return err
-	}
-	return writeFile(filename, j)
-}
-
-func writeFile(filename string, content []byte) error {
-	dir := filepath.Dir(filename)
-	err := os.MkdirAll(dir, 0755)
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(filename, content, 0644)
-	if err != nil {
-		return err
-	}
-	return nil
 }

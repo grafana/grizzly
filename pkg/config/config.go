@@ -155,6 +155,8 @@ var acceptableKeys = map[string]string{
 	"synthetic-monitoring.metrics-id": "string",
 	"synthetic-monitoring.logs-id":    "string",
 	"targets":                         "[]string",
+	"output-format":                   "string",
+	"only-spec":                       "bool",
 }
 
 func Set(path string, value string) error {
@@ -168,6 +170,10 @@ func Set(path string, value string) error {
 				val = value
 			case "[]string":
 				val = strings.Split(value, ",")
+			case "bool":
+				val = strings.ToLower(value) == "true"
+			default:
+				return fmt.Errorf("Unknown config key type %s for key %s", typ, key)
 			}
 			viper.Set(fullPath, val)
 			return Write()

@@ -55,11 +55,6 @@ func (h *AlertRuleGroupHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-// GetExtension returns the file name extension for a alertRuleGroup
-func (h *AlertRuleGroupHandler) GetExtension() string {
-	return "json"
-}
-
 const (
 	alertRuleGroupGlob    = "alert-rules/alertRuleGroup-*"
 	alertRuleGroupPattern = "alert-rules/alertRuleGroup-%s.%s"

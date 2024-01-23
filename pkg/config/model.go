@@ -1,28 +1,30 @@
 package config
 
 type GrafanaConfig struct {
-	URL   string `yaml:"url"`
-	User  string `yaml:"user"`
-	Token string `yaml:"token"`
+	URL   string `yaml:"url" mapstructure:"url"`
+	User  string `yaml:"user" mapstructure:"user"`
+	Token string `yaml:"token" mapstructure:"token"`
 }
 
 type MimirConfig struct {
-	Address  string `yaml:"address"`
-	TenantID int64  `yaml:"tenant-id"`
-	ApiKey   string `yaml:"api-key"`
+	Address  string `yaml:"address" mapstructure:"address"`
+	TenantID int64  `yaml:"tenant-id" mapstructure:"tenant-id"`
+	ApiKey   string `yaml:"api-key" mapstructure:"api-key"`
 }
 
 type SyntheticMonitoringConfig struct {
-	Token     string `yaml:"token"`
-	StackID   int64  `yaml:"stack-id"`
-	LogsID    int64  `yaml:"logs-id"`
-	MetricsID int64  `yaml:"metrics-id"`
+	Token     string `yaml:"token" mapstructure:"token"`
+	StackID   int64  `yaml:"stack-id" mapstructure:"stack-id"`
+	LogsID    int64  `yaml:"logs-id" mapstructure:"logs-id"`
+	MetricsID int64  `yaml:"metrics-id" mapstructure:"metrics-id"`
 }
 
 type Context struct {
-	Name                string                    `yaml:"name"`
-	Grafana             GrafanaConfig             `yaml:"grafana"`
-	Mimir               MimirConfig               `yaml:"mimir"`
-	SyntheticMonitoring SyntheticMonitoringConfig `yaml:"synthetic-monitoring"`
-	Targets             []string                  `yaml:"targets"`
+	Name                string                    `yaml:"name" mapstructure:"name"`
+	Grafana             GrafanaConfig             `yaml:"grafana" mapstructure:"grafana"`
+	Mimir               MimirConfig               `yaml:"mimir" mapstructure:"mimir"`
+	SyntheticMonitoring SyntheticMonitoringConfig `yaml:"synthetic-monitoring" mapstructure:"synthetic-monitoring"`
+	Targets             []string                  `yaml:"targets" mapstructure:"targets"`
+	OutputFormat        string                    `yaml:"output-format" mapstructure:"output-format"`
+	OnlySpec            bool                      `yaml:"only-spec" mapstructure:"only-spec"`
 }

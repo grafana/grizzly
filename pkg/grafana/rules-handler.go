@@ -48,11 +48,6 @@ func (h *RuleHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-// GetExtension returns the file name extension for a rule grouping
-func (h *RuleHandler) GetExtension() string {
-	return "yaml"
-}
-
 const (
 	prometheusRuleGroupGlob    = "prometheus/rules-*"
 	prometheusRuleGroupPattern = "prometheus/rules-%s.%s"

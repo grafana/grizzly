@@ -52,11 +52,6 @@ func (h *DashboardHandler) APIVersion() string {
 	return h.Provider.APIVersion()
 }
 
-// GetExtension returns the file name extension for a dashboard
-func (h *DashboardHandler) GetExtension() string {
-	return "json"
-}
-
 const (
 	dashboardGlob    = "dashboards/*/dashboard-*"
 	dashboardPattern = "dashboards/%s/dashboard-%s.%s"
