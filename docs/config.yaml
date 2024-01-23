@@ -25,8 +25,8 @@ menu:
     - name: What is Grizzly?
       url: /what-is-grizzly/
       weight: 3
-    - name: Authentication
-      url: /authentication/
+    - name: Setup and Config
+      url: /configuration/
       weight: 4
     - name: With Grafana
       url: /grafana/

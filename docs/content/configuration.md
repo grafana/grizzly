@@ -1,6 +1,6 @@
 ---
 date: "2021-06-28T00:00:00+00:00"
-title: "Authentication and Configuration"
+title: "Setup and Configuration"
 ---
 
 Grizzly can be configured in two ways: using environment variables
