@@ -1,11 +1,9 @@
 ---
 date: "2021-06-28T00:00:00+00:00"
-title: "Authentication"
+title: "Authentication and Configuration"
 ---
 
-# Authentication and Configuration
-
-Authentication for Grizzly can be configured in two ways: using environment variables
+Grizzly can be configured in two ways: using environment variables
 and through Grizzly's own 'context' support (much like `kubectl` contexts).
 
 Environment variables are suitable for use against a single system, and best suited
