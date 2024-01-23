@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 (2024-01-23)
+Feature improvements:
+* Allow targets to be set in contexts (#304)
+* Current context highlighted in `grr config current-contexts` (#305)
+* Support Non-glob and lower case targets (#306)
+* Add `push` as an alias for `apply` (#307)
+* Support JSON as well as YAML output (#309)
+
 ## 0.3.0 (2024-01-04)
 Feature improvements:
 * Add notification policies (#290)
