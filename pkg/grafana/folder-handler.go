@@ -88,11 +88,6 @@ func (h *FolderHandler) GetUID(resource grizzly.Resource) (string, error) {
 	return resource.Name(), nil
 }
 
-type folderForSorting struct {
-	UID      string
-	Resource grizzly.Resource
-}
-
 // Sort sorts according to handler needs
 func (h *FolderHandler) Sort(resources grizzly.Resources) grizzly.Resources {
 	result := grizzly.Resources{}
