@@ -82,3 +82,94 @@ func TestFolders(t *testing.T) {
 		require.Equal(t, 412, apiError.Code)
 	})
 }
+
+func TestSortFolders(t *testing.T) {
+	provider := NewProvider()
+	InitialiseTestConfig()
+	handler := NewFolderHandler(NewProvider())
+	grizzly.ConfigureProviderRegistry([]grizzly.Provider{provider})
+	folder := func(uid string, parentUID string) grizzly.Resource {
+		spec := map[string]interface{}{
+			"uid": uid,
+		}
+		if parentUID != "" {
+			spec["parentUid"] = parentUID
+		}
+		return grizzly.NewResource(handler.APIVersion(), handler.Kind(), uid, spec)
+	}
+
+	cases := []struct {
+		name     string
+		folders  []grizzly.Resource
+		expected []string // expected order of UIDs
+	}{
+		{
+			name:     "empty",
+			folders:  []grizzly.Resource{},
+			expected: []string{},
+		},
+		{
+			name: "no parents",
+			folders: []grizzly.Resource{
+				folder("a", ""),
+				folder("b", ""),
+				folder("c", ""),
+			},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			name: "one parent",
+			folders: []grizzly.Resource{
+				folder("b", "a"),
+				folder("a", ""),
+				folder("c", ""),
+			},
+			expected: []string{"a", "c", "b"},
+		},
+		{
+			name: "nested",
+			folders: []grizzly.Resource{
+				folder("c", "b"),
+				folder("b", "a"),
+				folder("a", ""),
+			},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			name: "nested with siblings",
+			folders: []grizzly.Resource{
+				folder("d", "b"),
+				folder("c", "b"),
+				folder("b", "a"),
+				folder("a", ""),
+			},
+			expected: []string{"a", "b", "d", "c"},
+		},
+		{
+			name: "parent not declared",
+			folders: []grizzly.Resource{
+				folder("a", "c"),
+				folder("b", ""),
+			},
+			expected: []string{"a", "b"},
+		},
+		{
+			name: "parent not declared - nested",
+			folders: []grizzly.Resource{
+				folder("b", "a"),
+				folder("a", "c"),
+			},
+			expected: []string{"a", "b"},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			sorted := handler.Sort(tc.folders)
+			require.Len(t, sorted, len(tc.expected))
+			for i, resource := range sorted {
+				require.Equal(t, tc.expected[i], resource.UID())
+			}
+		})
+	}
+}

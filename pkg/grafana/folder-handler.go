@@ -110,14 +110,8 @@ func (h *FolderHandler) Sort(resources grizzly.Resources) grizzly.Resources {
 				continue
 			}
 			parentAdded, parentExists := addedToResult[parentUID.(string)]
-			// Add folders with parents which aren't declared in Grizzly
-			if !parentExists {
-				addedToResult[resource.UID()] = true
-				result = append(result, resource)
-				continue
-			}
-			// Add folders with parents which have already been added
-			if parentAdded {
+			// Add folders with parents which aren't declared in Grizzly, or which have already been added
+			if !parentExists || parentAdded {
 				addedToResult[resource.UID()] = true
 				result = append(result, resource)
 				continue
