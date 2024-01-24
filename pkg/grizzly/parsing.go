@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 
 	"github.com/google/go-jsonnet"
@@ -43,7 +42,7 @@ func Parse(resourcePath string, opts Opts) (Resources, error) {
 		}
 		resources = append(resources, r...)
 	}
-
+	resources = resources.Sort()
 	return resources, nil
 }
 
@@ -190,7 +189,6 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 			}
 		}
 	}
-	sort.Sort(resources)
 	return resources, nil
 }
 
@@ -254,6 +252,5 @@ func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 			}
 		}
 	}
-	sort.Sort(resources)
 	return resources, nil
 }

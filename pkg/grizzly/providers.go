@@ -146,16 +146,17 @@ func (r Resources) Len() int {
 	return len(r)
 }
 
-func (r Resources) Less(i, j int) bool {
-	iKind := r[i].Kind()
-	jKind := r[j].Kind()
-	iPos := Registry.HandlerOrder[iKind]
-	jPos := Registry.HandlerOrder[jKind]
-	return iPos < jPos
-}
-
-func (r Resources) Swap(i, j int) {
-	r[i], r[j] = r[j], r[i]
+func (r *Resources) Sort() Resources {
+	resourceByKind := map[string]Resources{}
+	resources := Resources{}
+	for _, resource := range *r {
+		resourceByKind[resource.Kind()] = append(resourceByKind[resource.Kind()], resource)
+	}
+	for _, handler := range Registry.HandlerOrder {
+		handlerResources := resourceByKind[handler.Kind()]
+		resources = append(resources, handler.Sort(handlerResources)...)
+	}
+	return resources
 }
 
 // Handler describes a handler for a single API resource handled by a single provider
@@ -198,6 +199,9 @@ type Handler interface {
 
 	// Validate gets or build the uid of corresponding resource
 	Validate(resource Resource) error
+
+	// Sort sorts resources as defined by the handler
+	Sort(resources Resources) Resources
 }
 
 // PreviewHandler describes a handler that has the ability to render

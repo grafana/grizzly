@@ -122,6 +122,11 @@ func (h *SyntheticMonitoringHandler) GetUID(resource grizzly.Resource) (string, 
 	return fmt.Sprintf("%s.%s", resource.GetMetadata("type"), resource.Name()), nil
 }
 
+// Sort sorts according to handler needs
+func (h *SyntheticMonitoringHandler) Sort(resources grizzly.Resources) grizzly.Resources {
+	return resources
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	return h.getRemoteCheck(UID)

@@ -19,7 +19,7 @@ type Provider interface {
 type registry struct {
 	Providers    []Provider
 	Handlers     map[string]Handler
-	HandlerOrder map[string]int
+	HandlerOrder []Handler
 }
 
 // Global Handler registry
@@ -29,13 +29,11 @@ var Registry registry
 func ConfigureProviderRegistry(providers []Provider) {
 	Registry.Providers = providers
 	Registry.Handlers = map[string]Handler{}
-	Registry.HandlerOrder = map[string]int{}
-	position := 0
+	Registry.HandlerOrder = []Handler{}
 	for _, provider := range providers {
 		for _, handler := range provider.GetHandlers() {
 			Registry.Handlers[handler.Kind()] = handler
-			Registry.HandlerOrder[handler.Kind()] = position
-			position++
+			Registry.HandlerOrder = append(Registry.HandlerOrder, handler)
 		}
 	}
 }

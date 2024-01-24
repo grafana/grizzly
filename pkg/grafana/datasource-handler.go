@@ -113,6 +113,11 @@ func (h *DatasourceHandler) GetUID(resource grizzly.Resource) (string, error) {
 	return resource.Name(), nil
 }
 
+// Sort sorts according to handler needs
+func (h *DatasourceHandler) Sort(resources grizzly.Resources) grizzly.Resources {
+	return resources
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	return h.getRemoteDatasource(UID)

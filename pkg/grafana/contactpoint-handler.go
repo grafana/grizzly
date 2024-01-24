@@ -84,6 +84,11 @@ func (h *AlertContactPointHandler) GetUID(resource grizzly.Resource) (string, er
 	return resource.Name(), nil
 }
 
+// Sort sorts according to handler needs
+func (h *AlertContactPointHandler) Sort(resources grizzly.Resources) grizzly.Resources {
+	return resources
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *AlertContactPointHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	return h.getRemoteContactPoint(UID)
