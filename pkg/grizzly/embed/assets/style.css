@@ -1,0 +1,66 @@
+:root {
+    --hue: 225deg;
+
+    --accent-fg-color: #ff6e42;
+
+    --default-fg-color: hsla(var(--hue), 15%, 90%, 0.82);
+    --default-bg-color: hsla(var(--hue), 15%, 14%, 1);
+
+    --primary-bg-color: hsla(var(--hue), 15%, 100%, 1);
+
+    --typeset-color: var(--default-fg-color);
+    --typeset-a-color: #5e8bde;
+}
+
+body {
+    background-color: var(--default-bg-color);
+    color: var(--typeset-color);
+    font-size: 1rem;
+    margin: 0;
+}
+
+a {
+    transition: color 125ms;
+    word-break: break-word;
+    text-decoration: none;
+    color: var(--typeset-a-color);
+}
+
+a:hover {
+    color: var(--accent-fg-color);
+}
+
+header {
+    box-shadow: 0 0 .2rem #0000, 0 .2rem .4rem #0000;
+    color: var(--primary-bg-color);
+    background-color: hsla(var(--hue), 15%, 9%, 1);
+
+    nav {
+        align-items: center;
+        display: flex;
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 61rem;
+
+        .logo {
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+            margin: .2rem .2rem .2rem 0;
+            padding: .4rem .4rem .4rem 0;
+
+            img {
+                display: block;
+                height: 2.2rem;
+            }
+        }
+    }
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 61rem;
+}

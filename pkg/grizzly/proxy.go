@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -111,8 +112,14 @@ var blockJSONpost = map[string]string{
 }
 
 func (p *ProxyServer) Start(openBrowser bool) error {
+	assetsFS, err := fs.Sub(embedFS, "embed/assets")
+	if err != nil {
+		return fmt.Errorf("could not create a sub-tree from the embedded assets FS: %w", err)
+	}
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
 	r.Get("/d/{uid}/{slug}", p.RootDashboardPageHandler)
 	r.Get("/api/dashboards/uid/{uid}", p.DashboardJSONGetHandler)
 	r.Post("/api/dashboards/db/", p.DashboardJSONPostHandler)
@@ -183,13 +190,15 @@ func (p *ProxyServer) RootHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Error: %s", err), 500)
 		return
 	}
-	w.Write([]byte("<h1>Available dashboards</h1><ul>"))
-	for _, resource := range resources {
-		if resource.Kind() == "Dashboard" {
-			w.Write([]byte(fmt.Sprintf(`<li><a href="%s/d/%s/slug">%s</a></li>`, "http://localhost:8080", resource.Name(), resource.Spec()["title"])))
-		}
+
+	templateVars := map[string]any{
+		"Resources": resources,
 	}
-	w.Write([]byte("</ul>"))
+	if err := templates.ExecuteTemplate(w, "proxy/index.html.tmpl", templateVars); err != nil {
+		log.Error("Error while executing template: ", err)
+		http.Error(w, fmt.Sprintf("Error: %s", err), 500)
+		return
+	}
 }
 
 /*
