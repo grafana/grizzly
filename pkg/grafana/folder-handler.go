@@ -9,7 +9,6 @@ import (
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
-	"github.com/stevenle/topsort"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/folders"
@@ -96,25 +95,49 @@ type folderForSorting struct {
 
 // Sort sorts according to handler needs
 func (h *FolderHandler) Sort(resources grizzly.Resources) grizzly.Resources {
-	foldersByUID := map[string]grizzly.Resource{}
-	graph := topsort.NewGraph()
-	rootFolders := []grizzly.Resource{}
+	result := grizzly.Resources{}
+	addedToResult := map[string]bool{}
 	for _, resource := range resources {
-		foldersByUID[resource.UID()] = resource
-		if parentUID, ok := resource.Spec()["parentUid"]; ok {
-			graph.AddEdge(parentUID.(string), resource.UID())
-		} else {
-			rootFolders = append(rootFolders, resource)
+		addedToResult[resource.UID()] = false
+	}
+	for {
+		continueLoop := false
+		for _, resource := range resources {
+			if addedToResult[resource.UID()] {
+				// already added
+				continue
+			}
+			parentUID, hasParentUID := resource.Spec()["parentUid"]
+			// Add root folders
+			if !hasParentUID {
+				addedToResult[resource.UID()] = true
+				result = append(result, resource)
+				continue
+			}
+			parentAdded, parentExists := addedToResult[parentUID.(string)]
+			// Add folders with parents which aren't declared in Grizzly
+			if !parentExists {
+				addedToResult[resource.UID()] = true
+				result = append(result, resource)
+				continue
+			}
+			// Add folders with parents which have already been added
+			if parentAdded {
+				addedToResult[resource.UID()] = true
+				result = append(result, resource)
+				continue
+			}
+
+			// Delay folders with parents which haven't been added yet
+			continueLoop = true
+		}
+
+		if !continueLoop {
+			break
 		}
 	}
-	sorted := grizzly.Resources{}
-	for _, resource := range rootFolders {
-		s, _ := graph.TopSort(resource.UID())
-		for i := len(s) - 1; i >= 0; i-- {
-			sorted = append(sorted, foldersByUID[s[i]])
-		}
-	}
-	return sorted
+
+	return result
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
