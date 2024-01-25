@@ -12,6 +12,7 @@ import (
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/folders"
+	"github.com/grafana/grafana-openapi-client-go/client/search"
 	"github.com/grafana/grafana-openapi-client-go/models"
 )
 
@@ -87,6 +88,47 @@ func (h *FolderHandler) GetUID(resource grizzly.Resource) (string, error) {
 	return resource.Name(), nil
 }
 
+// Sort sorts according to handler needs
+func (h *FolderHandler) Sort(resources grizzly.Resources) grizzly.Resources {
+	result := grizzly.Resources{}
+	addedToResult := map[string]bool{}
+	for _, resource := range resources {
+		addedToResult[resource.UID()] = false
+	}
+	for {
+		continueLoop := false
+		for _, resource := range resources {
+			if addedToResult[resource.UID()] {
+				// already added
+				continue
+			}
+			parentUID, hasParentUID := resource.Spec()["parentUid"]
+			// Add root folders
+			if !hasParentUID {
+				addedToResult[resource.UID()] = true
+				result = append(result, resource)
+				continue
+			}
+			parentAdded, parentExists := addedToResult[parentUID.(string)]
+			// Add folders with parents which aren't declared in Grizzly, or which have already been added
+			if !parentExists || parentAdded {
+				addedToResult[resource.UID()] = true
+				result = append(result, resource)
+				continue
+			}
+
+			// Delay folders with parents which haven't been added yet
+			continueLoop = true
+		}
+
+		if !continueLoop {
+			break
+		}
+	}
+
+	return result
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *FolderHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	resource, err := h.getRemoteFolder(UID)
@@ -157,11 +199,14 @@ func (h *FolderHandler) getRemoteFolder(uid string) (*grizzly.Resource, error) {
 
 func (h *FolderHandler) getRemoteFolderList() ([]string, error) {
 	var (
-		limit       = int64(1000)
-		page  int64 = 0
-		uids  []string
+		limit            = int64(1000)
+		page       int64 = 0
+		uids       []string
+		folderType string = "dash-folder"
 	)
-	params := folders.NewGetFoldersParams().WithLimit(&limit)
+
+	params := search.NewSearchParams().WithLimit(&limit)
+	params.Type = &folderType
 	client, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return nil, err
@@ -171,15 +216,15 @@ func (h *FolderHandler) getRemoteFolderList() ([]string, error) {
 		page++
 		params.SetPage(&page)
 
-		foldersOk, err := client.Folders.GetFolders(params, nil)
+		searchOk, err := client.Search.Search(params, nil)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, folder := range foldersOk.GetPayload() {
+		for _, folder := range searchOk.GetPayload() {
 			uids = append(uids, folder.UID)
 		}
-		if int64(len(foldersOk.GetPayload())) < *params.Limit {
+		if int64(len(searchOk.GetPayload())) < *params.Limit {
 			return uids, nil
 		}
 	}
@@ -207,8 +252,9 @@ func (h *FolderHandler) postFolder(resource grizzly.Resource) error {
 	}
 
 	body := models.CreateFolderCommand{
-		Title: folder.Title,
-		UID:   folder.UID,
+		Title:     folder.Title,
+		UID:       folder.UID,
+		ParentUID: folder.ParentUID,
 	}
 	client, err := h.Provider.(ClientProvider).Client()
 	if err != nil {

@@ -88,6 +88,11 @@ func (h *RuleHandler) GetUID(resource grizzly.Resource) (string, error) {
 	return fmt.Sprintf("%s.%s", resource.GetMetadata("namespace"), resource.Name()), nil
 }
 
+// Sort sorts according to handler needs
+func (h *RuleHandler) Sort(resources grizzly.Resources) grizzly.Resources {
+	return resources
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *RuleHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	return h.getRemoteRuleGroup(UID)

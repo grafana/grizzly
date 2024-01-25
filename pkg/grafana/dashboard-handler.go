@@ -95,6 +95,11 @@ func (h *DashboardHandler) GetUID(resource grizzly.Resource) (string, error) {
 	return resource.Name(), nil
 }
 
+// Sort sorts according to handler needs
+func (h *DashboardHandler) Sort(resources grizzly.Resources) grizzly.Resources {
+	return resources
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	resource, err := h.getRemoteDashboard(UID)
@@ -126,6 +131,7 @@ func (h *DashboardHandler) Add(resource grizzly.Resource) error {
 
 // Update pushes a dashboard to Grafana via the API
 func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
+	resource = *h.Unprepare(resource)
 	return h.postDashboard(resource)
 }
 

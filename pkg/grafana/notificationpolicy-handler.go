@@ -89,6 +89,11 @@ func (h *AlertNotificationPolicyHandler) GetUID(resource grizzly.Resource) (stri
 	return resource.Name(), nil
 }
 
+// Sort sorts according to handler needs
+func (h *AlertNotificationPolicyHandler) Sort(resources grizzly.Resources) grizzly.Resources {
+	return resources
+}
+
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *AlertNotificationPolicyHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	return h.getRemoteAlertNotificationPolicy()
