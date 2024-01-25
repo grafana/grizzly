@@ -131,6 +131,7 @@ func (h *DashboardHandler) Add(resource grizzly.Resource) error {
 
 // Update pushes a dashboard to Grafana via the API
 func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
+	resource = *h.Unprepare(resource)
 	return h.postDashboard(resource)
 }
 
