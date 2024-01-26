@@ -47,15 +47,15 @@ func Parse(resourcePath string, opts Opts) (Resources, error) {
 }
 
 func FindResourceFiles(resourcePath string) ([]string, error) {
-	var files []string
-	for _, handler := range Registry.Handlers {
-		handlerFiles, err := handler.FindResourceFiles(resourcePath)
-		if err != nil {
-			return nil, err
+	files := []string{}
+
+	err := filepath.Walk(resourcePath, func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			files = append(files, path)
 		}
-		files = append(files, handlerFiles...)
-	}
-	return files, nil
+		return nil
+	})
+	return files, err
 }
 
 func ParseFile(opts Opts, resourceFile string) (Resources, error) {

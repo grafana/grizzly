@@ -2,7 +2,6 @@ package grafana
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"log"
 	"os"
@@ -49,15 +48,8 @@ func (h *RuleHandler) APIVersion() string {
 }
 
 const (
-	prometheusRuleGroupGlob    = "prometheus/rules-*"
 	prometheusRuleGroupPattern = "prometheus/rules-%s.%s"
 )
-
-// FindResourceFiles identifies files within a directory that this handler can process
-func (h *RuleHandler) FindResourceFiles(dir string) ([]string, error) {
-	path := filepath.Join(dir, prometheusRuleGroupGlob)
-	return filepath.Glob(path)
-}
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *RuleHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {

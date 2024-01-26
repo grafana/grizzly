@@ -2,7 +2,6 @@ package grafana
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"encoding/json"
 	"errors"
@@ -51,15 +50,8 @@ func (h *DatasourceHandler) APIVersion() string {
 }
 
 const (
-	datasourceGlob    = "datasources/datasource-*"
 	datasourcePattern = "datasources/datasource-%s.%s"
 )
-
-// FindResourceFiles identifies files within a directory that this handler can process
-func (h *DatasourceHandler) FindResourceFiles(dir string) ([]string, error) {
-	path := filepath.Join(dir, datasourceGlob)
-	return filepath.Glob(path)
-}
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *DatasourceHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
