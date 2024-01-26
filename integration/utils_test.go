@@ -1,4 +1,4 @@
-package main
+package integration_test
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ type GrizzlyTest struct {
 	Name     string
 	TestDir  string
 	Commands []Command
-	Validate func(t *testing.T)
+	Validate *func(t *testing.T)
 }
 
 func RunTests(t *testing.T, tests []GrizzlyTest) {

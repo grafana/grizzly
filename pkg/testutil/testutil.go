@@ -37,7 +37,6 @@ func PingService(url string) *time.Ticker {
 
 		case <-ticker.C:
 			resp, _ := http.Get(url)
-			fmt.Println("Response:", resp)
 			if resp != nil {
 				success = true
 			}

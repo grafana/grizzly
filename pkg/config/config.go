@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/kirsle/configdir"
@@ -103,7 +104,12 @@ func GetContexts() error {
 	contexts := map[string]interface{}{}
 	currentContext := viper.GetString(CURRENT_CONTEXT)
 	viper.UnmarshalKey("contexts", &contexts)
+	keys := make([]string, 0, len(contexts))
 	for k := range contexts {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
 		if k == currentContext {
 			fmt.Printf("* %s\n", k)
 		} else {

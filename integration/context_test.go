@@ -1,4 +1,4 @@
-package main
+package integration_test
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ func TestContexts(t *testing.T) {
 					ExpectedOutput: "get-contexts.txt",
 				},
 			},
-			Validate: func(t *testing.T) {
+			Validate: &func(t *testing.T) {
 
 			},
 		},
