@@ -73,7 +73,7 @@ local vault_secret(name, vault_path, key) = {
         volumes: mounts,
         commands: ['apk add docker make && make run-test-image'],
         ports: [
-          3000,
+          3001,
         ],
       },
     ],

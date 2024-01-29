@@ -7,7 +7,7 @@ services:
   image: alpine
   name: grizzly-grafana
   ports:
-  - 3000
+  - 3001
   volumes:
   - name: gopath
     path: /go
@@ -258,6 +258,6 @@ kind: secret
 name: docker_password
 ---
 kind: signature
-hmac: 9f2d996590311637e94240a900540251c3b2e3c7cf3c7c158b2d12b6b44f5922
+hmac: fbac431632b439fbd3362695412c919bdc59f15ad2f180fde228fbdb7b195256
 
 ...

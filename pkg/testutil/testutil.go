@@ -12,7 +12,7 @@ import (
 
 func GetUrl() string {
 	if os.Getenv("CI") != "" {
-		return "http://grizzly-grafana:3000/"
+		return "http://grizzly-grafana:3001/"
 	} else {
 		return "http://localhost:3001/"
 	}
