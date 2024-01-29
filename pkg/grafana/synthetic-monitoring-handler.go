@@ -145,6 +145,11 @@ func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource)
 	return h.updateCheck(resource)
 }
 
+// UsesFolders identifies whether this resource lives within a folder
+func (h *SyntheticMonitoringHandler) UsesFolders() bool {
+	return false
+}
+
 // NewSyntheticMonitoringClient creates a new client for synthetic monitoring go client
 func (h *SyntheticMonitoringHandler) NewSyntheticMonitoringClient() (*smapi.Client, error) {
 	grizzlyContext, err := config.CurrentContext()

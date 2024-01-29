@@ -114,6 +114,11 @@ func (h *AlertRuleGroupHandler) Update(existing, resource grizzly.Resource) erro
 	return h.putAlertRuleGroup(resource)
 }
 
+// UsesFolders identifies whether this resource lives within a folder
+func (h *AlertRuleGroupHandler) UsesFolders() bool {
+	return false
+}
+
 // getRemoteAlertRuleGroup retrieves a alertRuleGroup object from Grafana
 func (h *AlertRuleGroupHandler) getRemoteAlertRuleGroup(uid string) (*grizzly.Resource, error) {
 	folder, group := h.splitUID(uid)

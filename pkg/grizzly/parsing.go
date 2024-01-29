@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/config"
@@ -59,10 +60,6 @@ func FindResourceFiles(resourcePath string) ([]string, error) {
 }
 
 func ParseFile(opts Opts, resourceFile string) (Resources, error) {
-	if opts.OnlySpec && filepath.Ext(resourceFile) != ".json" {
-		return nil, fmt.Errorf("when -s flag is passed, command expects only json files as resources")
-	}
-
 	switch filepath.Ext(resourceFile) {
 	case ".json":
 		return ParseJSON(resourceFile, opts)
@@ -75,79 +72,49 @@ func ParseFile(opts Opts, resourceFile string) (Resources, error) {
 	}
 }
 
-func manifestFile(resourceFile string) (bool, error) {
-	if filepath.Ext(resourceFile) != ".json" {
-		return false, nil
-	}
-
-	m := map[string]interface{}{}
-
-	f, err := os.Open(resourceFile)
-	if err != nil {
-		return false, err
-	}
-
-	err = json.NewDecoder(f).Decode(&m)
-	if err != nil {
-		return false, err
-	}
-
-	if _, ok := m["spec"]; ok {
-		return true, nil
-	}
-
-	return false, nil
-}
-
 // ParseJSON evaluates a JSON file and parses it into resources
 func ParseJSON(resourceFile string, opts Opts) (Resources, error) {
-	if opts.OnlySpec {
-		return ParseDashboardJSON(resourceFile, opts)
-	}
 
-	isManifest, err := manifestFile(resourceFile)
-	if err != nil {
-		return Resources{}, err
-	}
-
-	// TODO: refactor, no need to read the file twice
-	if !isManifest {
-		return ParseDashboardJSON(resourceFile, opts)
-	}
-
-	return ParseJsonnet(resourceFile, opts)
-}
-
-// ParseDashboardJSON parses a JSON file with a single dashboard object into a Resources (to align with ParseFile interface)
-func ParseDashboardJSON(jsonFile string, opts Opts) (Resources, error) {
-	if filepath.Ext(jsonFile) != ".json" {
-		return nil, fmt.Errorf("when -s flag is passed, command expects only json files as resources")
-	}
-
-	f, err := os.Open(jsonFile)
+	m := map[string]interface{}{}
+	f, err := os.Open(resourceFile)
 	if err != nil {
 		return nil, err
 	}
 
-	var spec map[string]interface{}
-	err = json.NewDecoder(f).Decode(&spec)
+	err = json.NewDecoder(f).Decode(&m)
 	if err != nil {
-		return Resources{}, err
+		return nil, err
 	}
 
-	handler := Registry.Handlers["Dashboard"]
+	var resource Resource
+	if opts.OnlySpec {
+		resource = newResource(resourceFile, m, opts.ResourceKind, opts.FolderUID)
+	} else {
+		resource = Resource(m)
+	}
+
+	return Resources{resource}, nil
+}
+
+// ParseDashboardJSON parses a JSON file with a single dashboard object into a Resources (to align with ParseFile interface)
+func newResource(resourceFile string, spec map[string]any, kind, folderUID string) map[string]any {
+	uid := strings.ReplaceAll(filepath.Base(resourceFile), filepath.Ext(resourceFile), "")
+
+	handler := Registry.Handlers[kind]
 
 	resource := Resource{
 		"apiVersion": handler.APIVersion(),
 		"kind":       handler.Kind(),
 		"metadata": map[string]interface{}{
-			"folder": opts.FolderUID,
-			"name":   spec["uid"],
+			"name": uid,
 		},
 		"spec": spec,
 	}
+	if handler.UsesFolders() {
+		resource.SetMetadata("folder", folderUID)
+	}
 
-	return Resources{resource}, nil
+	return resource
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources

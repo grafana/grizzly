@@ -132,6 +132,11 @@ func (h *LibraryElementHandler) Update(existing, resource grizzly.Resource) erro
 	return h.updateElement(existing, resource)
 }
 
+// UsesFolders identifies whether this resource lives within a folder
+func (h *LibraryElementHandler) UsesFolders() bool {
+	return false
+}
+
 func (h *LibraryElementHandler) listElements() ([]string, error) {
 	params := library.NewGetLibraryElementsParams()
 	client, err := h.Provider.(ClientProvider).Client()

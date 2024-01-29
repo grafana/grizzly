@@ -135,6 +135,11 @@ func (h *DatasourceHandler) Update(existing, resource grizzly.Resource) error {
 	return h.putDatasource(resource)
 }
 
+// UsesFolders identifies whether this resource lives within a folder
+func (h *DatasourceHandler) UsesFolders() bool {
+	return false
+}
+
 // getRemoteDatasource retrieves a datasource object from Grafana
 func (h *DatasourceHandler) getRemoteDatasource(uid string) (*grizzly.Resource, error) {
 	client, err := h.Provider.(ClientProvider).Client()

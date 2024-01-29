@@ -111,6 +111,11 @@ func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
 	return h.writeRuleGroup(resource)
 }
 
+// UsesFolders identifies whether this resource lives within a folder
+func (h *RuleHandler) UsesFolders() bool {
+	return false
+}
+
 var cortexTool = func(mimirConfig *config.MimirConfig, args ...string) ([]byte, error) {
 	path := os.Getenv("CORTEXTOOL_PATH")
 	if path == "" {

@@ -151,6 +151,11 @@ func (h *FolderHandler) Update(existing, resource grizzly.Resource) error {
 	return h.putFolder(resource)
 }
 
+// UsesFolders identifies whether this resource lives within a folder
+func (h *FolderHandler) UsesFolders() bool {
+	return false
+}
+
 // getRemoteFolder retrieves a folder object from Grafana
 func (h *FolderHandler) getRemoteFolder(uid string) (*grizzly.Resource, error) {
 	var folder *models.Folder

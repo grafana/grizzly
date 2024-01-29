@@ -13,10 +13,11 @@ type Opts struct {
 	Targets      []string
 	OutputFormat string
 
-	// Used for supporting commands that output dashboard JSON
-	FolderUID   string
-	OnlySpec    bool
-	HasOnlySpec bool
+	// Used for legacy forms that do not include the metadata envelope
+	OnlySpec     bool
+	HasOnlySpec  bool
+	FolderUID    string
+	ResourceKind string
 }
 
 // PreviewOpts contains options to configure a preview
