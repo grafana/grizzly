@@ -12,11 +12,11 @@ build-test-image:
 
 run-test-image: build-test-image
 	docker rm -f grizzly-grafana
-	docker run --net $$DRONE_DOCKER_NETWORK_ID --name grizzly-grafana -p 3001:3000 --rm grizzly-grafana-test:latest
+	docker run --net $$DRONE_DOCKER_NETWORK_ID --name grizzly-grafana --rm grizzly-grafana-test:latest
 
 run-test-image-locally: build-test-image test-clean
 	docker rm -f grizzly-grafana
-	docker run -d --name grizzly-grafana -p 3001:3000 --rm grizzly-grafana-test:latest
+	docker run -d --name grizzly-grafana -p 3001:3001 --rm grizzly-grafana-test:latest
 
 test-clean:
 	go clean -testcache
