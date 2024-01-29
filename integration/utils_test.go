@@ -21,7 +21,7 @@ type GrizzlyTest struct {
 	Name     string
 	TestDir  string
 	Commands []Command
-	Validate *func(t *testing.T)
+	Validate func(t *testing.T)
 }
 
 func RunTests(t *testing.T, tests []GrizzlyTest) {
@@ -45,7 +45,9 @@ func RunTests(t *testing.T, tests []GrizzlyTest) {
 				exitCode := cmd.ProcessState.ExitCode()
 				require.Equal(t, command.ExpectedCode, exitCode, "Exited with %d (%d expected)", exitCode, command.ExpectedCode)
 			}
-			test.Validate(t)
+			if test.Validate != nil {
+				test.Validate(t)
+			}
 		})
 	}
 }

@@ -23,9 +23,6 @@ func TestContexts(t *testing.T) {
 					ExpectedOutput: "get-contexts.txt",
 				},
 			},
-			Validate: &func(t *testing.T) {
-
-			},
 		},
 	}
 

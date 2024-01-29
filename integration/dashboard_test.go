@@ -23,9 +23,6 @@ func TestDashboard(t *testing.T) {
 					ExpectedOutput: "ReciqtgGk.json",
 				},
 			},
-			Validate: func(t *testing.T) {
-
-			},
 		},
 		{
 			Name:    "Get dashboard - failure",
@@ -35,9 +32,6 @@ func TestDashboard(t *testing.T) {
 					Command:      "get missing-dashboard",
 					ExpectedCode: 1,
 				},
-			},
-			Validate: func(t *testing.T) {
-
 			},
 		},
 	}
