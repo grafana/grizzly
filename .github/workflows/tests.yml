@@ -1,0 +1,24 @@
+name: run tests
+
+on:
+  pull_request: {}
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: 
+          go-version: '1.21'
+      - name: Make
+        run: make test
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - name: Make
+        run: make integration

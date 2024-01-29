@@ -1,78 +1,4 @@
 ---
-kind: pipeline
-name: check
-services:
-- commands:
-  - apk add docker make && make run-test-image
-  image: alpine
-  name: grizzly-grafana
-  ports:
-  - 3001
-  volumes:
-  - name: gopath
-    path: /go
-  - name: docker
-    path: /var/run/docker.sock
-steps:
-- commands:
-  - go mod download
-  image: golang:1.20.6
-  name: download
-  volumes:
-  - name: gopath
-    path: /go
-  - name: docker
-    path: /var/run/docker.sock
-- commands:
-  - make lint
-  depends_on:
-  - download
-  image: golang:1.20.6
-  name: lint
-  volumes:
-  - name: gopath
-    path: /go
-  - name: docker
-    path: /var/run/docker.sock
-- commands:
-  - go test ./cmd/... ./pkg/...
-  image: golang:1.20.6
-  name: test
-  volumes:
-  - name: gopath
-    path: /go
-  - name: docker
-    path: /var/run/docker.sock
-- commands:
-  - make dev
-  depends_on:
-  - download
-  image: golang:1.20.6
-  name: dev
-  volumes:
-  - name: gopath
-    path: /go
-  - name: docker
-    path: /var/run/docker.sock
-- commands:
-  - go test -v ./integration/...
-  depends_on:
-  - dev
-  image: golang:1.20.6
-  name: integration
-  volumes:
-  - name: gopath
-    path: /go
-  - name: docker
-    path: /var/run/docker.sock
-type: docker
-volumes:
-- host:
-    path: /var/run/docker.sock
-  name: docker
-- name: gopath
-  temp: {}
----
 depends_on:
 - check
 kind: pipeline
@@ -258,6 +184,6 @@ kind: secret
 name: docker_password
 ---
 kind: signature
-hmac: fbac431632b439fbd3362695412c919bdc59f15ad2f180fde228fbdb7b195256
+hmac: 2b97321758c322df59e76479f27d1315bb9798bcbe3fbee2129678061195e346
 
 ...
