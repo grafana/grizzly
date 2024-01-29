@@ -45,6 +45,8 @@ steps:
     path: /var/run/docker.sock
 - commands:
   - make dev
+  depends_on:
+  - download
   image: golang:1.20.6
   name: dev
   volumes:
@@ -54,6 +56,8 @@ steps:
     path: /var/run/docker.sock
 - commands:
   - go test -v ./integration/...
+  depends_on:
+  - dev
   image: golang:1.20.6
   name: integration
   volumes:
@@ -254,6 +258,6 @@ kind: secret
 name: docker_password
 ---
 kind: signature
-hmac: 7ebb538b05eb41f85c0496eebfb58db0959a9fe266bab4bd06195f1fb0bc2b46
+hmac: 9f2d996590311637e94240a900540251c3b2e3c7cf3c7c158b2d12b6b44f5922
 
 ...
