@@ -1,0 +1,50 @@
+# Copied from https://github.com/grafana/tanka/blob/main/.github/workflows/release.yml
+# Consider sharing here: https://github.com/grafana/shared-workflows
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+      - uses: ./.github/actions/setup-goversion
+      - run: make cross
+      - id: docker_tag
+        run: echo "DOCKER_TAG=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            This is release `${{ env.GITHUB_REF_NAME }}` of Grizzly (`grr`). Check out the [CHANGELOG](CHANGELOG.md) for detailed release notes.
+            ## Install instructions
+
+            #### Binary:
+            ```bash
+            # download the binary (adapt os and arch as needed)
+            $ curl -fSL -o "/usr/local/bin/grr" "https://github.com/grafana/grizzly/releases/download/${{ env.GITHUB_REF_NAME }}/grr-linux-amd64"
+
+            # make it executable
+            $ chmod a+x "/usr/local/bin/grr"
+
+            # have fun :)
+            $ grr --help
+            ```
+
+            #### Docker container:
+            https://hub.docker.com/r/grafana/grizzly
+            ```bash
+            $ docker pull grafana/grizzly:${{ env.GITHUB_REF_NAME }}
+            ```
+          draft: true
+          files: |
+            dist/*
