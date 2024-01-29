@@ -65,25 +65,6 @@ local vault_secret(name, vault_path, key) = {
 };
 
 [
-  pipeline('check') {
-    services: [
-      {
-        name: 'grizzly-grafana',
-        image: 'alpine',
-        volumes: mounts,
-        commands: ['apk add docker make && make run-test-image'],
-        ports: [
-          3000,
-        ],
-      },
-    ],
-    steps: [
-      go('download', ['go mod download']),
-      make('lint') { depends_on: ['download'] },
-      go('test', ['go test ./...']),
-    ],
-  } + constraints.always,
-
   pipeline('release') {
     steps: [
       go('fetch-tags', ['git fetch origin --tags']),
@@ -100,10 +81,10 @@ local vault_secret(name, vault_path, key) = {
         },
       },
     ],
-  } + { depends_on: ['check'] } + constraints.onlyTags,
+  } + constraints.onlyTags,
 
-  docker('amd64') { depends_on: ['check'] } + constraints.onlyTagOrMain,
-  docker('arm64') { depends_on: ['check'] } + constraints.onlyTagOrMain,
+  docker('amd64') + constraints.onlyTagOrMain,
+  docker('arm64') + constraints.onlyTagOrMain,
 
   pipeline('manifest') {
     steps: [{

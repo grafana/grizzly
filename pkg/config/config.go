@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/kirsle/configdir"
@@ -19,10 +20,9 @@ func Initialise() {
 	viper.SetConfigName("settings")
 	viper.SetConfigType("yaml")
 
-	viper.AddConfigPath(configdir.LocalConfig("grizzly"))
 	viper.AddConfigPath(".")
+	viper.AddConfigPath(configdir.LocalConfig("grizzly"))
 }
-
 func override(v *viper.Viper) {
 	bindings := map[string]string{
 		"grafana.url":   "GRAFANA_URL",
@@ -97,13 +97,19 @@ func configPath() (string, error) {
 func NewConfig() {
 	viper.Set("apiVersion", "v1alpha1")
 	viper.Set(CURRENT_CONTEXT, "default")
+	viper.Set("contexts.default.name", "default")
 }
 
 func GetContexts() error {
 	contexts := map[string]interface{}{}
 	currentContext := viper.GetString(CURRENT_CONTEXT)
 	viper.UnmarshalKey("contexts", &contexts)
+	keys := make([]string, 0, len(contexts))
 	for k := range contexts {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
 		if k == currentContext {
 			fmt.Printf("* %s\n", k)
 		} else {

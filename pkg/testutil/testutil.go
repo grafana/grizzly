@@ -3,7 +3,6 @@ package testutil
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/grafana/grizzly/pkg/config"
@@ -11,11 +10,7 @@ import (
 )
 
 func GetUrl() string {
-	if os.Getenv("CI") != "" {
-		return "http://grizzly-grafana:3000/"
-	} else {
-		return "http://localhost:3001/"
-	}
+	return "http://localhost:3001/"
 }
 
 func InitialiseTestConfig() {
@@ -37,7 +32,6 @@ func PingService(url string) *time.Ticker {
 
 		case <-ticker.C:
 			resp, _ := http.Get(url)
-			fmt.Println("Response:", resp)
 			if resp != nil {
 				success = true
 			}

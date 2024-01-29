@@ -7,7 +7,7 @@ import (
 
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	. "github.com/grafana/grizzly/pkg/internal/testutil"
+	. "github.com/grafana/grizzly/pkg/testutil"
 	"github.com/stretchr/testify/require"
 
 	"gopkg.in/yaml.v3"
