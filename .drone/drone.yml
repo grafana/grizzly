@@ -44,6 +44,15 @@ steps:
   - name: docker
     path: /var/run/docker.sock
 - commands:
+  - make dev
+  image: golang:1.20.6
+  name: dev
+  volumes:
+  - name: gopath
+    path: /go
+  - name: docker
+    path: /var/run/docker.sock
+- commands:
   - go test -v ./integration/...
   image: golang:1.20.6
   name: integration
@@ -245,6 +254,6 @@ kind: secret
 name: docker_password
 ---
 kind: signature
-hmac: a7ae75e2f762a62c955d171df7f748647fec889124be1d2fce9e599d3e997348
+hmac: 7ebb538b05eb41f85c0496eebfb58db0959a9fe266bab4bd06195f1fb0bc2b46
 
 ...
