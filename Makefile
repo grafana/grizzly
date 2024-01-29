@@ -22,7 +22,7 @@ test-clean:
 	go clean -testcache
 
 test: run-test-image-locally
-	go test ./cmd/... ./pkg/... || ( status=$$?; docker logs grizzly-grafana ; exit $$status )
+	go test -v ./cmd/... ./pkg/... || ( status=$$?; docker logs grizzly-grafana ; exit $$status )
 
 integration: run-test-image-locally dev
 	go test -v ./integration/...
