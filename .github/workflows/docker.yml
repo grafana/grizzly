@@ -121,19 +121,8 @@ jobs:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: ${{ env.TAGS_CONFIG }}
 
-      # Login to Docker Hub
-      - name: Get Secrets
-        uses: grafana/shared-workflows/actions/get-vault-secrets@main
-        with:
-          # Secrets placed in the ci/common/<path> path in Vault
-          common_secrets: |
-            DOCKERHUB_USERNAME=dockerhub:username
-            DOCKERHUB_TOKEN=dockerhub:password
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
+      - name: Login to DockerHub
+        uses: grafana/shared-workflows/actions/dockerhub-login@main
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
