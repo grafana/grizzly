@@ -1,4 +1,4 @@
-.PHONY: dev lint test integration static install uninstall cross build-test-image run-test-image run-test-image-locally test-clean
+.PHONY: dev lint test integration static install uninstall cross build-test-image run-test-image-locally test-clean
 VERSION := $(shell git describe --tags --dirty --always)
 BIN_DIR := $(GOPATH)/bin
 GOX := $(BIN_DIR)/gox
@@ -9,10 +9,6 @@ lint:
 
 build-test-image:
 	docker build pkg/grafana/testdata -t grizzly-grafana-test:latest
-
-run-test-image: build-test-image
-	docker rm -f grizzly-grafana
-	docker run --net $$DRONE_DOCKER_NETWORK_ID --name grizzly-grafana -p 3001:3001 --rm grizzly-grafana-test:latest
 
 run-test-image-locally: build-test-image test-clean
 	docker rm -f grizzly-grafana
@@ -51,11 +47,3 @@ cross: $(GOX)
 # Docker container
 container: static
 	docker build -t grafana/grizzly .
-
-# CI
-drone:
-	# Render the YAML from the jsonnet
-	drone jsonnet --source .drone/drone.jsonnet --target .drone/drone.yml --stream --format
-	# Sign the config
-	drone --server https://drone.grafana.net sign --save grafana/grizzly .drone/drone.yml
-
