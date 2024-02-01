@@ -1,4 +1,3 @@
-  another
+  basic_auth
 * default
-  other
   subpath

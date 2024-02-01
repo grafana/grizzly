@@ -5,20 +5,18 @@ import (
 )
 
 func TestContexts(t *testing.T) {
-	tests := []GrizzlyTest{
-		{
-			Name:    "Get contexts - success",
+	setupContexts(t, "testdata/contexts")
+
+	t.Run("Get contexts - success", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
 			TestDir: "testdata/contexts",
 			Commands: []Command{
 				{
 					Command:        "config get-contexts",
 					ExpectedCode:   0,
-					ExpectedError:  nil,
 					ExpectedOutput: "get-contexts.txt",
 				},
 			},
-		},
-	}
-
-	RunTests(t, tests)
+		})
+	})
 }
