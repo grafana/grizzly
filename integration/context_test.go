@@ -7,7 +7,6 @@ import (
 )
 
 func TestContexts(t *testing.T) {
-
 	ticker := testutil.PingService(testutil.GetUrl())
 	defer ticker.Stop()
 
