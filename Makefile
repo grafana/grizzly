@@ -2,7 +2,7 @@
 VERSION := $(shell git describe --tags --dirty --always)
 BIN_DIR := $(GOPATH)/bin
 GOX := $(BIN_DIR)/gox
-DOCKER_COMPOSE := docker compose -f ./integration/instances/docker-compose.yml
+DOCKER_COMPOSE := docker compose -f ./test-docker-compose/docker-compose.yml
 
 lint:
 	test -z $$(gofmt -s -l cmd/ pkg/)
