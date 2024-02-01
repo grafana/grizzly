@@ -2,6 +2,7 @@ version: '3'
 services:
   grafana:
     image: &image grafana/grafana:10.2.0
+    restart: on-failure
     ports:
       - "3001:3001"
     environment:
@@ -22,6 +23,7 @@ services:
   # Grafana will redirect all subpaths to the root URL if that's the correct path, while an nginx will fail if the subpath is not correct
   grafana_subpath:
     image: *image
+    restart: on-failure
     ports:
       - "3002:3002"
     environment:

@@ -14,9 +14,6 @@ func TestLibraryElements(t *testing.T) {
 	InitialiseTestConfig()
 	handler := NewLibraryElementHandler(NewProvider())
 
-	ticker := PingService(GetUrl())
-	defer ticker.Stop()
-
 	t.Run("create libraryElement - success", func(t *testing.T) {
 		libraryElement, err := os.ReadFile("testdata/test_json/post_library-element.json")
 		require.NoError(t, err)

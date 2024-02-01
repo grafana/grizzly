@@ -2,14 +2,9 @@ package integration_test
 
 import (
 	"testing"
-
-	"github.com/grafana/grizzly/pkg/testutil"
 )
 
 func TestContexts(t *testing.T) {
-	ticker := testutil.PingService(testutil.GetUrl())
-	defer ticker.Stop()
-
 	tests := []GrizzlyTest{
 		{
 			Name:    "Get contexts - success",

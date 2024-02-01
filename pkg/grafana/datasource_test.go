@@ -14,9 +14,6 @@ func TestDatasources(t *testing.T) {
 	InitialiseTestConfig()
 	handler := NewDatasourceHandler(NewProvider())
 
-	ticker := PingService(GetUrl())
-	defer ticker.Stop()
-
 	t.Run("get remote datasource - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("AppDynamics")
 		require.NoError(t, err)
