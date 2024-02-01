@@ -1,3 +1,4 @@
   another
 * default
   other
+  subpath

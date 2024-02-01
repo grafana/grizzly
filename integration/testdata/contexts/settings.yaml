@@ -3,6 +3,10 @@ contexts:
     name: default
     grafana:
       url: http://localhost:3001
+  subpath:
+    name: subpath
+    grafana:
+      url: http://localhost:3003/grafana
   other:
     name: other
   another:
