@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 
 type Command struct {
 	Command        string
+	Arguments      string
 	ExpectedCode   int
 	ExpectedError  error
 	ExpectedOutput string
@@ -25,13 +27,20 @@ type GrizzlyTest struct {
 }
 
 func RunTests(t *testing.T, tests []GrizzlyTest) {
+	cwd, _ := os.Getwd()
+	grrCmd := filepath.Join(cwd, "../grr")
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			for _, command := range test.Commands {
+				log.Printf("CMD: %s", command.Arguments)
 				args := []string{}
-				args = append(args, strings.Split(command.Command, " ")...)
-				cwd, _ := os.Getwd()
-				cmd := exec.Command(filepath.Join(cwd, "../grr"), args...)
+				args = append(args, strings.Split(command.Arguments, " ")...)
+				var cmd *exec.Cmd
+				if command.Command == "" {
+					cmd = exec.Command(grrCmd, args...)
+				} else {
+					cmd = exec.Command(command.Command, args...)
+				}
 				cmd.Dir = test.TestDir
 				output, err := cmd.CombinedOutput()
 				if command.ExpectedError != nil {
@@ -42,6 +51,7 @@ func RunTests(t *testing.T, tests []GrizzlyTest) {
 					require.NoError(t, err, fmt.Sprintf(""))
 					require.Contains(t, string(output), string(data))
 				}
+				log.Printf("OUT: %s", output)
 				exitCode := cmd.ProcessState.ExitCode()
 				require.Equal(t, command.ExpectedCode, exitCode, "Exited with %d (%d expected)", exitCode, command.ExpectedCode)
 			}

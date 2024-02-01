@@ -17,7 +17,7 @@ func TestContexts(t *testing.T) {
 			TestDir: "testdata/contexts",
 			Commands: []Command{
 				{
-					Command:        "config get-contexts",
+					Arguments:      "config get-contexts",
 					ExpectedCode:   0,
 					ExpectedError:  nil,
 					ExpectedOutput: "get-contexts.txt",

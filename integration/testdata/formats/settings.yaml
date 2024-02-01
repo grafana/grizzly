@@ -1,0 +1,12 @@
+contexts:
+  default:
+    name: default
+    grafana:
+      url: http://localhost:3001
+    targets:
+    - Dashboard
+  other:
+    name: other
+  another:
+    name: another
+current-context: default

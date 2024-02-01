@@ -16,7 +16,7 @@ func TestDashboard(t *testing.T) {
 			TestDir: "testdata/dashboards",
 			Commands: []Command{
 				{
-					Command:        "get Dashboard.ReciqtgGk",
+					Arguments:      "get Dashboard.ReciqtgGk",
 					ExpectedCode:   0,
 					ExpectedError:  nil,
 					ExpectedOutput: "ReciqtgGk.json",
@@ -28,7 +28,7 @@ func TestDashboard(t *testing.T) {
 			TestDir: "testdata/dashboards",
 			Commands: []Command{
 				{
-					Command:      "get missing-dashboard",
+					Arguments:    "get missing-dashboard",
 					ExpectedCode: 1,
 				},
 			},
