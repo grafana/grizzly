@@ -1,0 +1,18 @@
+version: '3'
+services:
+  grafana:
+    image: grafana/grafana:10.2.0
+    ports:
+      - "3001:3001"
+    environment:
+      - GF_SERVER_HTTP_PORT=3001
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_PATHS=/etc/grafana/provisioning
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://0.0.0.0:3001/api/health || exit 1 # Use wget because older versions of Grafana don't have curl
+      interval: 1s
+      retries: 30
+      start_period: 10s
