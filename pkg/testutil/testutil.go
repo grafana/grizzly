@@ -1,10 +1,6 @@
 package testutil
 
 import (
-	"fmt"
-	"net/http"
-	"time"
-
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/spf13/viper"
 )
@@ -17,25 +13,4 @@ func InitialiseTestConfig() {
 	viper.Set(config.CURRENT_CONTEXT, "test")
 	viper.Set("contexts.test.grafana.name", "test")
 	viper.Set("contexts.test.grafana.url", GetUrl())
-}
-
-// PingService checks whether a URL is available before tests begin
-func PingService(url string) *time.Ticker {
-	ticker := time.NewTicker(1 * time.Second)
-	timeoutExceeded := time.After(120 * time.Second)
-
-	success := false
-	for !success {
-		select {
-		case <-timeoutExceeded:
-			panic(fmt.Sprintf("Unable to connect to %s", url))
-
-		case <-ticker.C:
-			resp, _ := http.Get(url)
-			if resp != nil {
-				success = true
-			}
-		}
-	}
-	return ticker
 }

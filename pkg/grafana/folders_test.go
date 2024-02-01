@@ -15,9 +15,6 @@ func TestFolders(t *testing.T) {
 	InitialiseTestConfig()
 	handler := NewFolderHandler(NewProvider())
 
-	ticker := PingService(GetUrl())
-	defer ticker.Stop()
-
 	t.Run("get remote folder - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("abcdefghi")
 		require.NoError(t, err)

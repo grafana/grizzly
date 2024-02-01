@@ -2,13 +2,9 @@ package integration_test
 
 import (
 	"testing"
-
-	"github.com/grafana/grizzly/pkg/testutil"
 )
 
 func TestDashboard(t *testing.T) {
-	ticker := testutil.PingService(testutil.GetUrl())
-	defer ticker.Stop()
 	dir := "testdata/dashboards"
 	setupContexts(t, dir)
 

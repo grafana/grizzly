@@ -20,9 +20,6 @@ func TestPull(t *testing.T) {
 			provider,
 		})
 
-	ticker := PingService(GetUrl())
-	defer ticker.Stop()
-
 	opts := grizzly.Opts{
 		Targets: []string{
 			"Datasource/392IktgGk",

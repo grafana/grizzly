@@ -14,9 +14,6 @@ func TestDashboard(t *testing.T) {
 	InitialiseTestConfig()
 	handler := NewDashboardHandler(NewProvider())
 
-	ticker := PingService(GetUrl())
-	defer ticker.Stop()
-
 	t.Run("get remote dashboard - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("ReciqtgGk")
 		require.NoError(t, err)
