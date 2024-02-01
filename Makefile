@@ -1,27 +1,29 @@
-.PHONY: dev lint test integration static install uninstall cross build-test-image run-test-image-locally test-clean
+.PHONY: dev lint test integration static install uninstall cross run-test-image-locally stop-test-image-locally test-clean
 VERSION := $(shell git describe --tags --dirty --always)
 BIN_DIR := $(GOPATH)/bin
 GOX := $(BIN_DIR)/gox
+DOCKER_COMPOSE := docker compose -f ./integration/instances/docker-compose.yml
 
 lint:
 	test -z $$(gofmt -s -l cmd/ pkg/)
 	go vet ./...
 
-build-test-image:
-	docker build pkg/grafana/testdata -t grizzly-grafana-test:latest
+run-test-image-locally: test-clean
+	$(DOCKER_COMPOSE) up --force-recreate --detach --remove-orphans --wait
 
-run-test-image-locally: build-test-image test-clean
-	docker rm -f grizzly-grafana
-	docker run -d --name grizzly-grafana -p 3001:3001 --rm grizzly-grafana-test:latest
+stop-test-image-locally:
+	$(DOCKER_COMPOSE) down
 
 test-clean:
 	go clean -testcache
 
 test: run-test-image-locally
 	go test -v ./cmd/... ./pkg/... || ( status=$$?; docker logs grizzly-grafana ; exit $$status )
+	make stop-test-image-locally
 
 integration: run-test-image-locally dev
 	go test -v ./integration/...
+	make stop-test-image-locally
 
 # Compilation
 dev:
