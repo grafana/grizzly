@@ -27,9 +27,11 @@ var Registry registry
 
 // NewProviderRegistry returns a new registry instance
 func ConfigureProviderRegistry(providers []Provider) {
-	Registry.Providers = providers
-	Registry.Handlers = map[string]Handler{}
-	Registry.HandlerOrder = []Handler{}
+	Registry.Providers = append(Registry.Providers, providers...)
+	if Registry.Handlers == nil {
+		Registry.Handlers = map[string]Handler{}
+		Registry.HandlerOrder = []Handler{}
+	}
 	for _, provider := range providers {
 		for _, handler := range provider.GetHandlers() {
 			Registry.Handlers[handler.Kind()] = handler
