@@ -52,7 +52,8 @@ func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
 
 	transportConfig := gclient.DefaultTransportConfig().
 		WithHost(parsedUrl.Host).
-		WithSchemes([]string{parsedUrl.Scheme})
+		WithSchemes([]string{parsedUrl.Scheme}).
+		WithBasePath(filepath.Join(parsedUrl.Path, "api"))
 
 	if p.context.Grafana.Token != "" {
 		if p.context.Grafana.User != "" {
