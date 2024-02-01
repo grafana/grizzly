@@ -1,7 +1,7 @@
 version: '3'
 services:
   grafana:
-    image: grafana/grafana:10.2.0
+    image: &image grafana/grafana:10.2.0
     ports:
       - "3001:3001"
     environment:
@@ -16,3 +16,34 @@ services:
       interval: 1s
       retries: 30
       start_period: 10s
+
+  # Grafana instance served from a subpath (Grafana on port 3002, nginx on port 3003, and the subpath is /grafana)
+  # It's important to use nginx to serve the subpath, otherwise, it doesn't really test the real-world scenario
+  # Grafana will redirect all subpaths to the root URL if that's the correct path, while an nginx will fail if the subpath is not correct
+  grafana_subpath:
+    image: *image
+    ports:
+      - "3002:3002"
+    environment:
+      - GF_SERVER_HTTP_PORT=3002
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_PATHS=/etc/grafana/provisioning
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SERVER_ROOT_URL=http://localhost:3003/grafana # This is the URL that nginx will use to proxy to the subpath
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://0.0.0.0:3002/api/health || exit 1 # Use wget because older versions of Grafana don't have curl
+      interval: 1s
+      retries: 30
+      start_period: 10s
+  nginx:
+    depends_on:
+      grafana_subpath:
+        condition: service_healthy
+    image: nginx:latest
+    ports:
+      - 3003:3003
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
