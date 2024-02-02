@@ -14,9 +14,9 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:        "get Dashboard.ReciqtgGk",
-					ExpectedCode:   0,
-					ExpectedOutput: "ReciqtgGk.json",
+					Command:            "get Dashboard.ReciqtgGk",
+					ExpectedCode:       0,
+					ExpectedOutputFile: "ReciqtgGk.json",
 				},
 			},
 		})
