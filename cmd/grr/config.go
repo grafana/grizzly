@@ -6,7 +6,23 @@ import (
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/spf13/viper"
 )
+
+func configPathCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "path",
+		Short: "Print the path to the configuration file",
+		Args:  cli.ArgsExact(0),
+	}
+	var opts grizzly.LoggingOpts
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		fmt.Println(viper.ConfigFileUsed())
+		return nil
+	}
+	return initialiseLogging(cmd, &opts)
+}
 
 func configImportCmd() *cli.Command {
 	cmd := &cli.Command{
@@ -65,6 +81,31 @@ func getContextsCmd() *cli.Command {
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		return config.GetContexts()
+	}
+	return initialiseLogging(cmd, &opts)
+}
+
+func getConfigCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "get [path]",
+		Short: "get the whole configuration for a context or a specific attribute of the configuration",
+		Args:  cli.ArgsRange(0, 1),
+	}
+	var opts grizzly.LoggingOpts
+	var output string
+	cmd.Flags().StringVarP(&output, "output", "o", "yaml", "Output format")
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		path := ""
+		if len(args) > 0 {
+			path = args[0]
+		}
+		val, err := config.Get(path, output)
+		if err != nil {
+			return err
+		}
+		fmt.Println(val)
+		return nil
 	}
 	return initialiseLogging(cmd, &opts)
 }
