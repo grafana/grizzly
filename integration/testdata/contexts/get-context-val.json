@@ -2,5 +2,8 @@
   "grafana": {
     "url": "http://localhost:3001"
   },
-  "name": "default"
+  "name": "default",
+  "synthetic-monitoring": {
+    "api-url": "https://synthetic-monitoring-api.grafana.net"
+  }
 }
