@@ -1,0 +1,4 @@
+API VERSION                     KIND         UID
+grizzly.grafana.com/v1alpha1    Dashboard    ReciqtgGk
+grizzly.grafana.com/v1alpha1    Dashboard    392Ik4GGk
+grizzly.grafana.com/v1alpha1    Dashboard    kE0IIVGGz

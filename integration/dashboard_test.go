@@ -22,6 +22,19 @@ func TestDashboard(t *testing.T) {
 		})
 	})
 
+	t.Run("Get dashboard list - success", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:            "list -r -t Dashboard",
+					ExpectedOutputFile: "list.txt",
+				},
+			},
+		})
+	})
+
 	t.Run("Apply dashboard - no folder", func(t *testing.T) {
 		runTest(t, GrizzlyTest{
 			TestDir:       dir,
