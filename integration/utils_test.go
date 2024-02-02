@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var allContexts = []string{"default", "subpath", "basic_auth"}
+
 type Command struct {
 	Command        string
 	ExpectedCode   int
@@ -18,33 +20,35 @@ type Command struct {
 	ExpectedOutput string
 }
 type GrizzlyTest struct {
-	Name     string
-	TestDir  string
-	Commands []Command
-	Validate func(t *testing.T)
+	TestDir       string
+	Commands      []Command
+	Validate      func(t *testing.T)
+	RunOnContexts []string
 }
 
-func RunTests(t *testing.T, tests []GrizzlyTest) {
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
-			for _, command := range test.Commands {
-				args := []string{}
-				args = append(args, strings.Split(command.Command, " ")...)
-				cwd, _ := os.Getwd()
-				stdErrBuf := &strings.Builder{}
-				cmd := exec.Command(filepath.Join(cwd, "../grr"), args...)
-				cmd.Stderr = stdErrBuf
-				cmd.Dir = test.TestDir
-				output, err := cmd.Output()
+func runTest(t *testing.T, test GrizzlyTest) {
+	t.Helper()
+
+	contexts := []string{"default"}
+	if len(test.RunOnContexts) > 0 {
+		contexts = test.RunOnContexts
+	}
+	for _, context := range contexts {
+		t.Run(context, func(t *testing.T) {
+			commands := []Command{
+				{Command: "config use-context " + context},
+			}
+			commands = append(commands, test.Commands...)
+			for _, command := range commands {
+				stdout, stderr, exitCode, err := runLocalGrizzly(t, test.TestDir, command.Command)
 				if command.ExpectedError != nil {
 					require.Error(t, err, command.ExpectedError)
 				}
-				exitCode := cmd.ProcessState.ExitCode()
-				require.Equal(t, command.ExpectedCode, exitCode, "Exited with %d (%d expected).\nOutput: %s\nstderr: %s", exitCode, command.ExpectedCode, string(output), stdErrBuf.String())
+				require.Equal(t, command.ExpectedCode, exitCode, "Exited with %d (%d expected).\nOutput: %s\nstderr: %s", exitCode, command.ExpectedCode, stdout, stderr)
 				if command.ExpectedOutput != "" {
 					data, err := os.ReadFile(filepath.Join(test.TestDir, command.ExpectedOutput))
 					require.NoError(t, err)
-					require.Equal(t, string(data), string(output))
+					require.Equal(t, string(data), stdout)
 				}
 			}
 			if test.Validate != nil {
@@ -54,24 +58,42 @@ func RunTests(t *testing.T, tests []GrizzlyTest) {
 	}
 }
 
+func runLocalGrizzly(t *testing.T, dir string, command string) (stdout, stderr string, exitCode int, err error) {
+	t.Helper()
+
+	args := []string{}
+	args = append(args, strings.Split(command, " ")...)
+	cwd, _ := os.Getwd()
+	stdErrBuf := &strings.Builder{}
+	cmd := exec.Command(filepath.Join(cwd, "../grr"), args...)
+	cmd.Stderr = stdErrBuf
+	cmd.Dir = dir
+	output, err := cmd.Output()
+	return string(output), stdErrBuf.String(), cmd.ProcessState.ExitCode(), err
+}
+
 // Setting up a settings.yaml file. We don't want to commit this file to avoid git diff.
 func setupContexts(t *testing.T, dir string) {
+	t.Helper()
+
 	_, err := os.Create(filepath.Join(dir, "settings.yaml"))
 	require.NoError(t, err)
-	RunTests(t, []GrizzlyTest{
-		{
-			Name:    "Create contexts",
-			TestDir: dir,
-			Commands: []Command{
-				{Command: "config create-context subpath"},
-				{Command: "config use-context subpath"},
-				{Command: "config set grafana.url http://localhost:3003/grafana"},
-				{Command: "config create-context default"},
-				{Command: "config use-context default"},
-				{Command: "config set grafana.url http://localhost:3001"},
-			},
-		},
-	})
+	for _, command := range []string{
+		"config create-context default",
+		"config use-context default",
+		"config set grafana.url http://localhost:3001",
+		"config create-context subpath",
+		"config use-context subpath",
+		"config set grafana.url http://localhost:3003/grafana",
+		"config create-context basic_auth",
+		"config use-context basic_auth",
+		"config set grafana.url http://localhost:3004",
+		"config set grafana.user admin",
+		"config set grafana.token admin",
+	} {
+		_, _, _, err = runLocalGrizzly(t, dir, command)
+		require.NoError(t, err)
+	}
 
 	t.Cleanup(func() {
 		assert.NoError(t, os.Remove(filepath.Join(dir, "settings.yaml")))

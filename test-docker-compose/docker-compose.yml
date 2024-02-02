@@ -49,3 +49,18 @@ services:
       - 3003:3003
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
+
+  grafana_basic_auth:
+    image: *image
+    ports:
+      - "3004:3004"
+    environment:
+      - GF_SERVER_HTTP_PORT=3004
+      - GF_PATHS=/etc/grafana/provisioning
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://0.0.0.0:3004/api/health || exit 1 # Use wget because older versions of Grafana don't have curl
+      interval: 1s
+      retries: 30
+      start_period: 10s
