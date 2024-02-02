@@ -68,7 +68,10 @@ func (h *DatasourceHandler) ResourceFilePath(resource grizzly.Resource, filetype
 
 // Parse parses a manifest object into a struct for this resource type
 func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
-	resource := grizzly.Resource(m)
+	resource, err := grizzly.ResourceFromMap(m)
+	if err != nil {
+		return nil, err
+	}
 	defaults := map[string]interface{}{
 		"basicAuth":         false,
 		"basicAuthPassword": "",

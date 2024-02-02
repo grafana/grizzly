@@ -1,0 +1,9 @@
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: Dashboard
+metadata:
+    folder: general
+    name: spec-as-string
+spec:
+    timezone: utc
+    title: Spec as String
+    uid: spec-as-string
