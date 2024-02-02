@@ -13,6 +13,7 @@ type MimirConfig struct {
 }
 
 type SyntheticMonitoringConfig struct {
+	APIURL    string `yaml:"api-url" mapstructure:"api-url"`
 	Token     string `yaml:"token" mapstructure:"token"`
 	StackID   int64  `yaml:"stack-id" mapstructure:"stack-id"`
 	LogsID    int64  `yaml:"logs-id" mapstructure:"logs-id"`

@@ -15,6 +15,7 @@ var allContexts = []string{"default", "subpath", "basic_auth"}
 
 type Command struct {
 	Command                string
+	Env                    map[string]string
 	ExpectedCode           int
 	ExpectedError          error
 	ExpectedOutput         string
@@ -42,7 +43,7 @@ func runTest(t *testing.T, test GrizzlyTest) {
 			}
 			commands = append(commands, test.Commands...)
 			for _, command := range commands {
-				stdout, stderr, exitCode, err := runLocalGrizzly(t, test.TestDir, command.Command)
+				stdout, stderr, exitCode, err := runLocalGrizzly(t, test.TestDir, command.Command, command.Env)
 				if command.ExpectedError != nil {
 					require.Error(t, err, command.ExpectedError)
 				}
@@ -67,7 +68,7 @@ func runTest(t *testing.T, test GrizzlyTest) {
 	}
 }
 
-func runLocalGrizzly(t *testing.T, dir string, command string) (stdout, stderr string, exitCode int, err error) {
+func runLocalGrizzly(t *testing.T, dir string, command string, env map[string]string) (stdout, stderr string, exitCode int, err error) {
 	t.Helper()
 
 	args := []string{}
@@ -75,6 +76,10 @@ func runLocalGrizzly(t *testing.T, dir string, command string) (stdout, stderr s
 	cwd, _ := os.Getwd()
 	stdErrBuf := &strings.Builder{}
 	cmd := exec.Command(filepath.Join(cwd, "../grr"), args...)
+	cmd.Env = []string{}
+	for k, v := range env {
+		cmd.Env = append(cmd.Env, k+"="+v)
+	}
 	cmd.Stderr = stdErrBuf
 	cmd.Dir = dir
 	output, err := cmd.Output()
@@ -100,7 +105,7 @@ func setupContexts(t *testing.T, dir string) {
 		"config set grafana.user admin",
 		"config set grafana.token admin",
 	} {
-		_, _, _, err = runLocalGrizzly(t, dir, command)
+		_, _, _, err = runLocalGrizzly(t, dir, command, nil)
 		require.NoError(t, err)
 	}
 

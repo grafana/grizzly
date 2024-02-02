@@ -30,6 +30,7 @@ func override(v *viper.Viper) {
 		"grafana.user":  "GRAFANA_USER",
 		"grafana.token": "GRAFANA_TOKEN",
 
+		"synthetic-monitoring.api-url":    "GRAFANA_SM_API_URL",
 		"synthetic-monitoring.token":      "GRAFANA_SM_TOKEN",
 		"synthetic-monitoring.stack-id":   "GRAFANA_SM_STACK_ID",
 		"synthetic-monitoring.logs-id":    "GRAFANA_SM_METRICS_ID",
@@ -121,20 +122,31 @@ func UseContext(context string) error {
 	return fmt.Errorf("Context %s not found", context)
 }
 
-func CurrentContext() (*Context, error) {
+func currentViperContext() *viper.Viper {
 	name := viper.GetString(CURRENT_CONTEXT)
 	if name == "" {
 		NewConfig()
-		return CurrentContext()
+		return currentViperContext()
 	}
 	contextPath := fmt.Sprintf("contexts.%s", name)
 	ctx := viper.Sub(contextPath)
 	if ctx == nil {
 		ctx = viper.New()
 	}
+
+	// Set defaults
+	if !ctx.IsSet("synthetic-monitoring.api-url") {
+		ctx.Set("synthetic-monitoring.api-url", "https://synthetic-monitoring-api.grafana.net")
+	}
+
 	override(ctx)
+	return ctx
+}
+
+func CurrentContext() (*Context, error) {
+	name := viper.GetString(CURRENT_CONTEXT)
 	var context Context
-	ctx.Unmarshal(&context)
+	currentViperContext().Unmarshal(&context)
 	context.Name = name
 	return &context, nil
 }
@@ -146,6 +158,7 @@ var acceptableKeys = map[string]string{
 	"mimir.address":                   "string",
 	"mimir.tenant-id":                 "string",
 	"mimir.api-key":                   "string",
+	"synthetic-monitoring.api-url":    "string",
 	"synthetic-monitoring.token":      "string",
 	"synthetic-monitoring.stack-id":   "string",
 	"synthetic-monitoring.metrics-id": "string",
@@ -156,12 +169,13 @@ var acceptableKeys = map[string]string{
 }
 
 func Get(path, outputFormat string) (string, error) {
-	ctx := viper.GetString(CURRENT_CONTEXT)
-	fullPath := fmt.Sprintf("contexts.%s", ctx)
-	if path != "" {
-		fullPath = fmt.Sprintf("%s.%s", fullPath, path)
+	ctx := currentViperContext()
+	var val any
+	if path == "" {
+		val = ctx.AllSettings()
+	} else {
+		val = ctx.Get(path)
 	}
-	val := viper.Get(fullPath)
 	if val == nil {
 		return "", fmt.Errorf("key not found: %s", path)
 	}

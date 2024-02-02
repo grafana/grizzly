@@ -60,4 +60,23 @@ func TestContexts(t *testing.T) {
 			},
 		})
 	})
+
+	t.Run("Get SM URL", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir: "testdata/contexts",
+			Commands: []Command{
+				{
+					Command:        "config get synthetic-monitoring.api-url",
+					ExpectedOutput: "https://synthetic-monitoring-api.grafana.net",
+				},
+				{
+					Command:        "config get synthetic-monitoring.api-url",
+					ExpectedOutput: "https://custom-url.com",
+					Env: map[string]string{
+						"GRAFANA_SM_API_URL": "https://custom-url.com",
+					},
+				},
+			},
+		})
+	})
 }

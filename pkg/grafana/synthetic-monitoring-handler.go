@@ -31,8 +31,6 @@ import (
  *    them to IDs, having requested an ID<->string mapping from the API.
  */
 
-const smBaseURL = "https://synthetic-monitoring-api.grafana.net"
-
 type Probes struct {
 	ByID   map[int64]synthetic_monitoring.Probe
 	ByName map[string]synthetic_monitoring.Probe
@@ -165,7 +163,7 @@ func (h *SyntheticMonitoringHandler) NewSyntheticMonitoringClient() (*smapi.Clie
 		return nil, err
 	}
 
-	smClient := smapi.NewClient(smBaseURL, "", client)
+	smClient := smapi.NewClient(smConfig.APIURL, "", client)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
