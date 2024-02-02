@@ -12,9 +12,9 @@ func TestContexts(t *testing.T) {
 			TestDir: "testdata/contexts",
 			Commands: []Command{
 				{
-					Command:        "config get-contexts",
-					ExpectedCode:   0,
-					ExpectedOutput: "get-contexts.txt",
+					Command:            "config get-contexts",
+					ExpectedCode:       0,
+					ExpectedOutputFile: "get-contexts.txt",
 				},
 			},
 		})

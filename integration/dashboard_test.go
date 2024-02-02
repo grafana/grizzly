@@ -14,9 +14,26 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:        "get Dashboard.ReciqtgGk",
-					ExpectedCode:   0,
-					ExpectedOutput: "ReciqtgGk.json",
+					Command:            "get Dashboard.ReciqtgGk",
+					ExpectedCode:       0,
+					ExpectedOutputFile: "ReciqtgGk.json",
+				},
+			},
+		})
+	})
+
+	t.Run("Apply dashboard - no folder", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:        "apply no-folder.yml",
+					ExpectedOutput: "Dashboard.no-folder added\n",
+				},
+				{
+					Command:                "get Dashboard.no-folder",
+					ExpectedOutputContains: "folder: general",
 				},
 			},
 		})

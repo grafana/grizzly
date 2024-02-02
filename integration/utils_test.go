@@ -14,10 +14,12 @@ import (
 var allContexts = []string{"default", "subpath", "basic_auth"}
 
 type Command struct {
-	Command        string
-	ExpectedCode   int
-	ExpectedError  error
-	ExpectedOutput string
+	Command                string
+	ExpectedCode           int
+	ExpectedError          error
+	ExpectedOutput         string
+	ExpectedOutputFile     string
+	ExpectedOutputContains string
 }
 type GrizzlyTest struct {
 	TestDir       string
@@ -45,10 +47,17 @@ func runTest(t *testing.T, test GrizzlyTest) {
 					require.Error(t, err, command.ExpectedError)
 				}
 				require.Equal(t, command.ExpectedCode, exitCode, "Exited with %d (%d expected).\nOutput: %s\nstderr: %s", exitCode, command.ExpectedCode, stdout, stderr)
-				if command.ExpectedOutput != "" {
-					data, err := os.ReadFile(filepath.Join(test.TestDir, command.ExpectedOutput))
+				// Check stdout
+				if command.ExpectedOutputFile != "" {
+					bytes, err := os.ReadFile(filepath.Join(test.TestDir, command.ExpectedOutputFile))
 					require.NoError(t, err)
-					require.Equal(t, string(data), stdout)
+					command.ExpectedOutput = string(bytes)
+				}
+				if command.ExpectedOutput != "" {
+					require.Equal(t, command.ExpectedOutput, stdout)
+				}
+				if command.ExpectedOutputContains != "" {
+					require.Contains(t, stdout, command.ExpectedOutputContains)
 				}
 			}
 			if test.Validate != nil {
