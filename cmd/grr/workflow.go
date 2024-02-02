@@ -272,10 +272,12 @@ func configCmd() *cli.Command {
 		Short: "Show, select or configure configuration",
 		Args:  cli.ArgsExact(0),
 	}
+	cmd.AddCommand(configPathCmd())
 	cmd.AddCommand(currentContextCmd())
 	cmd.AddCommand(useContextCmd())
 	cmd.AddCommand(getContextsCmd())
 	cmd.AddCommand(configImportCmd())
+	cmd.AddCommand(getConfigCmd())
 	cmd.AddCommand(setCmd())
 	cmd.AddCommand(createContextCmd())
 	return cmd

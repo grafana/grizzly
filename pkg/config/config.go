@@ -1,14 +1,15 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/kirsle/configdir"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -83,17 +84,6 @@ func Import() error {
 	return err
 }
 
-func configPath() (string, error) {
-	configPath := configdir.LocalConfig("grizzly")
-	err := configdir.MakePath(configPath)
-	if err != nil {
-		return "", err
-	}
-
-	configFile := filepath.Join(configPath, "settings.yaml")
-	return configFile, nil
-}
-
 func NewConfig() {
 	viper.Set("apiVersion", "v1alpha1")
 	viper.Set(CURRENT_CONTEXT, "default")
@@ -165,6 +155,27 @@ var acceptableKeys = map[string]string{
 	"only-spec":                       "bool",
 }
 
+func Get(path, outputFormat string) (string, error) {
+	ctx := viper.GetString(CURRENT_CONTEXT)
+	fullPath := fmt.Sprintf("contexts.%s", ctx)
+	if path != "" {
+		fullPath = fmt.Sprintf("%s.%s", fullPath, path)
+	}
+	val := viper.Get(fullPath)
+	if val == nil {
+		return "", fmt.Errorf("key not found: %s", path)
+	}
+	switch outputFormat {
+	case "yaml":
+		res, err := yaml.Marshal(val)
+		return string(res), err
+	case "json":
+		res, err := json.MarshalIndent(val, "", "  ")
+		return string(res), err
+	}
+	return "", fmt.Errorf("unknown output format: %s", outputFormat)
+}
+
 func Set(path string, value string) error {
 	for key, typ := range acceptableKeys {
 		if path == key {
@@ -198,10 +209,7 @@ func Write() error {
 	err := viper.WriteConfig()
 	if err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			configpath, err := configPath()
-			if err != nil {
-				return err
-			}
+			configpath := viper.ConfigFileUsed()
 			return viper.WriteConfigAs(configpath)
 		}
 	}

@@ -54,7 +54,7 @@ func runTest(t *testing.T, test GrizzlyTest) {
 					command.ExpectedOutput = string(bytes)
 				}
 				if command.ExpectedOutput != "" {
-					require.Equal(t, command.ExpectedOutput, stdout)
+					require.Equal(t, strings.TrimSpace(command.ExpectedOutput), strings.TrimSpace(stdout))
 				}
 				if command.ExpectedOutputContains != "" {
 					require.Contains(t, stdout, command.ExpectedOutputContains)

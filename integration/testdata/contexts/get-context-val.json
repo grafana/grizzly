@@ -1,0 +1,6 @@
+{
+  "grafana": {
+    "url": "http://localhost:3001"
+  },
+  "name": "default"
+}
