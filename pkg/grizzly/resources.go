@@ -19,15 +19,7 @@ func ResourceFromMap(data map[string]interface{}) (Resource, error) {
 		return nil, fmt.Errorf("resource %s has no spec", r.Name())
 	}
 	if _, isMap := spec.(map[string]interface{}); !isMap {
-		specStr, isString := spec.(string)
-		if !isString {
-			return nil, fmt.Errorf("resource %s has an invalid spec. Expected either a map or a JSON string", r.Name())
-		}
-		var specMap map[string]interface{}
-		if err := json.Unmarshal([]byte(specStr), &specMap); err != nil {
-			return nil, fmt.Errorf("resource %s has an invalid spec. Expected either a map or a JSON string. JSON parse error: %w", r.Name(), err)
-		}
-		r["spec"] = specMap
+		return nil, fmt.Errorf("resource %s has an invalid spec. Expected a map, got a value of type %T", r.Name(), spec)
 	}
 
 	return r, nil
