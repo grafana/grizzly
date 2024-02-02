@@ -16,7 +16,7 @@ func TestDashboard(t *testing.T) {
 				{
 					Command:            "get Dashboard.ReciqtgGk",
 					ExpectedCode:       0,
-					ExpectedOutputFile: "ReciqtgGk.json",
+					ExpectedOutputFile: "ReciqtgGk.yml",
 				},
 			},
 		})
@@ -34,6 +34,34 @@ func TestDashboard(t *testing.T) {
 				{
 					Command:                "get Dashboard.no-folder",
 					ExpectedOutputContains: "folder: general",
+				},
+			},
+		})
+	})
+
+	t.Run("Diff dashboard - success", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:        "diff ReciqtgGk.yml",
+					ExpectedCode:   0,
+					ExpectedOutput: "Dashboard.ReciqtgGk no differences\n",
+				},
+			},
+		})
+	})
+
+	t.Run("Diff dashboard - invalid auth", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: []string{"invalid_auth"},
+			Commands: []Command{
+				{
+					Command:             "diff ReciqtgGk.yml",
+					ExpectedCode:        1,
+					ExpectedLogsContain: "Invalid username or password",
 				},
 			},
 		})

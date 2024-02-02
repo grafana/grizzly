@@ -1,3 +1,4 @@
   basic_auth
 * default
+  invalid_auth
   subpath
