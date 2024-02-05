@@ -17,6 +17,7 @@ type Command struct {
 	Command                string
 	ExpectedCode           int
 	ExpectedError          error
+	ExpectedLogsContain    string
 	ExpectedOutput         string
 	ExpectedOutputFile     string
 	ExpectedOutputContains string
@@ -42,11 +43,18 @@ func runTest(t *testing.T, test GrizzlyTest) {
 			}
 			commands = append(commands, test.Commands...)
 			for _, command := range commands {
-				stdout, stderr, exitCode, err := runLocalGrizzly(t, test.TestDir, command.Command)
-				if command.ExpectedError != nil {
-					require.Error(t, err, command.ExpectedError)
+				stdout, stderr, err := runLocalGrizzly(t, test.TestDir, command.Command)
+				exitCode := 0
+				if err != nil {
+					exitCode = err.(*exec.ExitError).ExitCode()
 				}
 				require.Equal(t, command.ExpectedCode, exitCode, "Exited with %d (%d expected).\nOutput: %s\nstderr: %s", exitCode, command.ExpectedCode, stdout, stderr)
+
+				// Check stderr
+				if command.ExpectedLogsContain != "" {
+					require.Contains(t, stderr, command.ExpectedLogsContain)
+				}
+
 				// Check stdout
 				if command.ExpectedOutputFile != "" {
 					bytes, err := os.ReadFile(filepath.Join(test.TestDir, command.ExpectedOutputFile))
@@ -67,7 +75,7 @@ func runTest(t *testing.T, test GrizzlyTest) {
 	}
 }
 
-func runLocalGrizzly(t *testing.T, dir string, command string) (stdout, stderr string, exitCode int, err error) {
+func runLocalGrizzly(t *testing.T, dir string, command string) (stdout, stderr string, err error) {
 	t.Helper()
 
 	args := []string{}
@@ -78,7 +86,7 @@ func runLocalGrizzly(t *testing.T, dir string, command string) (stdout, stderr s
 	cmd.Stderr = stdErrBuf
 	cmd.Dir = dir
 	output, err := cmd.Output()
-	return string(output), stdErrBuf.String(), cmd.ProcessState.ExitCode(), err
+	return string(output), stdErrBuf.String(), err
 }
 
 // Setting up a settings.yaml file. We don't want to commit this file to avoid git diff.
@@ -91,16 +99,24 @@ func setupContexts(t *testing.T, dir string) {
 		"config create-context default",
 		"config use-context default",
 		"config set grafana.url http://localhost:3001",
+
 		"config create-context subpath",
 		"config use-context subpath",
 		"config set grafana.url http://localhost:3003/grafana",
+
 		"config create-context basic_auth",
 		"config use-context basic_auth",
 		"config set grafana.url http://localhost:3004",
 		"config set grafana.user admin",
 		"config set grafana.token admin",
+
+		"config create-context invalid_auth",
+		"config use-context invalid_auth",
+		"config set grafana.url http://localhost:3004",
+		"config set grafana.user admin",
+		"config set grafana.token invalid",
 	} {
-		_, _, _, err = runLocalGrizzly(t, dir, command)
+		_, _, err = runLocalGrizzly(t, dir, command)
 		require.NoError(t, err)
 	}
 
