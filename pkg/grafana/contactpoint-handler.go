@@ -30,17 +30,6 @@ func (h *AlertContactPointHandler) Kind() string {
 	return "AlertContactPoint"
 }
 
-// Validate returns the uid of resource
-func (h *AlertContactPointHandler) Validate(resource grizzly.Resource) error {
-	uid, exist := resource.GetSpecString("uid")
-	if exist {
-		if uid != resource.Name() {
-			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
-		}
-	}
-	return nil
-}
-
 // APIVersion returns group and version of the provider of this resource
 func (h *AlertContactPointHandler) APIVersion() string {
 	return h.Provider.APIVersion()
@@ -80,6 +69,17 @@ func (h *AlertContactPointHandler) Unprepare(resource grizzly.Resource) *grizzly
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *AlertContactPointHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
 	return &resource
+}
+
+// Validate returns the uid of resource
+func (h *AlertContactPointHandler) Validate(resource grizzly.Resource) error {
+	uid, exist := resource.GetSpecString("uid")
+	if exist {
+		if uid != resource.Name() {
+			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
+		}
+	}
+	return nil
 }
 
 // GetUID returns the UID for a resource

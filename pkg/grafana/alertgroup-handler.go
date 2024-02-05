@@ -32,24 +32,6 @@ func (h *AlertRuleGroupHandler) Kind() string {
 	return "AlertRuleGroup"
 }
 
-// Validate checks that the uid format is valid
-func (h *AlertRuleGroupHandler) Validate(resource grizzly.Resource) error {
-	data, err := json.Marshal(resource.Spec())
-	if err != nil {
-		return err
-	}
-	var group models.AlertRuleGroup
-	err = json.Unmarshal(data, &group)
-	if err != nil {
-		return err
-	}
-	uid := h.getUID(group)
-	if uid != resource.Name() {
-		return fmt.Errorf("title/folder combination '%s' and name '%s', don't match", uid, resource.Name())
-	}
-	return nil
-}
-
 // APIVersion returns group and version of the provider of this resource
 func (h *AlertRuleGroupHandler) APIVersion() string {
 	return h.Provider.APIVersion()
@@ -88,6 +70,24 @@ func (h *AlertRuleGroupHandler) Unprepare(resource grizzly.Resource) *grizzly.Re
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *AlertRuleGroupHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
 	return &resource
+}
+
+// Validate checks that the uid format is valid
+func (h *AlertRuleGroupHandler) Validate(resource grizzly.Resource) error {
+	data, err := json.Marshal(resource.Spec())
+	if err != nil {
+		return err
+	}
+	var group models.AlertRuleGroup
+	err = json.Unmarshal(data, &group)
+	if err != nil {
+		return err
+	}
+	uid := h.getUID(group)
+	if uid != resource.Name() {
+		return fmt.Errorf("title/folder combination '%s' and name '%s', don't match", uid, resource.Name())
+	}
+	return nil
 }
 
 // GetUID returns the UID for a resource

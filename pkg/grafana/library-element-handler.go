@@ -33,18 +33,6 @@ func (h *LibraryElementHandler) Kind() string {
 	return "LibraryElement"
 }
 
-// Validate returns the uid of resource
-func (h *LibraryElementHandler) Validate(resource grizzly.Resource) error {
-	uid, exist := resource.GetSpecString("uid")
-	if exist {
-		if uid != resource.Name() {
-			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
-		}
-	}
-
-	return nil
-}
-
 // APIVersion returns the group and version for the provider of which this handler is a part
 func (h *LibraryElementHandler) APIVersion() string {
 	return h.Provider.APIVersion()
@@ -101,6 +89,18 @@ func (h *LibraryElementHandler) Prepare(existing, resource grizzly.Resource) *gr
 	}
 	resource.DeleteSpecKey("meta")
 	return &resource
+}
+
+// Validate returns the uid of resource
+func (h *LibraryElementHandler) Validate(resource grizzly.Resource) error {
+	uid, exist := resource.GetSpecString("uid")
+	if exist {
+		if uid != resource.Name() {
+			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
+		}
+	}
+
+	return nil
 }
 
 // GetUID returns the UID for a resource

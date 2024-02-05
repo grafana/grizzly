@@ -34,17 +34,6 @@ func (h *DatasourceHandler) Kind() string {
 	return "Datasource"
 }
 
-// Validate returns the uid of resource
-func (h *DatasourceHandler) Validate(resource grizzly.Resource) error {
-	uid, exist := resource.GetSpecString("uid")
-	if exist {
-		if uid != resource.Name() {
-			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
-		}
-	}
-	return nil
-}
-
 // APIVersion returns group and version of the provider of this resource
 func (h *DatasourceHandler) APIVersion() string {
 	return h.Provider.APIVersion()
@@ -109,6 +98,17 @@ func (h *DatasourceHandler) Prepare(existing, resource grizzly.Resource) *grizzl
 	resource.SetSpecValue("id", existing.GetSpecValue("id"))
 	resource.DeleteSpecKey("version")
 	return &resource
+}
+
+// Validate returns the uid of resource
+func (h *DatasourceHandler) Validate(resource grizzly.Resource) error {
+	uid, exist := resource.GetSpecString("uid")
+	if exist {
+		if uid != resource.Name() {
+			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
+		}
+	}
+	return nil
 }
 
 // GetUID returns the UID for a resource
