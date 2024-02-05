@@ -10,6 +10,21 @@ import (
 // Resource represents a single Resource destined for a single endpoint
 type Resource map[string]interface{}
 
+func ResourceFromMap(data map[string]interface{}) (Resource, error) {
+	r := Resource(data)
+
+	// Ensure that the spec is a map
+	spec := r["spec"]
+	if spec == nil {
+		return nil, fmt.Errorf("resource %s has no spec", r.Name())
+	}
+	if _, isMap := spec.(map[string]interface{}); !isMap {
+		return nil, fmt.Errorf("resource %s has an invalid spec. Expected a map, got a value of type %T", r.Name(), spec)
+	}
+
+	return r, nil
+}
+
 // NewResource returns a new Resource object
 func NewResource(apiVersion, kind, name string, spec map[string]interface{}) Resource {
 	resource := Resource{

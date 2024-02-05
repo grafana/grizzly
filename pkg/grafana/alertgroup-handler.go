@@ -73,7 +73,10 @@ func (h *AlertRuleGroupHandler) ResourceFilePath(resource grizzly.Resource, file
 
 // Parse parses a manifest object into a struct for this resource type
 func (h *AlertRuleGroupHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
-	resource := grizzly.Resource(m)
+	resource, err := grizzly.ResourceFromMap(m)
+	if err != nil {
+		return nil, err
+	}
 	return grizzly.Resources{resource}, nil
 }
 

@@ -70,7 +70,10 @@ func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype 
 
 // Parse parses a manifest object into a struct for this resource type
 func (h *DashboardHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
-	resource := grizzly.Resource(m)
+	resource, err := grizzly.ResourceFromMap(m)
+	if err != nil {
+		return nil, err
+	}
 	resource.SetSpecString("uid", resource.Name())
 	if !resource.HasMetadata("folder") {
 		resource.SetMetadata("folder", generalFolderUID)

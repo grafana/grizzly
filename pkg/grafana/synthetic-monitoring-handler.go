@@ -93,7 +93,10 @@ func (h *SyntheticMonitoringHandler) ResourceFilePath(resource grizzly.Resource,
 
 // Parse parses a manifest object into a struct for this resource type
 func (h *SyntheticMonitoringHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
-	resource := grizzly.Resource(m)
+	resource, err := grizzly.ResourceFromMap(m)
+	if err != nil {
+		return nil, err
+	}
 	resource.SetSpecString("job", resource.GetMetadata("name"))
 	return grizzly.Resources{resource}, nil
 }
