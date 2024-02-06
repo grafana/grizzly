@@ -18,7 +18,7 @@ test-clean:
 	go clean -testcache
 
 test: run-test-image-locally
-	go test -v ./cmd/... ./pkg/... || ( status=$$?; docker logs grizzly-grafana ; exit $$status )
+	go test -v ./cmd/... ./pkg/...
 	make stop-test-image-locally
 
 integration: run-test-image-locally dev
