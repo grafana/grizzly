@@ -89,9 +89,6 @@ func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly
 // Validate returns the uid of resource
 func (h *DashboardHandler) Validate(resource grizzly.Resource) error {
 	uid, exist := resource.GetSpecString("uid")
-	if resource.Name() == "" {
-		return fmt.Errorf("name cannot be blank")
-	}
 	if resource.Name() != uid && exist {
 		return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
 	}

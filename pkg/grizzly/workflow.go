@@ -283,8 +283,7 @@ func Apply(resources Resources) error {
 		if err != nil {
 			return err
 		}
-
-		err = handler.Validate(resource)
+		err = resource.Validate()
 		if err != nil {
 			return fmt.Errorf("resource %s is not valid: %v", resource.Key(), err)
 		}
