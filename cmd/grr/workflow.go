@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 	"text/tabwriter"
 
 	"github.com/go-clix/cli"
@@ -71,10 +70,6 @@ func pullCmd() *cli.Command {
 	var opts grizzly.Opts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		if err := checkDashboardTarget(opts); err != nil {
-			return err
-		}
-
 		return grizzly.Pull(args[0], opts)
 	}
 
@@ -128,10 +123,6 @@ func applyCmd() *cli.Command {
 	var opts grizzly.Opts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		if err := checkDashboardTarget(opts); err != nil {
-			return err
-		}
-
 		resources, err := grizzly.Parse(args[0], opts)
 		if err != nil {
 			return err
@@ -141,27 +132,6 @@ func applyCmd() *cli.Command {
 
 	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
-}
-
-// targetsOfKind checks if the specified targets are of certain kind
-func targetsOfKind(kind string, opts grizzly.Opts) bool {
-	for _, t := range opts.Targets {
-		if !(strings.Contains(t, "/") && strings.Split(t, "/")[0] == kind) {
-			return false
-		}
-	}
-
-	return true
-}
-
-// checkDashboardTarget ensures that the specified targets are of dashboards kind
-func checkDashboardTarget(opts grizzly.Opts) error {
-	ok := targetsOfKind("Dashboard", opts)
-	if opts.OnlySpec && !ok {
-		return fmt.Errorf("-s flag is only supported for dashboards")
-	}
-
-	return nil
 }
 
 type jsonnetWatchParser struct {
