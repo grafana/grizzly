@@ -81,7 +81,7 @@ func TestRules(t *testing.T) {
 		err = yaml.Unmarshal(file, &spec)
 		require.NoError(t, err)
 
-		resource := grizzly.NewResource("apiV", "kind", "name", spec)
+		resource, _ := grizzly.NewResource("apiV", "kind", "name", spec)
 		resource.SetMetadata("namespace", "value")
 		err = h.writeRuleGroup(resource)
 		require.NoError(t, err)
@@ -96,7 +96,7 @@ func TestRules(t *testing.T) {
 		err = yaml.Unmarshal(file, &spec)
 		require.NoError(t, err)
 
-		resource := grizzly.NewResource("apiV", "kind", "name", spec)
+		resource, _ := grizzly.NewResource("apiV", "kind", "name", spec)
 		resource.SetMetadata("namespace", "value")
 		err = h.writeRuleGroup(resource)
 		require.Error(t, err)

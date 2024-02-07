@@ -112,6 +112,11 @@ func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
 	return h.writeRuleGroup(resource)
 }
 
+// UsesFolders identifies whether this resource lives within a folder
+func (h *RuleHandler) UsesFolders() bool {
+	return false
+}
+
 var cortexTool = func(mimirConfig *config.MimirConfig, args ...string) ([]byte, error) {
 	path := os.Getenv("CORTEXTOOL_PATH")
 	if path == "" {
@@ -157,7 +162,10 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 					spec := map[string]interface{}{
 						"rules": group.Rules,
 					}
-					resource := grizzly.NewResource(h.APIVersion(), h.Kind(), group.Name, spec)
+					resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), group.Name, spec)
+					if err != nil {
+						return nil, err
+					}
 					resource.SetMetadata("namespace", namespace)
 					return &resource, nil
 				}

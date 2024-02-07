@@ -146,6 +146,11 @@ func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource)
 	return h.updateCheck(resource)
 }
 
+// UsesFolders identifies whether this resource lives within a folder
+func (h *SyntheticMonitoringHandler) UsesFolders() bool {
+	return false
+}
+
 // NewSyntheticMonitoringClient creates a new client for synthetic monitoring go client
 func (h *SyntheticMonitoringHandler) NewSyntheticMonitoringClient() (*smapi.Client, error) {
 	grizzlyContext, err := config.CurrentContext()
@@ -257,7 +262,10 @@ func (h *SyntheticMonitoringHandler) getRemoteCheck(uid string) (*grizzly.Resour
 				return nil, err
 			}
 			specmap["probes"] = probeNames
-			resource := grizzly.NewResource(handler.APIVersion(), handler.Kind(), check.Job, specmap)
+			resource, err := grizzly.NewResource(handler.APIVersion(), handler.Kind(), check.Job, specmap)
+			if err != nil {
+				return nil, err
+			}
 			resource.SetMetadata("type", h.getType(check))
 			return &resource, nil
 		}

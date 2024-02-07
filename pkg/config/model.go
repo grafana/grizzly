@@ -27,4 +27,6 @@ type Context struct {
 	Targets             []string                  `yaml:"targets" mapstructure:"targets"`
 	OutputFormat        string                    `yaml:"output-format" mapstructure:"output-format"`
 	OnlySpec            bool                      `yaml:"only-spec" mapstructure:"only-spec"`
+	ResourceKind        string                    `yaml:"resource-kind" mapstructure:"resource-kind"`
+	FolderUID           string                    `yaml:"folder-uid" mapstructure:"folder-uid"`
 }

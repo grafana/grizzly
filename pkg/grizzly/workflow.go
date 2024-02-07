@@ -527,3 +527,33 @@ func getOutputFormat(opts Opts) (string, bool, error) {
 	}
 	return "yaml", onlySpec, nil
 }
+
+func getOnlySpec(opts Opts) (bool, string, string, error) {
+	var onlySpec bool
+	context, err := config.CurrentContext()
+	if err != nil {
+		return false, "", "", err
+	}
+	if opts.HasOnlySpec {
+		onlySpec = opts.OnlySpec
+	} else {
+		onlySpec = context.OnlySpec
+	}
+
+	if !onlySpec {
+		return false, "", "", nil
+	}
+	var kind string
+	if context.ResourceKind != "" {
+		kind = context.ResourceKind
+	} else {
+		kind = opts.ResourceKind
+	}
+	var folderUID string
+	if context.FolderUID != "" {
+		folderUID = context.FolderUID
+	} else {
+		folderUID = opts.FolderUID
+	}
+	return onlySpec, kind, folderUID, nil
+}

@@ -28,7 +28,7 @@ func ResourceFromMap(data map[string]interface{}) (Resource, error) {
 }
 
 // NewResource returns a new Resource object
-func NewResource(apiVersion, kind, name string, spec map[string]interface{}) Resource {
+func NewResource(apiVersion, kind, name string, spec map[string]interface{}) (Resource, error) {
 	resource := Resource{
 		"apiVersion": apiVersion,
 		"kind":       kind,
@@ -37,7 +37,18 @@ func NewResource(apiVersion, kind, name string, spec map[string]interface{}) Res
 		},
 		"spec": spec,
 	}
-	return resource
+	if name == "" {
+		handler, err := Registry.GetHandler(kind)
+		if err != nil {
+			return nil, err
+		}
+		uid, err := handler.GetUID(resource)
+		if uid == "" {
+			return nil, fmt.Errorf("Resources of kind %s require a UID", kind)
+		}
+		resource.SetMetadata("name", uid)
+	}
+	return resource, nil
 }
 
 // APIVersion returns the group and version of the provider of the resource

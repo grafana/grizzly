@@ -109,6 +109,11 @@ func (h *AlertNotificationPolicyHandler) Update(existing, resource grizzly.Resou
 	return h.putAlertNotificationPolicy(resource)
 }
 
+// UsesFolders identifies whether this resource lives within a folder
+func (h *AlertNotificationPolicyHandler) UsesFolders() bool {
+	return false
+}
+
 // getRemoteAlertNotificationPolicy retrieves a alertNotificationPolicy object from Grafana
 func (h *AlertNotificationPolicyHandler) getRemoteAlertNotificationPolicy() (*grizzly.Resource, error) {
 	client, err := h.Provider.(ClientProvider).Client()
@@ -128,7 +133,10 @@ func (h *AlertNotificationPolicyHandler) getRemoteAlertNotificationPolicy() (*gr
 		return nil, err
 	}
 
-	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), GlobalAlertNotificationPolicyName, spec)
+	resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), GlobalAlertNotificationPolicyName, spec)
+	if err != nil {
+		return nil, err
+	}
 	return &resource, nil
 }
 
