@@ -1,7 +1,11 @@
 package grizzly
 
 import (
+	"fmt"
+	"io/fs"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/go-jsonnet"
 )
@@ -81,4 +85,30 @@ func (i *ExtendedImporter) Import(importedFrom, importedPath string) (contents j
 	}
 
 	return contents, foundAt, nil
+}
+
+func GenerateJsonnetImports(dir, out string) error {
+	var b strings.Builder
+	b.WriteString("{\n")
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if !d.IsDir() {
+			ext := filepath.Ext(d.Name())
+			base := strings.TrimSuffix(d.Name(), ext)
+			b.WriteString(fmt.Sprintf("  \"%s\": {\n", base))
+			b.WriteString(fmt.Sprintf("    \"path\": \"%s\",\n", path))
+			b.WriteString(fmt.Sprintf("    \"type\": \"%s\",\n", strings.TrimPrefix(ext, ".")))
+			if ext == ".yaml" || ext == ".yml" {
+				b.WriteString(fmt.Sprintf("    \"resource\": std.parseYAML(importstr \"%s\"),\n", path))
+			} else if ext == ".json" {
+				b.WriteString(fmt.Sprintf("    \"resource\": import \"%s\",\n", path))
+			}
+			b.WriteString("  },\n")
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	b.WriteString("}\n")
+	return os.WriteFile(out, []byte(b.String()), 0644)
 }

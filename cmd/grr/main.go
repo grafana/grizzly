@@ -45,6 +45,7 @@ func main() {
 		previewCmd(),
 		providersCmd(),
 		configCmd(),
+		jsonnetCmd(),
 	)
 
 	// Run!
