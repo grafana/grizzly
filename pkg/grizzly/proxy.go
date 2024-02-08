@@ -92,8 +92,8 @@ var blockJSONget = map[string]string{
         "dashboards:write": true,
 	}`,
 	"/api/prometheus/grafana/api/v1/rules": `{
-      status: "success",
-      data: { groups: [] },
+      "status": "success",
+      "data": { "groups": [] }
     }`,
 	"/avatar/*":    "",
 	"/api/folders": "[]",
