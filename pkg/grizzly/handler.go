@@ -9,9 +9,6 @@ type Handler interface {
 	APIVersion() string
 	Kind() string
 
-	// FindResourceFiles identifies files within a directory that this handler can process
-	FindResourceFiles(dir string) ([]string, error)
-
 	// ResourceFilePath returns the location on disk where a resource should be updated
 	ResourceFilePath(resource Resource, filetype string) string
 

@@ -2,7 +2,6 @@ package grafana
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"encoding/json"
 
@@ -36,15 +35,8 @@ func (h *AlertContactPointHandler) APIVersion() string {
 }
 
 const (
-	contactPointGlob    = "alert-contact-points/contactPoint-*"
 	contactPointPattern = "alert-contact-points/contactPoint-%s.%s"
 )
-
-// FindResourceFiles identifies files within a directory that this handler can process
-func (h *AlertContactPointHandler) FindResourceFiles(dir string) ([]string, error) {
-	path := filepath.Join(dir, contactPointGlob)
-	return filepath.Glob(path)
-}
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *AlertContactPointHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {

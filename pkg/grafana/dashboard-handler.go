@@ -2,7 +2,6 @@ package grafana
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"errors"
 
@@ -42,15 +41,8 @@ func (h *DashboardHandler) APIVersion() string {
 }
 
 const (
-	dashboardGlob    = "dashboards/*/dashboard-*"
 	dashboardPattern = "dashboards/%s/dashboard-%s.%s"
 )
-
-// FindResourceFiles identifies files within a directory that this handler can process
-func (h *DashboardHandler) FindResourceFiles(dir string) ([]string, error) {
-	path := filepath.Join(dir, dashboardGlob)
-	return filepath.Glob(path)
-}
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {

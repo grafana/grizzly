@@ -2,7 +2,6 @@ package grafana
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"context"
 	"encoding/json"
@@ -61,15 +60,8 @@ func (h *SyntheticMonitoringHandler) APIVersion() string {
 }
 
 const (
-	syntheticMonitoringCheckGlob = "synthetic-monitoring/check-*"
-	syntheticMonitoringPattern   = "synthetic-monitoring/check-%s.%s"
+	syntheticMonitoringPattern = "synthetic-monitoring/check-%s.%s"
 )
-
-// FindResourceFiles identifies files within a directory that this handler can process
-func (h *SyntheticMonitoringHandler) FindResourceFiles(dir string) ([]string, error) {
-	path := filepath.Join(dir, syntheticMonitoringCheckGlob)
-	return filepath.Glob(path)
-}
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *SyntheticMonitoringHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
