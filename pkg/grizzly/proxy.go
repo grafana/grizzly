@@ -123,17 +123,17 @@ func (p *ProxyServer) Start(openBrowser bool) error {
 	r.Get("/d/{uid}/{slug}", p.RootDashboardPageHandler)
 	r.Get("/api/dashboards/uid/{uid}", p.DashboardJSONGetHandler)
 	r.Post("/api/dashboards/db/", p.DashboardJSONPostHandler)
-	for _, url := range mustProxyGET {
-		r.Get(url, p.ProxyRequestHandler)
+	for _, pattern := range mustProxyGET {
+		r.Get(pattern, p.ProxyRequestHandler)
 	}
-	for _, url := range mustProxyPOST {
-		r.Post(url, p.ProxyRequestHandler)
+	for _, pattern := range mustProxyPOST {
+		r.Post(pattern, p.ProxyRequestHandler)
 	}
-	for url, response := range blockJSONget {
-		r.Get(url, p.blockHandler(response))
+	for pattern, response := range blockJSONget {
+		r.Get(pattern, p.blockHandler(response))
 	}
-	for url, response := range blockJSONpost {
-		r.Post(url, p.blockHandler(response))
+	for pattern, response := range blockJSONpost {
+		r.Post(pattern, p.blockHandler(response))
 	}
 	r.Get("/", p.RootHandler)
 
@@ -163,8 +163,10 @@ func (p *ProxyServer) openBrowser(url string) {
 	}
 }
 
-func (p *ProxyServer) blockHandler(response string) func(w http.ResponseWriter, r *http.Request) {
+func (p *ProxyServer) blockHandler(response string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(response))
 	}
 }
