@@ -90,6 +90,7 @@ var blockJSONget = map[string]string{
 	"/api/annotations":  "[]",
 	"/api/search":       "[]",
 	"/api/usage/*":      "[]",
+	"/api/plugins/*":    `{"enabled": false}`,
 	"/api/access-control/user/actions": `{
         "dashboards:write": true,
 	}`,
