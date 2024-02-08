@@ -67,6 +67,13 @@ func NewProxyServer(parser WatchParser, resourcePath string, isLegacyJSON bool) 
 				r.Out.Header.Set("Authorization", "Bearer "+server.token)
 			}
 			r.Out.Header.Set("User-Agent", "Grizzly Proxy Server")
+			r.Out.Header.Set("Access-Control-Allow-Origin", "*")
+			r.Out.Header.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+			r.Out.Header.Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+			r.Out.Header.Set("Origin", "http://localhost:8080")
+
+			req, _ := httputil.DumpRequest(r.Out, true)
+			fmt.Printf("%s\n", string(req))
 		},
 	}
 	return &server, nil
@@ -118,6 +125,7 @@ func (p *ProxyServer) Start(openBrowser bool) error {
 	}
 
 	r := chi.NewRouter()
+
 	r.Use(middleware.Logger)
 	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
 	r.Get("/d/{uid}/{slug}", p.RootDashboardPageHandler)
