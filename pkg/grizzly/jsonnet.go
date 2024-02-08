@@ -95,12 +95,12 @@ func GenerateJsonnetImports(dir, out string) error {
 			ext := filepath.Ext(d.Name())
 			base := strings.TrimSuffix(d.Name(), ext)
 			b.WriteString(fmt.Sprintf("  \"%s\": {\n", base))
-			b.WriteString(fmt.Sprintf("    \"path\": \"%s\",\n", path))
-			b.WriteString(fmt.Sprintf("    \"type\": \"%s\",\n", strings.TrimPrefix(ext, ".")))
+			b.WriteString(fmt.Sprintf("    path: \"%s\",\n", path))
+			b.WriteString(fmt.Sprintf("    type: \"%s\",\n", strings.TrimPrefix(ext, ".")))
 			if ext == ".yaml" || ext == ".yml" {
-				b.WriteString(fmt.Sprintf("    \"resource\": std.parseYaml(importstr \"%s\"),\n", path))
+				b.WriteString(fmt.Sprintf("    resource: std.parseYaml(importstr \"%s\"),\n", path))
 			} else if ext == ".json" {
-				b.WriteString(fmt.Sprintf("    \"resource\": import \"%s\",\n", path))
+				b.WriteString(fmt.Sprintf("    resource: import \"%s\",\n", path))
 			}
 			b.WriteString("  },\n")
 		}
