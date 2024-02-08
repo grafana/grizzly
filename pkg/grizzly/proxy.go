@@ -58,7 +58,7 @@ func NewProxyServer(parser WatchParser, resourcePath string, isLegacyJSON bool) 
 	server.proxy = &httputil.ReverseProxy{
 		Rewrite: func(r *httputil.ProxyRequest) {
 			r.SetURL(u)
-			r.Out.Host = r.In.Host // if desired
+
 			if server.user != "" {
 				header := fmt.Sprintf("%s:%s", server.user, server.token)
 				encoded := base64.StdEncoding.EncodeToString([]byte(header))
@@ -66,14 +66,9 @@ func NewProxyServer(parser WatchParser, resourcePath string, isLegacyJSON bool) 
 			} else {
 				r.Out.Header.Set("Authorization", "Bearer "+server.token)
 			}
-			r.Out.Header.Set("User-Agent", "Grizzly Proxy Server")
-			r.Out.Header.Set("Access-Control-Allow-Origin", "*")
-			r.Out.Header.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-			r.Out.Header.Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-			r.Out.Header.Set("Origin", "http://localhost:8080")
 
-			req, _ := httputil.DumpRequest(r.Out, true)
-			fmt.Printf("%s\n", string(req))
+			r.Out.Header.Del("Origin")
+			r.Out.Header.Set("User-Agent", "Grizzly Proxy Server")
 		},
 	}
 	return &server, nil
@@ -302,8 +297,6 @@ func (p *ProxyServer) DashboardJSONGetHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (p *ProxyServer) DashboardJSONPostHandler(w http.ResponseWriter, r *http.Request) {
-	//cors(corsOptions),
-
 	if !p.isLegacy {
 		http.Error(w, "Save only works for legacy json dashboards", 400)
 		return
@@ -336,25 +329,3 @@ func (p *ProxyServer) DashboardJSONPostHandler(w http.ResponseWriter, r *http.Re
 	out, _ := json.Marshal(jout)
 	w.Write(out)
 }
-
-/****** CORS
-  const corsOptions = {
-    origin: `http://localhost:${port}`,
-    optionsSuccessStatus: 200,
-  };
-  ***/
-
-/*** WEBSOCKETS
-  server.on("upgrade", function (req, socket, head) {
-    proxy.ws(req, socket, head, {});
-  });
-  ****/
-
-/**** PROXY PAGES
-  const sendErrorPage = (res: express.Response, message: string) => {
-    const errorFile = path.join(extensionPath, "public/error.html");
-    let content = fs.readFileSync(errorFile, "utf-8");
-    content = content.replaceAll("${error}", message);
-    res.write(content);
-  };
-  **/
