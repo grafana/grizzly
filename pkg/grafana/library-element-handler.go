@@ -3,7 +3,6 @@ package grafana
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 
 	"errors"
 
@@ -39,15 +38,8 @@ func (h *LibraryElementHandler) APIVersion() string {
 }
 
 const (
-	libraryElementGlob    = "library-elements/*-*"
 	libraryElementPattern = "library-elements/%s-%s.%s"
 )
-
-// FindResourceFiles identifies files within a directory that this handler can process
-func (h *LibraryElementHandler) FindResourceFiles(dir string) ([]string, error) {
-	path := filepath.Join(dir, libraryElementGlob)
-	return filepath.Glob(path)
-}
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *LibraryElementHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {

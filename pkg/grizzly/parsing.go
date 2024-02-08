@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -48,14 +49,13 @@ func Parse(resourcePath string, opts Opts) (Resources, error) {
 
 func FindResourceFiles(resourcePath string) ([]string, error) {
 	var files []string
-	for _, handler := range Registry.Handlers {
-		handlerFiles, err := handler.FindResourceFiles(resourcePath)
-		if err != nil {
-			return nil, err
+	err := filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
+		if !info.IsDir() {
+			files = append(files, path)
 		}
-		files = append(files, handlerFiles...)
-	}
-	return files, nil
+		return nil
+	})
+	return files, err
 }
 
 func ParseFile(opts Opts, resourceFile string) (Resources, error) {

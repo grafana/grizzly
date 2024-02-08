@@ -2,7 +2,6 @@ package grafana
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"encoding/json"
@@ -38,15 +37,8 @@ func (h *AlertRuleGroupHandler) APIVersion() string {
 }
 
 const (
-	alertRuleGroupGlob    = "alert-rules/alertRuleGroup-*"
 	alertRuleGroupPattern = "alert-rules/alertRuleGroup-%s.%s"
 )
-
-// FindResourceFiles identifies files within a directory that this handler can process
-func (h *AlertRuleGroupHandler) FindResourceFiles(dir string) ([]string, error) {
-	path := filepath.Join(dir, alertRuleGroupGlob)
-	return filepath.Glob(path)
-}
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *AlertRuleGroupHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
