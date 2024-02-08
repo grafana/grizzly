@@ -283,16 +283,15 @@ func Apply(resources Resources) error {
 		if err != nil {
 			return err
 		}
+		err = resource.Validate()
+		if err != nil {
+			return fmt.Errorf("resource %s is not valid: %v", resource.Key(), err)
+		}
 
 		log.Debugf("Getting the remote value for `%s`", resource.Key())
 		existingResource, err := handler.GetRemote(resource)
 		if errors.Is(err, ErrNotFound) {
 			log.Debugf("`%s` was not found, adding it...", resource.Key())
-
-			err := handler.Validate(resource)
-			if err != nil {
-				return fmt.Errorf("resource %s is not valid: %v", resource.Key(), err)
-			}
 
 			if err := handler.Add(resource); err != nil {
 				return err

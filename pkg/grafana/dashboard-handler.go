@@ -31,17 +31,6 @@ func NewDashboardHandler(provider grizzly.Provider) *DashboardHandler {
 	}
 }
 
-// Validate returns the uid of resource
-func (h *DashboardHandler) Validate(resource grizzly.Resource) error {
-	uid, exist := resource.GetSpecString("uid")
-	if exist {
-		if uid != resource.Name() {
-			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
-		}
-	}
-	return nil
-}
-
 // Kind returns the name for this handler
 func (h *DashboardHandler) Kind() string {
 	return "Dashboard"
@@ -90,7 +79,20 @@ func (h *DashboardHandler) Unprepare(resource grizzly.Resource) *grizzly.Resourc
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
+	uid, _ := resource.GetSpecString("uid")
+	if uid == "" {
+		resource.SetSpecString("uid", resource.Name())
+	}
 	return &resource
+}
+
+// Validate returns the uid of resource
+func (h *DashboardHandler) Validate(resource grizzly.Resource) error {
+	uid, exist := resource.GetSpecString("uid")
+	if resource.Name() != uid && exist {
+		return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
+	}
+	return nil
 }
 
 // GetUID returns the UID for a resource

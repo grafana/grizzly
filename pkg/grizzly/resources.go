@@ -3,6 +3,8 @@ package grizzly
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -82,6 +84,9 @@ func (r *Resource) HasMetadata(key string) bool {
 
 func (r *Resource) GetMetadata(key string) string {
 	metadata := (*r)["metadata"].(map[string]interface{})
+	if _, ok := metadata[key]; !ok {
+		return ""
+	}
 	return metadata[key].(string)
 }
 
@@ -151,6 +156,32 @@ func (r *Resource) JSON() (string, error) {
 		return "", err
 	}
 	return string(j), nil
+}
+
+func (r *Resource) Validate() error {
+	handler, err := Registry.GetHandler(r.Kind())
+	if err != nil {
+		return err
+	}
+	missing := []string{}
+	if r.Name() == "" {
+		missing = append(missing, "name")
+	}
+	if r.Spec() == nil || len(r.Spec()) == 0 {
+		missing = append(missing, "spec")
+	}
+	jj, _ := r.JSON()
+
+	log.Printf("KIND: '%s' NAME: '%s' SPEC(%d)", r.Kind(), r.Name(), len(jj))
+	if len(missing) > 0 {
+		if r.Name() != "" {
+			return fmt.Errorf("Resource %s lacks %s", r.Name(), strings.Join(missing, ", "))
+		} else {
+			j, _ := r.JSON()
+			return fmt.Errorf("Resource lacks %s: %s", strings.Join(missing, ", "), j)
+		}
+	}
+	return handler.Validate(*r)
 }
 
 // Resources represents a set of resources

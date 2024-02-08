@@ -35,14 +35,6 @@ func (h *AlertNotificationPolicyHandler) Kind() string {
 	return "AlertNotificationPolicy"
 }
 
-// Validate returns the uid of resource
-func (h *AlertNotificationPolicyHandler) Validate(resource grizzly.Resource) error {
-	if resource.Name() != GlobalAlertNotificationPolicyName {
-		return fmt.Errorf("name of notification policy must be '%s', got '%s'", GlobalAlertNotificationPolicyName, resource.Name())
-	}
-	return nil
-}
-
 // APIVersion returns group and version of the provider of this resource
 func (h *AlertNotificationPolicyHandler) APIVersion() string {
 	return h.Provider.APIVersion()
@@ -85,6 +77,14 @@ func (h *AlertNotificationPolicyHandler) Unprepare(resource grizzly.Resource) *g
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *AlertNotificationPolicyHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
 	return &resource
+}
+
+// Validate returns the uid of resource
+func (h *AlertNotificationPolicyHandler) Validate(resource grizzly.Resource) error {
+	if resource.Name() != GlobalAlertNotificationPolicyName {
+		return fmt.Errorf("name of notification policy must be '%s', got '%s'", GlobalAlertNotificationPolicyName, resource.Name())
+	}
+	return nil
 }
 
 // GetUID returns the UID for a resource

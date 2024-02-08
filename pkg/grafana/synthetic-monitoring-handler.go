@@ -71,21 +71,6 @@ func (h *SyntheticMonitoringHandler) FindResourceFiles(dir string) ([]string, er
 	return filepath.Glob(path)
 }
 
-// Validate returns the uid of resource
-func (h *SyntheticMonitoringHandler) Validate(resource grizzly.Resource) error {
-	job, exist := resource.GetSpecString("job")
-	if exist {
-		if job != resource.Name() {
-			return fmt.Errorf("job '%s' and name '%s', don't match", job, resource.Name())
-		}
-	}
-	settings := resource.GetSpecValue("settings").(map[string]interface{})
-	if _, ok := settings[resource.GetMetadata("type")]; !ok {
-		return fmt.Errorf("type '%s' is incorrect", resource.GetMetadata("type"))
-	}
-	return nil
-}
-
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *SyntheticMonitoringHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
 	return fmt.Sprintf(syntheticMonitoringPattern, resource.Name(), filetype)
@@ -115,6 +100,19 @@ func (h *SyntheticMonitoringHandler) Prepare(existing, resource grizzly.Resource
 	resource.SetSpecValue("tenantId", existing.GetSpecValue("tenantId"))
 	resource.SetSpecValue("id", existing.GetSpecValue("id"))
 	return &resource
+}
+
+// Validate returns the uid of resource
+func (h *SyntheticMonitoringHandler) Validate(resource grizzly.Resource) error {
+	job, exist := resource.GetSpecString("job")
+	if exist && job != resource.Name() {
+		return fmt.Errorf("job '%s' and name '%s', don't match", job, resource.Name())
+	}
+	settings := resource.GetSpecValue("settings").(map[string]interface{})
+	if _, ok := settings[resource.GetMetadata("type")]; !ok {
+		return fmt.Errorf("type '%s' is incorrect", resource.GetMetadata("type"))
+	}
+	return nil
 }
 
 // GetUID returns the UID for a resource

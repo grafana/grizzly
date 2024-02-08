@@ -32,17 +32,6 @@ func (h *RuleHandler) Kind() string {
 	return "PrometheusRuleGroup"
 }
 
-// Validate returns the uid of resource
-func (h *RuleHandler) Validate(resource grizzly.Resource) error {
-	uid, exist := resource.GetSpecString("uid")
-	if exist {
-		if uid != resource.Name() {
-			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
-		}
-	}
-	return nil
-}
-
 // APIVersion returns the group and version for the provider of which this handler is a part
 func (h *RuleHandler) APIVersion() string {
 	return h.Provider.APIVersion()
@@ -81,6 +70,15 @@ func (h *RuleHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *RuleHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
 	return &resource
+}
+
+// Validate returns the uid of resource
+func (h *RuleHandler) Validate(resource grizzly.Resource) error {
+	uid, exist := resource.GetSpecString("uid")
+	if exist && uid != resource.Name() {
+		return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
+	}
+	return nil
 }
 
 // GetUID returns the UID for a resource

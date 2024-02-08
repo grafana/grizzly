@@ -81,4 +81,73 @@ func TestDashboard(t *testing.T) {
 	})
 
 	_ = os.Unsetenv("GRAFANA_URL")
+
+	t.Run("Validate/Prepare", func(t *testing.T) {
+		grizzly.ConfigureProviderRegistry(
+			[]grizzly.Provider{
+				NewProvider(),
+			})
+
+		handler := DashboardHandler{}
+		tests := []struct {
+			Name                string
+			Kind                string
+			Resource            grizzly.Resource
+			ValidateErrorString string
+			ExpectedUID         string
+		}{
+			{
+				Name:                "name and UID match",
+				Kind:                "Dashboard",
+				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "name1", map[string]any{"uid": "name1"}),
+				ValidateErrorString: "",
+				ExpectedUID:         "name1",
+			},
+			{
+				Name:                "no UID provided",
+				Kind:                "Dashboard",
+				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "name1", map[string]any{"title": "something"}),
+				ValidateErrorString: "",
+				ExpectedUID:         "name1",
+			},
+			{
+				Name:                "name and UID differ",
+				Kind:                "Dashboard",
+				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "name1", map[string]any{"uid": "name2"}),
+				ValidateErrorString: "uid 'name2' and name 'name1', don't match",
+			},
+			{
+				Name:                "no name provided",
+				Kind:                "Dashboard",
+				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "", map[string]any{"uid": "name1"}),
+				ValidateErrorString: "Resource lacks name",
+			},
+			{
+				Name:                "no spec provided",
+				Kind:                "Dashboard",
+				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "name1", map[string]any{}),
+				ValidateErrorString: "Resource name1 lacks spec",
+			},
+			{
+				Name:                "neither name nor UID provided",
+				Kind:                "Dashboard",
+				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "", map[string]any{"title": "something"}),
+				ValidateErrorString: "Resource lacks name",
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.Name, func(t *testing.T) {
+				err := test.Resource.Validate()
+				if test.ValidateErrorString != "" {
+					require.Error(t, err)
+					require.Contains(t, err.Error(), test.ValidateErrorString)
+					return
+				}
+				require.NoError(t, err)
+				newResource := handler.Prepare(nil, test.Resource)
+				uid, _ := handler.GetUID(*newResource)
+				require.Equal(t, uid, test.ExpectedUID)
+			})
+		}
+	})
 }
