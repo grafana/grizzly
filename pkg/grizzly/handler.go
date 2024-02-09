@@ -44,6 +44,9 @@ type Handler interface {
 
 	// Sort sorts resources as defined by the handler
 	Sort(resources Resources) Resources
+
+	// UsesFolders identifies whether this resource lives within a folder
+	UsesFolders() bool
 }
 
 // PreviewHandler describes a handler that has the ability to render

@@ -3,7 +3,6 @@ package grizzly
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -28,7 +27,7 @@ func ResourceFromMap(data map[string]interface{}) (Resource, error) {
 }
 
 // NewResource returns a new Resource object
-func NewResource(apiVersion, kind, name string, spec map[string]interface{}) Resource {
+func NewResource(apiVersion, kind, name string, spec map[string]interface{}) (Resource, error) {
 	resource := Resource{
 		"apiVersion": apiVersion,
 		"kind":       kind,
@@ -37,7 +36,18 @@ func NewResource(apiVersion, kind, name string, spec map[string]interface{}) Res
 		},
 		"spec": spec,
 	}
-	return resource
+	if name == "" {
+		handler, err := Registry.GetHandler(kind)
+		if err != nil {
+			return nil, err
+		}
+		uid, err := handler.GetUID(resource)
+		if uid == "" {
+			return nil, fmt.Errorf("Resources of kind %s require a UID", kind)
+		}
+		resource.SetMetadata("name", uid)
+	}
+	return resource, nil
 }
 
 // APIVersion returns the group and version of the provider of the resource
@@ -170,9 +180,7 @@ func (r *Resource) Validate() error {
 	if r.Spec() == nil || len(r.Spec()) == 0 {
 		missing = append(missing, "spec")
 	}
-	jj, _ := r.JSON()
 
-	log.Printf("KIND: '%s' NAME: '%s' SPEC(%d)", r.Kind(), r.Name(), len(jj))
 	if len(missing) > 0 {
 		if r.Name() != "" {
 			return fmt.Errorf("Resource %s lacks %s", r.Name(), strings.Join(missing, ", "))

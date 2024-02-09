@@ -147,6 +147,11 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.Prev
 	return nil
 }
 
+// UsesFolders identifies whether this resource lives within a folder
+func (h *DashboardHandler) UsesFolders() bool {
+	return true
+}
+
 // getRemoteDashboard retrieves a dashboard object from Grafana
 func (h *DashboardHandler) getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	client, err := h.Provider.(ClientProvider).Client()
@@ -169,7 +174,10 @@ func (h *DashboardHandler) getRemoteDashboard(uid string) (*grizzly.Resource, er
 		return nil, err
 	}
 
-	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
+	resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
+	if err != nil {
+		return nil, err
+	}
 	folderUid := extractFolderUID(client, *dashboard)
 	resource.SetMetadata("folder", folderUid)
 	return &resource, nil

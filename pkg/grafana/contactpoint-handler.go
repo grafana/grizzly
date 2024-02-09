@@ -109,6 +109,11 @@ func (h *AlertContactPointHandler) Update(existing, resource grizzly.Resource) e
 	return h.putContactPoint(resource)
 }
 
+// UsesFolders identifies whether this resource lives within a folder
+func (h *AlertContactPointHandler) UsesFolders() bool {
+	return false
+}
+
 // getRemoteContactPoint retrieves a contactPoint object from Grafana
 func (h *AlertContactPointHandler) getRemoteContactPoint(uid string) (*grizzly.Resource, error) {
 	client, err := h.Provider.(ClientProvider).Client()
@@ -137,7 +142,10 @@ func (h *AlertContactPointHandler) getRemoteContactPoint(uid string) (*grizzly.R
 		return nil, err
 	}
 
-	resource := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
+	resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
+	if err != nil {
+		return nil, err
+	}
 	return &resource, nil
 }
 

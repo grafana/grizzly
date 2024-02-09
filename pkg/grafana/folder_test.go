@@ -92,7 +92,8 @@ func TestSortFolders(t *testing.T) {
 		if parentUID != "" {
 			spec["parentUid"] = parentUID
 		}
-		return grizzly.NewResource(handler.APIVersion(), handler.Kind(), uid, spec)
+		resource, _ := grizzly.NewResource(handler.APIVersion(), handler.Kind(), uid, spec)
+		return resource
 	}
 
 	cases := []struct {
