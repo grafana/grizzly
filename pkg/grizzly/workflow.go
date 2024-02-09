@@ -543,16 +543,12 @@ func getOnlySpec(opts Opts) (bool, string, string, error) {
 	if !onlySpec {
 		return false, "", "", nil
 	}
-	var kind string
-	if context.ResourceKind != "" {
-		kind = context.ResourceKind
-	} else {
+	kind := context.ResourceKind
+	if kind == "" {
 		kind = opts.ResourceKind
 	}
-	var folderUID string
-	if context.FolderUID != "" {
-		folderUID = context.FolderUID
-	} else {
+	folderUID := context.FolderUID
+	if folderUID == "" {
 		folderUID = opts.FolderUID
 	}
 	return onlySpec, kind, folderUID, nil
