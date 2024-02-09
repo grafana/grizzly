@@ -361,14 +361,19 @@ func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.ProxyServer) func(
 			return
 		}
 
-		resource := grizzly.NewResource(h.APIVersion(), h.Kind(), "", dash)
+		resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), "dummy", dash)
+		if err != nil {
+			http.Error(w, "Error creating resource", 400)
+			return
+		}
 		uid, err := h.GetUID(resource)
 		if err != nil {
 			http.Error(w, "Error getting dashboard UID", 400)
 			return
 		}
+		resource.SetMetadata("name", uid)
 
-		out, _, _, err := grizzly.Format("", &resource, p.Opts.OutputFormat, p.Opts.OnlySpec)
+		out, _, _, err := grizzly.Format(p.ResourcePath, &resource, p.Opts.OutputFormat, p.Opts.OnlySpec)
 		if err != nil {
 			http.Error(w, "Error formatting content", 400)
 			return

@@ -212,7 +212,7 @@ func proxyCmd(registry grizzly.Registry) *cli.Command {
 		return grizzly.Proxy(parser, args[0], opts)
 	}
 	cmd.Flags().BoolVarP(&opts.OpenBrowser, "open-browser", "b", false, "Open proxy URL in default browser")
-	cmd.Flags().BoolVarP(&opts.OnlySpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
+	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
 

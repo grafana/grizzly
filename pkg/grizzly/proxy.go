@@ -124,10 +124,8 @@ func (p *ProxyServer) Start() error {
 
 	for _, handler := range Registry.Handlers {
 		proxyHandler, ok := handler.(ProxyHandler)
-		log.Printf("HANDLER: %s : %t", handler.Kind(), ok)
 		if ok {
 			for _, endpoint := range proxyHandler.GetProxyEndpoints(*p) {
-				log.Printf("Registering %s:%s", endpoint.Method, endpoint.Url)
 				switch endpoint.Method {
 				case "GET":
 					r.Get(endpoint.Url, endpoint.Handler)
