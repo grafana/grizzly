@@ -1,13 +1,19 @@
 package grafana
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 
 	"errors"
 
+	"github.com/go-chi/chi"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
 	"github.com/grafana/grafana-openapi-client-go/client/search"
@@ -247,4 +253,142 @@ func (h *DashboardHandler) postSnapshot(resource grizzly.Resource, opts *grizzly
 		return nil, err
 	}
 	return response.GetPayload(), nil
+}
+
+func (h *DashboardHandler) GetProxyEndpoints(p grizzly.ProxyServer) []grizzly.ProxyEndpoint {
+	return []grizzly.ProxyEndpoint{
+		{
+			Method:  "GET",
+			Url:     "/d/{uid}/{slug}",
+			Handler: h.RootDashboardPageHandler(p),
+		},
+		{
+			Method:  "GET",
+			Url:     "/api/dashboards/uid/{uid}",
+			Handler: h.DashboardJSONGetHandler(p),
+		},
+		{
+			Method:  "POST",
+			Url:     "/api/dashboards/db/",
+			Handler: h.DashboardJSONPostHandler(p),
+		},
+	}
+}
+
+func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.ProxyServer) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		req, err := http.NewRequest("GET", p.Url+r.URL.Path, nil)
+		if err != nil {
+			log.Print(err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+		req.Header.Set("Authorization", "Bearer "+p.Token)
+		req.Header.Set("User-Agent", p.UserAgent)
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+
+		if err == nil {
+			w.Header().Add("Content-Type", "text/html")
+			body, _ := io.ReadAll(resp.Body)
+			w.Write(body)
+			return
+		}
+
+		msg := ""
+		if p.Url == "" {
+			msg += "<p><b>Error:</b> URL is not defined</p>"
+		}
+		if p.Token == "" {
+			msg += "<p><b>Warning:</b> No service account token specified.</p>"
+		}
+
+		if resp.StatusCode == 302 {
+			http.Error(w, msg+"<p>Authentication error</p>", http.StatusUnauthorized)
+		} else {
+			body, _ := io.ReadAll(resp.Body)
+			http.Error(w, msg+string(body), resp.StatusCode)
+		}
+	}
+}
+
+func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.ProxyServer) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		uid := chi.URLParam(r, "uid")
+		if uid == "" {
+			http.Error(w, "No UID specified", 400)
+			return
+		}
+
+		resources, err := p.Parser.Parse()
+		if err != nil {
+			log.Error("Error: ", err)
+			http.Error(w, fmt.Sprintf("Error: %s", err), 500)
+			return
+		}
+		for _, resource := range resources {
+			if resource.Kind() == "Dashboard" && resource.Name() == uid {
+				meta := map[string]interface{}{
+					"type":      "db",
+					"isStarred": false,
+					"folderID":  0,
+					"folderUID": "",
+					"url":       fmt.Sprintf("/d/%s/slug", uid),
+				}
+				wrapper := map[string]interface{}{
+					"dashboard": resource.Spec(),
+					"meta":      meta,
+				}
+
+				out, _ := json.Marshal(wrapper)
+				w.Write(out)
+				return
+			}
+		}
+		http.Error(w, fmt.Sprintf("Dashboard with UID %s not found", uid), 404)
+	}
+}
+
+func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.ProxyServer) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		dash := map[string]interface{}{}
+		content, _ := io.ReadAll(r.Body)
+		err := json.Unmarshal(content, &dash)
+		if err != nil {
+			http.Error(w, "Error parsing JSON", 400)
+			return
+		}
+
+		resource := grizzly.NewResource(h.APIVersion(), h.Kind(), "", dash)
+		uid, err := h.GetUID(resource)
+		if err != nil {
+			http.Error(w, "Error getting dashboard UID", 400)
+			return
+		}
+
+		out, _, _, err := grizzly.Format("", &resource, p.Opts.OutputFormat, p.Opts.OnlySpec)
+		if err != nil {
+			http.Error(w, "Error formatting content", 400)
+			return
+		}
+
+		err = os.WriteFile(p.ResourcePath, out, 0644)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error writing file: %s", err), 400)
+			return
+		}
+
+		jout := map[string]interface{}{
+			"id":      1,
+			"slug":    "slug",
+			"status":  "success",
+			"uid":     uid,
+			"url":     fmt.Sprintf("/d/%s/slug", uid),
+			"version": 1,
+		}
+		body, _ := json.Marshal(jout)
+		w.Write(body)
+	}
 }

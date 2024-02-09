@@ -1,6 +1,8 @@
 package grizzly
 
 import (
+	"net/http"
+
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
@@ -106,4 +108,16 @@ type PreviewHandler interface {
 type ListenHandler interface {
 	// Listen watches a resource and update local file on changes
 	Listen(UID, filename string) error
+}
+
+type ProxyEndpoint struct {
+	Method  string
+	Url     string
+	Handler func(http.ResponseWriter, *http.Request)
+}
+
+// ProxyHandler describes a handler that can be used to edit resources live via a proxied UI
+type ProxyHandler interface {
+	// RegisterHandlers registers HTTP handlers for proxy events
+	GetProxyEndpoints(p ProxyServer) []ProxyEndpoint
 }
