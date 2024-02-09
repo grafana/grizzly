@@ -88,50 +88,54 @@ func TestDashboard(t *testing.T) {
 				NewProvider(),
 			})
 
+		newResource := func(name string, spec map[string]any) grizzly.Resource {
+			resource := grizzly.Resource{
+				"apiVersion": "apiVersion",
+				"kind":       "Dashboard",
+				"metadata": map[string]interface{}{
+					"name": name,
+				},
+				"spec": spec,
+			}
+			return resource
+		}
 		handler := DashboardHandler{}
 		tests := []struct {
 			Name                string
-			Kind                string
 			Resource            grizzly.Resource
 			ValidateErrorString string
 			ExpectedUID         string
 		}{
 			{
 				Name:                "name and UID match",
-				Kind:                "Dashboard",
-				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "name1", map[string]any{"uid": "name1"}),
+				Resource:            newResource("name1", map[string]any{"uid": "name1"}),
 				ValidateErrorString: "",
 				ExpectedUID:         "name1",
 			},
 			{
 				Name:                "no UID provided",
-				Kind:                "Dashboard",
-				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "name1", map[string]any{"title": "something"}),
+				Resource:            newResource("name1", map[string]any{"title": "something"}),
 				ValidateErrorString: "",
 				ExpectedUID:         "name1",
 			},
 			{
 				Name:                "name and UID differ",
-				Kind:                "Dashboard",
-				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "name1", map[string]any{"uid": "name2"}),
+				Resource:            newResource("name1", map[string]any{"uid": "name2"}),
 				ValidateErrorString: "uid 'name2' and name 'name1', don't match",
 			},
 			{
 				Name:                "no name provided",
-				Kind:                "Dashboard",
-				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "", map[string]any{"uid": "name1"}),
+				Resource:            newResource("", map[string]any{"uid": "name1"}),
 				ValidateErrorString: "Resource lacks name",
 			},
 			{
 				Name:                "no spec provided",
-				Kind:                "Dashboard",
-				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "name1", map[string]any{}),
+				Resource:            newResource("name1", map[string]any{}),
 				ValidateErrorString: "Resource name1 lacks spec",
 			},
 			{
 				Name:                "neither name nor UID provided",
-				Kind:                "Dashboard",
-				Resource:            grizzly.NewResource("apiVersion", "Dashboard", "", map[string]any{"title": "something"}),
+				Resource:            newResource("", map[string]any{"title": "something"}),
 				ValidateErrorString: "Resource lacks name",
 			},
 		}

@@ -3,7 +3,6 @@ package grizzly
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -181,9 +180,7 @@ func (r *Resource) Validate() error {
 	if r.Spec() == nil || len(r.Spec()) == 0 {
 		missing = append(missing, "spec")
 	}
-	jj, _ := r.JSON()
 
-	log.Printf("KIND: '%s' NAME: '%s' SPEC(%d)", r.Kind(), r.Name(), len(jj))
 	if len(missing) > 0 {
 		if r.Name() != "" {
 			return fmt.Errorf("Resource %s lacks %s", r.Name(), strings.Join(missing, ", "))
