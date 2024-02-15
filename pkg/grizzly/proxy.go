@@ -155,11 +155,44 @@ func (p *ProxyServer) Start() error {
 	r.Get("/", p.RootHandler)
 
 	r.Get("/api/live/ws", p.wsHandler)
-	fmt.Printf("Listening on http://localhost:8080\n")
-	if p.Opts.OpenBrowser {
-		p.openBrowser("http://localhost:8080")
+	if p.Opts.ProxyPort == 0 {
+		p.Opts.ProxyPort = 8080
 	}
-	return http.ListenAndServe(":8080", r)
+	if p.Opts.OpenBrowser {
+		var url string
+		if p.Opts.IsDir {
+			url = fmt.Sprintf("http://localhost:%d", p.Opts.ProxyPort)
+		} else {
+			resources, err := p.Parser.Parse()
+			if err != nil {
+				return err
+			}
+			if len(resources) > 1 {
+				url = fmt.Sprintf("http://localhost:%d", p.Opts.ProxyPort)
+				url = fmt.Sprintf("ht")
+			} else if len(resources) == 0 {
+				return fmt.Errorf("No resources found to proxy")
+			} else {
+				resource := resources[0]
+				handler, err := Registry.GetHandler(resource.Kind())
+				if err != nil {
+					return err
+				}
+				proxyHandler, ok := handler.(ProxyHandler)
+				if !ok {
+					uid, err := handler.GetUID(resource)
+					if err != nil {
+						return err
+					}
+					return fmt.Errorf("Kind %s (for resource %s) does not support proxying", resource.Kind(), uid)
+				}
+				url = fmt.Sprintf("http://localhost:%d%s", p.Opts.ProxyPort, proxyHandler.ProxyURL(resource))
+			}
+		}
+		p.openBrowser(url)
+	}
+	fmt.Printf("Listening on http://localhost:%d\n", p.Opts.ProxyPort)
+	return http.ListenAndServe(fmt.Sprintf(":%d", p.Opts.ProxyPort), r)
 }
 
 func (p *ProxyServer) openBrowser(url string) {
