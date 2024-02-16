@@ -255,7 +255,7 @@ func (h *DashboardHandler) postSnapshot(resource grizzly.Resource, opts *grizzly
 	return response.GetPayload(), nil
 }
 
-func (h *DashboardHandler) GetProxyEndpoints(p grizzly.ProxyServer) []grizzly.ProxyEndpoint {
+func (h *DashboardHandler) GetProxyEndpoints(p grizzly.GrizzlyServer) []grizzly.ProxyEndpoint {
 	return []grizzly.ProxyEndpoint{
 		{
 			Method:  "GET",
@@ -275,7 +275,7 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.ProxyServer) []grizzly.Pr
 	}
 }
 
-func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.ProxyServer) func(http.ResponseWriter, *http.Request) {
+func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.GrizzlyServer) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, err := http.NewRequest("GET", p.Url+r.URL.Path, nil)
 		if err != nil {
@@ -313,7 +313,7 @@ func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.ProxyServer) func(
 	}
 }
 
-func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.ProxyServer) func(http.ResponseWriter, *http.Request) {
+func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.GrizzlyServer) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		uid := chi.URLParam(r, "uid")
 		if uid == "" {
@@ -350,7 +350,7 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.ProxyServer) func(h
 	}
 }
 
-func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.ProxyServer) func(http.ResponseWriter, *http.Request) {
+func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.GrizzlyServer) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		dash := map[string]interface{}{}

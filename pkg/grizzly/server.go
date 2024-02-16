@@ -17,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type ProxyServer struct {
+type GrizzlyServer struct {
 	proxy        *httputil.ReverseProxy
 	Parser       WatchParser
 	Url          string
@@ -34,8 +34,8 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func NewProxyServer(parser WatchParser, resourcePath string, opts Opts) (*ProxyServer, error) {
-	server := ProxyServer{
+func NewGrizzlyServer(parser WatchParser, resourcePath string, opts Opts) (*GrizzlyServer, error) {
+	server := GrizzlyServer{
 		Parser:       parser,
 		UserAgent:    "grizzly",
 		Opts:         opts,
@@ -113,7 +113,7 @@ var blockJSONpost = map[string]string{
 	"/api/ma/events":        "null",
 }
 
-func (p *ProxyServer) Start() error {
+func (p *GrizzlyServer) Start() error {
 	assetsFS, err := fs.Sub(embedFS, "embed/assets")
 	if err != nil {
 		return fmt.Errorf("could not create a sub-tree from the embedded assets FS: %w", err)
@@ -197,7 +197,7 @@ func (p *ProxyServer) Start() error {
 	return http.ListenAndServe(fmt.Sprintf(":%d", p.Opts.ProxyPort), r)
 }
 
-func (p *ProxyServer) openBrowser(url string) {
+func (p *GrizzlyServer) openBrowser(url string) {
 	var err error
 
 	switch runtime.GOOS {
@@ -215,7 +215,7 @@ func (p *ProxyServer) openBrowser(url string) {
 	}
 }
 
-func (p *ProxyServer) blockHandler(response string) http.HandlerFunc {
+func (p *GrizzlyServer) blockHandler(response string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -224,11 +224,11 @@ func (p *ProxyServer) blockHandler(response string) http.HandlerFunc {
 }
 
 // ProxyRequestHandler handles the http request using proxy
-func (p *ProxyServer) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
+func (p *GrizzlyServer) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	p.proxy.ServeHTTP(w, r)
 }
 
-func (p *ProxyServer) wsHandler(w http.ResponseWriter, r *http.Request) {
+func (p *GrizzlyServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -237,7 +237,7 @@ func (p *ProxyServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	p.proxy.ServeHTTP(w, r)
 }
 
-func (p *ProxyServer) RootHandler(w http.ResponseWriter, r *http.Request) {
+func (p *GrizzlyServer) RootHandler(w http.ResponseWriter, r *http.Request) {
 	resources, err := p.Parser.Parse()
 	if err != nil {
 		log.Error("Error: ", err)

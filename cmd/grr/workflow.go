@@ -195,10 +195,10 @@ func previewCmd(registry grizzly.Registry) *cli.Command {
 	return initialiseCmd(cmd, &opts)
 }
 
-func proxyCmd(registry grizzly.Registry) *cli.Command {
+func serveCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
-		Use:   "proxy <resources>",
-		Short: "Run debugging proxy",
+		Use:   "serve <resources>",
+		Short: "Run Grizzly server",
 		Args:  cli.ArgsExact(1),
 	}
 	var opts grizzly.Opts
@@ -209,9 +209,9 @@ func proxyCmd(registry grizzly.Registry) *cli.Command {
 			registry:     registry,
 			opts:         opts,
 		}
-		return grizzly.Proxy(parser, args[0], opts)
+		return grizzly.Serve(parser, args[0], opts)
 	}
-	cmd.Flags().BoolVarP(&opts.OpenBrowser, "open-browser", "b", false, "Open proxy URL in default browser")
+	cmd.Flags().BoolVarP(&opts.OpenBrowser, "open-browser", "b", false, "Open Grizzly in default browser")
 	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }

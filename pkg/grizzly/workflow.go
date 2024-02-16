@@ -411,14 +411,15 @@ func Watch(registry Registry, watchDir string, parser WatchParser) error {
 	return nil
 }
 
-// Proxy opens an HTTP endpoint that offers a Grafana UI to visualise the
-// resources handed to Grizzly. If pure files, they can be saved too.
-func Proxy(parser WatchParser, resourcePath string, opts Opts) error {
-	proxy, err := NewProxyServer(parser, resourcePath, opts)
+// Serve starts an HTTP server that can be used to navigate Grizzly resources,
+// as well as allowing visualisation of resources handed to Grizzly.
+// If pure files, they can be saved too.
+func Serve(parser WatchParser, resourcePath string, opts Opts) error {
+	server, err := NewGrizzlyServer(parser, resourcePath, opts)
 	if err != nil {
 		return err
 	}
-	return proxy.Start()
+	return server.Start()
 }
 
 // Listen waits for remote changes to a resource and saves them to disk
