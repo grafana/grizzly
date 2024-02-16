@@ -14,24 +14,14 @@ import (
 
 // AlertContactPointHandler is a Grizzly Handler for Grafana contactPoints
 type AlertContactPointHandler struct {
-	Provider grizzly.Provider
+	grizzly.BaseHandler
 }
 
 // NewAlertContactPointHandler returns a new Grizzly Handler for Grafana contactPoints
 func NewAlertContactPointHandler(provider grizzly.Provider) *AlertContactPointHandler {
 	return &AlertContactPointHandler{
-		Provider: provider,
+		BaseHandler: grizzly.NewBaseHandler(provider, "AlertContactPoint", false),
 	}
-}
-
-// Kind returns the kind for this handler
-func (h *AlertContactPointHandler) Kind() string {
-	return "AlertContactPoint"
-}
-
-// APIVersion returns group and version of the provider of this resource
-func (h *AlertContactPointHandler) APIVersion() string {
-	return h.Provider.APIVersion()
 }
 
 const (
@@ -53,16 +43,6 @@ func (h *AlertContactPointHandler) Parse(m manifest.Manifest) (grizzly.Resources
 	return grizzly.Resources{resource}, nil
 }
 
-// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *AlertContactPointHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	return &resource
-}
-
-// Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *AlertContactPointHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	return &resource
-}
-
 // Validate returns the uid of resource
 func (h *AlertContactPointHandler) Validate(resource grizzly.Resource) error {
 	uid, exist := resource.GetSpecString("uid")
@@ -74,22 +54,12 @@ func (h *AlertContactPointHandler) Validate(resource grizzly.Resource) error {
 	return nil
 }
 
-// GetUID returns the UID for a resource
-func (h *AlertContactPointHandler) GetUID(resource grizzly.Resource) (string, error) {
-	return resource.Name(), nil
-}
-
 func (h *AlertContactPointHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
 	spec := resource["spec"].(map[string]interface{})
 	if val, ok := spec["uid"]; ok {
 		return val.(string), nil
 	}
 	return "", fmt.Errorf("UID not specified")
-}
-
-// Sort sorts according to handler needs
-func (h *AlertContactPointHandler) Sort(resources grizzly.Resources) grizzly.Resources {
-	return resources
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
@@ -115,11 +85,6 @@ func (h *AlertContactPointHandler) Add(resource grizzly.Resource) error {
 // Update pushes a contactPoint to Grafana via the API
 func (h *AlertContactPointHandler) Update(existing, resource grizzly.Resource) error {
 	return h.putContactPoint(resource)
-}
-
-// UsesFolders identifies whether this resource lives within a folder
-func (h *AlertContactPointHandler) UsesFolders() bool {
-	return false
 }
 
 // getRemoteContactPoint retrieves a contactPoint object from Grafana

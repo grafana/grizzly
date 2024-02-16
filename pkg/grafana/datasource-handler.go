@@ -18,24 +18,14 @@ import (
 
 // DatasourceHandler is a Grizzly Handler for Grafana datasources
 type DatasourceHandler struct {
-	Provider grizzly.Provider
+	grizzly.BaseHandler
 }
 
 // NewDatasourceHandler returns a new Grizzly Handler for Grafana datasources
 func NewDatasourceHandler(provider grizzly.Provider) *DatasourceHandler {
 	return &DatasourceHandler{
-		Provider: provider,
+		BaseHandler: grizzly.NewBaseHandler(provider, "Datasource", false),
 	}
-}
-
-// Kind returns the kind for this handler
-func (h *DatasourceHandler) Kind() string {
-	return "Datasource"
-}
-
-// APIVersion returns group and version of the provider of this resource
-func (h *DatasourceHandler) APIVersion() string {
-	return h.Provider.APIVersion()
 }
 
 const (
@@ -103,22 +93,12 @@ func (h *DatasourceHandler) Validate(resource grizzly.Resource) error {
 	return nil
 }
 
-// GetUID returns the UID for a resource
-func (h *DatasourceHandler) GetUID(resource grizzly.Resource) (string, error) {
-	return resource.Name(), nil
-}
-
 func (h *DatasourceHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
 	spec := resource["spec"].(map[string]interface{})
 	if val, ok := spec["uid"]; ok {
 		return val.(string), nil
 	}
 	return "", fmt.Errorf("UID not specified")
-}
-
-// Sort sorts according to handler needs
-func (h *DatasourceHandler) Sort(resources grizzly.Resources) grizzly.Resources {
-	return resources
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
@@ -144,11 +124,6 @@ func (h *DatasourceHandler) Add(resource grizzly.Resource) error {
 // Update pushes a datasource to Grafana via the API
 func (h *DatasourceHandler) Update(existing, resource grizzly.Resource) error {
 	return h.putDatasource(resource)
-}
-
-// UsesFolders identifies whether this resource lives within a folder
-func (h *DatasourceHandler) UsesFolders() bool {
-	return false
 }
 
 // getRemoteDatasource retrieves a datasource object from Grafana

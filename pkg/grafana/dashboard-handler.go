@@ -20,24 +20,14 @@ const generalFolderUID = "general"
 
 // DashboardHandler is a Grizzly Handler for Grafana dashboards
 type DashboardHandler struct {
-	Provider grizzly.Provider
+	grizzly.BaseHandler
 }
 
 // NewDashboardHandler returns configuration defining a new Grafana Dashboard Handler
 func NewDashboardHandler(provider grizzly.Provider) *DashboardHandler {
 	return &DashboardHandler{
-		Provider: provider,
+		BaseHandler: grizzly.NewBaseHandler(provider, "Dashboard", true),
 	}
-}
-
-// Kind returns the name for this handler
-func (h *DashboardHandler) Kind() string {
-	return "Dashboard"
-}
-
-// APIVersion returns the group and version for the provider of which this handler is a part
-func (h *DashboardHandler) APIVersion() string {
-	return h.Provider.APIVersion()
 }
 
 const (
@@ -87,22 +77,12 @@ func (h *DashboardHandler) Validate(resource grizzly.Resource) error {
 	return nil
 }
 
-// GetUID returns the UID for a resource
-func (h *DashboardHandler) GetUID(resource grizzly.Resource) (string, error) {
-	return resource.Name(), nil
-}
-
 func (h *DashboardHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
 	spec := resource["spec"].(map[string]interface{})
 	if val, ok := spec["uid"]; ok {
 		return val.(string), nil
 	}
 	return "", fmt.Errorf("UID not specified")
-}
-
-// Sort sorts according to handler needs
-func (h *DashboardHandler) Sort(resources grizzly.Resources) grizzly.Resources {
-	return resources
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
@@ -153,11 +133,6 @@ func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.Prev
 		notifier.Error(resource, "delete: "+s.DeleteURL)
 	}
 	return nil
-}
-
-// UsesFolders identifies whether this resource lives within a folder
-func (h *DashboardHandler) UsesFolders() bool {
-	return true
 }
 
 // getRemoteDashboard retrieves a dashboard object from Grafana

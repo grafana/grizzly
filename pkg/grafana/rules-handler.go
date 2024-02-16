@@ -16,24 +16,14 @@ import (
 
 // RuleHandler is a Grizzly Handler for Prometheus Rules
 type RuleHandler struct {
-	Provider grizzly.Provider
+	grizzly.BaseHandler
 }
 
 // NewRuleHandler returns a new Grizzly Handler for Prometheus Rules
 func NewRuleHandler(provider grizzly.Provider) *RuleHandler {
 	return &RuleHandler{
-		Provider: provider,
+		BaseHandler: grizzly.NewBaseHandler(provider, "PrometheusRuleGroup", false),
 	}
-}
-
-// Kind returns the name for this handler
-func (h *RuleHandler) Kind() string {
-	return "PrometheusRuleGroup"
-}
-
-// APIVersion returns the group and version for the provider of which this handler is a part
-func (h *RuleHandler) APIVersion() string {
-	return h.Provider.APIVersion()
 }
 
 const (
@@ -52,16 +42,6 @@ func (h *RuleHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 		return nil, err
 	}
 	return grizzly.Resources{resource}, nil
-}
-
-// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *RuleHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	return &resource
-}
-
-// Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *RuleHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	return &resource
 }
 
 // Validate returns the uid of resource
@@ -89,11 +69,6 @@ func (h *RuleHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
 	return "", fmt.Errorf("UID not specified")
 }
 
-// Sort sorts according to handler needs
-func (h *RuleHandler) Sort(resources grizzly.Resources) grizzly.Resources {
-	return resources
-}
-
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *RuleHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	return h.getRemoteRuleGroup(UID)
@@ -118,11 +93,6 @@ func (h *RuleHandler) Add(resource grizzly.Resource) error {
 // Update pushes a datasource to Grafana via the API
 func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
 	return h.writeRuleGroup(resource)
-}
-
-// UsesFolders identifies whether this resource lives within a folder
-func (h *RuleHandler) UsesFolders() bool {
-	return false
 }
 
 var cortexTool = func(mimirConfig *config.MimirConfig, args ...string) ([]byte, error) {

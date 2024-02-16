@@ -16,24 +16,14 @@ import (
 
 // AlertRuleGroupHandler is a Grizzly Handler for Grafana alertRuleGroups
 type AlertRuleGroupHandler struct {
-	Provider grizzly.Provider
+	grizzly.BaseHandler
 }
 
 // NewAlertRuleGroupHandler returns a new Grizzly Handler for Grafana alertRuleGroups
 func NewAlertRuleGroupHandler(provider grizzly.Provider) *AlertRuleGroupHandler {
 	return &AlertRuleGroupHandler{
-		Provider: provider,
+		BaseHandler: grizzly.NewBaseHandler(provider, "AlertRuleGroup", false),
 	}
-}
-
-// Kind returns the kind for this handler
-func (h *AlertRuleGroupHandler) Kind() string {
-	return "AlertRuleGroup"
-}
-
-// APIVersion returns group and version of the provider of this resource
-func (h *AlertRuleGroupHandler) APIVersion() string {
-	return h.Provider.APIVersion()
 }
 
 const (
@@ -54,16 +44,6 @@ func (h *AlertRuleGroupHandler) Parse(m manifest.Manifest) (grizzly.Resources, e
 	return grizzly.Resources{resource}, nil
 }
 
-// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *AlertRuleGroupHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	return &resource
-}
-
-// Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *AlertRuleGroupHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	return &resource
-}
-
 // Validate checks that the uid format is valid
 func (h *AlertRuleGroupHandler) Validate(resource grizzly.Resource) error {
 	data, err := json.Marshal(resource.Spec())
@@ -82,22 +62,12 @@ func (h *AlertRuleGroupHandler) Validate(resource grizzly.Resource) error {
 	return nil
 }
 
-// GetUID returns the UID for a resource
-func (h *AlertRuleGroupHandler) GetUID(resource grizzly.Resource) (string, error) {
-	return resource.Name(), nil
-}
-
 func (h *AlertRuleGroupHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
 	spec := resource["spec"].(map[string]interface{})
 	if val, ok := spec["name"]; ok {
 		return val.(string), nil
 	}
 	return "", fmt.Errorf("UID not specified")
-}
-
-// Sort sorts according to handler needs
-func (h *AlertRuleGroupHandler) Sort(resources grizzly.Resources) grizzly.Resources {
-	return resources
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
@@ -123,11 +93,6 @@ func (h *AlertRuleGroupHandler) Add(resource grizzly.Resource) error {
 // Update pushes a alertRuleGroup to Grafana via the API
 func (h *AlertRuleGroupHandler) Update(existing, resource grizzly.Resource) error {
 	return h.putAlertRuleGroup(resource)
-}
-
-// UsesFolders identifies whether this resource lives within a folder
-func (h *AlertRuleGroupHandler) UsesFolders() bool {
-	return false
 }
 
 // getRemoteAlertRuleGroup retrieves a alertRuleGroup object from Grafana

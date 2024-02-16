@@ -17,24 +17,14 @@ import (
 
 // FolderHandler is a Grizzly Handler for Grafana dashboard folders
 type FolderHandler struct {
-	Provider grizzly.Provider
+	grizzly.BaseHandler
 }
 
 // NewFolderHandler returns configuration defining a new Grafana Folder Handler
 func NewFolderHandler(provider grizzly.Provider) *FolderHandler {
 	return &FolderHandler{
-		Provider: provider,
+		BaseHandler: grizzly.NewBaseHandler(provider, "DashboardFolder", false),
 	}
-}
-
-// Kind returns the name for this handler
-func (h *FolderHandler) Kind() string {
-	return "DashboardFolder"
-}
-
-// APIVersion returns the group and version for the provider of which this handler is a part
-func (h *FolderHandler) APIVersion() string {
-	return h.Provider.APIVersion()
 }
 
 const (
@@ -56,16 +46,6 @@ func (h *FolderHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
 	return grizzly.Resources{resource}, nil
 }
 
-// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *FolderHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	return &resource
-}
-
-// Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *FolderHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	return &resource
-}
-
 // Validate returns the uid of resource
 func (h *FolderHandler) Validate(resource grizzly.Resource) error {
 	uid, exist := resource.GetSpecString("uid")
@@ -76,11 +56,6 @@ func (h *FolderHandler) Validate(resource grizzly.Resource) error {
 	}
 
 	return nil
-}
-
-// GetUID returns the UID for a resource
-func (h *FolderHandler) GetUID(resource grizzly.Resource) (string, error) {
-	return resource.Name(), nil
 }
 
 func (h *FolderHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
@@ -160,11 +135,6 @@ func (h *FolderHandler) Add(resource grizzly.Resource) error {
 // Update pushes a folder to Grafana via the API
 func (h *FolderHandler) Update(existing, resource grizzly.Resource) error {
 	return h.putFolder(resource)
-}
-
-// UsesFolders identifies whether this resource lives within a folder
-func (h *FolderHandler) UsesFolders() bool {
-	return false
 }
 
 // getRemoteFolder retrieves a folder object from Grafana
