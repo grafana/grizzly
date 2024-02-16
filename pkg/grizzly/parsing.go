@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/grizzly/pkg/config"
@@ -19,15 +20,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(resourcePath string, opts Opts) (Resources, error) {
+func Parse(resourcePath string, opts *Opts) (Resources, error) {
 	stat, err := os.Stat(resourcePath)
 	if err != nil {
 		return nil, err
 	}
 
 	if !stat.IsDir() {
-		return ParseFile(opts, resourcePath)
+		return ParseFile(*opts, resourcePath)
 	}
+	opts.IsDir = true
 
 	var resources Resources
 	files, err := FindResourceFiles(resourcePath)
@@ -36,7 +38,7 @@ func Parse(resourcePath string, opts Opts) (Resources, error) {
 	}
 
 	for _, file := range files {
-		r, err := ParseFile(opts, file)
+		r, err := ParseFile(*opts, file)
 		if err != nil {
 			return nil, err
 		}
@@ -88,9 +90,18 @@ func ParseJSON(resourceFile string, opts Opts) (Resources, error) {
 		return nil, err
 	}
 	if onlySpec {
-		return newOnlySpecResources(m, kind, folderUID)
+		resources, err := newOnlySpecResources(m, kind, folderUID)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing %s: %v", resourceFile, err)
+		}
+		return resources, nil
+
 	} else {
-		return newWithEnvelopeResources(m)
+		resources, err := newWithEnvelopeResources(m)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing %s: %v", resourceFile, err)
+		}
+		return resources, nil
 	}
 }
 
@@ -120,12 +131,12 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 		if onlySpec {
 			parsedResources, err = newOnlySpecResources(m, kind, folderUID)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("Error parsing %s: %v", yamlFile, err)
 			}
 		} else {
 			parsedResources, err = newWithEnvelopeResources(m)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("Error parsing %s: %v", yamlFile, err)
 			}
 		}
 		handler, err := Registry.GetHandler(m.Kind())
@@ -157,10 +168,16 @@ func newOnlySpecResources(data map[string]any, kind, folderUID string) (Resource
 	if handler.UsesFolders() && folderUID == "" {
 		return nil, fmt.Errorf("Folder (-f) required with --onlyspec")
 	}
-	resource, err := NewResource(handler.APIVersion(), handler.Kind(), "", data)
+	resource, err := NewResource(handler.APIVersion(), handler.Kind(), "dummy", data)
 	if err != nil {
 		return nil, err
 	}
+	uid, err := handler.GetSpecUID(resource)
+	if err != nil {
+		return nil, err
+	}
+	resource.SetMetadata("name", uid)
+
 	if handler.UsesFolders() {
 		resource.SetMetadata("folder", folderUID)
 	}
@@ -169,6 +186,11 @@ func newOnlySpecResources(data map[string]any, kind, folderUID string) (Resource
 }
 
 func newWithEnvelopeResources(data map[string]any) (Resources, error) {
+	err := verifyEnvelope(data)
+	if err != nil {
+		return nil, err
+	}
+
 	resource, err := ResourceFromMap(data)
 	if err != nil {
 		return nil, err
@@ -179,6 +201,24 @@ func newWithEnvelopeResources(data map[string]any) (Resources, error) {
 	}
 	m := manifest.Manifest(resource)
 	return handler.Parse(m)
+}
+
+func verifyEnvelope(data map[string]any) error {
+	missing := []string{}
+	if _, ok := data["metadata"]; !ok {
+		missing = append(missing, "metadata")
+	}
+	if _, ok := data["spec"]; !ok {
+		missing = append(missing, "spec")
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	plural := ""
+	if len(missing) > 1 {
+		plural = "s"
+	}
+	return fmt.Errorf("missing element%s %s in resource", plural, strings.Join(missing, ", "))
 }
 
 //go:embed grizzly.jsonnet

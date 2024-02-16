@@ -12,6 +12,7 @@ type Opts struct {
 	JsonnetPaths []string
 	Targets      []string
 	OutputFormat string
+	IsDir        bool // used internally to denote that the resource path argument pointed at a directory
 
 	// Used for supporting resources without envelopes
 	OnlySpec     bool

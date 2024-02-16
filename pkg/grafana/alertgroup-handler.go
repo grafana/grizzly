@@ -87,6 +87,14 @@ func (h *AlertRuleGroupHandler) GetUID(resource grizzly.Resource) (string, error
 	return resource.Name(), nil
 }
 
+func (h *AlertRuleGroupHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
+	spec := resource["spec"].(map[string]interface{})
+	if val, ok := spec["name"]; ok {
+		return val.(string), nil
+	}
+	return "", fmt.Errorf("UID not specified")
+}
+
 // Sort sorts according to handler needs
 func (h *AlertRuleGroupHandler) Sort(resources grizzly.Resources) grizzly.Resources {
 	return resources

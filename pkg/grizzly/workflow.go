@@ -191,11 +191,11 @@ func Show(resources Resources, opts Opts) error {
 		}
 		resource = *(handler.Unprepare(resource))
 
-		format, onlySpec, err := getOutputFormat(opts)
+		format, _, err := getOutputFormat(opts)
 		if err != nil {
 			return err
 		}
-		content, _, _, err := Format("", &resource, format, onlySpec)
+		content, _, _, err := Format("", &resource, format, false) // we always show full resource, even if only-spec was specified
 		if err != nil {
 			return err
 		}
