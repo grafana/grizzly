@@ -4,13 +4,15 @@ local folder = import 'folder-simple.libsonnet';
 local grr = import 'grizzly/grizzly.libsonnet';
 local prometheus = import 'prometheus-rules.libsonnet';
 local sm = import 'synthetic-monitoring-simple.libsonnet';
-
+local testDashboard = import 'test-dashboard.json';
 {
   folders: [
     grr.folder.new('sample', 'Sample'),
   ],
   dashboards: [
     grr.dashboard.new('prod-overview', dashboard)
+    + grr.resource.addMetadata('folder', 'sample'),
+    grr.dashboard.new('e9abc1a5-1b8f-4327-83e4-0b3c2b3722a9', testDashboard)
     + grr.resource.addMetadata('folder', 'sample'),
   ],
   datasources: [
