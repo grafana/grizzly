@@ -100,6 +100,14 @@ func (h *LibraryElementHandler) GetUID(resource grizzly.Resource) (string, error
 	return resource.Name(), nil
 }
 
+func (h *LibraryElementHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
+	spec := resource["spec"].(map[string]interface{})
+	if val, ok := spec["uid"]; ok {
+		return val.(string), nil
+	}
+	return "", fmt.Errorf("UID not specified")
+}
+
 // Sort sorts according to handler needs
 func (h *LibraryElementHandler) Sort(resources grizzly.Resources) grizzly.Resources {
 	return resources

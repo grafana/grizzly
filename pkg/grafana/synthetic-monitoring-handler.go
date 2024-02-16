@@ -114,6 +114,13 @@ func (h *SyntheticMonitoringHandler) GetUID(resource grizzly.Resource) (string, 
 	}
 	return fmt.Sprintf("%s.%s", resource.GetMetadata("type"), resource.Name()), nil
 }
+func (h *SyntheticMonitoringHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
+	spec := resource["spec"].(map[string]interface{})
+	if val, ok := spec["XXXXXXX"]; ok {
+		return val.(string), nil
+	}
+	return "", fmt.Errorf("UID not specified")
+}
 
 // Sort sorts according to handler needs
 func (h *SyntheticMonitoringHandler) Sort(resources grizzly.Resources) grizzly.Resources {

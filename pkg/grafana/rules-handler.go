@@ -81,6 +81,14 @@ func (h *RuleHandler) GetUID(resource grizzly.Resource) (string, error) {
 	return fmt.Sprintf("%s.%s", resource.GetMetadata("namespace"), resource.Name()), nil
 }
 
+func (h *RuleHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
+	spec := resource["spec"].(map[string]interface{})
+	if val, ok := spec["XXXXXXX"]; ok {
+		return val.(string), nil
+	}
+	return "", fmt.Errorf("UID not specified")
+}
+
 // Sort sorts according to handler needs
 func (h *RuleHandler) Sort(resources grizzly.Resources) grizzly.Resources {
 	return resources

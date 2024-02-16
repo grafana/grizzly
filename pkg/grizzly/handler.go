@@ -24,6 +24,9 @@ type Handler interface {
 	// Retrieves a UID for a resource
 	GetUID(resource Resource) (string, error)
 
+	// GetSpecUID retrieves a UID from the spec of a raw resource
+	GetSpecUID(resource Resource) (string, error)
+
 	// Get retrieves JSON for a resource from an endpoint, by UID
 	GetByUID(UID string) (*Resource, error)
 

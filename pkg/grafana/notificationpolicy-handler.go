@@ -79,6 +79,14 @@ func (h *AlertNotificationPolicyHandler) GetUID(resource grizzly.Resource) (stri
 	return resource.Name(), nil
 }
 
+func (h *AlertNotificationPolicyHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
+	spec := resource["spec"].(map[string]interface{})
+	if val, ok := spec["XXXXXXX"]; ok {
+		return val.(string), nil
+	}
+	return "", fmt.Errorf("UID not specified")
+}
+
 // Sort sorts according to handler needs
 func (h *AlertNotificationPolicyHandler) Sort(resources grizzly.Resources) grizzly.Resources {
 	return resources

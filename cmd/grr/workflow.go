@@ -51,7 +51,7 @@ func listCmd() *cli.Command {
 			notifier.Error(nil, "resource-path required when listing local resources")
 			return nil
 		}
-		resources, err := grizzly.Parse(args[0], opts)
+		resources, err := grizzly.Parse(args[0], &opts)
 		if err != nil {
 			return err
 		}
@@ -86,12 +86,13 @@ func showCmd() *cli.Command {
 	var opts grizzly.Opts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		resources, err := grizzly.Parse(args[0], opts)
+		resources, err := grizzly.Parse(args[0], &opts)
 		if err != nil {
 			return err
 		}
 		return grizzly.Show(resources, opts)
 	}
+	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
 
@@ -104,7 +105,7 @@ func diffCmd() *cli.Command {
 	var opts grizzly.Opts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		resources, err := grizzly.Parse(args[0], opts)
+		resources, err := grizzly.Parse(args[0], &opts)
 		if err != nil {
 			return err
 		}
@@ -123,7 +124,7 @@ func applyCmd() *cli.Command {
 	var opts grizzly.Opts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		resources, err := grizzly.Parse(args[0], opts)
+		resources, err := grizzly.Parse(args[0], &opts)
 		if err != nil {
 			return err
 		}
@@ -144,7 +145,7 @@ func (p *jsonnetWatchParser) Name() string {
 }
 
 func (p *jsonnetWatchParser) Parse() (grizzly.Resources, error) {
-	return grizzly.Parse(p.resourcePath, p.opts)
+	return grizzly.Parse(p.resourcePath, &p.opts)
 }
 
 func watchCmd() *cli.Command {
@@ -178,7 +179,7 @@ func previewCmd() *cli.Command {
 	expires := cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		resources, err := grizzly.Parse(args[0], opts)
+		resources, err := grizzly.Parse(args[0], &opts)
 		if err != nil {
 			return err
 		}
@@ -202,7 +203,7 @@ func exportCmd() *cli.Command {
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		dashboardDir := args[1]
-		resources, err := grizzly.Parse(args[0], opts)
+		resources, err := grizzly.Parse(args[0], &opts)
 		if err != nil {
 			return err
 		}
@@ -267,7 +268,7 @@ func initialiseCmd(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
 func initialiseOnlySpec(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
 	cmd.Flags().BoolVarP(&opts.OnlySpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
 	cmd.Flags().StringVarP(&opts.FolderUID, "folder", "f", generalFolderUID, "folder to push dashboards to")
-	cmd.Flags().StringVarP(&opts.FolderUID, "kind", "k", "", "Kind to use for resources. Required by --only-spec")
+	cmd.Flags().StringVarP(&opts.ResourceKind, "kind", "k", "", "Kind to use for resources. Required by --only-spec")
 
 	cmdRun := cmd.Run
 	cmd.Run = func(cmd *cli.Command, args []string) error {
