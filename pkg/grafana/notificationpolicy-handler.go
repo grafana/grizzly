@@ -18,24 +18,14 @@ const (
 
 // AlertNotificationPolicyHandler is a Grizzly Handler for Grafana alertNotificationPolicies
 type AlertNotificationPolicyHandler struct {
-	Provider grizzly.Provider
+	grizzly.BaseHandler
 }
 
 // NewAlertNotificationPolicyHandler returns a new Grizzly Handler for Grafana alertNotificationPolicies
 func NewAlertNotificationPolicyHandler(provider grizzly.Provider) *AlertNotificationPolicyHandler {
 	return &AlertNotificationPolicyHandler{
-		Provider: provider,
+		BaseHandler: grizzly.NewBaseHandler(provider, "AlertNotificationPolicy", false),
 	}
-}
-
-// Kind returns the kind for this handler
-func (h *AlertNotificationPolicyHandler) Kind() string {
-	return "AlertNotificationPolicy"
-}
-
-// APIVersion returns group and version of the provider of this resource
-func (h *AlertNotificationPolicyHandler) APIVersion() string {
-	return h.Provider.APIVersion()
 }
 
 const (
@@ -56,16 +46,6 @@ func (h *AlertNotificationPolicyHandler) Parse(m manifest.Manifest) (grizzly.Res
 	return grizzly.Resources{resource}, h.Validate(resource)
 }
 
-// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
-func (h *AlertNotificationPolicyHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	return &resource
-}
-
-// Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *AlertNotificationPolicyHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	return &resource
-}
-
 // Validate returns the uid of resource
 func (h *AlertNotificationPolicyHandler) Validate(resource grizzly.Resource) error {
 	if resource.Name() != GlobalAlertNotificationPolicyName {
@@ -74,22 +54,12 @@ func (h *AlertNotificationPolicyHandler) Validate(resource grizzly.Resource) err
 	return nil
 }
 
-// GetUID returns the UID for a resource
-func (h *AlertNotificationPolicyHandler) GetUID(resource grizzly.Resource) (string, error) {
-	return resource.Name(), nil
-}
-
 func (h *AlertNotificationPolicyHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
 	spec := resource["spec"].(map[string]interface{})
 	if val, ok := spec["XXXXXXX"]; ok {
 		return val.(string), nil
 	}
 	return "", fmt.Errorf("UID not specified")
-}
-
-// Sort sorts according to handler needs
-func (h *AlertNotificationPolicyHandler) Sort(resources grizzly.Resources) grizzly.Resources {
-	return resources
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
@@ -115,11 +85,6 @@ func (h *AlertNotificationPolicyHandler) Add(resource grizzly.Resource) error {
 // Update pushes a alertNotificationPolicy to Grafana via the API
 func (h *AlertNotificationPolicyHandler) Update(existing, resource grizzly.Resource) error {
 	return h.putAlertNotificationPolicy(resource)
-}
-
-// UsesFolders identifies whether this resource lives within a folder
-func (h *AlertNotificationPolicyHandler) UsesFolders() bool {
-	return false
 }
 
 // getRemoteAlertNotificationPolicy retrieves a alertNotificationPolicy object from Grafana

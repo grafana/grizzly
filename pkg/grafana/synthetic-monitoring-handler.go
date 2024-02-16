@@ -39,24 +39,14 @@ type Probes struct {
 
 // SyntheticMonitoringHandler is a Grizzly Handler for Grafana Synthetic Monitoring
 type SyntheticMonitoringHandler struct {
-	Provider grizzly.Provider
+	grizzly.BaseHandler
 }
 
 // NewSyntheticMonitoringHandler returns a Grizzly Handler for Grafana Synthetic Monitoring
 func NewSyntheticMonitoringHandler(provider grizzly.Provider) *SyntheticMonitoringHandler {
 	return &SyntheticMonitoringHandler{
-		Provider: provider,
+		BaseHandler: grizzly.NewBaseHandler(provider, "SyntheticMonitoringCheck", false),
 	}
-}
-
-// Kind returns the name for this handler
-func (h *SyntheticMonitoringHandler) Kind() string {
-	return "SyntheticMonitoringCheck"
-}
-
-// APIVersion returns the group and version for the provider of which this handler is a part
-func (h *SyntheticMonitoringHandler) APIVersion() string {
-	return h.Provider.APIVersion()
 }
 
 const (
@@ -122,11 +112,6 @@ func (h *SyntheticMonitoringHandler) GetSpecUID(resource grizzly.Resource) (stri
 	return "", fmt.Errorf("UID not specified")
 }
 
-// Sort sorts according to handler needs
-func (h *SyntheticMonitoringHandler) Sort(resources grizzly.Resources) grizzly.Resources {
-	return resources
-}
-
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, error) {
 	return h.getRemoteCheck(UID)
@@ -151,11 +136,6 @@ func (h *SyntheticMonitoringHandler) Add(resource grizzly.Resource) error {
 // Update pushes an updated check to the SyntheticMonitoring endpoing
 func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource) error {
 	return h.updateCheck(resource)
-}
-
-// UsesFolders identifies whether this resource lives within a folder
-func (h *SyntheticMonitoringHandler) UsesFolders() bool {
-	return false
 }
 
 // NewSyntheticMonitoringClient creates a new client for synthetic monitoring go client

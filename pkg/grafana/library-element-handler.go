@@ -15,7 +15,7 @@ import (
 
 // LibraryElementHandler is a Grizzly Handler for Grafana dashboard folders
 type LibraryElementHandler struct {
-	Provider grizzly.Provider
+	grizzly.BaseHandler
 }
 
 var _ grizzly.Handler = &LibraryElementHandler{}
@@ -23,18 +23,8 @@ var _ grizzly.Handler = &LibraryElementHandler{}
 // NewLibraryElementHandler returns configuration defining a new Grafana Library Element Handler
 func NewLibraryElementHandler(provider grizzly.Provider) *LibraryElementHandler {
 	return &LibraryElementHandler{
-		Provider: provider,
+		BaseHandler: grizzly.NewBaseHandler(provider, "LibraryElement", false),
 	}
-}
-
-// Kind returns the name for this handler
-func (h *LibraryElementHandler) Kind() string {
-	return "LibraryElement"
-}
-
-// APIVersion returns the group and version for the provider of which this handler is a part
-func (h *LibraryElementHandler) APIVersion() string {
-	return h.Provider.APIVersion()
 }
 
 const (
@@ -95,22 +85,12 @@ func (h *LibraryElementHandler) Validate(resource grizzly.Resource) error {
 	return nil
 }
 
-// GetUID returns the UID for a resource
-func (h *LibraryElementHandler) GetUID(resource grizzly.Resource) (string, error) {
-	return resource.Name(), nil
-}
-
 func (h *LibraryElementHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
 	spec := resource["spec"].(map[string]interface{})
 	if val, ok := spec["uid"]; ok {
 		return val.(string), nil
 	}
 	return "", fmt.Errorf("UID not specified")
-}
-
-// Sort sorts according to handler needs
-func (h *LibraryElementHandler) Sort(resources grizzly.Resources) grizzly.Resources {
-	return resources
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
@@ -141,11 +121,6 @@ func (h *LibraryElementHandler) Add(resource grizzly.Resource) error {
 // Update pushes an element to Grafana via the API
 func (h *LibraryElementHandler) Update(existing, resource grizzly.Resource) error {
 	return h.updateElement(existing, resource)
-}
-
-// UsesFolders identifies whether this resource lives within a folder
-func (h *LibraryElementHandler) UsesFolders() bool {
-	return false
 }
 
 func (h *LibraryElementHandler) listElements() ([]string, error) {

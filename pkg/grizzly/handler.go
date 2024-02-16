@@ -4,6 +4,48 @@ import (
 	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
+type BaseHandler struct {
+	Provider    Provider
+	kind        string
+	usesFolders bool
+}
+
+func NewBaseHandler(provider Provider, kind string, usesFolders bool) BaseHandler {
+	return BaseHandler{
+		Provider:    provider,
+		kind:        kind,
+		usesFolders: usesFolders,
+	}
+}
+
+func (h *BaseHandler) Kind() string {
+	return h.kind
+}
+
+func (h *BaseHandler) APIVersion() string {
+	return h.Provider.APIVersion()
+}
+
+func (h *BaseHandler) UsesFolders() bool {
+	return h.usesFolders
+}
+
+func (h *BaseHandler) Unprepare(resource Resource) *Resource {
+	return &resource
+}
+
+func (h *BaseHandler) Prepare(existing, resource Resource) *Resource {
+	return &resource
+}
+
+func (h *BaseHandler) GetUID(resource Resource) (string, error) {
+	return resource.Name(), nil
+}
+
+func (h *BaseHandler) Sort(resources Resources) Resources {
+	return resources
+}
+
 // Handler describes a handler for a single API resource handled by a single provider
 type Handler interface {
 	APIVersion() string
