@@ -397,3 +397,8 @@ func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.ProxyServer) func(
 		w.Write(body)
 	}
 }
+
+func (h *DashboardHandler) ProxyURL(resource grizzly.Resource) (string, error) {
+	uid, err := h.GetUID(resource)
+	return fmt.Sprintf("/d/%s/slug", uid), err
+}

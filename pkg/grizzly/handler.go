@@ -120,4 +120,7 @@ type ProxyEndpoint struct {
 type ProxyHandler interface {
 	// RegisterHandlers registers HTTP handlers for proxy events
 	GetProxyEndpoints(p ProxyServer) []ProxyEndpoint
+
+	// ProxyURL returns a URL path for a resource on the proxy
+	ProxyURL(Resource) (string, error)
 }

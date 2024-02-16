@@ -168,9 +168,8 @@ func (p *ProxyServer) Start() error {
 			}
 			if len(resources) > 1 {
 				url = fmt.Sprintf("http://localhost:%d", p.Opts.ProxyPort)
-				url = fmt.Sprintf("ht")
 			} else if len(resources) == 0 {
-				return fmt.Errorf("No resources found to proxy")
+				return fmt.Errorf("no resources found to proxy")
 			} else {
 				resource := resources[0]
 				handler, err := Registry.GetHandler(resource.Kind())
@@ -183,9 +182,13 @@ func (p *ProxyServer) Start() error {
 					if err != nil {
 						return err
 					}
-					return fmt.Errorf("Kind %s (for resource %s) does not support proxying", resource.Kind(), uid)
+					return fmt.Errorf("kind %s (for resource %s) does not support proxying", resource.Kind(), uid)
 				}
-				url = fmt.Sprintf("http://localhost:%d%s", p.Opts.ProxyPort, proxyHandler.ProxyURL(resource))
+				proxyURL, err := proxyHandler.ProxyURL(resource)
+				if err != nil {
+					return err
+				}
+				url = fmt.Sprintf("http://localhost:%d%s", p.Opts.ProxyPort, proxyURL)
 			}
 		}
 		p.openBrowser(url)
