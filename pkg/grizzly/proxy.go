@@ -76,7 +76,7 @@ var mustProxyGET = []string{
 	"/api/datasources/proxy/*",
 	"/api/datasources/*",
 	"/api/plugins/*",
-	"/avatar/",
+	"/avatar/*",
 }
 var mustProxyPOST = []string{
 	"/api/datasources/proxy/*",
@@ -98,7 +98,6 @@ var blockJSONget = map[string]string{
       "status": "success",
       "data": { "groups": [] }
     }`,
-	"/avatar/*":    "",
 	"/api/folders": "[]",
 	"/api/recording-rules/writer": `{
       "id": "cojWep7Vz",
