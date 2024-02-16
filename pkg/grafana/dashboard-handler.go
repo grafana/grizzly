@@ -277,6 +277,12 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.GrizzlyServer) []grizzly.
 
 func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.GrizzlyServer) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text/html")
+		if p.Url == "" {
+			w.WriteHeader(400)
+			fmt.Fprintf(w, "<p><b>Error:</b> No URL provided")
+			return
+		}
 		req, err := http.NewRequest("GET", p.Url+r.URL.Path, nil)
 		if err != nil {
 			log.Print(err)
@@ -290,25 +296,23 @@ func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.GrizzlyServer) fun
 		resp, err := client.Do(req)
 
 		if err == nil {
-			w.Header().Add("Content-Type", "text/html")
 			body, _ := io.ReadAll(resp.Body)
 			w.Write(body)
 			return
 		}
 
 		msg := ""
-		if p.Url == "" {
-			msg += "<p><b>Error:</b> URL is not defined</p>"
-		}
 		if p.Token == "" {
 			msg += "<p><b>Warning:</b> No service account token specified.</p>"
 		}
 
 		if resp.StatusCode == 302 {
-			http.Error(w, msg+"<p>Authentication error</p>", http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprintf(w, msg+"<p>Authentication error</p>")
 		} else {
 			body, _ := io.ReadAll(resp.Body)
-			http.Error(w, msg+string(body), resp.StatusCode)
+			w.WriteHeader(resp.StatusCode)
+			fmt.Fprintf(w, msg+string(body))
 		}
 	}
 }
