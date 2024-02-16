@@ -267,7 +267,7 @@ func initialiseCmd(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
 func initialiseOnlySpec(cmd *cli.Command, opts *grizzly.Opts) *cli.Command {
 	cmd.Flags().BoolVarP(&opts.OnlySpec, "only-spec", "s", false, "this flag is only used for dashboards to output the spec")
 	cmd.Flags().StringVarP(&opts.FolderUID, "folder", "f", generalFolderUID, "folder to push dashboards to")
-	cmd.Flags().StringVarP(&opts.FolderUID, "kind", "k", "", "Kind to use for resources. Required by --only-spec")
+	cmd.Flags().StringVarP(&opts.ResourceKind, "kind", "k", "", "Kind to use for resources. Required by --only-spec")
 
 	cmdRun := cmd.Run
 	cmd.Run = func(cmd *cli.Command, args []string) error {
