@@ -5,7 +5,6 @@ import (
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/models"
-	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,11 +13,6 @@ func TestExtractFolderUID(t *testing.T) {
 
 	client, err := provider.Client()
 	require.NoError(t, err)
-
-	grizzly.ConfigureProviderRegistry(
-		[]grizzly.Provider{
-			&Provider{client: client},
-		})
 
 	t.Run("extract folder uid successfully - uid exists", func(t *testing.T) {
 		meta := models.DashboardMeta{

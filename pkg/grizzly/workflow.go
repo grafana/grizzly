@@ -22,7 +22,7 @@ import (
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 // Get retrieves a resource from a remote endpoint using its UID
-func Get(UID string, opts Opts) error {
+func Get(registry Registry, UID string, opts Opts) error {
 	log.Info("Getting ", UID)
 
 	count := strings.Count(UID, ".")
@@ -40,7 +40,7 @@ func Get(UID string, opts Opts) error {
 		return fmt.Errorf("UID must be <provider>.<uid>: %s", UID)
 	}
 
-	handler, err := Registry.GetHandler(handlerName)
+	handler, err := registry.GetHandler(handlerName)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func Get(UID string, opts Opts) error {
 	if err != nil {
 		return err
 	}
-	content, _, _, err := Format("", resource, format, onlySpec)
+	content, _, _, err := Format(registry, "", resource, format, onlySpec)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func Get(UID string, opts Opts) error {
 }
 
 // List outputs the keys resources found in resulting json.
-func List(resources Resources) error {
+func List(registry Registry, resources Resources) error {
 	log.Infof("Listing %d resources", resources.Len())
 
 	f := "%s\t%s\t%s\n"
@@ -73,7 +73,7 @@ func List(resources Resources) error {
 
 	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
 	for _, resource := range resources {
-		handler, err := Registry.GetHandler(resource.Kind())
+		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
 		}
@@ -83,7 +83,7 @@ func List(resources Resources) error {
 }
 
 // ListRetmote outputs the keys of remote resources
-func ListRemote(opts Opts) error {
+func ListRemote(registry Registry, opts Opts) error {
 	log.Info("Listing remotes")
 
 	f := "%s\t%s\t%s\n"
@@ -95,8 +95,8 @@ func ListRemote(opts Opts) error {
 	}
 	targets := currentContext.GetTargets(opts.Targets)
 	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
-	for name, handler := range Registry.Handlers {
-		if !Registry.HandlerMatchesTarget(handler, targets) {
+	for name, handler := range registry.Handlers {
+		if !registry.HandlerMatchesTarget(handler, targets) {
 			continue
 		}
 		log.Debugf("Listing remote values for handler %s", name)
@@ -105,7 +105,7 @@ func ListRemote(opts Opts) error {
 			return err
 		}
 		for _, id := range IDs {
-			if Registry.ResourceMatchesTarget(handler, id, targets) {
+			if registry.ResourceMatchesTarget(handler, id, targets) {
 				fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), id)
 			}
 		}
@@ -116,7 +116,7 @@ func ListRemote(opts Opts) error {
 // Pull pulls remote resources and stores them in the local file system.
 // The given resourcePath must be a directory, where all resources will be stored.
 // If opts.JSONSpec is true, which is only applicable for dashboards, saves the spec as a JSON file.
-func Pull(resourcePath string, opts Opts) error {
+func Pull(registry Registry, resourcePath string, opts Opts) error {
 	isFile, err := isFile(resourcePath)
 	if err != nil {
 		return err
@@ -133,8 +133,8 @@ func Pull(resourcePath string, opts Opts) error {
 		return err
 	}
 	targets := currentContext.GetTargets(opts.Targets)
-	for name, handler := range Registry.Handlers {
-		if !Registry.HandlerMatchesTarget(handler, targets) {
+	for name, handler := range registry.Handlers {
+		if !registry.HandlerMatchesTarget(handler, targets) {
 			notifier.Info(notifier.SimpleString(handler.Kind()), "skipped")
 			continue
 		}
@@ -153,7 +153,7 @@ func Pull(resourcePath string, opts Opts) error {
 		}
 		notifier.Warn(nil, fmt.Sprintf("Pulling %d resources", len(UIDs)))
 		for _, UID := range UIDs {
-			if !Registry.ResourceMatchesTarget(handler, UID, targets) {
+			if !registry.ResourceMatchesTarget(handler, UID, targets) {
 				continue
 			}
 			resource, err := handler.GetByUID(UID)
@@ -165,7 +165,7 @@ func Pull(resourcePath string, opts Opts) error {
 				return err
 			}
 
-			content, filename, _, err := Format(resourcePath, resource, format, onlySpec)
+			content, filename, _, err := Format(registry, resourcePath, resource, format, onlySpec)
 			if err != nil {
 				return err
 			}
@@ -180,12 +180,12 @@ func Pull(resourcePath string, opts Opts) error {
 }
 
 // Show displays resources
-func Show(resources Resources, opts Opts) error {
+func Show(registry Registry, resources Resources, opts Opts) error {
 	log.Infof("Showing %d resources", resources.Len())
 
 	var items []term.PageItem
 	for _, resource := range resources {
-		handler, err := Registry.GetHandler(resource.Kind())
+		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
 		}
@@ -195,7 +195,7 @@ func Show(resources Resources, opts Opts) error {
 		if err != nil {
 			return err
 		}
-		content, _, _, err := Format("", &resource, format, false) // we always show full resource, even if only-spec was specified
+		content, _, _, err := Format(registry, "", &resource, format, false) // we always show full resource, even if only-spec was specified
 		if err != nil {
 			return err
 		}
@@ -217,11 +217,11 @@ func Show(resources Resources, opts Opts) error {
 }
 
 // Diff compares resources to those at the endpoints
-func Diff(resources Resources, opts Opts) error {
+func Diff(registry Registry, resources Resources, opts Opts) error {
 	log.Infof("Diff-ing %d resources", resources.Len())
 
 	for _, resource := range resources {
-		handler, err := Registry.GetHandler(resource.Kind())
+		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
 		}
@@ -230,7 +230,7 @@ func Diff(resources Resources, opts Opts) error {
 		if err != nil {
 			return err
 		}
-		local, _, _, err := Format("", &resource, format, onlySpec)
+		local, _, _, err := Format(registry, "", &resource, format, onlySpec)
 		if err != nil {
 			return err
 		}
@@ -238,7 +238,7 @@ func Diff(resources Resources, opts Opts) error {
 		resource = *handler.Unprepare(resource)
 		uid := resource.Name()
 
-		log.Debugf("Getting the remote value for `%s`", resource.Key())
+		log.Debugf("Getting the remote value for `%s.%s`", handler.Kind(), uid)
 		remote, err := handler.GetRemote(resource)
 		if errors.Is(err, ErrNotFound) {
 			notifier.NotFound(resource)
@@ -251,7 +251,7 @@ func Diff(resources Resources, opts Opts) error {
 
 		remote = handler.Unprepare(*remote)
 
-		remoteRepresentation, _, _, err := Format("", &resource, format, onlySpec)
+		remoteRepresentation, _, _, err := Format(registry, "", &resource, format, onlySpec)
 		if err != nil {
 			return err
 		}
@@ -275,23 +275,19 @@ func Diff(resources Resources, opts Opts) error {
 }
 
 // Apply pushes resources to endpoints
-func Apply(resources Resources) error {
+func Apply(registry Registry, resources Resources) error {
 	log.Infof("Applying %d resources", resources.Len())
 
 	for _, resource := range resources {
-		handler, err := Registry.GetHandler(resource.Kind())
+		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
 		}
-		err = resource.Validate()
-		if err != nil {
-			return fmt.Errorf("resource %s is not valid: %v", resource.Key(), err)
-		}
 
-		log.Debugf("Getting the remote value for `%s`", resource.Key())
+		log.Debugf("Getting the remote value for `%s.%s`", handler.Kind(), resource.Name())
 		existingResource, err := handler.GetRemote(resource)
 		if errors.Is(err, ErrNotFound) {
-			log.Debugf("`%s` was not found, adding it...", resource.Key())
+			log.Debugf("`%s.%s` was not found, adding it...", handler.Kind(), resource.Name())
 
 			if err := handler.Add(resource); err != nil {
 				return err
@@ -303,7 +299,7 @@ func Apply(resources Resources) error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("`%s` was found, updating it...", resource.Key())
+		log.Debugf("`%s.%s` was found, updating it...", handler.Kind(), resource.Name())
 
 		resourceRepresentation, err := resource.YAML()
 		if err != nil {
@@ -333,9 +329,9 @@ func Apply(resources Resources) error {
 }
 
 // Preview pushes resources to endpoints as previews, if supported
-func Preview(resources Resources, opts *PreviewOpts) error {
+func Preview(registry Registry, resources Resources, opts *PreviewOpts) error {
 	for _, resource := range resources {
-		handler, err := Registry.GetHandler(resource.Kind())
+		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
 		}
@@ -360,7 +356,7 @@ type WatchParser interface {
 
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
 // when changes are noticed.
-func Watch(watchDir string, parser WatchParser) error {
+func Watch(registry Registry, watchDir string, parser WatchParser) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -382,7 +378,7 @@ func Watch(watchDir string, parser WatchParser) error {
 					if err != nil {
 						log.Error("Error: ", err)
 					}
-					err = Apply(resources)
+					err = Apply(registry, resources)
 					if err != nil {
 						log.Error("Error: ", err)
 					}
@@ -416,7 +412,7 @@ func Watch(watchDir string, parser WatchParser) error {
 }
 
 // Listen waits for remote changes to a resource and saves them to disk
-func Listen(UID, filename string) error {
+func Listen(registry Registry, UID, filename string) error {
 	count := strings.Count(UID, ".")
 	var handlerName, resourceID string
 	if count == 1 {
@@ -432,7 +428,7 @@ func Listen(UID, filename string) error {
 		return fmt.Errorf("UID must be <provider>.<uid>: %s", UID)
 	}
 
-	handler, err := Registry.GetHandler(handlerName)
+	handler, err := registry.GetHandler(handlerName)
 	if err != nil {
 		return err
 	}
@@ -446,7 +442,7 @@ func Listen(UID, filename string) error {
 }
 
 // Export renders Jsonnet resources then saves them to a directory
-func Export(exportDir string, resources Resources, opts Opts) error {
+func Export(registry Registry, exportDir string, resources Resources, opts Opts) error {
 	if _, err := os.Stat(exportDir); os.IsNotExist(err) {
 		err = os.Mkdir(exportDir, 0755)
 		if err != nil {
@@ -459,7 +455,7 @@ func Export(exportDir string, resources Resources, opts Opts) error {
 		if err != nil {
 			return err
 		}
-		updatedResourceBytes, _, extension, err := Format("", &resource, format, onlySpec)
+		updatedResourceBytes, _, extension, err := Format(registry, "", &resource, format, onlySpec)
 		if err != nil {
 			return err
 		}

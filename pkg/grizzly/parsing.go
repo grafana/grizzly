@@ -20,14 +20,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(resourcePath string, opts *Opts) (Resources, error) {
+func Parse(registry Registry, resourcePath string, opts *Opts) (Resources, error) {
 	stat, err := os.Stat(resourcePath)
 	if err != nil {
 		return nil, err
 	}
 
 	if !stat.IsDir() {
-		return ParseFile(*opts, resourcePath)
+		return ParseFile(registry, *opts, resourcePath)
 	}
 	opts.IsDir = true
 
@@ -38,13 +38,13 @@ func Parse(resourcePath string, opts *Opts) (Resources, error) {
 	}
 
 	for _, file := range files {
-		r, err := ParseFile(*opts, file)
+		r, err := ParseFile(registry, *opts, file)
 		if err != nil {
 			return nil, err
 		}
 		resources = append(resources, r...)
 	}
-	resources = resources.Sort()
+	resources = registry.Sort(resources)
 	return resources, nil
 }
 
@@ -59,21 +59,21 @@ func FindResourceFiles(resourcePath string) ([]string, error) {
 	return files, err
 }
 
-func ParseFile(opts Opts, resourceFile string) (Resources, error) {
+func ParseFile(registry Registry, opts Opts, resourceFile string) (Resources, error) {
 	switch filepath.Ext(resourceFile) {
 	case ".json":
-		return ParseJSON(resourceFile, opts)
+		return ParseJSON(registry, resourceFile, opts)
 	case ".yaml", ".yml":
-		return ParseYAML(resourceFile, opts)
+		return ParseYAML(registry, resourceFile, opts)
 	case ".jsonnet", ".libsonnet":
-		return ParseJsonnet(resourceFile, opts)
+		return ParseJsonnet(registry, resourceFile, opts)
 	default:
 		return nil, fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)
 	}
 }
 
 // ParseJSON evaluates a JSON file and parses it into resources
-func ParseJSON(resourceFile string, opts Opts) (Resources, error) {
+func ParseJSON(registry Registry, resourceFile string, opts Opts) (Resources, error) {
 	f, err := os.Open(resourceFile)
 	if err != nil {
 		return nil, err
@@ -90,14 +90,14 @@ func ParseJSON(resourceFile string, opts Opts) (Resources, error) {
 		return nil, err
 	}
 	if onlySpec {
-		resources, err := newOnlySpecResources(m, kind, folderUID)
+		resources, err := newOnlySpecResources(registry, m, kind, folderUID)
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing %s: %v", resourceFile, err)
 		}
 		return resources, nil
 
 	} else {
-		resources, err := newWithEnvelopeResources(m)
+		resources, err := newWithEnvelopeResources(registry, m)
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing %s: %v", resourceFile, err)
 		}
@@ -106,7 +106,7 @@ func ParseJSON(resourceFile string, opts Opts) (Resources, error) {
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources
-func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
+func ParseYAML(registry Registry, yamlFile string, opts Opts) (Resources, error) {
 	f, err := os.Open(yamlFile)
 	if err != nil {
 		return nil, err
@@ -129,17 +129,17 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 			return nil, err
 		}
 		if onlySpec {
-			parsedResources, err = newOnlySpecResources(m, kind, folderUID)
+			parsedResources, err = newOnlySpecResources(registry, m, kind, folderUID)
 			if err != nil {
 				return nil, fmt.Errorf("Error parsing %s: %v", yamlFile, err)
 			}
 		} else {
-			parsedResources, err = newWithEnvelopeResources(m)
+			parsedResources, err = newWithEnvelopeResources(registry, m)
 			if err != nil {
 				return nil, fmt.Errorf("Error parsing %s: %v", yamlFile, err)
 			}
 		}
-		handler, err := Registry.GetHandler(m.Kind())
+		handler, err := registry.GetHandler(m.Kind())
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +149,7 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 		}
 		targets := currentContext.GetTargets(opts.Targets)
 		for _, parsedResource := range parsedResources {
-			if Registry.ResourceMatchesTarget(handler, parsedResource.UID(), targets) {
+			if registry.ResourceMatchesTarget(handler, parsedResource.Name(), targets) {
 				resources = append(resources, parsedResource)
 			}
 		}
@@ -157,16 +157,16 @@ func ParseYAML(yamlFile string, opts Opts) (Resources, error) {
 	return resources, nil
 }
 
-func newOnlySpecResources(data map[string]any, kind, folderUID string) (Resources, error) {
+func newOnlySpecResources(registry Registry, data map[string]any, kind, folderUID string) (Resources, error) {
 	if kind == "" {
 		return nil, fmt.Errorf("Kind (-k) required with --onlyspec")
 	}
-	handler, err := Registry.GetHandler(kind)
+	handler, err := registry.GetHandler(kind)
 	if err != nil {
 		return nil, err
 	}
 	if handler.UsesFolders() && folderUID == "" {
-		return nil, fmt.Errorf("Folder (-f) required with --onlyspec")
+		return nil, fmt.Errorf("folder (-f) required with --onlyspec")
 	}
 	resource, err := NewResource(handler.APIVersion(), handler.Kind(), "dummy", data)
 	if err != nil {
@@ -185,8 +185,8 @@ func newOnlySpecResources(data map[string]any, kind, folderUID string) (Resource
 	return handler.Parse(m)
 }
 
-func newWithEnvelopeResources(data map[string]any) (Resources, error) {
-	err := verifyEnvelope(data)
+func newWithEnvelopeResources(registry Registry, data map[string]any) (Resources, error) {
+	err := ValidateEnvelope(data)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func newWithEnvelopeResources(data map[string]any) (Resources, error) {
 	if err != nil {
 		return nil, err
 	}
-	handler, err := Registry.GetHandler(resource.Kind())
+	handler, err := registry.GetHandler(resource.Kind())
 	if err != nil {
 		return nil, err
 	}
@@ -203,29 +203,60 @@ func newWithEnvelopeResources(data map[string]any) (Resources, error) {
 	return handler.Parse(m)
 }
 
-func verifyEnvelope(data map[string]any) error {
-	missing := []string{}
-	if _, ok := data["metadata"]; !ok {
-		missing = append(missing, "metadata")
+func ValidateEnvelope(data map[string]any) error {
+	errors := []string{}
+
+	kind, ok := data["kind"]
+	if !ok || kind == "" {
+		errors = append(errors, "kind missing")
 	}
-	if _, ok := data["spec"]; !ok {
-		missing = append(missing, "spec")
+	metadata, ok := data["metadata"]
+	if !ok {
+		errors = append(errors, "metadata missing")
+	} else {
+		m, ok := metadata.(map[string]interface{})
+		if !ok {
+			errors = append(errors, "Metadata is not a map")
+		} else {
+			name, ok := m["name"]
+			if !ok || name == nil || name == "" {
+				errors = append(errors, "metadata/name missing")
+			} else {
+				n, ok := name.(string)
+				if !ok {
+					errors = append(errors, "metadata/name is not a string")
+				}
+				if n == "" {
+					errors = append(errors, "metadata/name is blank")
+				}
+			}
+		}
 	}
-	if len(missing) == 0 {
-		return nil
+	spec, ok := data["spec"]
+	if !ok || spec == nil {
+		errors = append(errors, "spec missing")
+	} else {
+		s, ok := spec.(map[string]any)
+		if !ok {
+			errors = append(errors, "spec is not a map")
+		} else {
+			if len(s) == 0 {
+				errors = append(errors, "spec should not be empty")
+			}
+		}
 	}
-	plural := ""
-	if len(missing) > 1 {
-		plural = "s"
+
+	if len(errors) > 0 {
+		return fmt.Errorf("errors parsing resource: %s", strings.Join(errors, ", "))
 	}
-	return fmt.Errorf("missing element%s %s in resource", plural, strings.Join(missing, ", "))
+	return nil
 }
 
 //go:embed grizzly.jsonnet
 var script string
 
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree
-func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
+func ParseJsonnet(registry Registry, jsonnetFile string, opts Opts) (Resources, error) {
 
 	if _, err := os.Stat(jsonnetFile); os.IsNotExist(err) {
 		return nil, fmt.Errorf("file does not exist: %s", jsonnetFile)
@@ -266,7 +297,7 @@ func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 	targets := currentContext.GetTargets(opts.Targets)
 	resources := Resources{}
 	for _, m := range extracted {
-		handler, err := Registry.GetHandler(m.Kind())
+		handler, err := registry.GetHandler(m.Kind())
 		if err != nil {
 			log.Error("Error getting handler: ", err)
 			continue
@@ -276,7 +307,12 @@ func ParseJsonnet(jsonnetFile string, opts Opts) (Resources, error) {
 			return nil, err
 		}
 		for _, parsedResource := range parsedResources {
-			if Registry.ResourceMatchesTarget(handler, parsedResource.UID(), targets) {
+			err := ValidateEnvelope(parsedResource)
+			if err != nil {
+				return nil, err
+			}
+
+			if registry.ResourceMatchesTarget(handler, parsedResource.Name(), targets) {
 				resources = append(resources, parsedResource)
 			}
 		}

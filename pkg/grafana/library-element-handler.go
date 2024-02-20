@@ -155,7 +155,7 @@ func (h *LibraryElementHandler) updateElement(existing, resource grizzly.Resourc
 	if err != nil {
 		return err
 	}
-	_, err = client.LibraryElements.UpdateLibraryElement(resource.UID(), &command)
+	_, err = client.LibraryElements.UpdateLibraryElement(resource.Name(), &command)
 	return err
 }
 

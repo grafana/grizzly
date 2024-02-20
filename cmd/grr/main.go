@@ -27,23 +27,23 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	grizzly.ConfigureProviderRegistry(
+	registry := grizzly.NewRegistry(
 		[]grizzly.Provider{
 			grafana.NewProvider(),
 		})
 
 	// workflow commands
 	rootCmd.AddCommand(
-		getCmd(),
-		listCmd(),
-		pullCmd(),
-		showCmd(),
-		diffCmd(),
-		applyCmd(),
-		watchCmd(),
-		exportCmd(),
-		previewCmd(),
-		providersCmd(),
+		getCmd(registry),
+		listCmd(registry),
+		pullCmd(registry),
+		showCmd(registry),
+		diffCmd(registry),
+		applyCmd(registry),
+		watchCmd(registry),
+		exportCmd(registry),
+		previewCmd(registry),
+		providersCmd(registry),
 		configCmd(),
 	)
 

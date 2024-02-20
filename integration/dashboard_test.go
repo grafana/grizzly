@@ -52,21 +52,6 @@ func TestDashboard(t *testing.T) {
 		})
 	})
 
-	// Check that the spec must be a map
-	t.Run("Apply dashboard - spec as string", func(t *testing.T) {
-		runTest(t, GrizzlyTest{
-			TestDir:       dir,
-			RunOnContexts: allContexts,
-			Commands: []Command{
-				{
-					Command:             "apply spec-as-string-post.yml",
-					ExpectedCode:        1,
-					ExpectedLogsContain: "resource spec-as-string has an invalid spec. Expected a map, got a value of type string",
-				},
-			},
-		})
-	})
-
 	t.Run("Diff dashboard - success", func(t *testing.T) {
 		runTest(t, GrizzlyTest{
 			TestDir:       dir,

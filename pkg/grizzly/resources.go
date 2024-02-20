@@ -3,7 +3,6 @@ package grizzly
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -36,17 +35,6 @@ func NewResource(apiVersion, kind, name string, spec map[string]interface{}) (Re
 		},
 		"spec": spec,
 	}
-	if name == "" {
-		handler, err := Registry.GetHandler(kind)
-		if err != nil {
-			return nil, err
-		}
-		uid, err := handler.GetUID(resource)
-		if uid == "" {
-			return nil, fmt.Errorf("Resources of kind %s require a UID", kind)
-		}
-		resource.SetMetadata("name", uid)
-	}
 	return resource, nil
 }
 
@@ -65,25 +53,7 @@ func (r *Resource) Name() string {
 }
 
 func (r Resource) String() string {
-	return r.Key()
-}
-
-// Key returns a key that combines kind and uid
-func (r *Resource) Key() string {
-	uid := r.UID()
-	return fmt.Sprintf("%s.%s", r.Kind(), uid)
-}
-
-func (r Resource) UID() string {
-	handler, err := Registry.GetHandler(r.Kind())
-	if err != nil {
-		return "Unknown-handler:" + r.Kind()
-	}
-	uid, err := handler.GetUID(r)
-	if err != nil {
-		return "error:" + err.Error()
-	}
-	return uid
+	return fmt.Sprintf("%s.%s", r.Kind(), r.Name())
 }
 
 func (r *Resource) HasMetadata(key string) bool {
@@ -168,46 +138,9 @@ func (r *Resource) JSON() (string, error) {
 	return string(j), nil
 }
 
-func (r *Resource) Validate() error {
-	handler, err := Registry.GetHandler(r.Kind())
-	if err != nil {
-		return err
-	}
-	missing := []string{}
-	if r.Name() == "" {
-		missing = append(missing, "name")
-	}
-	if r.Spec() == nil || len(r.Spec()) == 0 {
-		missing = append(missing, "spec")
-	}
-
-	if len(missing) > 0 {
-		if r.Name() != "" {
-			return fmt.Errorf("Resource %s lacks %s", r.Name(), strings.Join(missing, ", "))
-		} else {
-			j, _ := r.JSON()
-			return fmt.Errorf("Resource lacks %s: %s", strings.Join(missing, ", "), j)
-		}
-	}
-	return handler.Validate(*r)
-}
-
 // Resources represents a set of resources
 type Resources []Resource
 
 func (r Resources) Len() int {
 	return len(r)
-}
-
-func (r *Resources) Sort() Resources {
-	resourceByKind := map[string]Resources{}
-	resources := Resources{}
-	for _, resource := range *r {
-		resourceByKind[resource.Kind()] = append(resourceByKind[resource.Kind()], resource)
-	}
-	for _, handler := range Registry.HandlerOrder {
-		handlerResources := resourceByKind[handler.Kind()]
-		resources = append(resources, handler.Sort(handlerResources)...)
-	}
-	return resources
 }

@@ -71,26 +71,26 @@ func (h *FolderHandler) Sort(resources grizzly.Resources) grizzly.Resources {
 	result := grizzly.Resources{}
 	addedToResult := map[string]bool{}
 	for _, resource := range resources {
-		addedToResult[resource.UID()] = false
+		addedToResult[resource.Name()] = false
 	}
 	for {
 		continueLoop := false
 		for _, resource := range resources {
-			if addedToResult[resource.UID()] {
+			if addedToResult[resource.Name()] {
 				// already added
 				continue
 			}
 			parentUID, hasParentUID := resource.Spec()["parentUid"]
 			// Add root folders
 			if !hasParentUID {
-				addedToResult[resource.UID()] = true
+				addedToResult[resource.Name()] = true
 				result = append(result, resource)
 				continue
 			}
 			parentAdded, parentExists := addedToResult[parentUID.(string)]
 			// Add folders with parents which aren't declared in Grizzly, or which have already been added
 			if !parentExists || parentAdded {
-				addedToResult[resource.UID()] = true
+				addedToResult[resource.Name()] = true
 				result = append(result, resource)
 				continue
 			}
@@ -271,7 +271,7 @@ func (h *FolderHandler) putFolder(resource grizzly.Resource) error {
 		return err
 	}
 
-	_, err = client.Folders.UpdateFolder(resource.UID(), &body)
+	_, err = client.Folders.UpdateFolder(resource.Name(), &body)
 	return err
 }
 

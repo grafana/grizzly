@@ -83,11 +83,6 @@ func TestDashboard(t *testing.T) {
 	_ = os.Unsetenv("GRAFANA_URL")
 
 	t.Run("Validate/Prepare", func(t *testing.T) {
-		grizzly.ConfigureProviderRegistry(
-			[]grizzly.Provider{
-				NewProvider(),
-			})
-
 		newResource := func(name string, spec map[string]any) grizzly.Resource {
 			resource := grizzly.Resource{
 				"apiVersion": "apiVersion",
@@ -123,25 +118,10 @@ func TestDashboard(t *testing.T) {
 				Resource:            newResource("name1", map[string]any{"uid": "name2"}),
 				ValidateErrorString: "uid 'name2' and name 'name1', don't match",
 			},
-			{
-				Name:                "no name provided",
-				Resource:            newResource("", map[string]any{"uid": "name1"}),
-				ValidateErrorString: "Resource lacks name",
-			},
-			{
-				Name:                "no spec provided",
-				Resource:            newResource("name1", map[string]any{}),
-				ValidateErrorString: "Resource name1 lacks spec",
-			},
-			{
-				Name:                "neither name nor UID provided",
-				Resource:            newResource("", map[string]any{"title": "something"}),
-				ValidateErrorString: "Resource lacks name",
-			},
 		}
 		for _, test := range tests {
 			t.Run(test.Name, func(t *testing.T) {
-				err := test.Resource.Validate()
+				err := handler.Validate(test.Resource)
 				if test.ValidateErrorString != "" {
 					require.Error(t, err)
 					require.Contains(t, err.Error(), test.ValidateErrorString)
