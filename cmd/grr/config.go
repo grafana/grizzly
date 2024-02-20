@@ -9,6 +9,23 @@ import (
 	"github.com/spf13/viper"
 )
 
+func configCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "config <sub-command>",
+		Short: "Show, select or configure configuration",
+		Args:  cli.ArgsExact(0),
+	}
+	cmd.AddCommand(configPathCmd())
+	cmd.AddCommand(currentContextCmd())
+	cmd.AddCommand(useContextCmd())
+	cmd.AddCommand(getContextsCmd())
+	cmd.AddCommand(configImportCmd())
+	cmd.AddCommand(getConfigCmd())
+	cmd.AddCommand(setCmd())
+	cmd.AddCommand(createContextCmd())
+	return cmd
+}
+
 func configPathCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "path",
