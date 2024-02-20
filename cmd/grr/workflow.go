@@ -209,7 +209,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 			registry:     registry,
 			opts:         opts,
 		}
-		return grizzly.Serve(parser, args[0], opts)
+		return grizzly.Serve(registry, parser, args[0], opts)
 	}
 	cmd.Flags().BoolVarP(&opts.OpenBrowser, "open-browser", "b", false, "Open Grizzly in default browser")
 	cmd = initialiseOnlySpec(cmd, &opts)

@@ -19,6 +19,7 @@ import (
 
 type GrizzlyServer struct {
 	proxy        *httputil.ReverseProxy
+	Registry     Registry
 	Parser       WatchParser
 	Url          string
 	User         string
@@ -34,7 +35,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func NewGrizzlyServer(parser WatchParser, resourcePath string, opts Opts) (*GrizzlyServer, error) {
+func NewGrizzlyServer(registry Registry, parser WatchParser, resourcePath string, opts Opts) (*GrizzlyServer, error) {
 	server := GrizzlyServer{
 		Parser:       parser,
 		UserAgent:    "grizzly",
@@ -124,7 +125,7 @@ func (p *GrizzlyServer) Start() error {
 	r.Use(middleware.Logger)
 	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
 
-	for _, handler := range Registry.Handlers {
+	for _, handler := range p.Registry.Handlers {
 		proxyHandler, ok := handler.(ProxyHandler)
 		if ok {
 			for _, endpoint := range proxyHandler.GetProxyEndpoints(*p) {
@@ -172,7 +173,7 @@ func (p *GrizzlyServer) Start() error {
 				return fmt.Errorf("no resources found to proxy")
 			} else {
 				resource := resources[0]
-				handler, err := Registry.GetHandler(resource.Kind())
+				handler, err := p.Registry.GetHandler(resource.Kind())
 				if err != nil {
 					return err
 				}

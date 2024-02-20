@@ -414,8 +414,8 @@ func Watch(registry Registry, watchDir string, parser WatchParser) error {
 // Serve starts an HTTP server that can be used to navigate Grizzly resources,
 // as well as allowing visualisation of resources handed to Grizzly.
 // If pure files, they can be saved too.
-func Serve(parser WatchParser, resourcePath string, opts Opts) error {
-	server, err := NewGrizzlyServer(parser, resourcePath, opts)
+func Serve(registry Registry, parser WatchParser, resourcePath string, opts Opts) error {
+	server, err := NewGrizzlyServer(registry, parser, resourcePath, opts)
 	if err != nil {
 		return err
 	}
