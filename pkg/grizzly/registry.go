@@ -16,41 +16,40 @@ type Provider interface {
 }
 
 // ProviderSet records providers
-type registry struct {
+type Registry struct {
 	Providers    []Provider
 	Handlers     map[string]Handler
 	HandlerOrder []Handler
 }
 
-// Global Handler registry
-var Registry registry
-
-// NewProviderRegistry returns a new registry instance
-func ConfigureProviderRegistry(providers []Provider) {
-	Registry.Providers = append(Registry.Providers, providers...)
-	if Registry.Handlers == nil {
-		Registry.Handlers = map[string]Handler{}
-		Registry.HandlerOrder = []Handler{}
+// NewRegistry returns an empty registry
+func NewRegistry(providers []Provider) Registry {
+	registry := Registry{
+		Handlers:     map[string]Handler{},
+		HandlerOrder: []Handler{},
 	}
+
+	registry.Providers = providers
 	for _, provider := range providers {
 		for _, handler := range provider.GetHandlers() {
-			Registry.Handlers[handler.Kind()] = handler
-			Registry.HandlerOrder = append(Registry.HandlerOrder, handler)
+			registry.Handlers[handler.Kind()] = handler
+			registry.HandlerOrder = append(registry.HandlerOrder, handler)
 		}
 	}
+	return registry
 }
 
 // GetHandler returns a single provider based upon a JSON path
-func (r *registry) GetHandler(path string) (Handler, error) {
-	handler, exists := r.Handlers[path]
+func (r *Registry) GetHandler(kind string) (Handler, error) {
+	handler, exists := r.Handlers[kind]
 	if !exists {
-		return nil, fmt.Errorf("couldn't find a handler for %s: %w", path, ErrHandlerNotFound)
+		return nil, fmt.Errorf("couldn't find a handler for %s: %w", kind, ErrHandlerNotFound)
 	}
 	return handler, nil
 }
 
 // HandlerMatchesTarget identifies whether a handler is in a target list
-func (r *registry) HandlerMatchesTarget(handler Handler, targets []string) bool {
+func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool {
 	if len(targets) == 0 {
 		return true
 	}
@@ -68,7 +67,7 @@ func (r *registry) HandlerMatchesTarget(handler Handler, targets []string) bool 
 }
 
 // ResourceMatchesTarget identifies whether a resource is in a target list
-func (r *registry) ResourceMatchesTarget(handler Handler, UID string, targets []string) bool {
+func (r *Registry) ResourceMatchesTarget(handler Handler, UID string, targets []string) bool {
 	if len(targets) == 0 {
 		return true
 	}
@@ -92,4 +91,17 @@ func (r *registry) ResourceMatchesTarget(handler Handler, UID string, targets []
 		}
 	}
 	return false
+}
+
+func (r *Registry) Sort(resources Resources) Resources {
+	resourceByKind := map[string]Resources{}
+	for _, resource := range resources {
+		resourceByKind[resource.Kind()] = append(resourceByKind[resource.Kind()], resource)
+	}
+	resources = Resources{}
+	for _, handler := range r.HandlerOrder {
+		handlerResources := resourceByKind[handler.Kind()]
+		resources = append(resources, handler.Sort(handlerResources)...)
+	}
+	return resources
 }

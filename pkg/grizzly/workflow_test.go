@@ -15,7 +15,7 @@ import (
 func TestPull(t *testing.T) {
 	InitialiseTestConfig()
 	provider := grafana.NewProvider()
-	grizzly.ConfigureProviderRegistry(
+	registry := grizzly.NewRegistry(
 		[]grizzly.Provider{
 			provider,
 		})
@@ -34,7 +34,7 @@ func TestPull(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, f.Close())
 
-		err = grizzly.Pull(path, opts)
+		err = grizzly.Pull(registry, path, opts)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "pull <resource-path> must be a directory")
 	})
@@ -46,7 +46,7 @@ func TestPull(t *testing.T) {
 		err := os.MkdirAll(path, 0755)
 		require.NoError(t, err)
 
-		err = grizzly.Pull(path, opts)
+		err = grizzly.Pull(registry, path, opts)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, numOfFiles(path))
 	})
@@ -55,7 +55,7 @@ func TestPull(t *testing.T) {
 		t.Parallel()
 
 		path := filepath.Join(t.TempDir(), filepath.Base(t.Name()))
-		err := grizzly.Pull(path, opts)
+		err := grizzly.Pull(registry, path, opts)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, numOfFiles(path))
 	})

@@ -184,7 +184,7 @@ func (h *AlertContactPointHandler) putContactPoint(resource grizzly.Resource) er
 	}
 	stringtrue := "true"
 	params := provisioning.NewPutContactpointParams().
-		WithUID(resource.UID()).
+		WithUID(resource.Name()).
 		WithBody(&modelContactPoint).
 		WithXDisableProvenance(&stringtrue)
 	_, err = client.Provisioning.PutContactpoint(params)

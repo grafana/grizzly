@@ -81,10 +81,8 @@ func TestFolders(t *testing.T) {
 }
 
 func TestSortFolders(t *testing.T) {
-	provider := NewProvider()
 	InitialiseTestConfig()
 	handler := NewFolderHandler(NewProvider())
-	grizzly.ConfigureProviderRegistry([]grizzly.Provider{provider})
 	folder := func(uid string, parentUID string) grizzly.Resource {
 		spec := map[string]interface{}{
 			"uid": uid,
@@ -166,7 +164,7 @@ func TestSortFolders(t *testing.T) {
 			sorted := handler.Sort(tc.folders)
 			require.Len(t, sorted, len(tc.expected))
 			for i, resource := range sorted {
-				require.Equal(t, tc.expected[i], resource.UID())
+				require.Equal(t, tc.expected[i], resource.Name())
 			}
 		})
 	}

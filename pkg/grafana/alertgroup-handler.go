@@ -174,7 +174,7 @@ func (h *AlertRuleGroupHandler) createAlertRuleGroup(resource grizzly.Resource) 
 
 	for _, r := range group.Rules {
 		if err := h.createAlertRule(r); err != nil {
-			return fmt.Errorf("creating rule for group %s: %w", resource.UID(), err)
+			return fmt.Errorf("creating rule for group %s: %w", resource.Name(), err)
 		}
 	}
 

@@ -19,11 +19,6 @@ func TestRules(t *testing.T) {
 	InitialiseTestConfig()
 	provider := NewProvider()
 	h := NewRuleHandler(provider)
-	grizzly.ConfigureProviderRegistry(
-		[]grizzly.Provider{
-			provider,
-		})
-
 	t.Run("get remote rule group", func(t *testing.T) {
 		mockCortexTool(t, "testdata/list_rules.yaml", nil)
 
@@ -35,9 +30,6 @@ func TestRules(t *testing.T) {
 		require.Equal(t, "first_rules.grizzly_alerts", uid)
 		require.Equal(t, "first_rules", res.GetMetadata("namespace"))
 		require.Equal(t, "PrometheusRuleGroup", res.Kind())
-		key := res.Key()
-		require.NoError(t, err)
-		require.Equal(t, "PrometheusRuleGroup.first_rules.grizzly_alerts", key)
 	})
 
 	t.Run("get remote rule group - error from cortextool client", func(t *testing.T) {

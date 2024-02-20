@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-func Format(resourcePath string, resource *Resource, format string, onlySpec bool) ([]byte, string, string, error) {
+func Format(registry Registry, resourcePath string, resource *Resource, format string, onlySpec bool) ([]byte, string, string, error) {
 	var content string
 	var filename string
 	var extension string
@@ -20,21 +20,21 @@ func Format(resourcePath string, resource *Resource, format string, onlySpec boo
 	switch format {
 	case "yaml":
 		extension = "yaml"
-		filename, err = getFilename(resourcePath, resource, extension)
+		filename, err = getFilename(registry, resourcePath, resource, extension)
 		if err != nil {
 			return nil, "", "", err
 		}
 		content, err = spec.YAML()
 	case "json":
 		extension = "json"
-		filename, err = getFilename(resourcePath, resource, extension)
+		filename, err = getFilename(registry, resourcePath, resource, extension)
 		if err != nil {
 			return nil, "", "", err
 		}
 		content, err = spec.JSON()
 	default:
 		extension = "yaml"
-		filename, err = getFilename(resourcePath, resource, extension)
+		filename, err = getFilename(registry, resourcePath, resource, extension)
 		if err != nil {
 			return nil, "", "", err
 		}
@@ -43,8 +43,8 @@ func Format(resourcePath string, resource *Resource, format string, onlySpec boo
 	return []byte(content), filename, extension, err
 }
 
-func getFilename(resourcePath string, resource *Resource, extension string) (string, error) {
-	handler, err := Registry.GetHandler(resource.Kind())
+func getFilename(registry Registry, resourcePath string, resource *Resource, extension string) (string, error) {
+	handler, err := registry.GetHandler(resource.Kind())
 	if err != nil {
 		return "", err
 	}
