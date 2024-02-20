@@ -45,6 +45,7 @@ func main() {
 		previewCmd(registry),
 		providersCmd(registry),
 		configCmd(),
+		serveCmd(registry),
 	)
 
 	// Run!

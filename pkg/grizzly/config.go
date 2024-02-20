@@ -19,6 +19,11 @@ type Opts struct {
 	HasOnlySpec  bool
 	FolderUID    string
 	ResourceKind string
+
+	// Used for supporting the proxy server
+	OpenBrowser bool
+	ProxyPort   int
+	CanSave     bool
 }
 
 // PreviewOpts contains options to configure a preview

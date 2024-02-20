@@ -195,6 +195,27 @@ func previewCmd(registry grizzly.Registry) *cli.Command {
 	return initialiseCmd(cmd, &opts)
 }
 
+func serveCmd(registry grizzly.Registry) *cli.Command {
+	cmd := &cli.Command{
+		Use:   "serve <resources>",
+		Short: "Run Grizzly server",
+		Args:  cli.ArgsExact(1),
+	}
+	var opts grizzly.Opts
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		parser := &jsonnetWatchParser{
+			resourcePath: args[0],
+			registry:     registry,
+			opts:         opts,
+		}
+		return grizzly.Serve(registry, parser, args[0], opts)
+	}
+	cmd.Flags().BoolVarP(&opts.OpenBrowser, "open-browser", "b", false, "Open Grizzly in default browser")
+	cmd = initialiseOnlySpec(cmd, &opts)
+	return initialiseCmd(cmd, &opts)
+}
+
 func exportCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "export <resource-path> <dashboard-dir>",

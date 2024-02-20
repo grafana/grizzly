@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset=utf-8>
+    <title>Grizzly</title>
+    <link rel="stylesheet" href="/grizzly/assets/style.css"/>
+</head>
+<body dir="ltr">
+<header>
+    <nav>
+        <a href="/" class="logo">
+            <img src="/grizzly/assets/logo.svg" alt="logo"/>
+        </a>
+
+        <h1>Grizzly</h1>
+    </nav>
+</header>
+
+<main>
+    <h1>Available dashboards</h1>
+
+    <ul>
+        {{ range .Resources }}
+            {{ if eq .Kind "Dashboard" }}
+                <li>
+                    <a href="http://localhost:8080/d/{{ .Name }}/slug">{{ .Spec.title }}</a>
+                </li>
+            {{ end }}
+        {{ end }}
+    </ul>
+</main>
+</body>
+</html>
