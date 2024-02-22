@@ -1,10 +1,11 @@
-package grafana
+package integration_test
 
 import (
 	"encoding/json"
 	"os"
 	"testing"
 
+	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	. "github.com/grafana/grizzly/pkg/testutil"
 	"github.com/stretchr/testify/require"
@@ -12,7 +13,7 @@ import (
 
 func TestDatasources(t *testing.T) {
 	InitialiseTestConfig()
-	handler := NewDatasourceHandler(NewProvider())
+	handler := grafana.NewDatasourceHandler(grafana.NewProvider())
 
 	t.Run("get remote datasource - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("AppDynamics")
@@ -78,7 +79,7 @@ func TestDatasources(t *testing.T) {
 		resource.SetSpecString("name", "AppDynamics")
 
 		err = handler.Add(resource)
-		apiError := err.(APIResponse)
+		apiError := err.(grafana.APIResponse)
 
 		require.Equal(t, 409, apiError.Code())
 	})
@@ -89,7 +90,7 @@ func TestDatasources(t *testing.T) {
 				"name": "test",
 			},
 		}
-		handler := DatasourceHandler{}
+		handler := grafana.DatasourceHandler{}
 		uid, err := handler.GetUID(resource)
 		require.NoError(t, err)
 		require.Equal(t, "test", uid)

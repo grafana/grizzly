@@ -17,9 +17,8 @@ stop-test-image-locally:
 test-clean:
 	go clean -testcache
 
-test: run-test-image-locally
+test:
 	go test -v ./cmd/... ./pkg/...
-	make stop-test-image-locally
 
 integration: run-test-image-locally dev
 	go test -v ./integration/...
