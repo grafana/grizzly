@@ -84,22 +84,25 @@ func ParseJSON(registry Registry, resourceFile string, opts Opts) (Resources, er
 	if err != nil {
 		return nil, err
 	}
-
-	onlySpec, kind, folderUID, err := getOnlySpec(opts)
-	if err != nil {
-		return nil, err
-	}
-	if onlySpec {
-		resources, err := newOnlySpecResources(registry, m, kind, folderUID)
+	hasEnvelope := DetectEnvelope(m)
+	if !hasEnvelope {
+		kind := registry.Detect(m)
+		if kind == "" {
+			if opts.ResourceKind == "" {
+				return nil, fmt.Errorf("cannot deduce kind of %s", resourceFile)
+			}
+			kind = opts.ResourceKind
+		}
+		resources, err := newOnlySpecResources(registry, m, kind, opts.FolderUID)
 		if err != nil {
-			return nil, fmt.Errorf("Error parsing %s: %v", resourceFile, err)
+			return nil, fmt.Errorf("error parsing %s: %v", resourceFile, err)
 		}
 		return resources, nil
 
 	} else {
 		resources, err := newWithEnvelopeResources(registry, m)
 		if err != nil {
-			return nil, fmt.Errorf("Error parsing %s: %v", resourceFile, err)
+			return nil, fmt.Errorf("error parsing %s: %v", resourceFile, err)
 		}
 		return resources, nil
 	}
@@ -203,6 +206,23 @@ func newWithEnvelopeResources(registry Registry, data map[string]any) (Resources
 	return handler.Parse(m)
 }
 
+// DetectEnvelope identifies whether this resource is enveloped or not
+func DetectEnvelope(data map[string]any) bool {
+	expectedKeys := []string{
+		"kind",
+		"metadata",
+		"spec",
+	}
+	for _, key := range expectedKeys {
+		_, ok := data[key]
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// ValidateEnvelope confirms that this resource is a complete enveloped resource
 func ValidateEnvelope(data map[string]any) error {
 	errors := []string{}
 

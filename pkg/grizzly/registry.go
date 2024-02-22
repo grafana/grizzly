@@ -59,7 +59,7 @@ func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool 
 		if (strings.Contains(target, "/") && strings.Split(target, "/")[0] == key) ||
 			(strings.Contains(target, ".") && strings.Split(target, ".")[0] == key) {
 			return true
-		} else if strings.ToLower(target) == strings.ToLower(key) {
+		} else if strings.EqualFold(target, key) {
 			return true
 		}
 	}
@@ -86,7 +86,7 @@ func (r *Registry) ResourceMatchesTarget(handler Handler, UID string, targets []
 			if g.Match(slashKey) || g.Match(dotKey) {
 				return true
 			}
-		} else if strings.ToLower(target) == strings.ToLower(kind) {
+		} else if strings.EqualFold(target, kind) {
 			return true
 		}
 	}
@@ -104,4 +104,13 @@ func (r *Registry) Sort(resources Resources) Resources {
 		resources = append(resources, handler.Sort(handlerResources)...)
 	}
 	return resources
+}
+
+func (r *Registry) Detect(data map[string]any) string {
+	for _, handler := range r.HandlerOrder {
+		if handler.Detect(data) {
+			return handler.Kind()
+		}
+	}
+	return ""
 }

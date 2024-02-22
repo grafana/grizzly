@@ -48,6 +48,10 @@ func (h *BaseHandler) Sort(resources Resources) Resources {
 	return resources
 }
 
+func (h *BaseHandler) Detect(map[string]any) bool {
+	return false
+}
+
 // Handler describes a handler for a single API resource handled by a single provider
 type Handler interface {
 	APIVersion() string
@@ -94,6 +98,9 @@ type Handler interface {
 
 	// UsesFolders identifies whether this resource lives within a folder
 	UsesFolders() bool
+
+	// Detects whether a spec-only resource is of this kind
+	Detect(map[string]any) bool
 }
 
 // PreviewHandler describes a handler that has the ability to render
