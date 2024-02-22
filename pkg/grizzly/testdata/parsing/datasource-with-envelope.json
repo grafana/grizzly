@@ -1,0 +1,17 @@
+{
+   "apiVersion": "grizzly.grafana.com/v1alpha1",
+   "kind": "Datasource",
+   "metadata": {
+      "name": "prometheus"
+   },
+   "spec": {
+      "access": "proxy",
+      "isDefault": true,
+      "jsonData": {
+         "httpMethod": "GET"
+      },
+      "type": "prometheus",
+      "uid": "prometheus",
+      "url": "http://localhost/prometheus/"
+   }
+}

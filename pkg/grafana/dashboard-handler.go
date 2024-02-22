@@ -255,6 +255,21 @@ func (h *DashboardHandler) postSnapshot(resource grizzly.Resource, opts *grizzly
 	return response.GetPayload(), nil
 }
 
+func (h *DashboardHandler) Detect(data map[string]any) bool {
+	expectedKeys := []string{
+		"panels",
+		"title",
+		"schemaVersion",
+	}
+	for _, key := range expectedKeys {
+		_, ok := data[key]
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
 func (h *DashboardHandler) GetProxyEndpoints(p grizzly.GrizzlyServer) []grizzly.ProxyEndpoint {
 	return []grizzly.ProxyEndpoint{
 		{

@@ -3,6 +3,7 @@ package grizzly_test
 import (
 	"testing"
 
+	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/stretchr/testify/require"
 )
@@ -96,6 +97,84 @@ func TestValidateEnvelope(t *testing.T) {
 					return
 				}
 				require.NoError(t, err)
+			})
+		}
+	})
+}
+
+func TestParseKindDetection(t *testing.T) {
+	t.Run("Parse kind detection", func(t *testing.T) {
+
+		registry := grizzly.NewRegistry(
+			[]grizzly.Provider{
+				grafana.NewProvider(),
+			},
+		)
+		opts := grizzly.Opts{
+			FolderUID: "general",
+		}
+
+		tests := []struct {
+			Name          string
+			InputFile     string
+			ExpectedKind  string
+			ExpectedError string
+		}{
+			{
+				Name:         "json dashboard input, with envelope",
+				InputFile:    "testdata/parsing/dashboard-with-envelope.json",
+				ExpectedKind: "Dashboard",
+			},
+			{
+				Name:         "json dashboard input, without envelope",
+				InputFile:    "testdata/parsing/dashboard-without-envelope.json",
+				ExpectedKind: "Dashboard",
+			},
+			{
+				Name:         "yaml dashboard input, with envelope",
+				InputFile:    "testdata/parsing/dashboard-with-envelope.yaml",
+				ExpectedKind: "Dashboard",
+			},
+			{
+				Name:         "yaml dashboard input, without envelope",
+				InputFile:    "testdata/parsing/dashboard-without-envelope.yaml",
+				ExpectedKind: "Dashboard",
+			},
+			{
+				Name:         "jsonnet dashboard input, with envelope",
+				InputFile:    "testdata/parsing/dashboard-with-envelope.jsonnet",
+				ExpectedKind: "Dashboard",
+			},
+			/*
+				{
+					Name:         "jsonnet dashboard input, without envelope",
+					InputFile:    "testdata/parsing/dashboard-without-envelope.jsonnet",
+					ExpectedKind: "Dashboard",
+				},
+			*/
+			{
+				Name:         "json datasource input, with envelope",
+				InputFile:    "testdata/parsing/datasource-with-envelope.json",
+				ExpectedKind: "Datasource",
+			},
+			{
+				// This test assumes that Grizzly is not configured to detect the kind
+				// of a datasource, thus resulting in an error.
+				Name:          "json datasource input, without envelope",
+				InputFile:     "testdata/parsing/datasource-without-envelope.json",
+				ExpectedError: "cannot deduce kind of testdata/parsing/datasource-without-envelope.json",
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.Name, func(t *testing.T) {
+				resources, err := grizzly.Parse(registry, test.InputFile, &opts)
+				if test.ExpectedError != "" {
+					require.Error(t, err)
+					require.Equal(t, err.Error(), test.ExpectedError)
+					return
+				}
+				require.NoError(t, err)
+				require.Equal(t, 1, len(resources), "Expected one resource from parsing")
 			})
 		}
 	})
