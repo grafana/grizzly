@@ -2,8 +2,6 @@ package grizzly
 
 import (
 	"net/http"
-
-	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 )
 
 type BaseHandler struct {
@@ -61,7 +59,7 @@ type Handler interface {
 	ResourceFilePath(resource Resource, filetype string) string
 
 	// Parse parses a manifest object into a struct for this resource type
-	Parse(m manifest.Manifest) (Resources, error)
+	Parse(m map[string]any) (Resources, error)
 
 	// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 	Unprepare(resource Resource) *Resource

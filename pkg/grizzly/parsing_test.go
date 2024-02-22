@@ -90,10 +90,11 @@ func TestValidateEnvelope(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.Name, func(t *testing.T) {
-				err := grizzly.ValidateEnvelope(test.Resource)
+				m := map[string]any(test.Resource)
+				err := grizzly.ValidateEnvelope(m)
 				if test.ExpectedError != "" {
 					require.Error(t, err)
-					require.Equal(t, err.Error(), "errors parsing resource: "+test.ExpectedError)
+					require.Equal(t, "errors parsing resource: "+test.ExpectedError, err.Error())
 					return
 				}
 				require.NoError(t, err)
@@ -162,7 +163,7 @@ func TestParseKindDetection(t *testing.T) {
 				// of a datasource, thus resulting in an error.
 				Name:          "json datasource input, without envelope",
 				InputFile:     "testdata/parsing/datasource-without-envelope.json",
-				ExpectedError: "cannot deduce kind of testdata/parsing/datasource-without-envelope.json",
+				ExpectedError: "error reading testdata/parsing/datasource-without-envelope.json: found invalid object (at .): errors parsing resource: kind missing, metadata missing, spec missing\n\naccess: proxy\nisDefault: true\njsonData:\n    httpMethod: GET\ntype: prometheus\nurl: http://localhost/prometheus/\n",
 			},
 		}
 		for _, test := range tests {
@@ -170,7 +171,7 @@ func TestParseKindDetection(t *testing.T) {
 				resources, err := grizzly.Parse(registry, test.InputFile, &opts)
 				if test.ExpectedError != "" {
 					require.Error(t, err)
-					require.Equal(t, err.Error(), test.ExpectedError)
+					require.Equal(t, test.ExpectedError, err.Error())
 					return
 				}
 				require.NoError(t, err)

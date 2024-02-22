@@ -7,7 +7,6 @@ import (
 	"errors"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/folders"
@@ -37,7 +36,7 @@ func (h *FolderHandler) ResourceFilePath(resource grizzly.Resource, filetype str
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *FolderHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
+func (h *FolderHandler) Parse(m map[string]any) (grizzly.Resources, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err

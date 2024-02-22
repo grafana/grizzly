@@ -10,7 +10,6 @@ import (
 
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	"gopkg.in/yaml.v3"
 )
 
@@ -36,7 +35,7 @@ func (h *RuleHandler) ResourceFilePath(resource grizzly.Resource, filetype strin
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *RuleHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
+func (h *RuleHandler) Parse(m map[string]any) (grizzly.Resources, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
@@ -226,7 +225,7 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 
 	output, err := cortexTool(&mimirConfig, "rules", "load", tmpfile.Name())
 	if err != nil {
-		log.Println("OUTPUT", output)
+		log.Println(output)
 		return err
 	}
 	os.Remove(tmpfile.Name())
