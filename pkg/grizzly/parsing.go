@@ -297,7 +297,7 @@ func (w *walker) Walk(raw interface{}) error {
 }
 
 // walkJSON recurses into either a map or list, returning a list of all objects that look
-// like envelopedresources. We support resources at an arbitrary level of nesting, and
+// like enveloped resources. We support resources at an arbitrary level of nesting, and
 // return an error if a node is not walkable.
 //
 // Handling the different types is quite gross, so we split this method into a generic
