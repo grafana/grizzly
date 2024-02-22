@@ -1,6 +1,7 @@
 package grizzly_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/grafana/grizzly/pkg/grafana"
@@ -116,10 +117,11 @@ func TestParseKindDetection(t *testing.T) {
 		}
 
 		tests := []struct {
-			Name          string
-			InputFile     string
-			ExpectedKind  string
-			ExpectedError string
+			Name              string
+			InputFile         string
+			ExpectedKind      string
+			ExpectedError     string
+			ExpectedResources int
 		}{
 			{
 				Name:         "json dashboard input, with envelope",
@@ -132,6 +134,12 @@ func TestParseKindDetection(t *testing.T) {
 				ExpectedKind: "Dashboard",
 			},
 			{
+				Name:              "json dashboards input, with envelope",
+				InputFile:         "testdata/parsing/dashboards-with-envelope.json",
+				ExpectedKind:      "Dashboard",
+				ExpectedResources: 2,
+			},
+			{
 				Name:         "yaml dashboard input, with envelope",
 				InputFile:    "testdata/parsing/dashboard-with-envelope.yaml",
 				ExpectedKind: "Dashboard",
@@ -142,17 +150,27 @@ func TestParseKindDetection(t *testing.T) {
 				ExpectedKind: "Dashboard",
 			},
 			{
+				Name:              "yaml dashboards input, with envelope",
+				InputFile:         "testdata/parsing/dashboards-with-envelope.yaml",
+				ExpectedKind:      "Dashboard",
+				ExpectedResources: 2,
+			},
+			{
 				Name:         "jsonnet dashboard input, with envelope",
 				InputFile:    "testdata/parsing/dashboard-with-envelope.jsonnet",
 				ExpectedKind: "Dashboard",
 			},
-			/*
-				{
-					Name:         "jsonnet dashboard input, without envelope",
-					InputFile:    "testdata/parsing/dashboard-without-envelope.jsonnet",
-					ExpectedKind: "Dashboard",
-				},
-			*/
+			{
+				Name:         "jsonnet dashboard input, without envelope",
+				InputFile:    "testdata/parsing/dashboard-without-envelope.jsonnet",
+				ExpectedKind: "Dashboard",
+			},
+			{
+				Name:              "jsonnet dashboards input, with envelope",
+				InputFile:         "testdata/parsing/dashboards-with-envelope.jsonnet",
+				ExpectedKind:      "Dashboard",
+				ExpectedResources: 2,
+			},
 			{
 				Name:         "json datasource input, with envelope",
 				InputFile:    "testdata/parsing/datasource-with-envelope.json",
@@ -175,7 +193,11 @@ func TestParseKindDetection(t *testing.T) {
 					return
 				}
 				require.NoError(t, err)
-				require.Equal(t, 1, len(resources), "Expected one resource from parsing")
+				if test.ExpectedResources == 0 { // i.e. the default, which actually means 1
+					require.Equal(t, 1, len(resources), "Expected one resource from parsing")
+				} else {
+					require.Equal(t, test.ExpectedResources, len(resources), fmt.Sprintf("Expected %d resources from parsing", test.ExpectedResources))
+				}
 			})
 		}
 	})
