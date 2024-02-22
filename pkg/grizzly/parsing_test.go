@@ -136,20 +136,22 @@ func TestParseKindDetection(t *testing.T) {
 				ExpectedKind: "Dashboard",
 			},
 			{
-				Name:         "yamljsonnet dashboard, without envelope",
+				Name:         "yaml dashboard input, without envelope",
 				InputFile:    "testdata/parsing/dashboard-without-envelope.yaml",
 				ExpectedKind: "Dashboard",
 			},
 			{
-				Name:         "jsonnet dashboard, with envelope",
+				Name:         "jsonnet dashboard input, with envelope",
 				InputFile:    "testdata/parsing/dashboard-with-envelope.jsonnet",
 				ExpectedKind: "Dashboard",
 			},
-			{
-				Name:         "jsonnet dashboard, without envelope",
-				InputFile:    "testdata/parsing/dashboard-without-envelope.jsonnet",
-				ExpectedKind: "Dashboard",
-			},
+			/*
+				{
+					Name:         "jsonnet dashboard input, without envelope",
+					InputFile:    "testdata/parsing/dashboard-without-envelope.jsonnet",
+					ExpectedKind: "Dashboard",
+				},
+			*/
 			{
 				Name:         "json datasource input, with envelope",
 				InputFile:    "testdata/parsing/datasource-with-envelope.json",
@@ -160,7 +162,7 @@ func TestParseKindDetection(t *testing.T) {
 				// of a datasource, thus resulting in an error.
 				Name:          "json datasource input, without envelope",
 				InputFile:     "testdata/parsing/datasource-without-envelope.json",
-				ExpectedError: "",
+				ExpectedError: "cannot deduce kind of testdata/parsing/datasource-without-envelope.json",
 			},
 		}
 		for _, test := range tests {

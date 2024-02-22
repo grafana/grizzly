@@ -79,7 +79,7 @@ func ParseJSON(registry Registry, resourceFile string, opts Opts) (Resources, er
 		return nil, err
 	}
 
-	m := map[string]interface{}{}
+	m := map[string]any{}
 	err = json.NewDecoder(f).Decode(&m)
 	if err != nil {
 		return nil, err
@@ -116,23 +116,29 @@ func ParseYAML(registry Registry, yamlFile string, opts Opts) (Resources, error)
 	}
 	reader := bufio.NewReader(f)
 	decoder := yaml.NewDecoder(reader)
-	var m manifest.Manifest
 	var resources Resources
 	for i := 0; ; i++ {
+		var m map[string]any
 		err = decoder.Decode(&m)
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("Error decoding %s: %v", yamlFile, err)
+			return nil, fmt.Errorf("xError decoding %s: %v", yamlFile, err)
 		}
 		var parsedResources Resources
-		onlySpec, kind, folderUID, err := getOnlySpec(opts)
-		if err != nil {
-			return nil, err
-		}
-		if onlySpec {
-			parsedResources, err = newOnlySpecResources(registry, m, kind, folderUID)
+
+		var kind string
+		hasEnvelope := DetectEnvelope(m)
+		if !hasEnvelope {
+			kind = registry.Detect(m)
+			if kind == "" {
+				if opts.ResourceKind == "" {
+					return nil, fmt.Errorf("cannot deduce kind of %s", yamlFile)
+				}
+				kind = opts.ResourceKind
+			}
+			parsedResources, err = newOnlySpecResources(registry, m, kind, opts.FolderUID)
 			if err != nil {
 				return nil, fmt.Errorf("Error parsing %s: %v", yamlFile, err)
 			}
@@ -141,8 +147,9 @@ func ParseYAML(registry Registry, yamlFile string, opts Opts) (Resources, error)
 			if err != nil {
 				return nil, fmt.Errorf("Error parsing %s: %v", yamlFile, err)
 			}
+			kind = parsedResources[0].Kind()
 		}
-		handler, err := registry.GetHandler(m.Kind())
+		handler, err := registry.GetHandler(kind)
 		if err != nil {
 			return nil, err
 		}
