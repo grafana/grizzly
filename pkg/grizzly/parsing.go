@@ -30,12 +30,15 @@ func Parse(registry Registry, resourcePath string, opts *Opts) (Resources, error
 	}
 	opts.IsDir = true
 
-	var parsedResources Resources
-	files, err := FindResourceFiles(resourcePath)
-	if err != nil {
-		return nil, err
-	}
+	var files []string
+	_ = filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
+		if !info.IsDir() {
+			files = append(files, path)
+		}
+		return nil
+	})
 
+	var parsedResources Resources
 	for _, file := range files {
 		r, err := ParseFile(registry, *opts, file)
 		if err != nil {
@@ -56,17 +59,6 @@ func Parse(registry Registry, resourcePath string, opts *Opts) (Resources, error
 	}
 	resources = registry.Sort(resources)
 	return resources, nil
-}
-
-func FindResourceFiles(resourcePath string) ([]string, error) {
-	var files []string
-	err := filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
-		if !info.IsDir() {
-			files = append(files, path)
-		}
-		return nil
-	})
-	return files, err
 }
 
 func ParseFile(registry Registry, opts Opts, resourceFile string) (Resources, error) {
