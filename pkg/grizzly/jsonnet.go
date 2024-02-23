@@ -29,9 +29,9 @@ func evaluateJsonnet(jsonnetFile, wd string, jpath []string) (string, error) {
 	s := fmt.Sprintf(script, jsonnetFile)
 	vm := jsonnet.MakeVM()
 	vm.Importer(newExtendedImporter(jsonnetFile, wd, jpath))
-	vm.NativeFunction(escapeStringRegex())
-	vm.NativeFunction(regexMatch())
-	vm.NativeFunction(regexSubst())
+	vm.NativeFunction(escapeStringRegexNativeFunc())
+	vm.NativeFunction(regexMatchNativeFunc())
+	vm.NativeFunction(regexSubstNativeFunc())
 
 	return vm.EvaluateAnonymousSnippet(jsonnetFile, s)
 }
@@ -101,9 +101,9 @@ func (i *ExtendedImporter) Import(importedFrom, importedPath string) (contents j
 	return contents, foundAt, nil
 }
 
-// escapeStringRegex escapes all regular expression metacharacters
+// escapeStringRegexNativeFunc escapes all regular expression metacharacters
 // and returns a regular expression that matches the literal text.
-func escapeStringRegex() *jsonnet.NativeFunction {
+func escapeStringRegexNativeFunc() *jsonnet.NativeFunction {
 	return &jsonnet.NativeFunction{
 		Name:   "escapeStringRegex",
 		Params: ast.Identifiers{"str"},
@@ -113,8 +113,8 @@ func escapeStringRegex() *jsonnet.NativeFunction {
 	}
 }
 
-// regexMatch returns whether the given string is matched by the given re2 regular expression.
-func regexMatch() *jsonnet.NativeFunction {
+// regexMatchNativeFunc returns whether the given string is matched by the given re2 regular expression.
+func regexMatchNativeFunc() *jsonnet.NativeFunction {
 	return &jsonnet.NativeFunction{
 		Name:   "regexMatch",
 		Params: ast.Identifiers{"regex", "string"},
@@ -124,8 +124,8 @@ func regexMatch() *jsonnet.NativeFunction {
 	}
 }
 
-// regexSubst replaces all matches of the re2 regular expression with another string.
-func regexSubst() *jsonnet.NativeFunction {
+// regexSubstNativeFunc replaces all matches of the re2 regular expression with another string.
+func regexSubstNativeFunc() *jsonnet.NativeFunction {
 	return &jsonnet.NativeFunction{
 		Name:   "regexSubst",
 		Params: ast.Identifiers{"regex", "src", "repl"},
