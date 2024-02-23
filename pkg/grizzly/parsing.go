@@ -297,7 +297,7 @@ func (w *walker) Walk(raw interface{}) error {
 }
 
 // walkJSON recurses into either a map or list, returning a list of all objects that look
-// like kubernetes resources. We support resources at an arbitrary level of nesting, and
+// like envelopedresources. We support resources at an arbitrary level of nesting, and
 // return an error if a node is not walkable.
 //
 // Handling the different types is quite gross, so we split this method into a generic
@@ -312,7 +312,7 @@ func (w *walker) walkJSON(raw interface{}, path trace) error {
 		return w.walkList(v, path)
 	}
 
-	log.Debugf("recursion ended on key %q of type %T which does not belong to a valid Kubernetes object", path.Name(), raw)
+	log.Debugf("recursion ended on key %q of type %T which does not belong to a valid resource", path.Name(), raw)
 	return ErrorPrimitiveReached{
 		path:      path.Base(),
 		key:       path.Name(),
@@ -332,7 +332,6 @@ func (w *walker) walkList(list []interface{}, path trace) error {
 
 func (w *walker) walkObj(obj map[string]any, path trace) error {
 
-	// This looks like a kubernetes manifest, so make one and return it
 	validateErr := ValidateEnvelope(obj)
 	if validateErr != nil {
 		// this is not an envelope, skip.
@@ -387,7 +386,7 @@ func (t trace) Name() string {
 	return ""
 }
 
-// ErrorPrimitiveReached occurs when walkJSON reaches the end of nested dicts without finding a valid Kubernetes manifest
+// ErrorPrimitiveReached occurs when walkJSON reaches the end of nested dicts without finding a valid resource
 type ErrorPrimitiveReached struct {
 	path, key        string
 	primitive        interface{}
