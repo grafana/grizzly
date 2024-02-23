@@ -12,7 +12,7 @@ import (
 )
 
 func TestDatasources(t *testing.T) {
-	handler := grafana.NewDatasourceHandler(grafana.NewProvider(testutil.TestContext()))
+	handler := grafana.NewDatasourceHandler(grafana.NewProvider(&testutil.TestContext().Grafana))
 
 	t.Run("get remote datasource - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("AppDynamics")

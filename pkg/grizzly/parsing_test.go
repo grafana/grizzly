@@ -110,7 +110,7 @@ func TestParseKindDetection(t *testing.T) {
 
 		registry := grizzly.NewRegistry(
 			[]grizzly.Provider{
-				grafana.NewProvider(&config.Context{}),
+				grafana.NewProvider(&config.GrafanaConfig{}),
 			},
 		)
 		tests := []struct {

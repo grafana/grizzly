@@ -21,9 +21,9 @@ type ClientProvider interface {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(context *config.Context) *Provider {
+func NewProvider(config *config.SyntheticMonitoringConfig) *Provider {
 	return &Provider{
-		config: &context.SyntheticMonitoring,
+		config: config,
 	}
 }
 

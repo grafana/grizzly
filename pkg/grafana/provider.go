@@ -24,9 +24,9 @@ type ClientProvider interface {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(context *config.Context) *Provider {
+func NewProvider(config *config.GrafanaConfig) *Provider {
 	return &Provider{
-		config: &context.Grafana,
+		config: config,
 	}
 }
 

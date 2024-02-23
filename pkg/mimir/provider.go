@@ -17,9 +17,9 @@ type ClientConfigProvider interface {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(context *config.Context) *Provider {
+func NewProvider(config *config.MimirConfig) *Provider {
 	return &Provider{
-		config: &context.Mimir,
+		config: config,
 	}
 }
 

@@ -15,7 +15,7 @@ import (
 var errCortextoolClient = errors.New("error coming from cortextool client")
 
 func TestRules(t *testing.T) {
-	provider := NewProvider(&config.Context{})
+	provider := NewProvider(&config.MimirConfig{})
 	h := NewRuleHandler(provider)
 	t.Run("get remote rule group", func(t *testing.T) {
 		mockCortexTool(t, "testdata/list_rules.yaml", nil)

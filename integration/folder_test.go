@@ -13,7 +13,7 @@ import (
 )
 
 func TestFolders(t *testing.T) {
-	handler := grafana.NewFolderHandler(grafana.NewProvider(testutil.TestContext()))
+	handler := grafana.NewFolderHandler(grafana.NewProvider(&testutil.TestContext().Grafana))
 
 	t.Run("get remote folder - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("abcdefghi")

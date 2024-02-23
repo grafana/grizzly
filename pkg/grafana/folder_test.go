@@ -9,7 +9,7 @@ import (
 )
 
 func TestSortFolders(t *testing.T) {
-	handler := NewFolderHandler(NewProvider(&config.Context{}))
+	handler := NewFolderHandler(NewProvider(&config.GrafanaConfig{}))
 	folder := func(uid string, parentUID string) grizzly.Resource {
 		spec := map[string]interface{}{
 			"uid": uid,

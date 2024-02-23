@@ -35,9 +35,9 @@ func main() {
 	}
 	registry := grizzly.NewRegistry(
 		[]grizzly.Provider{
-			grafana.NewProvider(context),
-			mimir.NewProvider(context),
-			syntheticmonitoring.NewProvider(context),
+			grafana.NewProvider(&context.Grafana),
+			mimir.NewProvider(&context.Mimir),
+			syntheticmonitoring.NewProvider(&context.SyntheticMonitoring),
 		})
 
 	// workflow commands
