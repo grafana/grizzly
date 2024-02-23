@@ -2,7 +2,6 @@ package grizzly
 
 import (
 	"bufio"
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,8 +11,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/google/go-jsonnet"
-	"github.com/grafana/tanka/pkg/jsonnet/native"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -114,27 +111,17 @@ func ParseYAML(registry Registry, yamlFile, resourceKind, folderUID string) (Res
 	return resources, nil
 }
 
-//go:embed grizzly.jsonnet
-var script string
-
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree
 func ParseJsonnet(registry Registry, jsonnetFile string, jsonnetPaths []string, resourceKind, folderUID string) (Resources, error) {
 
 	if _, err := os.Stat(jsonnetFile); os.IsNotExist(err) {
 		return nil, fmt.Errorf("file does not exist: %s", jsonnetFile)
 	}
-	script := fmt.Sprintf(script, jsonnetFile)
-	vm := jsonnet.MakeVM()
 	currentWorkingDirectory, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
-	vm.Importer(newExtendedImporter(jsonnetFile, currentWorkingDirectory, jsonnetPaths))
-	for _, nf := range native.Funcs() {
-		vm.NativeFunction(nf)
-	}
-
-	result, err := vm.EvaluateSnippet(jsonnetFile, script)
+	result, err := evaluateJsonnet(jsonnetFile, currentWorkingDirectory, jsonnetPaths)
 	if err != nil {
 		return nil, err
 	}
