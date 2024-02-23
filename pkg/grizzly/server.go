@@ -1,12 +1,10 @@
 package grizzly
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -14,7 +12,6 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
-	"github.com/grafana/grizzly/pkg/config"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -40,7 +37,18 @@ var upgrader = websocket.Upgrader{
 }
 
 func NewGrizzlyServer(registry Registry, parser WatchParser, resourcePath string, port int, openBrowser bool, onlySpec bool, outputFormat string) (*GrizzlyServer, error) {
+	prov, err := registry.GetProxyProvider()
+	if err != nil {
+		return nil, err
+	}
+
+	proxy, err := (*prov).SetupProxy()
+	if err != nil {
+		return nil, err
+	}
+
 	server := GrizzlyServer{
+		Registry:     registry,
 		Parser:       parser,
 		UserAgent:    "grizzly",
 		ResourcePath: resourcePath,
@@ -48,33 +56,7 @@ func NewGrizzlyServer(registry Registry, parser WatchParser, resourcePath string
 		OpenBrowser:  openBrowser,
 		OnlySpec:     onlySpec,
 		OutputFormat: outputFormat,
-	}
-	context, err := config.CurrentContext()
-	if err != nil {
-		return nil, err
-	}
-	server.Url = context.Grafana.URL
-	server.User = context.Grafana.User
-	server.Token = context.Grafana.Token
-	u, err := url.Parse(server.Url)
-	if err != nil {
-		return nil, err
-	}
-	server.proxy = &httputil.ReverseProxy{
-		Rewrite: func(r *httputil.ProxyRequest) {
-			r.SetURL(u)
-
-			if server.User != "" {
-				header := fmt.Sprintf("%s:%s", server.User, server.Token)
-				encoded := base64.StdEncoding.EncodeToString([]byte(header))
-				r.Out.Header.Set("Authorization", "Bearer "+encoded)
-			} else {
-				r.Out.Header.Set("Authorization", "Bearer "+server.Token)
-			}
-
-			r.Out.Header.Del("Origin")
-			r.Out.Header.Set("User-Agent", "Grizzly Proxy Server")
-		},
+		proxy:        proxy,
 	}
 	return &server, nil
 }
@@ -135,6 +117,7 @@ func (p *GrizzlyServer) Start() error {
 	for _, handler := range p.Registry.Handlers {
 		proxyHandler, ok := handler.(ProxyHandler)
 		if ok {
+			log.Printf("Handler: %s IS PROXY", handler.Kind())
 			for _, endpoint := range proxyHandler.GetProxyEndpoints(*p) {
 				switch endpoint.Method {
 				case "GET":
@@ -142,7 +125,7 @@ func (p *GrizzlyServer) Start() error {
 				case "POST":
 					r.Post(endpoint.Url, endpoint.Handler)
 				default:
-					return fmt.Errorf("Unknown endpoint method %s for handler %s", endpoint.Method, handler.Kind())
+					return fmt.Errorf("unknown endpoint method %s for handler %s", endpoint.Method, handler.Kind())
 				}
 			}
 		}

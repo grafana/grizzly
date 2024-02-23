@@ -7,13 +7,12 @@ import (
 
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	. "github.com/grafana/grizzly/pkg/testutil"
+	"github.com/grafana/grizzly/pkg/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLibraryElements(t *testing.T) {
-	InitialiseTestConfig()
-	handler := grafana.NewLibraryElementHandler(grafana.NewProvider())
+	handler := grafana.NewLibraryElementHandler(grafana.NewProvider(testutil.TestContext()))
 
 	t.Run("create libraryElement - success", func(t *testing.T) {
 		libraryElement, err := os.ReadFile("testdata/test_json/post_library-element.json")

@@ -1,7 +1,9 @@
 package grafana
 
 import (
+	"encoding/base64"
 	"fmt"
+	"net/http/httputil"
 	"net/url"
 	"path/filepath"
 
@@ -12,17 +14,20 @@ import (
 
 // Provider is a grizzly.Provider implementation for Grafana.
 type Provider struct {
-	context *config.Context
-	client  *gclient.GrafanaHTTPAPI
+	config *config.GrafanaConfig
+	client *gclient.GrafanaHTTPAPI
 }
 
 type ClientProvider interface {
 	Client() (*gclient.GrafanaHTTPAPI, error)
+	Config() *config.GrafanaConfig
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider() *Provider {
-	return &Provider{}
+func NewProvider(context *config.Context) *Provider {
+	return &Provider{
+		config: &context.Grafana,
+	}
 }
 
 // Group returns the group name of the Grafana provider
@@ -40,12 +45,7 @@ func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
 		return p.client, nil
 	}
 
-	ctx, err := config.CurrentContext()
-	if err != nil {
-		return nil, err
-	}
-	p.context = ctx
-	parsedUrl, err := url.Parse(p.context.Grafana.URL)
+	parsedUrl, err := url.Parse(p.config.URL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid Grafana URL")
 	}
@@ -55,16 +55,20 @@ func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
 		WithSchemes([]string{parsedUrl.Scheme}).
 		WithBasePath(filepath.Join(parsedUrl.Path, "api"))
 
-	if p.context.Grafana.Token != "" {
-		if p.context.Grafana.User != "" {
-			transportConfig.BasicAuth = url.UserPassword(p.context.Grafana.User, p.context.Grafana.Token)
+	if p.config.Token != "" {
+		if p.config.User != "" {
+			transportConfig.BasicAuth = url.UserPassword(p.config.User, p.config.Token)
 		} else {
-			transportConfig.APIKey = p.context.Grafana.Token
+			transportConfig.APIKey = p.config.Token
 		}
 	}
 	grafanaClient := gclient.NewHTTPClientWithConfig(nil, transportConfig)
 	p.client = grafanaClient
 	return grafanaClient, nil
+}
+
+func (p *Provider) Config() *config.GrafanaConfig {
+	return p.config
 }
 
 // APIVersion returns the group and version of this provider
@@ -81,8 +85,30 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 		NewDashboardHandler(p),
 		NewAlertRuleGroupHandler(p),
 		NewAlertNotificationPolicyHandler(p),
-		NewRuleHandler(p),
-		NewSyntheticMonitoringHandler(p),
 		NewAlertContactPointHandler(p),
 	}
+}
+
+func (p *Provider) SetupProxy() (*httputil.ReverseProxy, error) {
+	u, err := url.Parse(p.config.URL)
+	if err != nil {
+		return nil, err
+	}
+	proxy := &httputil.ReverseProxy{
+		Rewrite: func(r *httputil.ProxyRequest) {
+			r.SetURL(u)
+
+			if p.config.User != "" {
+				header := fmt.Sprintf("%s:%s", p.config.User, p.config.Token)
+				encoded := base64.StdEncoding.EncodeToString([]byte(header))
+				r.Out.Header.Set("Authorization", "Bearer "+encoded)
+			} else {
+				r.Out.Header.Set("Authorization", "Bearer "+p.config.Token)
+			}
+
+			r.Out.Header.Del("Origin")
+			r.Out.Header.Set("User-Agent", "Grizzly Proxy Server")
+		},
+	}
+	return proxy, nil
 }

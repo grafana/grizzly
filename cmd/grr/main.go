@@ -7,6 +7,8 @@ import (
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/mimir"
+	"github.com/grafana/grizzly/pkg/syntheticmonitoring"
 )
 
 // Version is the current version of the grr command.
@@ -27,9 +29,15 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	context, err := config.CurrentContext()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	registry := grizzly.NewRegistry(
 		[]grizzly.Provider{
-			grafana.NewProvider(),
+			grafana.NewProvider(context),
+			mimir.NewProvider(context),
+			syntheticmonitoring.NewProvider(context),
 		})
 
 	// workflow commands

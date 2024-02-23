@@ -1,4 +1,4 @@
-package grafana
+package syntheticmonitoring
 
 import (
 	"net/http"
