@@ -391,7 +391,7 @@ func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.GrizzlyServer) fun
 		}
 		resource.SetMetadata("name", uid)
 
-		out, _, _, err := grizzly.Format(p.Registry, p.ResourcePath, &resource, p.Opts.OutputFormat, p.Opts.OnlySpec)
+		out, _, _, err := grizzly.Format(p.Registry, p.ResourcePath, &resource, p.OutputFormat, p.OnlySpec)
 		if err != nil {
 			http.Error(w, "Error formatting content", 400)
 			return

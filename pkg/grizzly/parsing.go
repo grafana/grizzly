@@ -13,22 +13,20 @@ import (
 	"strings"
 
 	"github.com/google/go-jsonnet"
-	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/tanka/pkg/jsonnet/native"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(registry Registry, resourcePath string, opts *Opts) (Resources, error) {
+func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targets, jsonnetPaths []string) (Resources, error) {
 	stat, err := os.Stat(resourcePath)
 	if err != nil {
 		return nil, err
 	}
 
 	if !stat.IsDir() {
-		return ParseFile(registry, *opts, resourcePath)
+		return ParseFile(registry, resourcePath, resourceKind, folderUID, jsonnetPaths)
 	}
-	opts.IsDir = true
 
 	var files []string
 	_ = filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
@@ -40,18 +38,13 @@ func Parse(registry Registry, resourcePath string, opts *Opts) (Resources, error
 
 	var parsedResources Resources
 	for _, file := range files {
-		r, err := ParseFile(registry, *opts, file)
+		r, err := ParseFile(registry, file, resourceKind, folderUID, jsonnetPaths)
 		if err != nil {
 			return nil, err
 		}
 		parsedResources = append(parsedResources, r...)
 	}
-	currentContext, err := config.CurrentContext()
-	if err != nil {
-		return nil, err
-	}
 	var resources Resources
-	targets := currentContext.GetTargets(opts.Targets)
 	for _, parsedResource := range parsedResources {
 		if registry.ResourceMatchesTarget(parsedResource.Kind(), parsedResource.Name(), targets) {
 			resources = append(resources, parsedResource)
@@ -61,21 +54,21 @@ func Parse(registry Registry, resourcePath string, opts *Opts) (Resources, error
 	return resources, nil
 }
 
-func ParseFile(registry Registry, opts Opts, resourceFile string) (Resources, error) {
+func ParseFile(registry Registry, resourceFile, resourceKind, folderUID string, jsonnetPaths []string) (Resources, error) {
 	switch filepath.Ext(resourceFile) {
 	case ".json":
-		return ParseJSON(registry, resourceFile, opts)
+		return ParseJSON(registry, resourceFile, resourceKind, folderUID)
 	case ".yaml", ".yml":
-		return ParseYAML(registry, resourceFile, opts)
+		return ParseYAML(registry, resourceFile, resourceKind, folderUID)
 	case ".jsonnet", ".libsonnet":
-		return ParseJsonnet(registry, resourceFile, opts)
+		return ParseJsonnet(registry, resourceFile, jsonnetPaths, resourceKind, folderUID)
 	default:
 		return nil, fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)
 	}
 }
 
 // ParseJSON evaluates a JSON file and parses it into resources
-func ParseJSON(registry Registry, resourceFile string, opts Opts) (Resources, error) {
+func ParseJSON(registry Registry, resourceFile, resourceKind, folderUID string) (Resources, error) {
 	f, err := os.Open(resourceFile)
 	if err != nil {
 		return nil, err
@@ -87,7 +80,7 @@ func ParseJSON(registry Registry, resourceFile string, opts Opts) (Resources, er
 		return nil, err
 	}
 
-	resources, err := parseAny(registry, m, opts)
+	resources, err := parseAny(registry, m, resourceKind, folderUID)
 	if err != nil {
 		return nil, fmt.Errorf("error reading %s: %v", resourceFile, err)
 	}
@@ -95,7 +88,7 @@ func ParseJSON(registry Registry, resourceFile string, opts Opts) (Resources, er
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources
-func ParseYAML(registry Registry, yamlFile string, opts Opts) (Resources, error) {
+func ParseYAML(registry Registry, yamlFile, resourceKind, folderUID string) (Resources, error) {
 	f, err := os.Open(yamlFile)
 	if err != nil {
 		return nil, err
@@ -112,7 +105,7 @@ func ParseYAML(registry Registry, yamlFile string, opts Opts) (Resources, error)
 		if err != nil {
 			return nil, fmt.Errorf("Error decoding %s: %v", yamlFile, err)
 		}
-		parsedResources, err := parseAny(registry, m, opts)
+		parsedResources, err := parseAny(registry, m, resourceKind, folderUID)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +118,7 @@ func ParseYAML(registry Registry, yamlFile string, opts Opts) (Resources, error)
 var script string
 
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree
-func ParseJsonnet(registry Registry, jsonnetFile string, opts Opts) (Resources, error) {
+func ParseJsonnet(registry Registry, jsonnetFile string, jsonnetPaths []string, resourceKind, folderUID string) (Resources, error) {
 
 	if _, err := os.Stat(jsonnetFile); os.IsNotExist(err) {
 		return nil, fmt.Errorf("file does not exist: %s", jsonnetFile)
@@ -136,7 +129,7 @@ func ParseJsonnet(registry Registry, jsonnetFile string, opts Opts) (Resources, 
 	if err != nil {
 		return nil, err
 	}
-	vm.Importer(newExtendedImporter(jsonnetFile, currentWorkingDirectory, opts.JsonnetPaths))
+	vm.Importer(newExtendedImporter(jsonnetFile, currentWorkingDirectory, jsonnetPaths))
 	for _, nf := range native.Funcs() {
 		vm.NativeFunction(nf)
 	}
@@ -150,14 +143,14 @@ func ParseJsonnet(registry Registry, jsonnetFile string, opts Opts) (Resources, 
 		return nil, err
 	}
 
-	resources, err := parseAny(registry, data, opts)
+	resources, err := parseAny(registry, data, resourceKind, folderUID)
 	if err != nil {
 		return nil, err
 	}
 	return resources, nil
 }
 
-func parseAny(registry Registry, data any, opts Opts) (Resources, error) {
+func parseAny(registry Registry, data any, resourceKind, folderUID string) (Resources, error) {
 	hasEnvelope := DetectEnvelope(data)
 	if hasEnvelope {
 		m := data.(map[string]any)
@@ -177,15 +170,15 @@ func parseAny(registry Registry, data any, opts Opts) (Resources, error) {
 		return handler.Parse(resource)
 	}
 	kind := registry.Detect(data)
-	if kind == "" && opts.ResourceKind != "" {
-		kind = opts.ResourceKind
+	if kind == "" && resourceKind != "" {
+		kind = resourceKind
 	}
 	if kind != "" {
 		handler, err := registry.GetHandler(kind)
 		if err != nil {
 			return nil, err
 		}
-		if handler.UsesFolders() && opts.FolderUID == "" {
+		if handler.UsesFolders() && folderUID == "" {
 			return nil, fmt.Errorf("folder (-f) required with --onlyspec")
 		}
 		m := data.(map[string]any)
@@ -200,7 +193,7 @@ func parseAny(registry Registry, data any, opts Opts) (Resources, error) {
 		resource.SetMetadata("name", uid)
 
 		if handler.UsesFolders() {
-			resource.SetMetadata("folder", opts.FolderUID)
+			resource.SetMetadata("folder", folderUID)
 		}
 		return handler.Parse(resource)
 	}
