@@ -105,7 +105,7 @@ func ListRemote(registry Registry, opts Opts) error {
 			return err
 		}
 		for _, id := range IDs {
-			if registry.ResourceMatchesTarget(handler, id, targets) {
+			if registry.ResourceMatchesTarget(handler.Kind(), id, targets) {
 				fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), id)
 			}
 		}
@@ -153,7 +153,7 @@ func Pull(registry Registry, resourcePath string, opts Opts) error {
 		}
 		notifier.Warn(nil, fmt.Sprintf("Pulling %d resources", len(UIDs)))
 		for _, UID := range UIDs {
-			if !registry.ResourceMatchesTarget(handler, UID, targets) {
+			if !registry.ResourceMatchesTarget(handler.Kind(), UID, targets) {
 				continue
 			}
 			resource, err := handler.GetByUID(UID)

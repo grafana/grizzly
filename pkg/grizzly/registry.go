@@ -67,11 +67,10 @@ func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool 
 }
 
 // ResourceMatchesTarget identifies whether a resource is in a target list
-func (r *Registry) ResourceMatchesTarget(handler Handler, UID string, targets []string) bool {
+func (r *Registry) ResourceMatchesTarget(kind string, UID string, targets []string) bool {
 	if len(targets) == 0 {
 		return true
 	}
-	kind := handler.Kind()
 	// I mistakenly assumed 'dot' was a special character for globs, so opted for '/' as separator.
 	// This keeps back-compat
 	slashKey := fmt.Sprintf("%s/%s", kind, UID)
@@ -106,9 +105,13 @@ func (r *Registry) Sort(resources Resources) Resources {
 	return resources
 }
 
-func (r *Registry) Detect(data map[string]any) string {
+func (r *Registry) Detect(data any) string {
+	m, ok := data.(map[string]any)
+	if !ok {
+		return ""
+	}
 	for _, handler := range r.HandlerOrder {
-		if handler.Detect(data) {
+		if handler.Detect(m) {
 			return handler.Kind()
 		}
 	}

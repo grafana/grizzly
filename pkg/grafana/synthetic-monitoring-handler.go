@@ -10,7 +10,6 @@ import (
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
-	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 
 	smapi "github.com/grafana/synthetic-monitoring-api-go-client"
 )
@@ -59,7 +58,7 @@ func (h *SyntheticMonitoringHandler) ResourceFilePath(resource grizzly.Resource,
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *SyntheticMonitoringHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
+func (h *SyntheticMonitoringHandler) Parse(m map[string]any) (grizzly.Resources, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err

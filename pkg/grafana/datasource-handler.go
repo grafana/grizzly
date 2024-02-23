@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-openapi/runtime"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 
 	"github.com/grafana/grafana-openapi-client-go/client/datasources"
 	"github.com/grafana/grafana-openapi-client-go/models"
@@ -38,7 +37,7 @@ func (h *DatasourceHandler) ResourceFilePath(resource grizzly.Resource, filetype
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
+func (h *DatasourceHandler) Parse(m map[string]any) (grizzly.Resources, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
@@ -63,7 +62,7 @@ func (h *DatasourceHandler) Parse(m manifest.Manifest) (grizzly.Resources, error
 			spec[k] = defaults[k]
 		}
 	}
-	spec["uid"] = m.Metadata().Name()
+	spec["uid"] = resource.Name()
 	resource["spec"] = spec
 	return grizzly.Resources{resource}, nil
 }

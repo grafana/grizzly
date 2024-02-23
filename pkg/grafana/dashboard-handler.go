@@ -12,7 +12,6 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
-	"github.com/grafana/tanka/pkg/kubernetes/manifest"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
@@ -46,7 +45,7 @@ func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype 
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *DashboardHandler) Parse(m manifest.Manifest) (grizzly.Resources, error) {
+func (h *DashboardHandler) Parse(m map[string]any) (grizzly.Resources, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err

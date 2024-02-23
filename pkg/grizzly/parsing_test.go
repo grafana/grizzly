@@ -1,6 +1,7 @@
 package grizzly_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/grafana/grizzly/pkg/grafana"
@@ -90,10 +91,11 @@ func TestValidateEnvelope(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.Name, func(t *testing.T) {
-				err := grizzly.ValidateEnvelope(test.Resource)
+				m := map[string]any(test.Resource)
+				err := grizzly.ValidateEnvelope(m)
 				if test.ExpectedError != "" {
 					require.Error(t, err)
-					require.Equal(t, err.Error(), "errors parsing resource: "+test.ExpectedError)
+					require.Equal(t, "errors parsing resource: "+test.ExpectedError, err.Error())
 					return
 				}
 				require.NoError(t, err)
@@ -115,10 +117,11 @@ func TestParseKindDetection(t *testing.T) {
 		}
 
 		tests := []struct {
-			Name          string
-			InputFile     string
-			ExpectedKind  string
-			ExpectedError string
+			Name              string
+			InputFile         string
+			ExpectedKind      string
+			ExpectedError     string
+			ExpectedResources int
 		}{
 			{
 				Name:         "json dashboard input, with envelope",
@@ -131,6 +134,12 @@ func TestParseKindDetection(t *testing.T) {
 				ExpectedKind: "Dashboard",
 			},
 			{
+				Name:              "json dashboards input, with envelope",
+				InputFile:         "testdata/parsing/dashboards-with-envelope.json",
+				ExpectedKind:      "Dashboard",
+				ExpectedResources: 2,
+			},
+			{
 				Name:         "yaml dashboard input, with envelope",
 				InputFile:    "testdata/parsing/dashboard-with-envelope.yaml",
 				ExpectedKind: "Dashboard",
@@ -141,17 +150,27 @@ func TestParseKindDetection(t *testing.T) {
 				ExpectedKind: "Dashboard",
 			},
 			{
+				Name:              "yaml dashboards input, with envelope",
+				InputFile:         "testdata/parsing/dashboards-with-envelope.yaml",
+				ExpectedKind:      "Dashboard",
+				ExpectedResources: 2,
+			},
+			{
 				Name:         "jsonnet dashboard input, with envelope",
 				InputFile:    "testdata/parsing/dashboard-with-envelope.jsonnet",
 				ExpectedKind: "Dashboard",
 			},
-			/*
-				{
-					Name:         "jsonnet dashboard input, without envelope",
-					InputFile:    "testdata/parsing/dashboard-without-envelope.jsonnet",
-					ExpectedKind: "Dashboard",
-				},
-			*/
+			{
+				Name:         "jsonnet dashboard input, without envelope",
+				InputFile:    "testdata/parsing/dashboard-without-envelope.jsonnet",
+				ExpectedKind: "Dashboard",
+			},
+			{
+				Name:              "jsonnet dashboards input, with envelope",
+				InputFile:         "testdata/parsing/dashboards-with-envelope.jsonnet",
+				ExpectedKind:      "Dashboard",
+				ExpectedResources: 2,
+			},
 			{
 				Name:         "json datasource input, with envelope",
 				InputFile:    "testdata/parsing/datasource-with-envelope.json",
@@ -162,7 +181,7 @@ func TestParseKindDetection(t *testing.T) {
 				// of a datasource, thus resulting in an error.
 				Name:          "json datasource input, without envelope",
 				InputFile:     "testdata/parsing/datasource-without-envelope.json",
-				ExpectedError: "cannot deduce kind of testdata/parsing/datasource-without-envelope.json",
+				ExpectedError: "error reading testdata/parsing/datasource-without-envelope.json: found invalid object (at .): errors parsing resource: kind missing, metadata missing, spec missing\n\naccess: proxy\nisDefault: true\njsonData:\n    httpMethod: GET\ntype: prometheus\nurl: http://localhost/prometheus/\n",
 			},
 		}
 		for _, test := range tests {
@@ -170,11 +189,15 @@ func TestParseKindDetection(t *testing.T) {
 				resources, err := grizzly.Parse(registry, test.InputFile, &opts)
 				if test.ExpectedError != "" {
 					require.Error(t, err)
-					require.Equal(t, err.Error(), test.ExpectedError)
+					require.Equal(t, test.ExpectedError, err.Error())
 					return
 				}
 				require.NoError(t, err)
-				require.Equal(t, 1, len(resources), "Expected one resource from parsing")
+				if test.ExpectedResources == 0 { // i.e. the default, which actually means 1
+					require.Equal(t, 1, len(resources), "Expected one resource from parsing")
+				} else {
+					require.Equal(t, test.ExpectedResources, len(resources), fmt.Sprintf("Expected %d resources from parsing", test.ExpectedResources))
+				}
 			})
 		}
 	})
