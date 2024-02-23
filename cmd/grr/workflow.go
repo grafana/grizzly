@@ -258,41 +258,6 @@ func watchCmd(registry grizzly.Registry) *cli.Command {
 	return initialiseCmd(cmd, &opts)
 }
 
-func previewCmd(registry grizzly.Registry) *cli.Command {
-	cmd := &cli.Command{
-		Use:   "preview <resource-path>",
-		Short: "upload a snapshot to preview the rendered file",
-		Args:  cli.ArgsExact(1),
-	}
-	var opts Opts
-	expires := cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
-
-	cmd.Run = func(cmd *cli.Command, args []string) error {
-		resourceKind, folderUID, err := getOnlySpec(opts)
-		if err != nil {
-			return err
-		}
-
-		currentContext, err := config.CurrentContext()
-		if err != nil {
-			return err
-		}
-		targets := currentContext.GetTargets(opts.Targets)
-
-		resources, err := grizzly.Parse(registry, args[0], resourceKind, folderUID, targets, opts.JsonnetPaths)
-		if err != nil {
-			return err
-		}
-
-		previewOpts := &grizzly.PreviewOpts{
-			ExpiresSeconds: *expires,
-		}
-
-		return grizzly.Preview(registry, resources, previewOpts)
-	}
-	return initialiseCmd(cmd, &opts)
-}
-
 func serveCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "serve <resources>",

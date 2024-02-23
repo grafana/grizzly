@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
@@ -125,21 +124,6 @@ func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
 	return h.postDashboard(resource)
 }
 
-// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-func (h *DashboardHandler) Preview(resource grizzly.Resource, opts *grizzly.PreviewOpts) error {
-	s, err := h.postSnapshot(resource, opts)
-	if err != nil {
-		return err
-	}
-	notifier.Info(resource, "view: "+s.URL)
-	if opts.ExpiresSeconds > 0 {
-		notifier.Warn(resource, fmt.Sprintf("Previews will expire and be deleted automatically in %d seconds\n", opts.ExpiresSeconds))
-	} else {
-		notifier.Error(resource, "delete: "+s.DeleteURL)
-	}
-	return nil
-}
-
 // getRemoteDashboard retrieves a dashboard object from Grafana
 func (h *DashboardHandler) getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	client, err := h.Provider.(ClientProvider).Client()
@@ -233,25 +217,6 @@ func (h *DashboardHandler) postDashboard(resource grizzly.Resource) error {
 
 	_, err = client.Dashboards.PostDashboard(&body)
 	return err
-}
-
-func (h *DashboardHandler) postSnapshot(resource grizzly.Resource, opts *grizzly.PreviewOpts) (*models.CreateDashboardSnapshotOKBody, error) {
-	body := models.CreateDashboardSnapshotCommand{
-		Dashboard: resource.Spec(),
-	}
-	if opts.ExpiresSeconds > 0 {
-		body.Expires = int64(opts.ExpiresSeconds)
-	}
-	client, err := h.Provider.(ClientProvider).Client()
-	if err != nil {
-		return nil, err
-	}
-
-	response, err := client.Snapshots.CreateDashboardSnapshot(&body, nil)
-	if err != nil {
-		return nil, err
-	}
-	return response.GetPayload(), nil
 }
 
 func (h *DashboardHandler) Detect(data map[string]any) bool {

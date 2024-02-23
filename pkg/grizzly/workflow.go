@@ -304,26 +304,6 @@ func Apply(registry Registry, resources Resources) error {
 	return nil
 }
 
-// Preview pushes resources to endpoints as previews, if supported
-func Preview(registry Registry, resources Resources, opts *PreviewOpts) error {
-	for _, resource := range resources {
-		handler, err := registry.GetHandler(resource.Kind())
-		if err != nil {
-			return err
-		}
-		previewHandler, ok := handler.(PreviewHandler)
-		if !ok {
-			notifier.NotSupported(resource, "preview")
-			continue
-		}
-		err = previewHandler.Preview(resource, opts)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // WatchParser encapsulates the action of parsing a resource (jsonnet or otherwise)
 type WatchParser interface {
 	Name() string
@@ -396,36 +376,6 @@ func Serve(registry Registry, parser WatchParser, resourcePath string, port int,
 		return err
 	}
 	return server.Start()
-}
-
-// Listen waits for remote changes to a resource and saves them to disk
-func Listen(registry Registry, UID, filename string) error {
-	count := strings.Count(UID, ".")
-	var handlerName, resourceID string
-	if count == 1 {
-		parts := strings.SplitN(UID, ".", 2)
-		handlerName = parts[0]
-		resourceID = parts[1]
-	} else if count == 2 {
-		parts := strings.SplitN(UID, ".", 3)
-		handlerName = parts[0] + "." + parts[1]
-		resourceID = parts[2]
-
-	} else {
-		return fmt.Errorf("UID must be <provider>.<uid>: %s", UID)
-	}
-
-	handler, err := registry.GetHandler(handlerName)
-	if err != nil {
-		return err
-	}
-	listenHandler, ok := handler.(ListenHandler)
-	if !ok {
-		uid := fmt.Sprintf("%s.%s", handler.Kind(), resourceID)
-		notifier.NotSupported(notifier.SimpleString(uid), "listen")
-		return nil
-	}
-	return listenHandler.Listen(resourceID, filename)
 }
 
 // Export renders Jsonnet resources then saves them to a directory
