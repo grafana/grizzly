@@ -1,0 +1,30 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: ["bug", "triage"]
+projects: ["grafana/513"] # Platform Client Administration Tooling
+body:
+  - type: input
+    id: grizzly_version
+    attributes:
+      label: Grizzly Version
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      placeholder: |
+        What should have happened?
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: Actual Behavior
+      placeholder: |
+        What actually happened?
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        Please list the steps required to reproduce the issue, for example:
+        1. `grr pull ...`
+        
