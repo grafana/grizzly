@@ -101,13 +101,6 @@ type Handler interface {
 	Detect(map[string]any) bool
 }
 
-// PreviewHandler describes a handler that has the ability to render
-// a preview of a resource
-type PreviewHandler interface {
-	// Preview renders Jsonnet then pushes them to the endpoint if previews are possible
-	Preview(resource Resource, opts *PreviewOpts) error
-}
-
 // ListenHandler describes a handler that has the ability to watch a single
 // resource for changes, and write changes to that resource to a local file
 type ListenHandler interface {
