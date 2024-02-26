@@ -1,4 +1,4 @@
-package grafana
+package mimir
 
 import (
 	"errors"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	. "github.com/grafana/grizzly/pkg/testutil"
 	"github.com/stretchr/testify/require"
 
 	"gopkg.in/yaml.v3"
@@ -16,8 +15,7 @@ import (
 var errCortextoolClient = errors.New("error coming from cortextool client")
 
 func TestRules(t *testing.T) {
-	InitialiseTestConfig()
-	provider := NewProvider()
+	provider := NewProvider(&config.MimirConfig{})
 	h := NewRuleHandler(provider)
 	t.Run("get remote rule group", func(t *testing.T) {
 		mockCortexTool(t, "testdata/list_rules.yaml", nil)

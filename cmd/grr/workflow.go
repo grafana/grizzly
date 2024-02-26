@@ -278,7 +278,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		}
 		targets := currentContext.GetTargets(opts.Targets)
 		parser := &jsonnetWatchParser{
-			resourcePath: args[1],
+			resourcePath: args[0],
 			registry:     registry,
 			resourceKind: resourceKind,
 			folderUID:    folderUID,

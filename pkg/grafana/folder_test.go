@@ -3,12 +3,13 @@ package grafana
 import (
 	"testing"
 
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSortFolders(t *testing.T) {
-	handler := NewFolderHandler(NewProvider())
+	handler := NewFolderHandler(NewProvider(&config.GrafanaConfig{}))
 	folder := func(uid string, parentUID string) grizzly.Resource {
 		spec := map[string]interface{}{
 			"uid": uid,

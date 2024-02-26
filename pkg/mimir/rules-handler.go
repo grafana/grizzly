@@ -1,4 +1,4 @@
-package grafana
+package mimir
 
 import (
 	"fmt"
@@ -117,13 +117,9 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 	parts := strings.SplitN(uid, ".", 2)
 	namespace := parts[0]
 	name := parts[1]
-	grizzlyContext, err := config.CurrentContext()
-	if err != nil {
-		return nil, err
-	}
-	mimirConfig := grizzlyContext.Mimir
 
-	out, err := cortexTool(&mimirConfig, "rules", "print", "--disable-color")
+	mimirConfig := h.Provider.(ClientConfigProvider).ClientConfig()
+	out, err := cortexTool(mimirConfig, "rules", "print", "--disable-color")
 	if err != nil {
 		return nil, err
 	}
@@ -154,13 +150,8 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 
 // getRemoteRuleGroupList retrieves a datasource object from Grafana
 func (h *RuleHandler) getRemoteRuleGroupList() ([]string, error) {
-	grizzlyContext, err := config.CurrentContext()
-	if err != nil {
-		return nil, err
-	}
-	mimirConfig := grizzlyContext.Mimir
-
-	out, err := cortexTool(&mimirConfig, "rules", "print", "--disable-color")
+	mimirConfig := h.Provider.(ClientConfigProvider).ClientConfig()
+	out, err := cortexTool(mimirConfig, "rules", "print", "--disable-color")
 	if err != nil {
 		return nil, err
 	}
@@ -217,13 +208,9 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 		return err
 	}
 	os.WriteFile(tmpfile.Name(), out, 0644)
-	grizzlyContext, err := config.CurrentContext()
-	if err != nil {
-		return err
-	}
-	mimirConfig := grizzlyContext.Mimir
 
-	output, err := cortexTool(&mimirConfig, "rules", "load", tmpfile.Name())
+	mimirConfig := h.Provider.(ClientConfigProvider).ClientConfig()
+	output, err := cortexTool(mimirConfig, "rules", "load", tmpfile.Name())
 	if err != nil {
 		log.Println(output)
 		return err

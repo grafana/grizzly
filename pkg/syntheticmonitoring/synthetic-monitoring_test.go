@@ -1,10 +1,10 @@
-package grafana
+package syntheticmonitoring
 
 import (
 	"testing"
 
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	. "github.com/grafana/grizzly/pkg/testutil"
 	"github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
 	"github.com/stretchr/testify/assert"
 
@@ -20,8 +20,7 @@ func TestSyntheticMonitoring(t *testing.T) {
 				"type": "http",
 			},
 		}
-		InitialiseTestConfig()
-		handler := NewSyntheticMonitoringHandler(NewProvider())
+		handler := NewSyntheticMonitoringHandler(NewProvider(&config.SyntheticMonitoringConfig{}))
 
 		uid, err := handler.GetUID(resource)
 		require.NoError(t, err)
@@ -77,8 +76,7 @@ func TestSyntheticMonitoringCheckUID(t *testing.T) {
 		},
 	}
 
-	InitialiseTestConfig()
-	h := NewSyntheticMonitoringHandler(NewProvider())
+	h := NewSyntheticMonitoringHandler(NewProvider(&config.SyntheticMonitoringConfig{}))
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.expectedUID, h.getUID(tc.check))

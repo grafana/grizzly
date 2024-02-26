@@ -5,11 +5,12 @@ import (
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/models"
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/stretchr/testify/require"
 )
 
 func TestExtractFolderUID(t *testing.T) {
-	provider := NewProvider()
+	provider := NewProvider(&config.GrafanaConfig{})
 
 	client, err := provider.Client()
 	require.NoError(t, err)

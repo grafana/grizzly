@@ -2,6 +2,7 @@ package grizzly
 
 import (
 	"fmt"
+	"net/http/httputil"
 	"strings"
 
 	"github.com/gobwas/glob"
@@ -13,6 +14,10 @@ type Provider interface {
 	Version() string
 	APIVersion() string
 	GetHandlers() []Handler
+}
+
+type ProxyProvider interface {
+	SetupProxy() (*httputil.ReverseProxy, error)
 }
 
 // ProviderSet records providers
@@ -116,4 +121,19 @@ func (r *Registry) Detect(data any) string {
 		}
 	}
 	return ""
+}
+
+func (r *Registry) GetProxyProvider() (*ProxyProvider, error) {
+	var proxyProvider *ProxyProvider
+	for _, provider := range r.Providers {
+		pp, ok := provider.(ProxyProvider)
+		if ok {
+			if proxyProvider == nil {
+				proxyProvider = &pp
+			} else {
+				return nil, fmt.Errorf("Only one proxy provider currently supported")
+			}
+		}
+	}
+	return proxyProvider, nil
 }

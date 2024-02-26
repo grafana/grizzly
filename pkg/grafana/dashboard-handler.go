@@ -257,18 +257,19 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.GrizzlyServer) []grizzly.
 func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.GrizzlyServer) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html")
-		if p.Url == "" {
+		config := h.Provider.(ClientProvider).Config()
+		if config.URL == "" {
 			w.WriteHeader(400)
 			fmt.Fprintf(w, "<p><b>Error:</b> No URL provided")
 			return
 		}
-		req, err := http.NewRequest("GET", p.Url+r.URL.Path, nil)
+		req, err := http.NewRequest("GET", config.URL+r.URL.Path, nil)
 		if err != nil {
 			log.Print(err)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-		req.Header.Set("Authorization", "Bearer "+p.Token)
+		req.Header.Set("Authorization", "Bearer "+config.Token)
 		req.Header.Set("User-Agent", p.UserAgent)
 
 		client := &http.Client{}
@@ -281,7 +282,7 @@ func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.GrizzlyServer) fun
 		}
 
 		msg := ""
-		if p.Token == "" {
+		if config.Token == "" {
 			msg += "<p><b>Warning:</b> No service account token specified.</p>"
 		}
 

@@ -8,13 +8,12 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	. "github.com/grafana/grizzly/pkg/testutil"
+	"github.com/grafana/grizzly/pkg/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFolders(t *testing.T) {
-	InitialiseTestConfig()
-	handler := grafana.NewFolderHandler(grafana.NewProvider())
+	handler := grafana.NewFolderHandler(grafana.NewProvider(&testutil.TestContext().Grafana))
 
 	t.Run("get remote folder - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("abcdefghi")

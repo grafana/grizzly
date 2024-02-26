@@ -7,13 +7,12 @@ import (
 
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	. "github.com/grafana/grizzly/pkg/testutil"
+	"github.com/grafana/grizzly/pkg/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDatasources(t *testing.T) {
-	InitialiseTestConfig()
-	handler := grafana.NewDatasourceHandler(grafana.NewProvider())
+	handler := grafana.NewDatasourceHandler(grafana.NewProvider(&testutil.TestContext().Grafana))
 
 	t.Run("get remote datasource - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("AppDynamics")

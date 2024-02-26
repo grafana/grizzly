@@ -8,7 +8,7 @@ import (
 
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	. "github.com/grafana/grizzly/pkg/testutil"
+	"github.com/grafana/grizzly/pkg/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -103,8 +103,7 @@ func TestDashboard(t *testing.T) {
 }
 
 func TestDashboardHandler(t *testing.T) {
-	InitialiseTestConfig()
-	handler := grafana.NewDashboardHandler(grafana.NewProvider())
+	handler := grafana.NewDashboardHandler(grafana.NewProvider(&testutil.TestContext().Grafana))
 
 	t.Run("get remote dashboard - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("ReciqtgGk")

@@ -1,4 +1,4 @@
-package grafana
+package syntheticmonitoring
 
 import (
 	"fmt"
@@ -7,11 +7,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
-
-	smapi "github.com/grafana/synthetic-monitoring-api-go-client"
 )
 
 /*
@@ -39,6 +36,7 @@ type Probes struct {
 // SyntheticMonitoringHandler is a Grizzly Handler for Grafana Synthetic Monitoring
 type SyntheticMonitoringHandler struct {
 	grizzly.BaseHandler
+	smProvider Provider
 }
 
 // NewSyntheticMonitoringHandler returns a Grizzly Handler for Grafana Synthetic Monitoring
@@ -137,34 +135,9 @@ func (h *SyntheticMonitoringHandler) Update(existing, resource grizzly.Resource)
 	return h.updateCheck(resource)
 }
 
-// NewSyntheticMonitoringClient creates a new client for synthetic monitoring go client
-func (h *SyntheticMonitoringHandler) NewSyntheticMonitoringClient() (*smapi.Client, error) {
-	grizzlyContext, err := config.CurrentContext()
-	if err != nil {
-		return nil, err
-	}
-	smConfig := grizzlyContext.SyntheticMonitoring
-	client, err := NewHttpClient()
-	if err != nil {
-		return nil, err
-	}
-
-	smClient := smapi.NewClient(smBaseURL, "", client)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err = smClient.Install(ctx, smConfig.StackID, smConfig.MetricsID, smConfig.LogsID, smConfig.Token)
-	if err != nil {
-		return nil, fmt.Errorf("failed to install synthetic monitoring client : %v", err)
-	}
-
-	return smClient, nil
-}
-
 // getProbeList retrieves the list of probe and grouped by id and name
 func (h *SyntheticMonitoringHandler) getProbeList() (Probes, error) {
-	smClient, err := h.NewSyntheticMonitoringClient()
+	smClient, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return Probes{}, err
 	}
@@ -192,7 +165,7 @@ func (h *SyntheticMonitoringHandler) getProbeList() (Probes, error) {
 
 // getRemoteCheck retrieves a check object from SM
 func (h *SyntheticMonitoringHandler) getRemoteCheckList() ([]string, error) {
-	smClient, err := h.NewSyntheticMonitoringClient()
+	smClient, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +186,7 @@ func (h *SyntheticMonitoringHandler) getRemoteCheckList() ([]string, error) {
 
 // getRemoteCheck retrieves a check object from SM
 func (h *SyntheticMonitoringHandler) getRemoteCheck(uid string) (*grizzly.Resource, error) {
-	smClient, err := h.NewSyntheticMonitoringClient()
+	smClient, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +249,7 @@ func (h *SyntheticMonitoringHandler) convertProbeNameToID(resource *grizzly.Reso
 }
 
 func (h *SyntheticMonitoringHandler) addCheck(resource grizzly.Resource) error {
-	smClient, err := h.NewSyntheticMonitoringClient()
+	smClient, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return err
 	}
@@ -301,7 +274,7 @@ func (h *SyntheticMonitoringHandler) addCheck(resource grizzly.Resource) error {
 }
 
 func (h *SyntheticMonitoringHandler) updateCheck(resource grizzly.Resource) error {
-	smClient, err := h.NewSyntheticMonitoringClient()
+	smClient, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return err
 	}
