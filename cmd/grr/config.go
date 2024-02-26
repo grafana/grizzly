@@ -5,9 +5,34 @@ import (
 
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/config"
-	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/spf13/viper"
 )
+
+// LoggingOpts contains logging options (used in all commands)
+type LoggingOpts struct {
+	LogLevel string
+}
+
+// Opts contains options for most Grizzly commands
+type Opts struct {
+	LoggingOpts
+	Directory    bool // Deprecated: now is gathered with os.Stat(<resource-path>)
+	JsonnetPaths []string
+	Targets      []string
+	OutputFormat string
+	IsDir        bool // used internally to denote that the resource path argument pointed at a directory
+
+	// Used for supporting resources without envelopes
+	OnlySpec     bool
+	HasOnlySpec  bool
+	FolderUID    string
+	ResourceKind string
+
+	// Used for supporting the proxy server
+	OpenBrowser bool
+	ProxyPort   int
+	CanSave     bool
+}
 
 func configPathCmd() *cli.Command {
 	cmd := &cli.Command{
@@ -15,7 +40,7 @@ func configPathCmd() *cli.Command {
 		Short: "Print the path to the configuration file",
 		Args:  cli.ArgsExact(0),
 	}
-	var opts grizzly.LoggingOpts
+	var opts LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		fmt.Println(viper.ConfigFileUsed())
@@ -30,7 +55,7 @@ func configImportCmd() *cli.Command {
 		Short: "Initialise Grizzly configuration file from environment variables",
 		Args:  cli.ArgsExact(0),
 	}
-	var opts grizzly.LoggingOpts
+	var opts LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		return config.Import()
@@ -43,7 +68,7 @@ func currentContextCmd() *cli.Command {
 		Short: "Show current context",
 		Args:  cli.ArgsExact(0),
 	}
-	var opts grizzly.LoggingOpts
+	var opts LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		conf, err := config.CurrentContext()
@@ -62,7 +87,7 @@ func useContextCmd() *cli.Command {
 		Short: "Select a context",
 		Args:  cli.ArgsExact(1),
 	}
-	var opts grizzly.LoggingOpts
+	var opts LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		context := args[0]
@@ -77,7 +102,7 @@ func getContextsCmd() *cli.Command {
 		Short: "list configured contexts",
 		Args:  cli.ArgsRange(0, 1),
 	}
-	var opts grizzly.LoggingOpts
+	var opts LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		return config.GetContexts()
@@ -91,7 +116,7 @@ func getConfigCmd() *cli.Command {
 		Short: "get the whole configuration for a context or a specific attribute of the configuration",
 		Args:  cli.ArgsRange(0, 1),
 	}
-	var opts grizzly.LoggingOpts
+	var opts LoggingOpts
 	var output string
 	cmd.Flags().StringVarP(&output, "output", "o", "yaml", "Output format")
 
@@ -116,7 +141,7 @@ func setCmd() *cli.Command {
 		Short: "set a configuration value",
 		Args:  cli.ArgsExact(2),
 	}
-	var opts grizzly.LoggingOpts
+	var opts LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		return config.Set(args[0], args[1])
@@ -130,7 +155,7 @@ func createContextCmd() *cli.Command {
 		Short: "Create a configuration context",
 		Args:  cli.ArgsExact(1),
 	}
-	var opts grizzly.LoggingOpts
+	var opts LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		return config.CreateContext(args[0])

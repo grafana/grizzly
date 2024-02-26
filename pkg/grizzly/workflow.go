@@ -10,7 +10,6 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/grizzly/pkg/term"
 	"github.com/pmezard/go-difflib/difflib"
@@ -22,7 +21,7 @@ import (
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 // Get retrieves a resource from a remote endpoint using its UID
-func Get(registry Registry, UID string, opts Opts) error {
+func Get(registry Registry, UID string, onlySpec bool, outputFormat string) error {
 	log.Info("Getting ", UID)
 
 	count := strings.Count(UID, ".")
@@ -51,11 +50,10 @@ func Get(registry Registry, UID string, opts Opts) error {
 	}
 
 	resource = handler.Unprepare(*resource)
-	format, onlySpec, err := getOutputFormat(opts)
 	if err != nil {
 		return err
 	}
-	content, _, _, err := Format(registry, "", resource, format, onlySpec)
+	content, _, _, err := Format(registry, "", resource, outputFormat, onlySpec)
 	if err != nil {
 		return err
 	}
@@ -83,17 +81,12 @@ func List(registry Registry, resources Resources) error {
 }
 
 // ListRetmote outputs the keys of remote resources
-func ListRemote(registry Registry, opts Opts) error {
+func ListRemote(registry Registry, targets []string) error {
 	log.Info("Listing remotes")
 
 	f := "%s\t%s\t%s\n"
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
-	currentContext, err := config.CurrentContext()
-	if err != nil {
-		return err
-	}
-	targets := currentContext.GetTargets(opts.Targets)
 	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
 	for name, handler := range registry.Handlers {
 		if !registry.HandlerMatchesTarget(handler, targets) {
@@ -116,7 +109,7 @@ func ListRemote(registry Registry, opts Opts) error {
 // Pull pulls remote resources and stores them in the local file system.
 // The given resourcePath must be a directory, where all resources will be stored.
 // If opts.JSONSpec is true, which is only applicable for dashboards, saves the spec as a JSON file.
-func Pull(registry Registry, resourcePath string, opts Opts) error {
+func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat string, targets []string) error {
 	isFile, err := isFile(resourcePath)
 	if err != nil {
 		return err
@@ -128,21 +121,12 @@ func Pull(registry Registry, resourcePath string, opts Opts) error {
 
 	log.Infof("Pulling resources to %s", resourcePath)
 
-	currentContext, err := config.CurrentContext()
-	if err != nil {
-		return err
-	}
-	targets := currentContext.GetTargets(opts.Targets)
 	for name, handler := range registry.Handlers {
 		if !registry.HandlerMatchesTarget(handler, targets) {
 			notifier.Info(notifier.SimpleString(handler.Kind()), "skipped")
 			continue
 		}
 
-		format, onlySpec, err := getOutputFormat(opts)
-		if err != nil {
-			return err
-		}
 		log.Debugf("Listing remote values for handler %s", name)
 		UIDs, err := handler.ListRemote()
 		if err != nil {
@@ -165,7 +149,7 @@ func Pull(registry Registry, resourcePath string, opts Opts) error {
 				return err
 			}
 
-			content, filename, _, err := Format(registry, resourcePath, resource, format, onlySpec)
+			content, filename, _, err := Format(registry, resourcePath, resource, outputFormat, onlySpec)
 			if err != nil {
 				return err
 			}
@@ -180,7 +164,7 @@ func Pull(registry Registry, resourcePath string, opts Opts) error {
 }
 
 // Show displays resources
-func Show(registry Registry, resources Resources, opts Opts) error {
+func Show(registry Registry, resources Resources, outputFormat string) error {
 	log.Infof("Showing %d resources", resources.Len())
 
 	var items []term.PageItem
@@ -191,11 +175,7 @@ func Show(registry Registry, resources Resources, opts Opts) error {
 		}
 		resource = *(handler.Unprepare(resource))
 
-		format, _, err := getOutputFormat(opts)
-		if err != nil {
-			return err
-		}
-		content, _, _, err := Format(registry, "", &resource, format, false) // we always show full resource, even if only-spec was specified
+		content, _, _, err := Format(registry, "", &resource, outputFormat, false) // we always show full resource, even if only-spec was specified
 		if err != nil {
 			return err
 		}
@@ -217,7 +197,7 @@ func Show(registry Registry, resources Resources, opts Opts) error {
 }
 
 // Diff compares resources to those at the endpoints
-func Diff(registry Registry, resources Resources, opts Opts) error {
+func Diff(registry Registry, resources Resources, onlySpec bool, outputFormat string) error {
 	log.Infof("Diff-ing %d resources", resources.Len())
 
 	for _, resource := range resources {
@@ -226,11 +206,7 @@ func Diff(registry Registry, resources Resources, opts Opts) error {
 			return err
 		}
 
-		format, onlySpec, err := getOutputFormat(opts)
-		if err != nil {
-			return err
-		}
-		local, _, _, err := Format(registry, "", &resource, format, onlySpec)
+		local, _, _, err := Format(registry, "", &resource, outputFormat, onlySpec)
 		if err != nil {
 			return err
 		}
@@ -251,7 +227,7 @@ func Diff(registry Registry, resources Resources, opts Opts) error {
 
 		remote = handler.Unprepare(*remote)
 
-		remoteRepresentation, _, _, err := Format(registry, "", &resource, format, onlySpec)
+		remoteRepresentation, _, _, err := Format(registry, "", remote, outputFormat, onlySpec)
 		if err != nil {
 			return err
 		}
@@ -414,8 +390,8 @@ func Watch(registry Registry, watchDir string, parser WatchParser) error {
 // Serve starts an HTTP server that can be used to navigate Grizzly resources,
 // as well as allowing visualisation of resources handed to Grizzly.
 // If pure files, they can be saved too.
-func Serve(registry Registry, parser WatchParser, resourcePath string, opts Opts) error {
-	server, err := NewGrizzlyServer(registry, parser, resourcePath, opts)
+func Serve(registry Registry, parser WatchParser, resourcePath string, port int, openBrowser, onlySpec bool, outputFormat string) error {
+	server, err := NewGrizzlyServer(registry, parser, resourcePath, port, openBrowser, onlySpec, outputFormat)
 	if err != nil {
 		return err
 	}
@@ -453,7 +429,7 @@ func Listen(registry Registry, UID, filename string) error {
 }
 
 // Export renders Jsonnet resources then saves them to a directory
-func Export(registry Registry, exportDir string, resources Resources, opts Opts) error {
+func Export(registry Registry, exportDir string, resources Resources, onlySpec bool, outputFormat string) error {
 	if _, err := os.Stat(exportDir); os.IsNotExist(err) {
 		err = os.Mkdir(exportDir, 0755)
 		if err != nil {
@@ -462,11 +438,7 @@ func Export(registry Registry, exportDir string, resources Resources, opts Opts)
 	}
 
 	for _, resource := range resources {
-		format, onlySpec, err := getOutputFormat(opts)
-		if err != nil {
-			return err
-		}
-		updatedResourceBytes, _, extension, err := Format(registry, "", &resource, format, onlySpec)
+		updatedResourceBytes, _, extension, err := Format(registry, "", &resource, outputFormat, onlySpec)
 		if err != nil {
 			return err
 		}
@@ -514,49 +486,4 @@ func isFile(resourcePath string) (bool, error) {
 	}
 
 	return !stat.IsDir(), nil
-}
-
-func getOutputFormat(opts Opts) (string, bool, error) {
-	var onlySpec bool
-	context, err := config.CurrentContext()
-	if err != nil {
-		return "", false, err
-	}
-	if opts.HasOnlySpec {
-		onlySpec = opts.OnlySpec
-	} else {
-		onlySpec = context.OnlySpec
-	}
-	if opts.OutputFormat != "" {
-		return opts.OutputFormat, onlySpec, nil
-	} else if context.OutputFormat != "" {
-		return context.OutputFormat, onlySpec, nil
-	}
-	return "yaml", onlySpec, nil
-}
-
-func getOnlySpec(opts Opts) (bool, string, string, error) {
-	var onlySpec bool
-	context, err := config.CurrentContext()
-	if err != nil {
-		return false, "", "", err
-	}
-	if opts.HasOnlySpec {
-		onlySpec = opts.OnlySpec
-	} else {
-		onlySpec = context.OnlySpec
-	}
-
-	if !onlySpec {
-		return false, "", "", nil
-	}
-	kind := context.ResourceKind
-	if kind == "" {
-		kind = opts.ResourceKind
-	}
-	folderUID := context.FolderUID
-	if folderUID == "" {
-		folderUID = opts.FolderUID
-	}
-	return onlySpec, kind, folderUID, nil
 }

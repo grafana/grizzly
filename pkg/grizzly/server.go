@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"os/exec"
 	"runtime"
 
@@ -19,6 +20,7 @@ import (
 
 type GrizzlyServer struct {
 	proxy        *httputil.ReverseProxy
+	Port         int
 	Registry     Registry
 	Parser       WatchParser
 	Url          string
@@ -26,7 +28,9 @@ type GrizzlyServer struct {
 	Token        string
 	UserAgent    string
 	ResourcePath string
-	Opts         Opts
+	OpenBrowser  bool
+	OnlySpec     bool
+	OutputFormat string
 }
 
 var upgrader = websocket.Upgrader{
@@ -35,12 +39,15 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func NewGrizzlyServer(registry Registry, parser WatchParser, resourcePath string, opts Opts) (*GrizzlyServer, error) {
+func NewGrizzlyServer(registry Registry, parser WatchParser, resourcePath string, port int, openBrowser bool, onlySpec bool, outputFormat string) (*GrizzlyServer, error) {
 	server := GrizzlyServer{
 		Parser:       parser,
 		UserAgent:    "grizzly",
-		Opts:         opts,
 		ResourcePath: resourcePath,
+		Port:         port,
+		OpenBrowser:  openBrowser,
+		OnlySpec:     onlySpec,
+		OutputFormat: outputFormat,
 	}
 	context, err := config.CurrentContext()
 	if err != nil {
@@ -155,20 +162,24 @@ func (p *GrizzlyServer) Start() error {
 	r.Get("/", p.RootHandler)
 
 	r.Get("/api/live/ws", p.wsHandler)
-	if p.Opts.ProxyPort == 0 {
-		p.Opts.ProxyPort = 8080
-	}
-	if p.Opts.OpenBrowser {
+
+	if p.OpenBrowser {
 		var url string
-		if p.Opts.IsDir {
-			url = fmt.Sprintf("http://localhost:%d", p.Opts.ProxyPort)
+
+		stat, err := os.Stat(p.ResourcePath)
+		if err != nil {
+			return err
+		}
+
+		if stat.IsDir() {
+			url = fmt.Sprintf("http://localhost:%d", p.Port)
 		} else {
 			resources, err := p.Parser.Parse()
 			if err != nil {
 				return err
 			}
 			if len(resources) > 1 {
-				url = fmt.Sprintf("http://localhost:%d", p.Opts.ProxyPort)
+				url = fmt.Sprintf("http://localhost:%d", p.Port)
 			} else if len(resources) == 0 {
 				return fmt.Errorf("no resources found to proxy")
 			} else {
@@ -189,13 +200,13 @@ func (p *GrizzlyServer) Start() error {
 				if err != nil {
 					return err
 				}
-				url = fmt.Sprintf("http://localhost:%d%s", p.Opts.ProxyPort, proxyURL)
+				url = fmt.Sprintf("http://localhost:%d%s", p.Port, proxyURL)
 			}
 		}
 		p.openBrowser(url)
 	}
-	fmt.Printf("Listening on http://localhost:%d\n", p.Opts.ProxyPort)
-	return http.ListenAndServe(fmt.Sprintf(":%d", p.Opts.ProxyPort), r)
+	fmt.Printf("Listening on http://localhost:%d\n", p.Port)
+	return http.ListenAndServe(fmt.Sprintf(":%d", p.Port), r)
 }
 
 func (p *GrizzlyServer) openBrowser(url string) {

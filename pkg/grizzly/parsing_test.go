@@ -112,10 +112,6 @@ func TestParseKindDetection(t *testing.T) {
 				grafana.NewProvider(),
 			},
 		)
-		opts := grizzly.Opts{
-			FolderUID: "general",
-		}
-
 		tests := []struct {
 			Name              string
 			InputFile         string
@@ -186,7 +182,7 @@ func TestParseKindDetection(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.Name, func(t *testing.T) {
-				resources, err := grizzly.Parse(registry, test.InputFile, &opts)
+				resources, err := grizzly.Parse(registry, test.InputFile, "", "General", nil, nil)
 				if test.ExpectedError != "" {
 					require.Error(t, err)
 					require.Equal(t, test.ExpectedError, err.Error())
