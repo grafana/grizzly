@@ -60,6 +60,22 @@ func TestDashboard(t *testing.T) {
 		})
 	})
 
+	t.Run("Re-apply dashboard - no folder", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:        "apply no-folder.yml",
+					ExpectedOutput: "Dashboard.no-folder added\n",
+				},
+				{
+					Command:                "get Dashboard.no-folder",
+					ExpectedOutputContains: "folder: general",
+				},
+			},
+		})
+	})
 	t.Run("Diff dashboard - success", func(t *testing.T) {
 		runTest(t, GrizzlyTest{
 			TestDir:       dir,
