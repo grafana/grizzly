@@ -1,0 +1,12 @@
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: Dashboard
+metadata:
+  name: no-folder
+spec:
+  schemaVersion: 17
+  tags:
+    - templated
+  timezone: browser
+  title: No Folder
+  uid: no-folder
+  editable: true
