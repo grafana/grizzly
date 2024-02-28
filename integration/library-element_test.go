@@ -80,7 +80,7 @@ func TestLibraryElements_CLI(t *testing.T) {
 				// Test list remote
 				{
 					Command:                "list -r -t LibraryElement",
-					ExpectedOutputContains: "-agbm1C4k",
+					ExpectedOutputContains: "grizzly.grafana.com/v1alpha1    LibraryElement    -agbm1C4k",
 				},
 			},
 		})
