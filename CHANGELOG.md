@@ -1,5 +1,7 @@
 # Changelog
 
+**Changelogs for v0.4.0+ can be found [here](https://github.com/grafana/grizzly/releases)**
+
 ## 0.3.1 (2024-01-23)
 Feature improvements:
 * Allow targets to be set in contexts (#304)
