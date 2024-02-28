@@ -1,0 +1,22 @@
+{
+    "apiVersion": "grizzly.grafana.com/v1alpha1",
+    "kind": "DashboardFolder",
+    "metadata": {
+      "name": "xVvlWeK4k"
+    },
+    "spec": {
+      "canAdmin": true,
+      "canEdit": true,
+      "canSave": true,
+      "created": "2021-07-05T09:17:29Z",
+      "createdBy": "Anonymous",
+      "hasAcl": false,
+      "id": 1,
+      "title": "xVvlWeK4k",
+      "uid": "xVvlWeK4k",
+      "updated": "2021-07-05T09:17:29Z",
+      "updatedBy": "Anonymous",
+      "version": 1
+    }
+  }
+  
