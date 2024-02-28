@@ -15,8 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-tags: true
       - uses: ./.github/actions/setup-goversion
       - run: make cross
       - id: docker_tag
@@ -25,7 +23,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           body: |
-            This is release `${{ env.GITHUB_REF_NAME }}` of Grizzly (`grr`). Check out the [CHANGELOG](CHANGELOG.md) for detailed release notes.
+            This is release `${{ env.GITHUB_REF_NAME }}` of Grizzly (`grr`).
             ## Install instructions
 
             #### Binary:
