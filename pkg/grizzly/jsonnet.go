@@ -1,7 +1,7 @@
 package grizzly
 
 import (
-	_ "embed"
+	_ "embed" // used to embed grizzly.jsonnet script below
 	"fmt"
 	"path/filepath"
 	"regexp"
