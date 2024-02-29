@@ -251,13 +251,17 @@ func Diff(registry Registry, resources Resources, onlySpec bool, outputFormat st
 }
 
 // Apply pushes resources to endpoints
-func Apply(registry Registry, resources Resources) error {
+func Apply(registry Registry, resources Resources, stopOnError bool) error {
 	log.Infof("Applying %d resources", resources.Len())
 
+	var errorSet []error
 	for _, resource := range resources {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
-			return err
+			if stopOnError {
+				return err
+			}
+			errorSet = append(errorSet, err)
 		}
 
 		log.Debugf("Getting the remote value for `%s.%s`", handler.Kind(), resource.Name())
@@ -266,27 +270,39 @@ func Apply(registry Registry, resources Resources) error {
 			log.Debugf("`%s.%s` was not found, adding it...", handler.Kind(), resource.Name())
 
 			if err := handler.Add(resource); err != nil {
-				return err
+				if stopOnError {
+					return err
+				}
+				errorSet = append(errorSet, err)
 			}
 
 			notifier.Added(resource)
 			continue
 		}
 		if err != nil {
-			return err
+			if stopOnError {
+				return err
+			}
+			errorSet = append(errorSet, err)
 		}
 		log.Debugf("`%s.%s` was found, updating it...", handler.Kind(), resource.Name())
 
 		resourceRepresentation, err := resource.YAML()
 		if err != nil {
-			return err
+			if stopOnError {
+				return err
+			}
+			errorSet = append(errorSet, err)
 		}
 
 		resource = *handler.Prepare(*existingResource, resource)
 		existingResource = handler.Unprepare(*existingResource)
 		existingResourceRepresentation, err := existingResource.YAML()
 		if err != nil {
-			return err
+			if stopOnError {
+				return err
+			}
+			errorSet = append(errorSet, err)
 		}
 
 		if resourceRepresentation == existingResourceRepresentation {
@@ -295,10 +311,18 @@ func Apply(registry Registry, resources Resources) error {
 		}
 
 		if err = handler.Update(*existingResource, resource); err != nil {
-			return err
+			if stopOnError {
+				return err
+			}
+			errorSet = append(errorSet, err)
 		}
 
 		notifier.Updated(resource)
+	}
+	if len(errorSet) > 0 {
+		err := fmt.Errorf("Multiple errors occurred: ")
+		errorSet = append([]error{err}, errorSet...)
+		return errors.Join(errorSet...)
 	}
 
 	return nil
@@ -334,7 +358,7 @@ func Watch(registry Registry, watchDir string, parser WatchParser) error {
 					if err != nil {
 						log.Error("Error: ", err)
 					}
-					err = Apply(registry, resources)
+					err = Apply(registry, resources, false)
 					if err != nil {
 						log.Error("Error: ", err)
 					}

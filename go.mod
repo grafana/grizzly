@@ -8,6 +8,7 @@ require (
 	github.com/go-chi/chi v1.5.5
 	github.com/go-clix/cli v0.2.0
 	github.com/go-openapi/runtime v0.27.1
+	github.com/go-openapi/strfmt v0.22.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.20.0
 	github.com/gorilla/websocket v1.5.1
@@ -38,7 +39,6 @@ require (
 	github.com/go-openapi/jsonreference v0.20.4 // indirect
 	github.com/go-openapi/loads v0.21.5 // indirect
 	github.com/go-openapi/spec v0.20.14 // indirect
-	github.com/go-openapi/strfmt v0.22.0 // indirect
 	github.com/go-openapi/swag v0.22.9 // indirect
 	github.com/go-openapi/validate v0.23.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect

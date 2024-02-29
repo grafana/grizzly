@@ -182,6 +182,8 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 		Args:    cli.ArgsExact(1),
 	}
 	var opts Opts
+	continueOnError := false
+	cmd.Flags().BoolVarP(&continueOnError, "continue-on-error", "e", false, "don't stop apply on first error")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		resourceKind, folderUID, err := getOnlySpec(opts)
@@ -199,7 +201,7 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Apply(registry, resources)
+		return grizzly.Apply(registry, resources, !continueOnError)
 	}
 
 	cmd = initialiseOnlySpec(cmd, &opts)
