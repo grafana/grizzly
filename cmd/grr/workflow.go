@@ -285,17 +285,16 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 			targets:      targets,
 			jsonnetPaths: opts.JsonnetPaths,
 		}
-		port := 8080
-		if opts.ProxyPort != 0 {
-			port = opts.ProxyPort
-		}
+
 		format, onlySpec, err := getOutputFormat(opts)
 		if err != nil {
 			return err
 		}
-		return grizzly.Serve(registry, parser, args[0], port, opts.OpenBrowser, onlySpec, format)
+
+		return grizzly.Serve(registry, parser, args[0], opts.ProxyPort, opts.OpenBrowser, onlySpec, format)
 	}
 	cmd.Flags().BoolVarP(&opts.OpenBrowser, "open-browser", "b", false, "Open Grizzly in default browser")
+	cmd.Flags().IntVarP(&opts.ProxyPort, "port", "p", 8080, "Port on which the server will listen")
 	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
