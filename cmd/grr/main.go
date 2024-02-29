@@ -33,12 +33,30 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	registry := grizzly.NewRegistry(
-		[]grizzly.Provider{
-			grafana.NewProvider(&context.Grafana),
-			mimir.NewProvider(&context.Mimir),
-			syntheticmonitoring.NewProvider(&context.SyntheticMonitoring),
-		})
+	providers := []grizzly.Provider{}
+
+	grafanaProvider, err := grafana.NewProvider(&context.Grafana)
+	if err != nil {
+		log.Warnf("Grafana provider is not configured: %v", err)
+	} else {
+		providers = append(providers, grafanaProvider)
+	}
+
+	mimirProvider, err := mimir.NewProvider(&context.Mimir)
+	if err != nil {
+		log.Warnf("Mimir provider is not configured: %v", err)
+	} else {
+		providers = append(providers, mimirProvider)
+	}
+
+	syntheticMonitoringProvider, err := syntheticmonitoring.NewProvider(&context.SyntheticMonitoring)
+	if err != nil {
+		log.Warnf("Synthetic Monitoring provider is not configured: %v", err)
+	} else {
+		providers = append(providers, syntheticMonitoringProvider)
+	}
+
+	registry := grizzly.NewRegistry(providers)
 
 	// workflow commands
 	rootCmd.AddCommand(

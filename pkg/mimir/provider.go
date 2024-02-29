@@ -1,6 +1,8 @@
 package mimir
 
 import (
+	"fmt"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/grafana/grizzly/pkg/config"
@@ -17,10 +19,20 @@ type ClientConfigProvider interface {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(config *config.MimirConfig) *Provider {
+func NewProvider(config *config.MimirConfig) (*Provider, error) {
+	if _, err := exec.LookPath("cortextool"); err != nil {
+		return nil, err
+	}
+	if config.Address == "" {
+		return nil, fmt.Errorf("mimir address is not set")
+	}
+	if config.ApiKey == "" {
+		return nil, fmt.Errorf("mimir api key is not set")
+	}
+
 	return &Provider{
 		config: config,
-	}
+	}, nil
 }
 
 // Group returns the group name of the Grafana provider

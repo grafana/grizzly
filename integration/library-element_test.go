@@ -12,7 +12,9 @@ import (
 )
 
 func TestLibraryElements(t *testing.T) {
-	handler := grafana.NewLibraryElementHandler(grafana.NewProvider(&testutil.TestContext().Grafana))
+	provider, err := grafana.NewProvider(&testutil.TestContext().Grafana)
+	require.NoError(t, err)
+	handler := grafana.NewLibraryElementHandler(provider)
 
 	t.Run("create libraryElement - success", func(t *testing.T) {
 		libraryElement, err := os.ReadFile("testdata/test_json/post_library-element.json")

@@ -13,7 +13,9 @@ import (
 )
 
 func TestFolders(t *testing.T) {
-	handler := grafana.NewFolderHandler(grafana.NewProvider(&testutil.TestContext().Grafana))
+	provider, err := grafana.NewProvider(&testutil.TestContext().Grafana)
+	require.NoError(t, err)
+	handler := grafana.NewFolderHandler(provider)
 
 	t.Run("get remote folder - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("abcdefghi")

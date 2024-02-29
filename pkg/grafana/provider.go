@@ -24,10 +24,13 @@ type ClientProvider interface {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(config *config.GrafanaConfig) *Provider {
+func NewProvider(config *config.GrafanaConfig) (*Provider, error) {
+	if config.URL == "" {
+		return nil, fmt.Errorf("grafana URL is not set")
+	}
 	return &Provider{
 		config: config,
-	}
+	}, nil
 }
 
 // Group returns the group name of the Grafana provider
