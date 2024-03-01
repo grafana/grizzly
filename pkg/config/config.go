@@ -143,6 +143,7 @@ var acceptableKeys = map[string]string{
 	"grafana.url":                     "string",
 	"grafana.token":                   "string",
 	"grafana.user":                    "string",
+	"grafana.insecure-skip-verify":    "bool",
 	"mimir.address":                   "string",
 	"mimir.tenant-id":                 "string",
 	"mimir.api-key":                   "string",
