@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -50,7 +51,7 @@ func TestDashboard(t *testing.T) {
 			Commands: []Command{
 				{
 					Command:        "apply no-folder.yml",
-					ExpectedOutput: "Dashboard.no-folder added\n",
+					ExpectedOutput: "Dashboard.no-folder added\n1 resource applied\n",
 				},
 				{
 					Command:                "get Dashboard.no-folder",
@@ -67,7 +68,7 @@ func TestDashboard(t *testing.T) {
 			Commands: []Command{
 				{
 					Command:        "apply no-folder.yml",
-					ExpectedOutput: "Dashboard.no-folder no differences\n",
+					ExpectedOutput: "Dashboard.no-folder no differences\n1 resource applied\n",
 				},
 				{
 					Command:                "get Dashboard.no-folder",
@@ -84,7 +85,7 @@ func TestDashboard(t *testing.T) {
 			Commands: []Command{
 				{
 					Command:        "apply no-folder-mk2.yml",
-					ExpectedOutput: "Dashboard.no-folder updated\n",
+					ExpectedOutput: "Dashboard.no-folder updated\n1 resource applied\n",
 				},
 				{
 					Command:                "get Dashboard.no-folder",
@@ -134,6 +135,32 @@ func TestDashboard(t *testing.T) {
 			},
 		})
 	})
+
+	t.Run("Apply - fail-on-error", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:       "-l debug apply continue-on-error",
+					ExpectedError: fmt.Errorf("FOO"),
+				},
+			},
+		})
+	})
+	t.Run("Apply - continue-on-error", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:       "-l debug apply -e continue-on-error",
+					ExpectedError: fmt.Errorf("FOO"),
+				},
+			},
+		})
+	})
+
 }
 
 func TestDashboardHandler(t *testing.T) {

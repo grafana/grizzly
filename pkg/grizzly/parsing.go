@@ -3,6 +3,7 @@ package grizzly
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -22,25 +23,27 @@ func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targ
 	}
 
 	if !stat.IsDir() {
-		return ParseFile(registry, resourcePath, resourceKind, folderUID, jsonnetPaths)
+		resources, errs := ParseFile(registry, resourcePath, resourceKind, folderUID, jsonnetPaths)
+		if errs != nil {
+			return nil, errors.Join(errs...)
+		}
+		return resources, nil
 	}
 
-	var files []string
+	var parsedResources Resources
+	var errorSet []error
 	_ = filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
 		if !info.IsDir() {
-			files = append(files, path)
+			r, errs := ParseFile(registry, path, resourceKind, folderUID, jsonnetPaths)
+			if errs != nil {
+				errorSet = append(errorSet, errs...)
+			} else {
+				parsedResources = append(parsedResources, r...)
+			}
 		}
 		return nil
 	})
 
-	var parsedResources Resources
-	for _, file := range files {
-		r, err := ParseFile(registry, file, resourceKind, folderUID, jsonnetPaths)
-		if err != nil {
-			return nil, err
-		}
-		parsedResources = append(parsedResources, r...)
-	}
 	var resources Resources
 	for _, parsedResource := range parsedResources {
 		if registry.ResourceMatchesTarget(parsedResource.Kind(), parsedResource.Name(), targets) {
@@ -48,19 +51,33 @@ func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targ
 		}
 	}
 	resources = registry.Sort(resources)
+	if errorSet != nil {
+		return nil, errors.Join(errorSet...)
+	}
 	return resources, nil
 }
 
-func ParseFile(registry Registry, resourceFile, resourceKind, folderUID string, jsonnetPaths []string) (Resources, error) {
+func ParseFile(registry Registry, resourceFile, resourceKind, folderUID string, jsonnetPaths []string) (Resources, []error) {
+	log.Printf("Parsing %s", resourceFile)
 	switch filepath.Ext(resourceFile) {
 	case ".json":
-		return ParseJSON(registry, resourceFile, resourceKind, folderUID)
+		resources, err := ParseJSON(registry, resourceFile, resourceKind, folderUID)
+		if err != nil {
+			return nil, []error{err}
+		}
+		return resources, nil
 	case ".yaml", ".yml":
-		return ParseYAML(registry, resourceFile, resourceKind, folderUID)
+		resources, errs := ParseYAML(registry, resourceFile, resourceKind, folderUID)
+		return resources, errs
 	case ".jsonnet", ".libsonnet":
-		return ParseJsonnet(registry, resourceFile, jsonnetPaths, resourceKind, folderUID)
+		resources, err := ParseJsonnet(registry, resourceFile, jsonnetPaths, resourceKind, folderUID)
+		if err != nil {
+			return nil, []error{err}
+		}
+		return resources, nil
+
 	default:
-		return nil, fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)
+		return nil, []error{fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)}
 	}
 }
 
@@ -81,18 +98,19 @@ func ParseJSON(registry Registry, resourceFile, resourceKind, folderUID string) 
 	if err != nil {
 		return nil, fmt.Errorf("error reading %s: %v", resourceFile, err)
 	}
-	return resources, err
+	return resources, nil
 }
 
 // ParseYAML evaluates a YAML file and parses it into resources
-func ParseYAML(registry Registry, yamlFile, resourceKind, folderUID string) (Resources, error) {
+func ParseYAML(registry Registry, yamlFile, resourceKind, folderUID string) (Resources, []error) {
 	f, err := os.Open(yamlFile)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 	reader := bufio.NewReader(f)
 	decoder := yaml.NewDecoder(reader)
 	var resources Resources
+	var errorSet []error
 	for i := 0; ; i++ {
 		var m map[string]any
 		err = decoder.Decode(&m)
@@ -100,15 +118,17 @@ func ParseYAML(registry Registry, yamlFile, resourceKind, folderUID string) (Res
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("Error decoding %s: %v", yamlFile, err)
+			errorSet = append(errorSet, fmt.Errorf("error decoding %s: %v", yamlFile, err))
+			continue
 		}
 		parsedResources, err := parseAny(registry, m, resourceKind, folderUID)
 		if err != nil {
-			return nil, err
+			errorSet = append(errorSet, err)
+		} else {
+			resources = append(resources, parsedResources...)
 		}
-		resources = append(resources, parsedResources...)
 	}
-	return resources, nil
+	return resources, errorSet
 }
 
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree
@@ -132,7 +152,7 @@ func ParseJsonnet(registry Registry, jsonnetFile string, jsonnetPaths []string, 
 
 	resources, err := parseAny(registry, data, resourceKind, folderUID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading %s: %v", jsonnetFile, err)
 	}
 	return resources, nil
 }
@@ -154,7 +174,8 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string) (Reso
 		if err != nil {
 			return nil, err
 		}
-		return handler.Parse(resource)
+		resource, err = handler.Parse(resource)
+		return Resources{resource}, err
 	}
 	kind := registry.Detect(data)
 	if kind == "" && resourceKind != "" {
@@ -182,7 +203,8 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string) (Reso
 		if handler.UsesFolders() {
 			resource.SetMetadata("folder", folderUID)
 		}
-		return handler.Parse(resource)
+		resource, err = handler.Parse(resource)
+		return Resources{resource}, err
 	}
 	walker := walker{}
 	err := walker.Walk(data)

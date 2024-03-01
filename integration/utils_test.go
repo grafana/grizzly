@@ -67,6 +67,9 @@ func runTest(t *testing.T, test GrizzlyTest) {
 				if command.ExpectedOutputContains != "" {
 					require.Contains(t, stdout, command.ExpectedOutputContains)
 				}
+				if command.ExpectedError != nil {
+					require.Error(t, command.ExpectedError)
+				}
 			}
 			if test.Validate != nil {
 				test.Validate(t)

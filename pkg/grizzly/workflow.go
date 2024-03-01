@@ -334,7 +334,11 @@ func Apply(registry Registry, resources Resources, continueOnError bool) error {
 		successCount := len(resources) - len(errorSet)
 		return fmt.Errorf("%d errors occurred, %d resources applied", errorCount, successCount)
 	}
-	notifier.Info(nil, fmt.Sprintf("%d resources applied", len(resources)))
+	if len(resources) == 1 {
+		notifier.Info(nil, fmt.Sprintf("%d resource applied", len(resources)))
+	} else {
+		notifier.Info(nil, fmt.Sprintf("%d resources applied", len(resources)))
+	}
 
 	return nil
 }
