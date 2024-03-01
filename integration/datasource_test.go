@@ -69,8 +69,11 @@ func TestDatasources(t *testing.T) {
 					ExpectedOutput: "Datasource.datasource-broken added\n",
 				},
 				{
-					Command:            "get -o json Datasource.datasource-broken",
-					ExpectedOutputFile: "datasource-broken-returned.json",
+					Command: "get -o json Datasource.datasource-broken",
+					ExpectedOutputFiles: []string{
+						"datasource-broken-returned.json",
+						"datasource-broken-returned2.json",
+					},
 				},
 			},
 		})

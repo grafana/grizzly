@@ -20,6 +20,7 @@ type Command struct {
 	ExpectedLogsContain    string
 	ExpectedOutput         string
 	ExpectedOutputFile     string
+	ExpectedOutputFiles    []string
 	ExpectedOutputContains string
 }
 type GrizzlyTest struct {
@@ -60,6 +61,16 @@ func runTest(t *testing.T, test GrizzlyTest) {
 					bytes, err := os.ReadFile(filepath.Join(test.TestDir, command.ExpectedOutputFile))
 					require.NoError(t, err)
 					command.ExpectedOutput = string(bytes)
+				}
+				if command.ExpectedOutputFiles != nil {
+					var expectedOutputs []string
+					for _, expectedOutputFile := range command.ExpectedOutputFiles {
+						bytes, err := os.ReadFile(filepath.Join(test.TestDir, expectedOutputFile))
+						require.NoError(t, err)
+						expectedOutputs = append(expectedOutputs, strings.TrimSpace(string(bytes)))
+					}
+					require.Contains(t, expectedOutputs, strings.TrimSpace(stdout))
+
 				}
 				if command.ExpectedOutput != "" {
 					require.Equal(t, strings.TrimSpace(command.ExpectedOutput), strings.TrimSpace(stdout))
