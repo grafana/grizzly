@@ -201,7 +201,7 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Apply(registry, resources, !continueOnError)
+		return grizzly.Apply(registry, resources, continueOnError)
 	}
 
 	cmd = initialiseOnlySpec(cmd, &opts)
