@@ -36,13 +36,13 @@ func (h *FolderHandler) ResourceFilePath(resource grizzly.Resource, filetype str
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *FolderHandler) Parse(m map[string]any) (grizzly.Resources, error) {
+func (h *FolderHandler) Parse(m map[string]any) (grizzly.Resource, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
 	}
 	resource.SetSpecString("uid", resource.Name())
-	return grizzly.Resources{resource}, nil
+	return resource, nil
 }
 
 // Validate returns the uid of resource

@@ -37,7 +37,7 @@ func (h *DatasourceHandler) ResourceFilePath(resource grizzly.Resource, filetype
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *DatasourceHandler) Parse(m map[string]any) (grizzly.Resources, error) {
+func (h *DatasourceHandler) Parse(m map[string]any) (grizzly.Resource, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (h *DatasourceHandler) Parse(m map[string]any) (grizzly.Resources, error) {
 	}
 	spec["uid"] = resource.Name()
 	resource["spec"] = spec
-	return grizzly.Resources{resource}, nil
+	return resource, nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison

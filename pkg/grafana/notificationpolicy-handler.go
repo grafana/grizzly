@@ -37,12 +37,12 @@ func (h *AlertNotificationPolicyHandler) ResourceFilePath(resource grizzly.Resou
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *AlertNotificationPolicyHandler) Parse(m map[string]any) (grizzly.Resources, error) {
+func (h *AlertNotificationPolicyHandler) Parse(m map[string]any) (grizzly.Resource, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
 	}
-	return grizzly.Resources{resource}, h.Validate(resource)
+	return resource, h.Validate(resource)
 }
 
 // Validate returns the uid of resource

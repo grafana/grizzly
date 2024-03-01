@@ -35,12 +35,8 @@ func (h *RuleHandler) ResourceFilePath(resource grizzly.Resource, filetype strin
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *RuleHandler) Parse(m map[string]any) (grizzly.Resources, error) {
-	resource, err := grizzly.ResourceFromMap(m)
-	if err != nil {
-		return nil, err
-	}
-	return grizzly.Resources{resource}, nil
+func (h *RuleHandler) Parse(m map[string]any) (grizzly.Resource, error) {
+	return grizzly.ResourceFromMap(m)
 }
 
 // Validate returns the uid of resource
