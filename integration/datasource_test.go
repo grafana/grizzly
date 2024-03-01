@@ -12,6 +12,71 @@ import (
 )
 
 func TestDatasources(t *testing.T) {
+	dir := "testdata/datasources"
+	setupContexts(t, dir)
+
+	t.Run("Get datasource - success", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:            "get Datasource.392IktgGk",
+					ExpectedCode:       0,
+					ExpectedOutputFile: "392IktgGk-returned.yaml",
+				},
+			},
+		})
+	})
+
+	t.Run("Get datasource list - success", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:            "list -r -t Datasource",
+					ExpectedOutputFile: "list.txt",
+				},
+			},
+		})
+	})
+
+	t.Run("Apply datasource", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:        "apply appdynamics2.yaml",
+					ExpectedOutput: "Datasource.appdynamics2 added\n",
+				},
+				{
+					Command:            "get Datasource.appdynamics2",
+					ExpectedOutputFile: "appdynamics2-returned.yaml",
+				},
+			},
+		})
+	})
+
+	t.Run("Apply broken datasource", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: []string{"default", "basic_auth"},
+			Commands: []Command{
+				{
+					Command:        "apply datasource-broken.json",
+					ExpectedOutput: "Datasource.datasource-broken added\n",
+				},
+				{
+					Command:            "get -o json Datasource.datasource-broken",
+					ExpectedOutputFile: "datasource-broken-returned.json",
+				},
+			},
+		})
+	})
+}
+func TestDatasourceHandler(t *testing.T) {
 	provider, err := grafana.NewProvider(&testutil.TestContext().Grafana)
 	require.NoError(t, err)
 	handler := grafana.NewDatasourceHandler(provider)
@@ -35,7 +100,7 @@ func TestDatasources(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NotNil(t, resources)
-		require.Len(t, resources, 1)
+		require.Len(t, resources, 3)
 	})
 
 	t.Run("post remote datasource - success", func(t *testing.T) {
