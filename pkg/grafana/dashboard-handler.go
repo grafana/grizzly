@@ -2,12 +2,11 @@ package grafana
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-
-	"errors"
 
 	"github.com/go-chi/chi"
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -254,7 +253,7 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.GrizzlyServer) []grizzly.
 	}
 }
 
-func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.GrizzlyServer) func(http.ResponseWriter, *http.Request) {
+func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.GrizzlyServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html")
 		config := h.Provider.(ClientProvider).Config()
@@ -297,7 +296,7 @@ func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.GrizzlyServer) fun
 	}
 }
 
-func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.GrizzlyServer) func(http.ResponseWriter, *http.Request) {
+func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.GrizzlyServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		uid := chi.URLParam(r, "uid")
 		if uid == "" {
@@ -311,30 +310,31 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.GrizzlyServer) func
 			http.Error(w, fmt.Sprintf("Error: %s", err), 500)
 			return
 		}
-		for _, resource := range resources {
-			if resource.Kind() == "Dashboard" && resource.Name() == uid {
-				meta := map[string]interface{}{
-					"type":      "db",
-					"isStarred": false,
-					"folderID":  0,
-					"folderUID": "",
-					"url":       fmt.Sprintf("/d/%s/slug", uid),
-				}
-				wrapper := map[string]interface{}{
-					"dashboard": resource.Spec(),
-					"meta":      meta,
-				}
 
-				out, _ := json.Marshal(wrapper)
-				w.Write(out)
-				return
-			}
+		resource, found := resources.Find(grizzly.NewResourceRef("Dashboard", uid))
+		if !found {
+			http.Error(w, fmt.Sprintf("Dashboard with UID %s not found", uid), 404)
+			return
 		}
-		http.Error(w, fmt.Sprintf("Dashboard with UID %s not found", uid), 404)
+
+		meta := map[string]interface{}{
+			"type":      "db",
+			"isStarred": false,
+			"folderID":  0,
+			"folderUID": "",
+			"url":       fmt.Sprintf("/d/%s/slug", uid),
+		}
+		wrapper := map[string]interface{}{
+			"dashboard": resource.Spec(),
+			"meta":      meta,
+		}
+
+		out, _ := json.Marshal(wrapper)
+		w.Write(out)
 	}
 }
 
-func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.GrizzlyServer) func(http.ResponseWriter, *http.Request) {
+func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.GrizzlyServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		dash := map[string]interface{}{}

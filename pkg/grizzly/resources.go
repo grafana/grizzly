@@ -7,6 +7,26 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type ResourceRef struct {
+	Kind string
+	Name string
+}
+
+func NewResourceRef(kind string, name string) ResourceRef {
+	return ResourceRef{
+		Kind: kind,
+		Name: name,
+	}
+}
+
+func (ref ResourceRef) Equal(other ResourceRef) bool {
+	return ref.Kind == other.Kind && ref.Name == other.Name
+}
+
+func (ref ResourceRef) String() string {
+	return fmt.Sprintf("%s.%s", ref.Kind, ref.Name)
+}
+
 // Resource represents a single Resource destined for a single endpoint
 type Resource map[string]interface{}
 
@@ -52,8 +72,15 @@ func (r *Resource) Name() string {
 	return r.GetMetadata("name")
 }
 
+func (r *Resource) Ref() ResourceRef {
+	return ResourceRef{
+		Kind: r.Kind(),
+		Name: r.Name(),
+	}
+}
+
 func (r Resource) String() string {
-	return fmt.Sprintf("%s.%s", r.Kind(), r.Name())
+	return r.Ref().String()
 }
 
 func (r *Resource) HasMetadata(key string) bool {
@@ -140,6 +167,16 @@ func (r *Resource) JSON() (string, error) {
 
 // Resources represents a set of resources
 type Resources []Resource
+
+func (r Resources) Find(ref ResourceRef) (Resource, bool) {
+	for _, resource := range r {
+		if resource.Ref().Equal(ref) {
+			return resource, true
+		}
+	}
+
+	return Resource{}, false
+}
 
 func (r Resources) Len() int {
 	return len(r)
