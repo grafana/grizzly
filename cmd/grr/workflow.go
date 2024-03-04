@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -69,9 +70,9 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		resources, err := grizzly.Parse(registry, args[0], resourceKind, folderUID, targets, opts.JsonnetPaths)
-		if err != nil {
-			return err
+		resources, errs := grizzly.Parse(registry, args[0], resourceKind, folderUID, targets, opts.JsonnetPaths)
+		if errs != nil {
+			return errors.Join(errs...)
 		}
 
 		return grizzly.List(registry, resources)
@@ -125,9 +126,9 @@ func showCmd(registry grizzly.Registry) *cli.Command {
 		}
 		targets := currentContext.GetTargets(opts.Targets)
 
-		resources, err := grizzly.Parse(registry, args[0], resourceKind, folderUID, targets, opts.JsonnetPaths)
-		if err != nil {
-			return err
+		resources, errs := grizzly.Parse(registry, args[0], resourceKind, folderUID, targets, opts.JsonnetPaths)
+		if errs != nil {
+			return errors.Join(errs...)
 		}
 
 		format, _, err := getOutputFormat(opts)
@@ -160,9 +161,9 @@ func diffCmd(registry grizzly.Registry) *cli.Command {
 		}
 		targets := currentContext.GetTargets(opts.Targets)
 
-		resources, err := grizzly.Parse(registry, args[0], resourceKind, folderUID, targets, opts.JsonnetPaths)
-		if err != nil {
-			return err
+		resources, errs := grizzly.Parse(registry, args[0], resourceKind, folderUID, targets, opts.JsonnetPaths)
+		if errs != nil {
+			return errors.Join(errs...)
 		}
 		format, onlySpec, err := getOutputFormat(opts)
 		if err != nil {
@@ -197,9 +198,9 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 		}
 		targets := currentContext.GetTargets(opts.Targets)
 
-		resources, err := grizzly.Parse(registry, args[0], resourceKind, folderUID, targets, opts.JsonnetPaths)
-		if err != nil {
-			return err
+		resources, errs := grizzly.Parse(registry, args[0], resourceKind, folderUID, targets, opts.JsonnetPaths)
+		if errs != nil {
+			return errors.Join(errs...)
 		}
 		return grizzly.Apply(registry, resources, continueOnError)
 	}
@@ -221,7 +222,7 @@ func (p *jsonnetWatchParser) Name() string {
 	return p.resourcePath
 }
 
-func (p *jsonnetWatchParser) Parse() (grizzly.Resources, error) {
+func (p *jsonnetWatchParser) Parse() (grizzly.Resources, []error) {
 	return grizzly.Parse(p.registry, p.resourcePath, p.resourceKind, p.folderUID, p.targets, p.jsonnetPaths)
 }
 
@@ -324,9 +325,9 @@ func exportCmd(registry grizzly.Registry) *cli.Command {
 		}
 		targets := currentContext.GetTargets(opts.Targets)
 
-		resources, err := grizzly.Parse(registry, resourcePath, resourceKind, folderUID, targets, opts.JsonnetPaths)
-		if err != nil {
-			return err
+		resources, errs := grizzly.Parse(registry, resourcePath, resourceKind, folderUID, targets, opts.JsonnetPaths)
+		if errs != nil {
+			return errors.Join(errs...)
 		}
 		format, onlySpec, err := getOutputFormat(opts)
 		if err != nil {

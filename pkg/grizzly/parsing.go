@@ -3,7 +3,6 @@ package grizzly
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -16,16 +15,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targets, jsonnetPaths []string) (Resources, error) {
+func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targets, jsonnetPaths []string) (Resources, []error) {
 	stat, err := os.Stat(resourcePath)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
 	if !stat.IsDir() {
 		resources, err := ParseFile(registry, resourcePath, resourceKind, folderUID, jsonnetPaths)
 		if err != nil {
-			return nil, errors.Join(err)
+			return nil, []error{err}
 		}
 		return resources, nil
 	}
@@ -52,13 +51,13 @@ func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targ
 	}
 	resources = registry.Sort(resources)
 	if errorSet != nil {
-		return nil, errors.Join(errorSet...)
+		errorSet = append([]error{fmt.Errorf("ERROR COUNT: %d", len(errorSet))}, errorSet...)
+		return nil, errorSet
 	}
 	return resources, nil
 }
 
 func ParseFile(registry Registry, resourceFile, resourceKind, folderUID string, jsonnetPaths []string) (Resources, error) {
-	log.Printf("Parsing %s", resourceFile)
 	switch filepath.Ext(resourceFile) {
 	case ".json":
 		return ParseJSON(registry, resourceFile, resourceKind, folderUID)
@@ -117,7 +116,7 @@ func ParseYAML(registry Registry, yamlFile, resourceKind, folderUID string) (Res
 			resources = append(resources, parsedResources...)
 		}
 	}
-	return resources, err
+	return resources, nil
 }
 
 // ParseJsonnet evaluates a jsonnet file and parses it into an object tree

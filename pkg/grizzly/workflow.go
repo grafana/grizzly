@@ -346,7 +346,7 @@ func Apply(registry Registry, resources Resources, continueOnError bool) error {
 // WatchParser encapsulates the action of parsing a resource (jsonnet or otherwise)
 type WatchParser interface {
 	Name() string
-	Parse() (Resources, error)
+	Parse() (Resources, []error)
 }
 
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
@@ -369,11 +369,11 @@ func Watch(registry Registry, watchDir string, parser WatchParser) error {
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					log.Info("Changes detected. Applying ", parser.Name())
-					resources, err := parser.Parse()
-					if err != nil {
-						log.Error("Error: ", err)
+					resources, errs := parser.Parse()
+					if errs != nil {
+						log.Error("Error: ", errors.Join(errs...))
 					}
-					err = Apply(registry, resources, false)
+					err := Apply(registry, resources, false)
 					if err != nil {
 						log.Error("Error: ", err)
 					}
