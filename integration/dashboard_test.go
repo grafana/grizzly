@@ -136,31 +136,55 @@ func TestDashboard(t *testing.T) {
 		})
 	})
 
-	t.Run("Apply - fail-on-error", func(t *testing.T) {
+	t.Run("Apply - fail-on-error parsing", func(t *testing.T) {
 		runTest(t, GrizzlyTest{
 			TestDir:       dir,
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:       "-l debug apply continue-on-error",
+					Command:       "apply continue-on-error/parsing",
 					ExpectedError: fmt.Errorf("FOO"),
 				},
 			},
 		})
 	})
-	t.Run("Apply - continue-on-error", func(t *testing.T) {
+	t.Run("Apply - continue-on-error parsing", func(t *testing.T) {
 		runTest(t, GrizzlyTest{
 			TestDir:       dir,
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:       "-l debug apply -e continue-on-error",
+					Command:       "apply -e continue-on-error/parsing",
 					ExpectedError: fmt.Errorf("FOO"),
 				},
 			},
 		})
 	})
 
+	t.Run("Apply - fail-on-error workflow", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:       "apply continue-on-error/workflow",
+					ExpectedError: fmt.Errorf("FOO"),
+				},
+			},
+		})
+	})
+	t.Run("Apply - continue-on-error workflow", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:       "apply -e continue-on-error/workflow",
+					ExpectedError: fmt.Errorf("FOO"),
+				},
+			},
+		})
+	})
 }
 
 func TestDashboardHandler(t *testing.T) {
