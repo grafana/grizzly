@@ -23,11 +23,7 @@ func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targ
 	}
 
 	if !stat.IsDir() {
-		resources, err := ParseFile(registry, resourcePath, resourceKind, folderUID, jsonnetPaths)
-		if err != nil {
-			return nil, err
-		}
-		return resources, nil
+		return ParseFile(registry, resourcePath, resourceKind, folderUID, jsonnetPaths)
 	}
 
 	var resources Resources
@@ -59,7 +55,6 @@ func ParseFile(registry Registry, resourceFile, resourceKind, folderUID string, 
 		return ParseYAML(registry, resourceFile, resourceKind, folderUID)
 	case ".jsonnet", ".libsonnet":
 		return ParseJsonnet(registry, resourceFile, jsonnetPaths, resourceKind, folderUID)
-
 	default:
 		return nil, fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)
 	}
@@ -106,9 +101,8 @@ func ParseYAML(registry Registry, yamlFile, resourceKind, folderUID string) (Res
 		parsedResources, err := parseAny(registry, m, resourceKind, folderUID)
 		if err != nil {
 			return nil, err
-		} else {
-			resources = append(resources, parsedResources...)
 		}
+		resources = append(resources, parsedResources...)
 	}
 	return resources, nil
 }
