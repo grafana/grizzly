@@ -64,3 +64,42 @@ services:
       interval: 1s
       retries: 30
       start_period: 10s
+
+  grafana-for-tls:
+    image: &image grafana/grafana:10.2.0
+    restart: on-failure
+    ports:
+      - "3005:3005"
+    environment:
+      - GF_SERVER_HTTP_PORT=3005
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_PATHS=/etc/grafana/provisioning
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://0.0.0.0:3005/api/health || exit 1 # Use wget because older versions of Grafana don't have curl
+      interval: 1s
+      retries: 30
+      start_period: 10s
+
+  mtls-proxy:
+    image: squareup/ghostunnel:v1.5.2
+    command: |
+       server
+         --listen 0.0.0.0:3006
+         --target grafana-for-tls:3005
+         --unsafe-target
+         --key /certs/grafana.key
+         --cert /certs/grafana.crt
+         --cacert /certs/ca.crt
+         --allow-cn client
+    volumes:
+      - ./certs:/certs
+    ports:
+      - 3006:3006
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider https://0.0.0.0:3006/api/health || exit 1 # Use wget because older versions of Grafana don't have curl
+      interval: 1s
+      retries: 30
+      start_period: 10s

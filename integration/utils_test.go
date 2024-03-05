@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var allContexts = []string{"default", "subpath", "basic_auth"}
+var allContexts = []string{"default", "subpath", "basic_auth", "tls"}
 
 type Command struct {
 	Command                string
@@ -115,6 +115,10 @@ func setupContexts(t *testing.T, dir string) {
 		"config set grafana.url http://localhost:3004",
 		"config set grafana.user admin",
 		"config set grafana.token invalid",
+
+		"config create-context tls",
+		"config use-context tls",
+		"config set grafana.url http://localhost:3006",
 	} {
 		_, _, err = runLocalGrizzly(t, dir, command)
 		require.NoError(t, err)
