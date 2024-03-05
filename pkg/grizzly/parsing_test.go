@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/stretchr/testify/require"
@@ -110,7 +109,7 @@ func TestParseKindDetection(t *testing.T) {
 
 		registry := grizzly.NewRegistry(
 			[]grizzly.Provider{
-				grafana.NewProvider(&config.GrafanaConfig{}),
+				&grafana.Provider{},
 			},
 		)
 		tests := []struct {

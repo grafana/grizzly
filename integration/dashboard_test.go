@@ -137,7 +137,9 @@ func TestDashboard(t *testing.T) {
 }
 
 func TestDashboardHandler(t *testing.T) {
-	handler := grafana.NewDashboardHandler(grafana.NewProvider(&testutil.TestContext().Grafana))
+	provider, err := grafana.NewProvider(&testutil.TestContext().Grafana)
+	require.NoError(t, err)
+	handler := grafana.NewDashboardHandler(provider)
 
 	t.Run("get remote dashboard - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("ReciqtgGk")

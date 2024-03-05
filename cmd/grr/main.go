@@ -33,12 +33,25 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	registry := grizzly.NewRegistry(
-		[]grizzly.Provider{
-			grafana.NewProvider(&context.Grafana),
-			mimir.NewProvider(&context.Mimir),
-			syntheticmonitoring.NewProvider(&context.SyntheticMonitoring),
-		})
+	providerInitFuncs := map[string]func() (grizzly.Provider, error){
+		"Grafana":              func() (grizzly.Provider, error) { return grafana.NewProvider(&context.Grafana) },
+		"Mimir":                func() (grizzly.Provider, error) { return mimir.NewProvider(&context.Mimir) },
+		"Synthetic Monitoring": func() (grizzly.Provider, error) { return syntheticmonitoring.NewProvider(&context.SyntheticMonitoring) },
+	}
+
+	providers := []grizzly.Provider{}
+	initMessage := "Providers:"
+	for name, initFunc := range providerInitFuncs {
+		provider, err := initFunc()
+		if err != nil {
+			initMessage += "\n  " + name + " - inactive: " + err.Error()
+			continue
+		}
+		initMessage += "\n  " + name + " - active"
+		providers = append(providers, provider)
+	}
+	log.Info(initMessage)
+	registry := grizzly.NewRegistry(providers)
 
 	// workflow commands
 	rootCmd.AddCommand(

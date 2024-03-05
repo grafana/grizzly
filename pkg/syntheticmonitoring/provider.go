@@ -21,10 +21,22 @@ type ClientProvider interface {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(config *config.SyntheticMonitoringConfig) *Provider {
+func NewProvider(config *config.SyntheticMonitoringConfig) (*Provider, error) {
+	if config.StackID == 0 {
+		return nil, fmt.Errorf("stack id is not set")
+	}
+	if config.MetricsID == 0 {
+		return nil, fmt.Errorf("metrics id is not set")
+	}
+	if config.LogsID == 0 {
+		return nil, fmt.Errorf("logs id is not set")
+	}
+	if config.Token == "" {
+		return nil, fmt.Errorf("token is not set")
+	}
 	return &Provider{
 		config: config,
-	}
+	}, nil
 }
 
 // Group returns the group name of the Grafana provider

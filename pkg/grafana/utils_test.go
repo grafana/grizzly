@@ -10,7 +10,8 @@ import (
 )
 
 func TestExtractFolderUID(t *testing.T) {
-	provider := NewProvider(&config.GrafanaConfig{})
+	provider, err := NewProvider(&config.GrafanaConfig{URL: "http://localhost:3000"})
+	require.NoError(t, err)
 
 	client, err := provider.Client()
 	require.NoError(t, err)
