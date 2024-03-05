@@ -11,36 +11,36 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targets, jsonnetPaths []string) (Resources, []error) {
+func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targets, jsonnetPaths []string) (Resources, error) {
 	stat, err := os.Stat(resourcePath)
 	if err != nil {
-		return nil, []error{err}
+		return nil, err
 	}
 
 	if !stat.IsDir() {
 		resources, err := ParseFile(registry, resourcePath, resourceKind, folderUID, jsonnetPaths)
 		if err != nil {
-			return nil, []error{err}
+			return nil, err
 		}
 		return resources, nil
 	}
 
 	var resources Resources
-	var errorSet []error
 	_ = filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
 		if !info.IsDir() {
 			r, err := ParseFile(registry, path, resourceKind, folderUID, jsonnetPaths)
 			if err != nil {
-				errorSet = append(errorSet, err)
-			} else {
-				for _, resource := range r {
-					if registry.ResourceMatchesTarget(resource.Kind(), resource.Name(), targets) {
-						resources = append(resources, resource)
-					}
+				notifier.Error(nil, err.Error())
+				return nil
+			}
+			for _, resource := range r {
+				if registry.ResourceMatchesTarget(resource.Kind(), resource.Name(), targets) {
+					resources = append(resources, resource)
 				}
 			}
 		}
@@ -48,9 +48,6 @@ func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targ
 	})
 
 	resources = registry.Sort(resources)
-	if errorSet != nil {
-		return nil, errorSet
-	}
 	return resources, nil
 }
 

@@ -250,7 +250,7 @@ func Diff(registry Registry, resources Resources, onlySpec bool, outputFormat st
 
 // Apply pushes resources to endpoints
 func Apply(registry Registry, resources Resources, continueOnError bool) error {
-	log.Infof("Applying %d resources", resources.Len())
+	notifier.Info(nil, fmt.Sprintf("Applying %d resources", resources.Len()))
 
 	errorCount := 0
 	successCount := 0
@@ -268,7 +268,11 @@ func Apply(registry Registry, resources Resources, continueOnError bool) error {
 		successCount++
 	}
 
-	notifier.Info(nil, fmt.Sprintf("%s occurred, %s applied", Pluraliser(errorCount, "error"), Pluraliser(successCount, "resource")))
+	var errorMessage string
+	if errorCount > 0 {
+		errorMessage = fmt.Sprintf("%s, ", Pluraliser(errorCount, "error"))
+	}
+	notifier.Info(nil, fmt.Sprintf("%s%s applied", errorMessage, Pluraliser(successCount, "resource")))
 	return nil
 }
 
@@ -321,7 +325,7 @@ func applyResource(registry Registry, resource Resource) error {
 // WatchParser encapsulates the action of parsing a resource (jsonnet or otherwise)
 type WatchParser interface {
 	Name() string
-	Parse() (Resources, []error)
+	Parse() (Resources, error)
 }
 
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
@@ -335,7 +339,7 @@ func Watch(registry Registry, watchDir string, parser WatchParser) error {
 
 	done := make(chan bool)
 	go func() {
-		log.Info("Watching for changes")
+		notifier.Info(nil, "Watching for changes")
 		for {
 			select {
 			case event, ok := <-watcher.Events:
@@ -343,21 +347,21 @@ func Watch(registry Registry, watchDir string, parser WatchParser) error {
 					return
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Info("Changes detected. Applying ", parser.Name())
-					resources, errs := parser.Parse()
-					if errs != nil {
-						log.Error("Error: ", errors.Join(errs...))
-					}
-					err := Apply(registry, resources, false)
+					notifier.Info(nil, fmt.Sprintf("Changes detected. Applying %s", parser.Name()))
+					resources, err := parser.Parse()
 					if err != nil {
-						log.Error("Error: ", err)
+						notifier.Error(nil, err.Error())
+					}
+					err = Apply(registry, resources, false)
+					if err != nil {
+						notifier.Error(nil, err.Error())
 					}
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
-				log.Error("error: ", err)
+				notifier.Error(nil, err.Error())
 			}
 		}
 	}()

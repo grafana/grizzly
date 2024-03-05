@@ -183,14 +183,13 @@ func TestParseKindDetection(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.Name, func(t *testing.T) {
-				resources, errs := grizzly.Parse(registry, test.InputFile, "", "General", nil, nil)
+				resources, err := grizzly.Parse(registry, test.InputFile, "", "General", nil, nil)
 				if test.ExpectedError != "" {
-					require.Equal(t, 1, len(errs))
-					require.Error(t, errs[0])
-					require.Equal(t, test.ExpectedError, errs[0].Error())
+					require.Error(t, err)
+					require.Equal(t, test.ExpectedError, err.Error())
 					return
 				}
-				require.Nil(t, errs)
+				require.NoError(t, err)
 				if test.ExpectedResources == 0 { // i.e. the default, which actually means 1
 					require.Equal(t, 1, len(resources), "Expected one resource from parsing")
 				} else {

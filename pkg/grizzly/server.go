@@ -1,7 +1,6 @@
 package grizzly
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -158,9 +157,9 @@ func (p *GrizzlyServer) Start() error {
 		if stat.IsDir() {
 			url = fmt.Sprintf("http://localhost:%d", p.Port)
 		} else {
-			resources, errs := p.Parser.Parse()
-			if errs != nil {
-				return errors.Join(errs...)
+			resources, err := p.Parser.Parse()
+			if err != nil {
+				return err
 			}
 			if len(resources) > 1 {
 				url = fmt.Sprintf("http://localhost:%d", p.Port)
