@@ -14,13 +14,14 @@ import (
 var allContexts = []string{"default", "subpath", "basic_auth"}
 
 type Command struct {
-	Command                string
-	ExpectedCode           int
-	ExpectedError          error
-	ExpectedLogsContain    string
-	ExpectedOutput         string
-	ExpectedOutputFile     string
-	ExpectedOutputContains string
+	Command                   string
+	ExpectedCode              int
+	ExpectedError             error
+	ExpectedLogsContain       string
+	ExpectedOutput            string
+	ExpectedOutputFile        string
+	ExpectedOutputContains    string
+	ExpectedOutputContainsAll []string
 }
 type GrizzlyTest struct {
 	TestDir       string
@@ -66,6 +67,9 @@ func runTest(t *testing.T, test GrizzlyTest) {
 				}
 				if command.ExpectedOutputContains != "" {
 					require.Contains(t, stdout, command.ExpectedOutputContains)
+				}
+				for _, expectedOutputContains := range command.ExpectedOutputContainsAll {
+					require.Contains(t, stdout, expectedOutputContains)
 				}
 				if command.ExpectedError != nil {
 					require.Error(t, command.ExpectedError)

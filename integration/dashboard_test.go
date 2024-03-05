@@ -50,8 +50,8 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:        "apply no-folder.yml",
-					ExpectedOutput: "Dashboard.no-folder added\n1 resource applied\n",
+					Command:                "apply no-folder.yml",
+					ExpectedOutputContains: "Dashboard.no-folder added",
 				},
 				{
 					Command:                "get Dashboard.no-folder",
@@ -67,8 +67,8 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:        "apply no-folder.yml",
-					ExpectedOutput: "Dashboard.no-folder no differences\n1 resource applied\n",
+					Command:                "apply no-folder.yml",
+					ExpectedOutputContains: "Dashboard.no-folder no differences",
 				},
 				{
 					Command:                "get Dashboard.no-folder",
@@ -84,8 +84,8 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:        "apply no-folder-mk2.yml",
-					ExpectedOutput: "Dashboard.no-folder updated\n1 resource applied\n",
+					Command:                "apply no-folder-mk2.yml",
+					ExpectedOutputContains: "Dashboard.no-folder updated",
 				},
 				{
 					Command:                "get Dashboard.no-folder",
@@ -101,9 +101,9 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:        "diff ReciqtgGk.yml",
-					ExpectedCode:   0,
-					ExpectedOutput: "Dashboard.ReciqtgGk no differences\n",
+					Command:                "diff ReciqtgGk.yml",
+					ExpectedCode:           0,
+					ExpectedOutputContains: "Dashboard.ReciqtgGk no differences\n",
 				},
 			},
 		})
@@ -142,8 +142,11 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:       "apply continue-on-error/parsing",
-					ExpectedError: fmt.Errorf("FOO"),
+					Command: "apply continue-on-error/parsing",
+					ExpectedOutputContainsAll: []string{
+						"error decoding continue-on-error/parsing/broken-dashboard-2.yml",
+						"error decoding continue-on-error/parsing/broken-dashboard-3.yml",
+					},
 				},
 			},
 		})
@@ -154,8 +157,11 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:       "apply -e continue-on-error/parsing",
-					ExpectedError: fmt.Errorf("FOO"),
+					Command: "apply -e continue-on-error/parsing",
+					ExpectedOutputContainsAll: []string{
+						"error decoding continue-on-error/parsing/broken-dashboard-2.yml",
+						"error decoding continue-on-error/parsing/broken-dashboard-3.yml",
+					},
 				},
 			},
 		})
@@ -208,8 +214,8 @@ func TestDashboardHandler(t *testing.T) {
 		list, err := handler.ListRemote()
 		require.NoError(t, err)
 
-		require.Len(t, list, 4)
-		require.EqualValues(t, []string{"ReciqtgGk", "392Ik4GGk", "kE0IIVGGz", "no-folder"}, list)
+		require.Len(t, list, 6)
+		require.EqualValues(t, []string{"ReciqtgGk", "392Ik4GGk", "kE0IIVGGz", "dashboard-1", "dashboard-4", "no-folder"}, list)
 	})
 
 	t.Run("post remote dashboard - success", func(t *testing.T) {

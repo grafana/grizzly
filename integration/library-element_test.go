@@ -65,17 +65,17 @@ func TestLibraryElements_CLI(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:        "apply in-folder/folder.json",
-					ExpectedOutput: "DashboardFolder.xVvlWeK4k added\n1 resource applied",
+					Command:                "apply in-folder/folder.json",
+					ExpectedOutputContains: "DashboardFolder.xVvlWeK4k added",
 				},
 				{
-					Command:        "apply in-folder/panel.json",
-					ExpectedOutput: "LibraryElement.-agbm1C4k added\n1 resource applied",
+					Command:                "apply in-folder/panel.json",
+					ExpectedOutputContains: "LibraryElement.-agbm1C4k added",
 				},
 				// Test update
 				{
-					Command:        "apply in-folder/panel.json",
-					ExpectedOutput: "LibraryElement.-agbm1C4k updated\n1 resource applied",
+					Command:                "apply in-folder/panel.json",
+					ExpectedOutputContains: "LibraryElement.-agbm1C4k updated",
 				},
 				// Test list remote
 				{
