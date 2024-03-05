@@ -33,29 +33,24 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	providerInitFuncs := map[string]func() (grizzly.Provider, error){
+		"Grafana":              func() (grizzly.Provider, error) { return grafana.NewProvider(&context.Grafana) },
+		"Mimir":                func() (grizzly.Provider, error) { return mimir.NewProvider(&context.Mimir) },
+		"Synthetic Monitoring": func() (grizzly.Provider, error) { return syntheticmonitoring.NewProvider(&context.SyntheticMonitoring) },
+	}
+
 	providers := []grizzly.Provider{}
-
-	grafanaProvider, err := grafana.NewProvider(&context.Grafana)
-	if err != nil {
-		log.Warnf("Grafana provider is not configured: %v", err)
-	} else {
-		providers = append(providers, grafanaProvider)
+	initMessage := "Providers:"
+	for name, initFunc := range providerInitFuncs {
+		provider, err := initFunc()
+		if err != nil {
+			initMessage += "\n  " + name + " - inactive: " + err.Error()
+			continue
+		}
+		initMessage += "\n  " + name + " - active"
+		providers = append(providers, provider)
 	}
-
-	mimirProvider, err := mimir.NewProvider(&context.Mimir)
-	if err != nil {
-		log.Warnf("Mimir provider is not configured: %v", err)
-	} else {
-		providers = append(providers, mimirProvider)
-	}
-
-	syntheticMonitoringProvider, err := syntheticmonitoring.NewProvider(&context.SyntheticMonitoring)
-	if err != nil {
-		log.Warnf("Synthetic Monitoring provider is not configured: %v", err)
-	} else {
-		providers = append(providers, syntheticMonitoringProvider)
-	}
-
+	log.Info(initMessage)
 	registry := grizzly.NewRegistry(providers)
 
 	// workflow commands
