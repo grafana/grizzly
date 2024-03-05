@@ -61,7 +61,7 @@ func Warn(obj fmt.Stringer, msg string) {
 	}
 }
 
-// Error announces a message in yellow
+// Error announces a message in red
 func Error(obj fmt.Stringer, msg string) {
 	if obj == nil {
 		fmt.Println(red(msg))

@@ -29,7 +29,7 @@ func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targ
 		return resources, nil
 	}
 
-	var parsedResources Resources
+	var resources Resources
 	var errorSet []error
 	_ = filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
 		if !info.IsDir() {
@@ -37,21 +37,18 @@ func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targ
 			if err != nil {
 				errorSet = append(errorSet, err)
 			} else {
-				parsedResources = append(parsedResources, r...)
+				for _, resource := range r {
+					if registry.ResourceMatchesTarget(resource.Kind(), resource.Name(), targets) {
+						resources = append(resources, resource)
+					}
+				}
 			}
 		}
 		return nil
 	})
 
-	var resources Resources
-	for _, parsedResource := range parsedResources {
-		if registry.ResourceMatchesTarget(parsedResource.Kind(), parsedResource.Name(), targets) {
-			resources = append(resources, parsedResource)
-		}
-	}
 	resources = registry.Sort(resources)
 	if errorSet != nil {
-		errorSet = append([]error{fmt.Errorf("ERROR COUNT: %d", len(errorSet))}, errorSet...)
 		return nil, errorSet
 	}
 	return resources, nil

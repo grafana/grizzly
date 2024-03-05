@@ -252,94 +252,69 @@ func Diff(registry Registry, resources Resources, onlySpec bool, outputFormat st
 func Apply(registry Registry, resources Resources, continueOnError bool) error {
 	log.Infof("Applying %d resources", resources.Len())
 
-	var errorSet []error
+	errorCount := 0
+	successCount := 0
 	for _, resource := range resources {
-		handler, err := registry.GetHandler(resource.Kind())
+		err := applyResource(registry, resource)
 		if err != nil {
-			if !continueOnError {
-				return err
-			}
-			errorSet = append(errorSet, err)
 			notifier.Error(nil, err.Error())
-			continue
-		}
-
-		log.Debugf("Getting the remote value for `%s.%s`", handler.Kind(), resource.Name())
-		existingResource, err := handler.GetRemote(resource)
-		if errors.Is(err, ErrNotFound) {
-			log.Debugf("`%s.%s` was not found, adding it...", handler.Kind(), resource.Name())
-
-			if err := handler.Add(resource); err != nil {
-				if !continueOnError {
-					return err
-				}
-				errorSet = append(errorSet, err)
-				notifier.Error(nil, err.Error())
+			errorCount++
+			if continueOnError {
 				continue
+			} else {
+				break
 			}
-
-			notifier.Added(resource)
-			continue
 		}
-		if err != nil {
-			if !continueOnError {
-				return err
-			}
-			errorSet = append(errorSet, err)
-			notifier.Error(nil, err.Error())
-			continue
-		}
-		log.Debugf("`%s.%s` was found, updating it...", handler.Kind(), resource.Name())
-
-		resourceRepresentation, err := resource.YAML()
-		if err != nil {
-			if !continueOnError {
-				return err
-			}
-			errorSet = append(errorSet, err)
-			notifier.Error(nil, err.Error())
-			continue
-		}
-
-		resource = *handler.Prepare(*existingResource, resource)
-		existingResource = handler.Unprepare(*existingResource)
-		existingResourceRepresentation, err := existingResource.YAML()
-		if err != nil {
-			if !continueOnError {
-				return err
-			}
-			errorSet = append(errorSet, err)
-			notifier.Error(nil, err.Error())
-			continue
-		}
-
-		if resourceRepresentation == existingResourceRepresentation {
-			notifier.NoChanges(resource)
-			continue
-		}
-
-		if err = handler.Update(*existingResource, resource); err != nil {
-			if !continueOnError {
-				return err
-			}
-			errorSet = append(errorSet, err)
-			notifier.Error(nil, err.Error())
-			continue
-		}
-
-		notifier.Updated(resource)
-	}
-	if len(errorSet) > 0 {
-		errorCount := len(errorSet)
-		successCount := len(resources) - len(errorSet)
-		return fmt.Errorf("%d errors occurred, %d resources applied", errorCount, successCount)
-	}
-	if len(resources) == 1 {
-		notifier.Info(nil, fmt.Sprintf("%d resource applied", len(resources)))
-	} else {
-		notifier.Info(nil, fmt.Sprintf("%d resources applied", len(resources)))
+		successCount++
 	}
 
+	notifier.Info(nil, fmt.Sprintf("%s occurred, %s applied", Pluraliser(errorCount, "error"), Pluraliser(successCount, "resource")))
+	return nil
+}
+
+func applyResource(registry Registry, resource Resource) error {
+	handler, err := registry.GetHandler(resource.Kind())
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Getting the remote value for `%s.%s`", handler.Kind(), resource.Name())
+	existingResource, err := handler.GetRemote(resource)
+	if errors.Is(err, ErrNotFound) {
+		log.Debugf("`%s.%s` was not found, adding it...", handler.Kind(), resource.Name())
+
+		if err := handler.Add(resource); err != nil {
+			return err
+		}
+		notifier.Added(resource)
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	log.Debugf("`%s.%s` was found, updating it...", handler.Kind(), resource.Name())
+
+	resourceRepresentation, err := resource.JSON()
+	if err != nil {
+		return err
+	}
+
+	resource = *handler.Prepare(*existingResource, resource)
+	existingResource = handler.Unprepare(*existingResource)
+	existingResourceRepresentation, err := existingResource.JSON()
+	if err != nil {
+		return err
+	}
+
+	if resourceRepresentation == existingResourceRepresentation {
+		notifier.NoChanges(resource)
+		return nil
+	}
+
+	if err = handler.Update(*existingResource, resource); err != nil {
+		return err
+	}
+	notifier.Updated(resource)
 	return nil
 }
 
