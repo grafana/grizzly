@@ -117,7 +117,7 @@ type ProxyEndpoint struct {
 // ProxyHandler describes a handler that can be used to edit resources live via a proxied UI
 type ProxyHandler interface {
 	// RegisterHandlers registers HTTP handlers for proxy events
-	GetProxyEndpoints(p GrizzlyServer) []ProxyEndpoint
+	GetProxyEndpoints(p Server) []ProxyEndpoint
 
 	// ProxyURL returns a URL path for a resource on the proxy
 	ProxyURL(Resource) (string, error)

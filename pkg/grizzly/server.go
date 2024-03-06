@@ -15,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type GrizzlyServer struct {
+type Server struct {
 	proxy        *httputil.ReverseProxy
 	Port         int
 	Registry     Registry
@@ -36,7 +36,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func NewGrizzlyServer(registry Registry, parser WatchParser, resourcePath string, port int, openBrowser bool, onlySpec bool, outputFormat string) (*GrizzlyServer, error) {
+func NewGrizzlyServer(registry Registry, parser WatchParser, resourcePath string, port int, openBrowser bool, onlySpec bool, outputFormat string) (*Server, error) {
 	prov, err := registry.GetProxyProvider()
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func NewGrizzlyServer(registry Registry, parser WatchParser, resourcePath string
 		return nil, err
 	}
 
-	server := GrizzlyServer{
+	server := Server{
 		Registry:     registry,
 		Parser:       parser,
 		UserAgent:    "grizzly",
@@ -103,7 +103,7 @@ var blockJSONpost = map[string]string{
 	"/api/ma/events":        "null",
 }
 
-func (p *GrizzlyServer) Start() error {
+func (p *Server) Start() error {
 	assetsFS, err := fs.Sub(embedFS, "embed/assets")
 	if err != nil {
 		return fmt.Errorf("could not create a sub-tree from the embedded assets FS: %w", err)
@@ -192,7 +192,7 @@ func (p *GrizzlyServer) Start() error {
 	return http.ListenAndServe(fmt.Sprintf(":%d", p.Port), r)
 }
 
-func (p *GrizzlyServer) openBrowser(url string) {
+func (p *Server) openBrowser(url string) {
 	var err error
 
 	switch runtime.GOOS {
@@ -210,7 +210,7 @@ func (p *GrizzlyServer) openBrowser(url string) {
 	}
 }
 
-func (p *GrizzlyServer) blockHandler(response string) http.HandlerFunc {
+func (p *Server) blockHandler(response string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -219,11 +219,11 @@ func (p *GrizzlyServer) blockHandler(response string) http.HandlerFunc {
 }
 
 // ProxyRequestHandler handles the http request using proxy
-func (p *GrizzlyServer) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
+func (p *Server) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	p.proxy.ServeHTTP(w, r)
 }
 
-func (p *GrizzlyServer) wsHandler(w http.ResponseWriter, r *http.Request) {
+func (p *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -232,7 +232,7 @@ func (p *GrizzlyServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	p.proxy.ServeHTTP(w, r)
 }
 
-func (p *GrizzlyServer) RootHandler(w http.ResponseWriter, r *http.Request) {
+func (p *Server) RootHandler(w http.ResponseWriter, r *http.Request) {
 	resources, err := p.Parser.Parse()
 	if err != nil {
 		log.Error("Error: ", err)
