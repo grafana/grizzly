@@ -32,7 +32,7 @@ func DefaultParser(registry Registry, targets []string, jsonnetPaths []string) P
 		NewChainParser([]FormatParser{
 			NewJSONParser(registry),
 			NewYAMLParser(registry),
-			NewJsonnerParser(registry, jsonnetPaths),
+			NewJsonnetParser(registry, jsonnetPaths),
 		}),
 		targets,
 	)
