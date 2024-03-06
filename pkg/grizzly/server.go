@@ -20,9 +20,6 @@ type Server struct {
 	Port         int
 	Registry     Registry
 	Parser       WatchParser
-	Url          string
-	User         string
-	Token        string
 	UserAgent    string
 	ResourcePath string
 	OpenBrowser  bool
