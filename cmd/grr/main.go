@@ -1,7 +1,8 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
+	"errors"
+	"os"
 
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/config"
@@ -9,14 +10,28 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/mimir"
 	"github.com/grafana/grizzly/pkg/syntheticmonitoring"
+	log "github.com/sirupsen/logrus"
 )
 
 // Version is the current version of the grr command.
 // To be overwritten at build time
 var Version = "dev"
 
-func main() {
+type silentError struct {
+	Err error
+}
 
+func (err silentError) Is(target error) bool {
+	_, ok := target.(silentError)
+
+	return ok
+}
+
+func (err silentError) Error() string {
+	return err.Err.Error()
+}
+
+func main() {
 	rootCmd := &cli.Command{
 		Use:     "grr",
 		Short:   "Grizzly",
@@ -70,6 +85,11 @@ func main() {
 
 	// Run!
 	if err = rootCmd.Execute(); err != nil {
-		log.Fatalln(err)
+		if errors.Is(err, silentError{}) {
+			log.Debugf("Silent error: %s", err)
+			os.Exit(1)
+		} else {
+			log.Fatalln(err)
+		}
 	}
 }

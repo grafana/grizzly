@@ -12,6 +12,7 @@ import (
 
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/grizzly/pkg/term"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pmezard/go-difflib/difflib"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
@@ -50,9 +51,7 @@ func Get(registry Registry, UID string, onlySpec bool, outputFormat string) erro
 	}
 
 	resource = handler.Unprepare(*resource)
-	if err != nil {
-		return err
-	}
+
 	content, _, _, err := Format(registry, "", resource, outputFormat, onlySpec)
 	if err != nil {
 		return err
@@ -182,11 +181,11 @@ func Show(registry Registry, resources Resources, outputFormat string) error {
 
 		if interactive {
 			items = append(items, term.PageItem{
-				Name:    fmt.Sprintf("%s.%s", resource.Kind(), resource.Name()),
+				Name:    resource.Ref().String(),
 				Content: string(content),
 			})
 		} else {
-			fmt.Printf("%s.%s:\n", resource.Kind(), resource.Name())
+			fmt.Printf("%s:\n", resource.Ref().String())
 			fmt.Println(string(content))
 		}
 	}
@@ -214,7 +213,7 @@ func Diff(registry Registry, resources Resources, onlySpec bool, outputFormat st
 		resource = *handler.Unprepare(resource)
 		uid := resource.Name()
 
-		log.Debugf("Getting the remote value for `%s.%s`", handler.Kind(), uid)
+		log.Debugf("Getting the remote value for `%s`", resource.Ref())
 		remote, err := handler.GetRemote(resource)
 		if errors.Is(err, ErrNotFound) {
 			notifier.NotFound(resource)
@@ -250,56 +249,91 @@ func Diff(registry Registry, resources Resources, onlySpec bool, outputFormat st
 	return nil
 }
 
+type eventsRecorder interface {
+	Record(event Event)
+}
+
 // Apply pushes resources to endpoints
-func Apply(registry Registry, resources Resources) error {
-	log.Infof("Applying %d resources", resources.Len())
+func Apply(registry Registry, resources Resources, continueOnError bool, eventsRecorder eventsRecorder) error {
+	var finalErr error
 
 	for _, resource := range resources {
-		handler, err := registry.GetHandler(resource.Kind())
+		err := applyResource(registry, resource, eventsRecorder)
 		if err != nil {
-			return err
-		}
+			finalErr = multierror.Append(finalErr, err)
 
-		log.Debugf("Getting the remote value for `%s.%s`", handler.Kind(), resource.Name())
-		existingResource, err := handler.GetRemote(resource)
-		if errors.Is(err, ErrNotFound) {
-			log.Debugf("`%s.%s` was not found, adding it...", handler.Kind(), resource.Name())
+			eventsRecorder.Record(Event{
+				Type:        ResourceFailure,
+				ResourceRef: resource.Ref().String(),
+				Details:     err.Error(),
+			})
 
-			if err := handler.Add(resource); err != nil {
-				return err
+			if !continueOnError {
+				return finalErr
 			}
-
-			notifier.Added(resource)
-			continue
 		}
-		if err != nil {
-			return err
-		}
-		log.Debugf("`%s.%s` was found, updating it...", handler.Kind(), resource.Name())
-
-		resourceRepresentation, err := resource.YAML()
-		if err != nil {
-			return err
-		}
-
-		resource = *handler.Prepare(*existingResource, resource)
-		existingResource = handler.Unprepare(*existingResource)
-		existingResourceRepresentation, err := existingResource.YAML()
-		if err != nil {
-			return err
-		}
-
-		if resourceRepresentation == existingResourceRepresentation {
-			notifier.NoChanges(resource)
-			continue
-		}
-
-		if err = handler.Update(*existingResource, resource); err != nil {
-			return err
-		}
-
-		notifier.Updated(resource)
 	}
+
+	return finalErr
+}
+
+func applyResource(registry Registry, resource Resource, trailRecorder eventsRecorder) error {
+	resourceRef := resource.Ref().String()
+
+	handler, err := registry.GetHandler(resource.Kind())
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Getting the remote value for `%s`", resource.Ref())
+	existingResource, err := handler.GetRemote(resource)
+	if errors.Is(err, ErrNotFound) {
+		log.Debugf("`%s` was not found, adding it...", resource.Ref())
+
+		if err := handler.Add(resource); err != nil {
+			return err
+		}
+
+		trailRecorder.Record(Event{
+			Type:        ResourceAdded,
+			ResourceRef: resourceRef,
+		})
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("`%s` was found, updating it...", resource.Ref())
+
+	resourceRepresentation, err := resource.YAML()
+	if err != nil {
+		return err
+	}
+
+	resource = *handler.Prepare(*existingResource, resource)
+	existingResource = handler.Unprepare(*existingResource)
+	existingResourceRepresentation, err := existingResource.YAML()
+	if err != nil {
+		return err
+	}
+
+	if resourceRepresentation == existingResourceRepresentation {
+		trailRecorder.Record(Event{
+			Type:        ResourceNotChanged,
+			ResourceRef: resourceRef,
+		})
+		return nil
+	}
+
+	if err = handler.Update(*existingResource, resource); err != nil {
+		return err
+	}
+
+	trailRecorder.Record(Event{
+		Type:        ResourceUpdated,
+		ResourceRef: resourceRef,
+	})
 
 	return nil
 }
@@ -312,7 +346,7 @@ type WatchParser interface {
 
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
 // when changes are noticed.
-func Watch(registry Registry, watchDir string, parser WatchParser) error {
+func Watch(registry Registry, watchDir string, parser WatchParser, trailRecorder eventsRecorder) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -334,7 +368,7 @@ func Watch(registry Registry, watchDir string, parser WatchParser) error {
 					if err != nil {
 						log.Error("Error: ", err)
 					}
-					err = Apply(registry, resources)
+					err = Apply(registry, resources, false, trailRecorder) // TODO?
 					if err != nil {
 						log.Error("Error: ", err)
 					}

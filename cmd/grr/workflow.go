@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/go-clix/cli"
@@ -10,6 +11,7 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 const generalFolderUID = "general"
@@ -193,6 +195,16 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 		Args:    cli.ArgsExact(1),
 	}
 	var opts Opts
+	var continueOnError bool
+
+	cmd.Flags().BoolVarP(&continueOnError, "continue-on-error", "e", false, "don't stop apply on first error")
+
+	eventFormatter := grizzly.EventToPlainText
+	if terminal.IsTerminal(int(os.Stdout.Fd())) {
+		eventFormatter = grizzly.EventToColoredText
+	}
+
+	eventsRecorder := grizzly.NewWriterRecorder(os.Stdout, eventFormatter)
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		resourceKind, folderUID, err := getOnlySpec(opts)
@@ -206,8 +218,9 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 		}
 
 		targets := currentContext.GetTargets(opts.Targets)
+		parser := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(continueOnError))
 
-		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(args[0], grizzly.ParserOptions{
+		resources, err := parser.Parse(args[0], grizzly.ParserOptions{
 			DefaultResourceKind: resourceKind,
 			DefaultFolderUID:    folderUID,
 		})
@@ -215,7 +228,32 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		return grizzly.Apply(registry, resources)
+		notifier.Info(nil, fmt.Sprintf("Applying %s", grizzly.Pluraliser(resources.Len(), "resource")))
+
+		err = grizzly.Apply(registry, resources, continueOnError, eventsRecorder)
+		summary := eventsRecorder.Summary()
+
+		var summaryParts []string
+		if summary.EventCounts[grizzly.ResourceFailure.ID] > 0 {
+			summaryParts = append(summaryParts, grizzly.Pluraliser(summary.EventCounts[grizzly.ResourceFailure.ID], "error"))
+		}
+		appliedCount := summary.EventCounts[grizzly.ResourceAdded.ID] + summary.EventCounts[grizzly.ResourceUpdated.ID]
+		if appliedCount > 0 {
+			summaryParts = append(summaryParts, fmt.Sprintf("%s applied", grizzly.Pluraliser(appliedCount, "resource")))
+		}
+		if summary.EventCounts[grizzly.ResourceNotChanged.ID] > 0 {
+			summaryParts = append(summaryParts, fmt.Sprintf("%s unchanged", grizzly.Pluraliser(summary.EventCounts[grizzly.ResourceNotChanged.ID], "resource")))
+		}
+
+		notifier.Info(nil, strings.Join(summaryParts, ", "))
+
+		// errors are already displayed by the `eventsRecorder`, so we return a
+		// "silent" one to ensure that the exit code will be non-zero
+		if err != nil {
+			return silentError{Err: err}
+		}
+
+		return nil
 	}
 
 	cmd = initialiseOnlySpec(cmd, &opts)
@@ -272,7 +310,9 @@ func watchCmd(registry grizzly.Registry) *cli.Command {
 
 		watchDir := args[0]
 
-		return grizzly.Watch(registry, watchDir, parser)
+		trailRecorder := grizzly.NewWriterRecorder(os.Stdout, grizzly.EventToPlainText)
+
+		return grizzly.Watch(registry, watchDir, parser, trailRecorder)
 	}
 	return initialiseCmd(cmd, &opts)
 }

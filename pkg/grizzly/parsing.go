@@ -136,6 +136,8 @@ func (parser *ChainParser) Parse(resourcePath string, options ParserOptions) (Re
 
 			if !parser.continueOnError {
 				return err
+			} else {
+				return nil
 			}
 		}
 
