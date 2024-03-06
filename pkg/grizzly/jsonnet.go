@@ -2,7 +2,9 @@ package grizzly
 
 import (
 	_ "embed" // used to embed grizzly.jsonnet script below
+	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 
@@ -10,8 +12,52 @@ import (
 	"github.com/google/go-jsonnet/ast"
 )
 
-// ExtendedImporter does stuff
-type ExtendedImporter struct {
+type JsonnerParser struct {
+	registry     Registry
+	jsonnetPaths []string
+}
+
+func NewJsonnerParser(registry Registry, jsonnetPaths []string) *JsonnerParser {
+	return &JsonnerParser{
+		registry:     registry,
+		jsonnetPaths: jsonnetPaths,
+	}
+}
+
+func (parser *JsonnerParser) Accept(file string) bool {
+	extension := filepath.Ext(file)
+
+	return extension == ".jsonnet" || extension == ".libsonnet"
+}
+
+// Parse evaluates a jsonnet file and parses it into an object tree
+func (parser *JsonnerParser) Parse(file string, options Options) (Resources, error) {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file does not exist: %s", file)
+	}
+	currentWorkingDirectory, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	result, err := evaluateJsonnet(file, currentWorkingDirectory, parser.jsonnetPaths)
+	if err != nil {
+		return nil, err
+	}
+	var data interface{}
+	if err := json.Unmarshal([]byte(result), &data); err != nil {
+		return nil, err
+	}
+
+	resources, err := parseAny(parser.registry, data, options.DefaultResourceKind, options.DefaultFolderUID)
+	if err != nil {
+		return nil, err
+	}
+
+	return resources, nil
+}
+
+// extendedImporter does stuff
+type extendedImporter struct {
 	loaders    []importLoader    // for loading jsonnet from somewhere. First one that returns non-nil is used
 	processors []importProcessor // for post-processing (e.g. yaml -> json)
 }
@@ -46,7 +92,7 @@ func newFileLoader(fi *jsonnet.FileImporter) importLoader {
 	}
 }
 
-func newExtendedImporter(jsonnetFile, path string, jpath []string) *ExtendedImporter {
+func newExtendedImporter(jsonnetFile, path string, jpath []string) *extendedImporter {
 	absolutePaths := make([]string, len(jpath)*2+1)
 	absolutePaths = append(absolutePaths, path)
 	jsonnetDir := filepath.Dir(jsonnetFile)
@@ -62,7 +108,7 @@ func newExtendedImporter(jsonnetFile, path string, jpath []string) *ExtendedImpo
 		}
 		absolutePaths = append(absolutePaths, p)
 	}
-	return &ExtendedImporter{
+	return &extendedImporter{
 		loaders: []importLoader{
 			newFileLoader(&jsonnet.FileImporter{
 				JPaths: absolutePaths,
@@ -71,8 +117,8 @@ func newExtendedImporter(jsonnetFile, path string, jpath []string) *ExtendedImpo
 	}
 }
 
-// Import implements the functionality offered by the ExtendedImporter
-func (i *ExtendedImporter) Import(importedFrom, importedPath string) (contents jsonnet.Contents, foundAt string, err error) {
+// Import implements the functionality offered by the extendedImporter
+func (i *extendedImporter) Import(importedFrom, importedPath string) (contents jsonnet.Contents, foundAt string, err error) {
 	// load using loader
 	for _, loader := range i.loaders {
 		c, f, err := loader(importedFrom, importedPath)

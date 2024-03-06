@@ -1,10 +1,7 @@
 package grizzly
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -15,126 +12,120 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Parse(registry Registry, resourcePath, resourceKind, folderUID string, targets, jsonnetPaths []string) (Resources, error) {
+type Options struct {
+	DefaultResourceKind string
+	DefaultFolderUID    string
+}
+
+type FormatParser interface {
+	Accept(file string) bool
+	Parse(file string, options Options) (Resources, error)
+}
+
+type Parser interface {
+	Parse(resourcePath string, options Options) (Resources, error)
+	ParseFile(file string, options Options) (Resources, error)
+}
+
+func DefaultParser(registry Registry, targets []string, jsonnetPaths []string) Parser {
+	return NewFilteredParser(
+		registry,
+		NewChainParser([]FormatParser{
+			NewJSONParser(registry),
+			NewYAMLParser(registry),
+			NewJsonnerParser(registry, jsonnetPaths),
+		}),
+		targets,
+	)
+}
+
+type FilteredParser struct {
+	registry  Registry
+	decorated Parser
+	targets   []string
+}
+
+func NewFilteredParser(registry Registry, decorated Parser, targets []string) *FilteredParser {
+	return &FilteredParser{
+		registry:  registry,
+		decorated: decorated,
+		targets:   targets,
+	}
+}
+
+func (parser *FilteredParser) Parse(resourcePath string, options Options) (Resources, error) {
+	resources, err := parser.decorated.Parse(resourcePath, options)
+	if err != nil {
+		return nil, err
+	}
+
+	resources = resources.Filter(func(resource Resource) bool {
+		return parser.registry.ResourceMatchesTarget(resource.Kind(), resource.Name(), parser.targets)
+	})
+
+	return parser.registry.Sort(resources), nil
+}
+
+func (parser *FilteredParser) ParseFile(file string, options Options) (Resources, error) {
+	return parser.ParseFile(file, options)
+}
+
+type ChainParser struct {
+	registry      Registry
+	formatParsers []FormatParser
+}
+
+func NewChainParser(formatParsers []FormatParser) *ChainParser {
+	return &ChainParser{
+		formatParsers: formatParsers,
+	}
+}
+
+func (parser *ChainParser) Parse(resourcePath string, options Options) (Resources, error) {
+	if resourcePath == "" {
+		return nil, nil
+	}
+
 	stat, err := os.Stat(resourcePath)
 	if err != nil {
 		return nil, err
 	}
 
 	if !stat.IsDir() {
-		return ParseFile(registry, resourcePath, resourceKind, folderUID, jsonnetPaths)
+		return parser.ParseFile(resourcePath, options)
 	}
 
-	var files []string
-	_ = filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
-		if !info.IsDir() {
-			files = append(files, path)
+	var parsedResources Resources
+	err = filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		r, err := parser.ParseFile(path, options)
+		if err != nil {
+			return err
+		}
+
+		parsedResources = append(parsedResources, r...)
+
 		return nil
 	})
 
-	var parsedResources Resources
-	for _, file := range files {
-		r, err := ParseFile(registry, file, resourceKind, folderUID, jsonnetPaths)
-		if err != nil {
-			return nil, err
-		}
-		parsedResources = append(parsedResources, r...)
-	}
-	var resources Resources
-	for _, parsedResource := range parsedResources {
-		if registry.ResourceMatchesTarget(parsedResource.Kind(), parsedResource.Name(), targets) {
-			resources = append(resources, parsedResource)
-		}
-	}
-	resources = registry.Sort(resources)
-	return resources, nil
+	return parsedResources, err
 }
 
-func ParseFile(registry Registry, resourceFile, resourceKind, folderUID string, jsonnetPaths []string) (Resources, error) {
-	switch filepath.Ext(resourceFile) {
-	case ".json":
-		return ParseJSON(registry, resourceFile, resourceKind, folderUID)
-	case ".yaml", ".yml":
-		return ParseYAML(registry, resourceFile, resourceKind, folderUID)
-	case ".jsonnet", ".libsonnet":
-		return ParseJsonnet(registry, resourceFile, jsonnetPaths, resourceKind, folderUID)
-	default:
-		return nil, fmt.Errorf("%s must be yaml, json or jsonnet", resourceFile)
-	}
-}
-
-// ParseJSON evaluates a JSON file and parses it into resources
-func ParseJSON(registry Registry, resourceFile, resourceKind, folderUID string) (Resources, error) {
-	f, err := os.Open(resourceFile)
-	if err != nil {
-		return nil, err
-	}
-
-	m := map[string]any{}
-	err = json.NewDecoder(f).Decode(&m)
-	if err != nil {
-		return nil, err
-	}
-
-	resources, err := parseAny(registry, m, resourceKind, folderUID)
-	if err != nil {
-		return nil, fmt.Errorf("error reading %s: %v", resourceFile, err)
-	}
-	return resources, err
-}
-
-// ParseYAML evaluates a YAML file and parses it into resources
-func ParseYAML(registry Registry, yamlFile, resourceKind, folderUID string) (Resources, error) {
-	f, err := os.Open(yamlFile)
-	if err != nil {
-		return nil, err
-	}
-	reader := bufio.NewReader(f)
-	decoder := yaml.NewDecoder(reader)
-	var resources Resources
-	for i := 0; ; i++ {
-		var m map[string]any
-		err = decoder.Decode(&m)
-		if err == io.EOF {
-			break
+func (parser *ChainParser) ParseFile(file string, options Options) (Resources, error) {
+	for _, l := range parser.formatParsers {
+		if l.Accept(file) {
+			return l.Parse(file, options)
 		}
-		if err != nil {
-			return nil, fmt.Errorf("Error decoding %s: %v", yamlFile, err)
-		}
-		parsedResources, err := parseAny(registry, m, resourceKind, folderUID)
-		if err != nil {
-			return nil, err
-		}
-		resources = append(resources, parsedResources...)
-	}
-	return resources, nil
-}
-
-// ParseJsonnet evaluates a jsonnet file and parses it into an object tree
-func ParseJsonnet(registry Registry, jsonnetFile string, jsonnetPaths []string, resourceKind, folderUID string) (Resources, error) {
-
-	if _, err := os.Stat(jsonnetFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("file does not exist: %s", jsonnetFile)
-	}
-	currentWorkingDirectory, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	result, err := evaluateJsonnet(jsonnetFile, currentWorkingDirectory, jsonnetPaths)
-	if err != nil {
-		return nil, err
-	}
-	var data interface{}
-	if err := json.Unmarshal([]byte(result), &data); err != nil {
-		return nil, err
 	}
 
-	resources, err := parseAny(registry, data, resourceKind, folderUID)
-	if err != nil {
-		return nil, err
-	}
-	return resources, nil
+	return nil, fmt.Errorf("unrecognized format for %s", file)
 }
 
 func parseAny(registry Registry, data any, resourceKind, folderUID string) (Resources, error) {
@@ -166,6 +157,7 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string) (Reso
 			return nil, err
 		}
 		if handler.UsesFolders() && folderUID == "" {
+			// TODO: the error shouldn't assume a CLI environment
 			return nil, fmt.Errorf("folder (-f) required with --onlyspec")
 		}
 		m := data.(map[string]any)
@@ -311,7 +303,6 @@ func (w *walker) walkList(list []interface{}, path trace) error {
 }
 
 func (w *walker) walkObj(obj map[string]any, path trace) error {
-
 	validateErr := ValidateEnvelope(obj)
 	if validateErr != nil {
 		// this is not an envelope, skip.

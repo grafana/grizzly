@@ -178,6 +178,18 @@ func (r Resources) Find(ref ResourceRef) (Resource, bool) {
 	return Resource{}, false
 }
 
+func (r Resources) Filter(predicate func(Resource) bool) Resources {
+	filtered := make(Resources, 0)
+
+	for _, resource := range r {
+		if predicate(resource) {
+			filtered = append(filtered, resource)
+		}
+	}
+
+	return filtered
+}
+
 func (r Resources) Len() int {
 	return len(r)
 }
