@@ -241,7 +241,8 @@ func (p *GrizzlyServer) RootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templateVars := map[string]any{
-		"Resources": resources,
+		"Resources":  resources,
+		"ServerPort": p.Port,
 	}
 	if err := templates.ExecuteTemplate(w, "proxy/index.html.tmpl", templateVars); err != nil {
 		log.Error("Error while executing template: ", err)

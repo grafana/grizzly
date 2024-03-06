@@ -23,7 +23,7 @@
         {{ range .Resources }}
             {{ if eq .Kind "Dashboard" }}
                 <li>
-                    <a href="http://localhost:8080/d/{{ .Name }}/slug">{{ .Spec.title }}</a>
+                    <a href="http://localhost:{{ $.ServerPort }}/d/{{ .Name }}/slug">{{ .Spec.title }}</a>
                 </li>
             {{ end }}
         {{ end }}
