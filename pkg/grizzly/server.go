@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
+	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -229,17 +230,22 @@ func (p *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 	p.proxy.ServeHTTP(w, r)
 }
 
-func (p *Server) RootHandler(w http.ResponseWriter, r *http.Request) {
+func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
+	var parseErrors []error
+
 	resources, err := p.Parser.Parse()
 	if err != nil {
-		log.Error("Error: ", err)
-		http.Error(w, fmt.Sprintf("Error: %s", err), 500)
-		return
+		if merr, ok := err.(*multierror.Error); ok {
+			parseErrors = merr.Errors
+		} else {
+			parseErrors = []error{err}
+		}
 	}
 
 	templateVars := map[string]any{
-		"Resources":  resources,
-		"ServerPort": p.Port,
+		"Resources":   resources,
+		"ParseErrors": parseErrors,
+		"ServerPort":  p.Port,
 	}
 	if err := templates.ExecuteTemplate(w, "proxy/index.html.tmpl", templateVars); err != nil {
 		log.Error("Error while executing template: ", err)

@@ -17,6 +17,15 @@
 </header>
 
 <main>
+    {{ if ne (len .ParseErrors) 0 }}
+        <h1>Errors</h1>
+
+        {{ range .ParseErrors }}
+            <li>
+                <code>{{ . }}</code>
+            </li>
+        {{ end }}
+    {{ end }}
     <h1>Available dashboards</h1>
 
     <ul>

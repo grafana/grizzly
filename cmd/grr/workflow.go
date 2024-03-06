@@ -236,7 +236,7 @@ func (p *jsonnetWatchParser) Name() string {
 }
 
 func (p *jsonnetWatchParser) Parse() (grizzly.Resources, error) {
-	return grizzly.DefaultParser(p.registry, p.targets, p.jsonnetPaths).Parse(p.resourcePath, grizzly.ParserOptions{
+	return grizzly.DefaultParser(p.registry, p.targets, p.jsonnetPaths, grizzly.ParserContinueOnError(true)).Parse(p.resourcePath, grizzly.ParserOptions{
 		DefaultResourceKind: p.resourceKind,
 		DefaultFolderUID:    p.folderUID,
 	})
