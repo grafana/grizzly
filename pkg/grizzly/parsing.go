@@ -8,9 +8,19 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
+
+type ParseError struct {
+	File string
+	Err  error
+}
+
+func (err ParseError) Error() string {
+	return fmt.Sprintf("parse error in '%s': %s", err.File, err.Err)
+}
 
 type ParserOptions struct {
 	DefaultResourceKind string
@@ -26,14 +36,32 @@ type Parser interface {
 	Parse(resourcePath string, options ParserOptions) (Resources, error)
 }
 
-func DefaultParser(registry Registry, targets []string, jsonnetPaths []string) Parser {
+type parsersConfig struct {
+	continueOnError bool
+}
+
+type ParserOpt func(config *parsersConfig)
+
+func ParserContinueOnError(continueOnError bool) ParserOpt {
+	return func(config *parsersConfig) {
+		config.continueOnError = continueOnError
+	}
+}
+
+func DefaultParser(registry Registry, targets []string, jsonnetPaths []string, opts ...ParserOpt) Parser {
+	config := &parsersConfig{}
+
+	for _, opt := range opts {
+		opt(config)
+	}
+
 	return NewFilteredParser(
 		registry,
 		NewChainParser([]FormatParser{
 			NewJSONParser(registry),
 			NewYAMLParser(registry),
 			NewJsonnetParser(registry, jsonnetPaths),
-		}),
+		}, config.continueOnError),
 		targets,
 	)
 }
@@ -55,7 +83,7 @@ func NewFilteredParser(registry Registry, decorated Parser, targets []string) *F
 func (parser *FilteredParser) Parse(resourcePath string, options ParserOptions) (Resources, error) {
 	resources, err := parser.decorated.Parse(resourcePath, options)
 	if err != nil {
-		return nil, err
+		return resources, err
 	}
 
 	resources = resources.Filter(func(resource Resource) bool {
@@ -66,12 +94,14 @@ func (parser *FilteredParser) Parse(resourcePath string, options ParserOptions) 
 }
 
 type ChainParser struct {
-	formatParsers []FormatParser
+	formatParsers   []FormatParser
+	continueOnError bool
 }
 
-func NewChainParser(formatParsers []FormatParser) *ChainParser {
+func NewChainParser(formatParsers []FormatParser, continueOnError bool) *ChainParser {
 	return &ChainParser{
-		formatParsers: formatParsers,
+		formatParsers:   formatParsers,
+		continueOnError: continueOnError,
 	}
 }
 
@@ -90,7 +120,8 @@ func (parser *ChainParser) Parse(resourcePath string, options ParserOptions) (Re
 	}
 
 	var parsedResources Resources
-	err = filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
+	var finalErr error
+	_ = filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -101,7 +132,11 @@ func (parser *ChainParser) Parse(resourcePath string, options ParserOptions) (Re
 
 		r, err := parser.parseFile(path, options)
 		if err != nil {
-			return err
+			finalErr = multierror.Append(finalErr, err)
+
+			if !parser.continueOnError {
+				return err
+			}
 		}
 
 		parsedResources = append(parsedResources, r...)
@@ -109,14 +144,21 @@ func (parser *ChainParser) Parse(resourcePath string, options ParserOptions) (Re
 		return nil
 	})
 
-	return parsedResources, err
+	return parsedResources, finalErr
 }
 
 func (parser *ChainParser) parseFile(file string, options ParserOptions) (Resources, error) {
 	for _, l := range parser.formatParsers {
-		if l.Accept(file) {
-			return l.Parse(file, options)
+		if !l.Accept(file) {
+			continue
 		}
+
+		resources, err := l.Parse(file, options)
+		if err != nil {
+			return nil, ParseError{File: file, Err: err}
+		}
+
+		return resources, nil
 	}
 
 	return nil, fmt.Errorf("unrecognized format for %s", file)

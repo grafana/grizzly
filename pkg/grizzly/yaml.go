@@ -2,7 +2,6 @@ package grizzly
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -44,7 +43,7 @@ func (parser *YAMLParser) Parse(file string, options ParserOptions) (Resources, 
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("error decoding %s: %v", file, err)
+			return nil, err
 		}
 
 		parsedResources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID)
