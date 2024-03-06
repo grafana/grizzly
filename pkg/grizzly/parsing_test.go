@@ -181,7 +181,7 @@ func TestParseKindDetection(t *testing.T) {
 		}
 
 		parser := grizzly.DefaultParser(registry, nil, nil)
-		parseOpts := grizzly.Options{
+		parseOpts := grizzly.ParserOptions{
 			DefaultResourceKind: "",
 			DefaultFolderUID:    "General",
 		}

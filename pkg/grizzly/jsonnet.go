@@ -12,26 +12,26 @@ import (
 	"github.com/google/go-jsonnet/ast"
 )
 
-type JsonnerParser struct {
+type JsonnetParser struct {
 	registry     Registry
 	jsonnetPaths []string
 }
 
-func NewJsonnerParser(registry Registry, jsonnetPaths []string) *JsonnerParser {
-	return &JsonnerParser{
+func NewJsonnerParser(registry Registry, jsonnetPaths []string) *JsonnetParser {
+	return &JsonnetParser{
 		registry:     registry,
 		jsonnetPaths: jsonnetPaths,
 	}
 }
 
-func (parser *JsonnerParser) Accept(file string) bool {
+func (parser *JsonnetParser) Accept(file string) bool {
 	extension := filepath.Ext(file)
 
 	return extension == ".jsonnet" || extension == ".libsonnet"
 }
 
 // Parse evaluates a jsonnet file and parses it into an object tree
-func (parser *JsonnerParser) Parse(file string, options Options) (Resources, error) {
+func (parser *JsonnetParser) Parse(file string, options ParserOptions) (Resources, error) {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return nil, fmt.Errorf("file does not exist: %s", file)
 	}

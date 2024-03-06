@@ -27,7 +27,7 @@ func (parser *YAMLParser) Accept(file string) bool {
 }
 
 // Parse evaluates a YAML file and parses it into resources
-func (parser *YAMLParser) Parse(file string, options Options) (Resources, error) {
+func (parser *YAMLParser) Parse(file string, options ParserOptions) (Resources, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err

@@ -12,19 +12,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Options struct {
+type ParserOptions struct {
 	DefaultResourceKind string
 	DefaultFolderUID    string
 }
 
 type FormatParser interface {
 	Accept(file string) bool
-	Parse(file string, options Options) (Resources, error)
+	Parse(file string, options ParserOptions) (Resources, error)
 }
 
 type Parser interface {
-	Parse(resourcePath string, options Options) (Resources, error)
-	ParseFile(file string, options Options) (Resources, error)
+	Parse(resourcePath string, options ParserOptions) (Resources, error)
 }
 
 func DefaultParser(registry Registry, targets []string, jsonnetPaths []string) Parser {
@@ -53,7 +52,7 @@ func NewFilteredParser(registry Registry, decorated Parser, targets []string) *F
 	}
 }
 
-func (parser *FilteredParser) Parse(resourcePath string, options Options) (Resources, error) {
+func (parser *FilteredParser) Parse(resourcePath string, options ParserOptions) (Resources, error) {
 	resources, err := parser.decorated.Parse(resourcePath, options)
 	if err != nil {
 		return nil, err
@@ -66,12 +65,7 @@ func (parser *FilteredParser) Parse(resourcePath string, options Options) (Resou
 	return parser.registry.Sort(resources), nil
 }
 
-func (parser *FilteredParser) ParseFile(file string, options Options) (Resources, error) {
-	return parser.ParseFile(file, options)
-}
-
 type ChainParser struct {
-	registry      Registry
 	formatParsers []FormatParser
 }
 
@@ -81,7 +75,7 @@ func NewChainParser(formatParsers []FormatParser) *ChainParser {
 	}
 }
 
-func (parser *ChainParser) Parse(resourcePath string, options Options) (Resources, error) {
+func (parser *ChainParser) Parse(resourcePath string, options ParserOptions) (Resources, error) {
 	if resourcePath == "" {
 		return nil, nil
 	}
@@ -92,7 +86,7 @@ func (parser *ChainParser) Parse(resourcePath string, options Options) (Resource
 	}
 
 	if !stat.IsDir() {
-		return parser.ParseFile(resourcePath, options)
+		return parser.parseFile(resourcePath, options)
 	}
 
 	var parsedResources Resources
@@ -105,7 +99,7 @@ func (parser *ChainParser) Parse(resourcePath string, options Options) (Resource
 			return nil
 		}
 
-		r, err := parser.ParseFile(path, options)
+		r, err := parser.parseFile(path, options)
 		if err != nil {
 			return err
 		}
@@ -118,7 +112,7 @@ func (parser *ChainParser) Parse(resourcePath string, options Options) (Resource
 	return parsedResources, err
 }
 
-func (parser *ChainParser) ParseFile(file string, options Options) (Resources, error) {
+func (parser *ChainParser) parseFile(file string, options ParserOptions) (Resources, error) {
 	for _, l := range parser.formatParsers {
 		if l.Accept(file) {
 			return l.Parse(file, options)

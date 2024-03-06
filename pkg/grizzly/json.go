@@ -22,7 +22,7 @@ func (parser *JSONParser) Accept(file string) bool {
 }
 
 // Parse evaluates a JSON file and parses it into resources
-func (parser *JSONParser) Parse(file string, options Options) (Resources, error) {
+func (parser *JSONParser) Parse(file string, options ParserOptions) (Resources, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err

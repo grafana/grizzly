@@ -69,7 +69,7 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(args[0], grizzly.Options{
+		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(args[0], grizzly.ParserOptions{
 			DefaultResourceKind: resourceKind,
 			DefaultFolderUID:    folderUID,
 		})
@@ -128,7 +128,7 @@ func showCmd(registry grizzly.Registry) *cli.Command {
 		}
 		targets := currentContext.GetTargets(opts.Targets)
 
-		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(args[0], grizzly.Options{
+		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(args[0], grizzly.ParserOptions{
 			DefaultResourceKind: resourceKind,
 			DefaultFolderUID:    folderUID,
 		})
@@ -167,7 +167,7 @@ func diffCmd(registry grizzly.Registry) *cli.Command {
 
 		targets := currentContext.GetTargets(opts.Targets)
 
-		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(args[0], grizzly.Options{
+		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(args[0], grizzly.ParserOptions{
 			DefaultResourceKind: resourceKind,
 			DefaultFolderUID:    folderUID,
 		})
@@ -207,7 +207,7 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 
 		targets := currentContext.GetTargets(opts.Targets)
 
-		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(args[0], grizzly.Options{
+		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(args[0], grizzly.ParserOptions{
 			DefaultResourceKind: resourceKind,
 			DefaultFolderUID:    folderUID,
 		})
@@ -236,7 +236,7 @@ func (p *jsonnetWatchParser) Name() string {
 }
 
 func (p *jsonnetWatchParser) Parse() (grizzly.Resources, error) {
-	return grizzly.DefaultParser(p.registry, p.targets, p.jsonnetPaths).Parse(p.resourcePath, grizzly.Options{
+	return grizzly.DefaultParser(p.registry, p.targets, p.jsonnetPaths).Parse(p.resourcePath, grizzly.ParserOptions{
 		DefaultResourceKind: p.resourceKind,
 		DefaultFolderUID:    p.folderUID,
 	})
@@ -341,7 +341,7 @@ func exportCmd(registry grizzly.Registry) *cli.Command {
 
 		targets := currentContext.GetTargets(opts.Targets)
 
-		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(resourcePath, grizzly.Options{
+		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(resourcePath, grizzly.ParserOptions{
 			DefaultResourceKind: resourceKind,
 			DefaultFolderUID:    folderUID,
 		})
