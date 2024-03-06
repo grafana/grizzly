@@ -233,7 +233,7 @@ func (h *DashboardHandler) Detect(data map[string]any) bool {
 	return true
 }
 
-func (h *DashboardHandler) GetProxyEndpoints(p grizzly.GrizzlyServer) []grizzly.ProxyEndpoint {
+func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.ProxyEndpoint {
 	return []grizzly.ProxyEndpoint{
 		{
 			Method:  "GET",
@@ -253,7 +253,7 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.GrizzlyServer) []grizzly.
 	}
 }
 
-func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.GrizzlyServer) http.HandlerFunc {
+func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html")
 		config := h.Provider.(ClientProvider).Config()
@@ -296,7 +296,7 @@ func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.GrizzlyServer) htt
 	}
 }
 
-func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.GrizzlyServer) http.HandlerFunc {
+func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		uid := chi.URLParam(r, "uid")
 		if uid == "" {
@@ -334,7 +334,7 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.GrizzlyServer) http
 	}
 }
 
-func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.GrizzlyServer) http.HandlerFunc {
+func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		dash := map[string]interface{}{}
