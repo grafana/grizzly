@@ -106,7 +106,6 @@ func TestValidateEnvelope(t *testing.T) {
 
 func TestParseKindDetection(t *testing.T) {
 	t.Run("Parse kind detection", func(t *testing.T) {
-
 		registry := grizzly.NewRegistry(
 			[]grizzly.Provider{
 				&grafana.Provider{},
@@ -180,9 +179,16 @@ func TestParseKindDetection(t *testing.T) {
 				ExpectedError: "error reading testdata/parsing/datasource-without-envelope.json: found invalid object (at .): errors parsing resource: kind missing, metadata missing, spec missing\n\naccess: proxy\nisDefault: true\njsonData:\n    httpMethod: GET\ntype: prometheus\nurl: http://localhost/prometheus/\n",
 			},
 		}
+
+		parser := grizzly.DefaultParser(registry, nil, nil)
+		parseOpts := grizzly.ParserOptions{
+			DefaultResourceKind: "",
+			DefaultFolderUID:    "General",
+		}
+
 		for _, test := range tests {
 			t.Run(test.Name, func(t *testing.T) {
-				resources, err := grizzly.Parse(registry, test.InputFile, "", "General", nil, nil)
+				resources, err := parser.Parse(test.InputFile, parseOpts)
 				if test.ExpectedError != "" {
 					require.Error(t, err)
 					require.Equal(t, test.ExpectedError, err.Error())
@@ -190,7 +196,7 @@ func TestParseKindDetection(t *testing.T) {
 				}
 				require.NoError(t, err)
 				if test.ExpectedResources == 0 { // i.e. the default, which actually means 1
-					require.Equal(t, 1, len(resources), "Expected one resource from parsing")
+					require.Len(t, resources, 1, "Expected one resource from parsing")
 				} else {
 					require.Equal(t, test.ExpectedResources, len(resources), fmt.Sprintf("Expected %d resources from parsing", test.ExpectedResources))
 				}
