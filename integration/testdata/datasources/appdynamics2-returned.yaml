@@ -1,0 +1,16 @@
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: Datasource
+metadata:
+    name: appdynamics2
+spec:
+    access: proxy
+    basicAuth: true
+    basicAuthUser: mothership2019052316285110@mothership2019052316285110
+    jsonData: {}
+    name: AppDynamics2
+    orgId: 1
+    type: dlopes7-appdynamics-datasource
+    typeLogoUrl: public/img/icn-datasource.svg
+    uid: appdynamics2
+    url: https://mothership2019052316285110.saas.appdynamics.com
+    withCredentials: true
