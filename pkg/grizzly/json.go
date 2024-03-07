@@ -2,7 +2,6 @@ package grizzly
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -37,7 +36,7 @@ func (parser *JSONParser) Parse(file string, options ParserOptions) (Resources, 
 
 	resources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID)
 	if err != nil {
-		return nil, fmt.Errorf("error reading %s: %v", file, err)
+		return nil, err
 	}
 
 	return resources, err

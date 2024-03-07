@@ -49,8 +49,8 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:        "apply no-folder.yml",
-					ExpectedOutput: "Dashboard.no-folder added\n",
+					Command:                "apply no-folder.yml",
+					ExpectedOutputContains: "Dashboard.no-folder added\n",
 				},
 				{
 					Command:                "get Dashboard.no-folder",
@@ -66,8 +66,8 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:        "apply no-folder.yml",
-					ExpectedOutput: "Dashboard.no-folder no differences\n",
+					Command:                "apply no-folder.yml",
+					ExpectedOutputContains: "Dashboard.no-folder no differences\n",
 				},
 				{
 					Command:                "get Dashboard.no-folder",
@@ -83,8 +83,8 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:        "apply no-folder-mk2.yml",
-					ExpectedOutput: "Dashboard.no-folder updated\n",
+					Command:                "apply no-folder-mk2.yml",
+					ExpectedOutputContains: "Dashboard.no-folder updated",
 				},
 				{
 					Command:                "get Dashboard.no-folder",
@@ -100,9 +100,9 @@ func TestDashboard(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:        "diff ReciqtgGk.yml",
-					ExpectedCode:   0,
-					ExpectedOutput: "Dashboard.ReciqtgGk no differences\n",
+					Command:                "diff ReciqtgGk.yml",
+					ExpectedCode:           0,
+					ExpectedOutputContains: "Dashboard.ReciqtgGk no differences",
 				},
 			},
 		})
@@ -134,6 +134,66 @@ func TestDashboard(t *testing.T) {
 			},
 		})
 	})
+
+	t.Run("Apply - fail-on-error parsing", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:                "apply continue-on-error/parsing",
+					ExpectedCode:           1,
+					ExpectedOutputContains: "parse error in 'continue-on-error/parsing/broken-dashboard-2.yml'",
+				},
+			},
+		})
+	})
+	t.Run("Apply - continue-on-error parsing", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:      "apply -e continue-on-error/parsing",
+					ExpectedCode: 1,
+					ExpectedOutputContainsAll: []string{
+						"parse error in 'continue-on-error/parsing/broken-dashboard-2.yml'",
+						"parse error in 'continue-on-error/parsing/broken-dashboard-3.yml'",
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("Apply - fail-on-error workflow", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:                "apply continue-on-error/workflow",
+					ExpectedCode:           1,
+					ExpectedOutputContains: "Dashboard.dashboard-2 failure: cannot upload dashboard dashboard-2 as folder non-existent-folder not found",
+				},
+			},
+		})
+	})
+	t.Run("Apply - continue-on-error workflow", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:      "apply -e continue-on-error/workflow",
+					ExpectedCode: 1,
+					ExpectedOutputContainsAll: []string{
+						"Dashboard.dashboard-2 failure: cannot upload dashboard dashboard-2 as folder non-existent-folder not found",
+						"Dashboard.dashboard-3 failure: cannot upload dashboard dashboard-3 as folder non-existent-folder not found",
+					},
+				},
+			},
+		})
+	})
 }
 
 func TestDashboardHandler(t *testing.T) {
@@ -159,8 +219,8 @@ func TestDashboardHandler(t *testing.T) {
 		list, err := handler.ListRemote()
 		require.NoError(t, err)
 
-		require.Len(t, list, 4)
-		require.EqualValues(t, []string{"ReciqtgGk", "392Ik4GGk", "kE0IIVGGz", "no-folder"}, list)
+		require.Len(t, list, 6)
+		require.EqualValues(t, []string{"ReciqtgGk", "392Ik4GGk", "kE0IIVGGz", "dashboard-1", "dashboard-4", "no-folder"}, list)
 	})
 
 	t.Run("post remote dashboard - success", func(t *testing.T) {

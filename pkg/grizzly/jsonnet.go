@@ -17,7 +17,7 @@ type JsonnetParser struct {
 	jsonnetPaths []string
 }
 
-func NewJsonnerParser(registry Registry, jsonnetPaths []string) *JsonnetParser {
+func NewJsonnetParser(registry Registry, jsonnetPaths []string) *JsonnetParser {
 	return &JsonnetParser{
 		registry:     registry,
 		jsonnetPaths: jsonnetPaths,
