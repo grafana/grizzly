@@ -1,0 +1,11 @@
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: Dashboard
+metadata:
+  name: dashboard-4
+spec:
+  schemaVersion: 17
+  tags:
+    - templated
+  timezone: browser
+  title: Broken test 4
+  uid: dashboard-4

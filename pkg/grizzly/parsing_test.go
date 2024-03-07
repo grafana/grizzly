@@ -176,7 +176,7 @@ func TestParseKindDetection(t *testing.T) {
 				// of a datasource, thus resulting in an error.
 				Name:          "json datasource input, without envelope",
 				InputFile:     "testdata/parsing/datasource-without-envelope.json",
-				ExpectedError: "error reading testdata/parsing/datasource-without-envelope.json: found invalid object (at .): errors parsing resource: kind missing, metadata missing, spec missing\n\naccess: proxy\nisDefault: true\njsonData:\n    httpMethod: GET\ntype: prometheus\nurl: http://localhost/prometheus/\n",
+				ExpectedError: "parse error in 'testdata/parsing/datasource-without-envelope.json': found invalid object (at .): errors parsing resource: kind missing, metadata missing, spec missing\n\naccess: proxy\nisDefault: true\njsonData:\n    httpMethod: GET\ntype: prometheus\nurl: http://localhost/prometheus/\n",
 			},
 		}
 

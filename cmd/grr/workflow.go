@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
+	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -220,17 +222,31 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 		targets := currentContext.GetTargets(opts.Targets)
 		parser := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(continueOnError))
 
-		resources, err := parser.Parse(args[0], grizzly.ParserOptions{
+		resources, parseErr := parser.Parse(args[0], grizzly.ParserOptions{
 			DefaultResourceKind: resourceKind,
 			DefaultFolderUID:    folderUID,
 		})
-		if err != nil {
-			return err
+
+		if parseErr != nil {
+			var parseErrors []error
+			if merr, ok := parseErr.(*multierror.Error); ok {
+				parseErrors = merr.Errors
+			} else {
+				parseErrors = []error{parseErr}
+			}
+
+			for _, e := range parseErrors {
+				notifier.Error(nil, e.Error())
+			}
+		}
+
+		if parseErr != nil && !continueOnError {
+			return silentError{Err: parseErr}
 		}
 
 		notifier.Info(nil, fmt.Sprintf("Applying %s", grizzly.Pluraliser(resources.Len(), "resource")))
 
-		err = grizzly.Apply(registry, resources, continueOnError, eventsRecorder)
+		applyErr := grizzly.Apply(registry, resources, continueOnError, eventsRecorder)
 		summary := eventsRecorder.Summary()
 
 		var summaryParts []string
@@ -249,8 +265,8 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 
 		// errors are already displayed by the `eventsRecorder`, so we return a
 		// "silent" one to ensure that the exit code will be non-zero
-		if err != nil {
-			return silentError{Err: err}
+		if parseErr != nil || applyErr != nil {
+			return silentError{Err: errors.Join(parseErr, applyErr)}
 		}
 
 		return nil
