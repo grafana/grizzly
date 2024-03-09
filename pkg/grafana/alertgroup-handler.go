@@ -1,16 +1,14 @@
 package grafana
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
-	"encoding/json"
-	"errors"
-
-	"github.com/grafana/grizzly/pkg/grizzly"
-
 	"github.com/grafana/grafana-openapi-client-go/client/provisioning"
 	"github.com/grafana/grafana-openapi-client-go/models"
+	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
 // AlertRuleGroupHandler is a Grizzly Handler for Grafana alertRuleGroups
@@ -35,12 +33,8 @@ func (h *AlertRuleGroupHandler) ResourceFilePath(resource grizzly.Resource, file
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *AlertRuleGroupHandler) Parse(m map[string]any) (grizzly.Resources, error) {
-	resource, err := grizzly.ResourceFromMap(m)
-	if err != nil {
-		return nil, err
-	}
-	return grizzly.Resources{resource}, nil
+func (h *AlertRuleGroupHandler) Parse(m map[string]any) (grizzly.Resource, error) {
+	return grizzly.ResourceFromMap(m)
 }
 
 // Validate checks that the uid format is valid

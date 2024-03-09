@@ -1,17 +1,15 @@
 package grafana
 
 import (
-	"fmt"
-
 	"encoding/json"
 	"errors"
-
-	"github.com/grafana/grizzly/pkg/grizzly"
+	"fmt"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/folders"
 	"github.com/grafana/grafana-openapi-client-go/client/search"
 	"github.com/grafana/grafana-openapi-client-go/models"
+	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
 // FolderHandler is a Grizzly Handler for Grafana dashboard folders
@@ -36,13 +34,15 @@ func (h *FolderHandler) ResourceFilePath(resource grizzly.Resource, filetype str
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *FolderHandler) Parse(m map[string]any) (grizzly.Resources, error) {
+func (h *FolderHandler) Parse(m map[string]any) (grizzly.Resource, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
 	}
+
 	resource.SetSpecString("uid", resource.Name())
-	return grizzly.Resources{resource}, nil
+
+	return resource, nil
 }
 
 // Validate returns the uid of resource

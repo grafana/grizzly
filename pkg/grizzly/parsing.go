@@ -175,47 +175,62 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string) (Reso
 			return nil, err
 		}
 
-		resource, err := ResourceFromMap(m)
+		handler, err := registry.GetHandler(m["kind"].(string))
 		if err != nil {
 			return nil, err
 		}
-		handler, err := registry.GetHandler(resource.Kind())
+
+		resource, err := handler.Parse(m)
 		if err != nil {
 			return nil, err
 		}
-		return handler.Parse(resource)
+
+		return Resources{resource}, nil
 	}
+
 	kind := registry.Detect(data)
 	if kind == "" && resourceKind != "" {
 		kind = resourceKind
 	}
+
 	if kind != "" {
 		handler, err := registry.GetHandler(kind)
 		if err != nil {
 			return nil, err
 		}
+
 		if handler.UsesFolders() && folderUID == "" {
 			// TODO: the error shouldn't assume a CLI environment
 			return nil, fmt.Errorf("folder (-f) required with --onlyspec")
 		}
+
 		m := data.(map[string]any)
 		resource, err := NewResource(handler.APIVersion(), handler.Kind(), "dummy", m)
 		if err != nil {
 			return nil, err
 		}
+
 		uid, err := handler.GetSpecUID(resource)
 		if err != nil {
 			return nil, err
 		}
-		resource.SetMetadata("name", uid)
 
+		resource.SetMetadata("name", uid)
 		if handler.UsesFolders() {
 			resource.SetMetadata("folder", folderUID)
 		}
-		return handler.Parse(resource)
+
+		resource, err = handler.Parse(resource)
+		if err != nil {
+			return nil, err
+		}
+
+		return Resources{resource}, nil
 	}
+
 	walker := walker{}
 	err := walker.Walk(data)
+
 	return walker.Resources, err
 }
 

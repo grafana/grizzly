@@ -1,18 +1,16 @@
 package grafana
 
 import (
-	"fmt"
-
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/go-openapi/runtime"
-	"github.com/grafana/grizzly/pkg/grizzly"
-
 	"github.com/grafana/grafana-openapi-client-go/client/datasources"
 	"github.com/grafana/grafana-openapi-client-go/models"
+	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
 // DatasourceHandler is a Grizzly Handler for Grafana datasources
@@ -37,11 +35,12 @@ func (h *DatasourceHandler) ResourceFilePath(resource grizzly.Resource, filetype
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *DatasourceHandler) Parse(m map[string]any) (grizzly.Resources, error) {
+func (h *DatasourceHandler) Parse(m map[string]any) (grizzly.Resource, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
 	}
+
 	defaults := map[string]interface{}{
 		"basicAuth":         false,
 		"basicAuthPassword": "",
@@ -64,7 +63,8 @@ func (h *DatasourceHandler) Parse(m map[string]any) (grizzly.Resources, error) {
 	}
 	spec["uid"] = resource.Name()
 	resource["spec"] = spec
-	return grizzly.Resources{resource}, nil
+
+	return resource, nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
