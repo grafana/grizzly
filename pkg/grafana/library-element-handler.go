@@ -2,14 +2,12 @@ package grafana
 
 import (
 	"encoding/json"
-	"fmt"
-
 	"errors"
-
-	"github.com/grafana/grizzly/pkg/grizzly"
+	"fmt"
 
 	library "github.com/grafana/grafana-openapi-client-go/client/library_elements"
 	"github.com/grafana/grafana-openapi-client-go/models"
+	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
 // LibraryElementHandler is a Grizzly Handler for Grafana dashboard folders
@@ -45,13 +43,15 @@ func (h *LibraryElementHandler) ResourceFilePath(resource grizzly.Resource, file
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *LibraryElementHandler) Parse(m map[string]any) (grizzly.Resources, error) {
+func (h *LibraryElementHandler) Parse(m map[string]any) (grizzly.Resource, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
 	}
+
 	resource.SetSpecString("uid", resource.Name())
-	return grizzly.Resources{resource}, nil
+
+	return resource, nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison

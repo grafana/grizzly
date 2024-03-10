@@ -1,10 +1,9 @@
 package syntheticmonitoring
 
 import (
-	"fmt"
-
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -56,13 +55,15 @@ func (h *SyntheticMonitoringHandler) ResourceFilePath(resource grizzly.Resource,
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *SyntheticMonitoringHandler) Parse(m map[string]any) (grizzly.Resources, error) {
+func (h *SyntheticMonitoringHandler) Parse(m map[string]any) (grizzly.Resource, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
 	}
+
 	resource.SetSpecString("job", resource.GetMetadata("name"))
-	return grizzly.Resources{resource}, nil
+
+	return resource, nil
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
