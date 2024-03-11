@@ -81,6 +81,7 @@ func main() {
 		providersCmd(registry),
 		configCmd(),
 		serveCmd(registry),
+		selfUpdateCmd(),
 	)
 
 	// Run!
