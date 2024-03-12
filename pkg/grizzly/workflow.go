@@ -147,6 +147,7 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 			if err != nil {
 				return err
 			}
+			resource = handler.Unprepare(*resource)
 
 			content, filename, _, err := Format(registry, resourcePath, resource, outputFormat, onlySpec)
 			if err != nil {
