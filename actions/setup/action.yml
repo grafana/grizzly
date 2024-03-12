@@ -1,0 +1,12 @@
+name: 'Setup Grizzly'
+description: 'Setup Grizzly - A utility for managing Grafana resources'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
+
+inputs:
+  version:
+    description: 'Version of grizzly to install'
+    required: true
+    default: 'latest'
