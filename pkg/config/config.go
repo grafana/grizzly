@@ -32,8 +32,8 @@ func override(v *viper.Viper) {
 
 		"synthetic-monitoring.token":      "GRAFANA_SM_TOKEN",
 		"synthetic-monitoring.stack-id":   "GRAFANA_SM_STACK_ID",
-		"synthetic-monitoring.logs-id":    "GRAFANA_SM_METRICS_ID",
-		"synthetic-monitoring.metrics-id": "GRAFANA_SM_LOGS_ID",
+		"synthetic-monitoring.logs-id":    "GRAFANA_SM_LOGS_ID",
+		"synthetic-monitoring.metrics-id": "GRAFANA_SM_METRICS_ID",
 
 		"mimir.address":   "CORTEX_ADDRESS",
 		"mimir.tenant-id": "CORTEX_TENANT_ID",
