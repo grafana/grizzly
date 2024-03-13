@@ -53,8 +53,8 @@ To interact with Grafana Synthetic Monitoring, you must configure the below sett
 ```sh
 grr config set synthetic-monitoring.token abcdef123456 # API key (must have MetricsPublisher permissions)
 grr config set synthetic-monitoring.stack-id # Grafana stack ID
-grr config set synthetic-monitoring.metrics-id # Logs instance ID
-grr config set synthetic-monitoring.logs-id # Metrics instance ID
+grr config set synthetic-monitoring.metrics-id # Metrics instance ID
+grr config set synthetic-monitoring.logs-id # Logs instance ID
 ```
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
 
