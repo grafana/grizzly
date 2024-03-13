@@ -108,18 +108,17 @@ func ListRemote(registry Registry, targets []string) error {
 // Pull pulls remote resources and stores them in the local file system.
 // The given resourcePath must be a directory, where all resources will be stored.
 // If opts.JSONSpec is true, which is only applicable for dashboards, saves the spec as a JSON file.
-func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat string, targets []string) error {
-	isFile, err := isFile(resourcePath)
+func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat string, targets []string, continueOnError bool) error {
+	resourcePathIsFile, err := isFile(resourcePath)
 	if err != nil {
 		return err
 	}
 
-	if isFile {
+	if resourcePathIsFile {
 		return fmt.Errorf("pull <resource-path> must be a directory")
 	}
 
 	log.Infof("Pulling resources to %s", resourcePath)
-
 	for name, handler := range registry.Handlers {
 		if !registry.HandlerMatchesTarget(handler, targets) {
 			notifier.Info(notifier.SimpleString(handler.Kind()), "skipped")
@@ -129,34 +128,64 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 		log.Debugf("Listing remote values for handler %s", name)
 		UIDs, err := handler.ListRemote()
 		if err != nil {
+			if continueOnError {
+				notifier.Error(notifier.SimpleString(name), fmt.Sprintf("failed listing remote values: %s", err))
+				continue
+			}
+
 			return err
 		}
 		if len(UIDs) == 0 {
 			notifier.Info(nil, "No resources found")
+			continue
 		}
+
 		notifier.Warn(nil, fmt.Sprintf("Pulling %d resources", len(UIDs)))
 		for _, UID := range UIDs {
 			if !registry.ResourceMatchesTarget(handler.Kind(), UID, targets) {
 				continue
 			}
+
 			resource, err := handler.GetByUID(UID)
 			if errors.Is(err, ErrNotFound) {
 				notifier.NotFound(notifier.SimpleString(UID))
+				if continueOnError {
+					continue
+				}
+
 				return nil
 			}
 			if err != nil {
+				if continueOnError {
+					notifier.Error(notifier.SimpleString(UID), fmt.Sprintf("failed pulling resource: %s", err))
+					continue
+				}
+
 				return err
 			}
+
 			resource = handler.Unprepare(*resource)
 
 			content, filename, _, err := Format(registry, resourcePath, resource, outputFormat, onlySpec)
 			if err != nil {
+				if continueOnError {
+					notifier.Error(resource, fmt.Sprintf("failed formatting resource: %s", err))
+					continue
+				}
+
 				return err
 			}
+
 			err = WriteFile(filename, content)
 			if err != nil {
+				if continueOnError {
+					notifier.Error(resource, fmt.Sprintf("failed writing resource to file: %s", err))
+					continue
+				}
+
 				return err
 			}
+
 			notifier.Info(resource, "pulled")
 		}
 	}

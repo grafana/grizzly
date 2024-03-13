@@ -93,6 +93,9 @@ func pullCmd(registry grizzly.Registry) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	var opts Opts
+	var continueOnError bool
+
+	cmd.Flags().BoolVarP(&continueOnError, "continue-on-error", "e", false, "don't stop pulling on error")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		format, onlySpec, err := getOutputFormat(opts)
@@ -105,7 +108,7 @@ func pullCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 		targets := currentContext.GetTargets(opts.Targets)
-		return grizzly.Pull(registry, args[0], onlySpec, format, targets)
+		return grizzly.Pull(registry, args[0], onlySpec, format, targets, continueOnError)
 	}
 
 	cmd = initialiseOnlySpec(cmd, &opts)
