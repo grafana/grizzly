@@ -118,6 +118,8 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 		return fmt.Errorf("pull <resource-path> must be a directory")
 	}
 
+	var finalErr error
+
 	log.Infof("Pulling resources to %s", resourcePath)
 	for name, handler := range registry.Handlers {
 		if !registry.HandlerMatchesTarget(handler, targets) {
@@ -128,12 +130,14 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 		log.Debugf("Listing remote values for handler %s", name)
 		UIDs, err := handler.ListRemote()
 		if err != nil {
+			finalErr = multierror.Append(finalErr, err)
+
 			if continueOnError {
 				notifier.Error(notifier.SimpleString(name), fmt.Sprintf("failed listing remote values: %s", err))
 				continue
 			}
 
-			return err
+			return finalErr
 		}
 		if len(UIDs) == 0 {
 			notifier.Info(nil, "No resources found")
@@ -148,6 +152,7 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 
 			resource, err := handler.GetByUID(UID)
 			if errors.Is(err, ErrNotFound) {
+				finalErr = multierror.Append(finalErr, err)
 				notifier.NotFound(notifier.SimpleString(UID))
 				if continueOnError {
 					continue
@@ -156,40 +161,47 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 				return nil
 			}
 			if err != nil {
+				finalErr = multierror.Append(finalErr, err)
+
 				if continueOnError {
 					notifier.Error(notifier.SimpleString(UID), fmt.Sprintf("failed pulling resource: %s", err))
 					continue
 				}
 
-				return err
+				return finalErr
 			}
 
 			resource = handler.Unprepare(*resource)
 
 			content, filename, _, err := Format(registry, resourcePath, resource, outputFormat, onlySpec)
 			if err != nil {
+				finalErr = multierror.Append(finalErr, err)
+
 				if continueOnError {
 					notifier.Error(resource, fmt.Sprintf("failed formatting resource: %s", err))
 					continue
 				}
 
-				return err
+				return finalErr
 			}
 
 			err = WriteFile(filename, content)
 			if err != nil {
+				finalErr = multierror.Append(finalErr, err)
+
 				if continueOnError {
 					notifier.Error(resource, fmt.Sprintf("failed writing resource to file: %s", err))
 					continue
 				}
 
-				return err
+				return finalErr
 			}
 
 			notifier.Info(resource, "pulled")
 		}
 	}
-	return nil
+
+	return finalErr
 }
 
 // Show displays resources
