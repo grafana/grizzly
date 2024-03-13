@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"text/tabwriter"
 
 	"github.com/go-clix/cli"
@@ -113,20 +112,8 @@ func pullCmd(registry grizzly.Registry) *cli.Command {
 		targets := currentContext.GetTargets(opts.Targets)
 
 		err = grizzly.Pull(registry, args[0], onlySpec, format, targets, continueOnError, eventsRecorder)
-		summary := eventsRecorder.Summary()
 
-		var summaryParts []string
-		if summary.EventCounts[grizzly.ResourceFailure.ID] > 0 {
-			summaryParts = append(summaryParts, grizzly.Pluraliser(summary.EventCounts[grizzly.ResourceFailure.ID], "error"))
-		}
-		if summary.EventCounts[grizzly.ResourcePulled.ID] > 0 {
-			summaryParts = append(summaryParts, fmt.Sprintf("%s pulled", grizzly.Pluraliser(summary.EventCounts[grizzly.ResourcePulled.ID], "resource")))
-		}
-		if summary.EventCounts[grizzly.ResourceNotFound.ID] > 0 {
-			summaryParts = append(summaryParts, fmt.Sprintf("%s not found", grizzly.Pluraliser(summary.EventCounts[grizzly.ResourceNotFound.ID], "resource")))
-		}
-
-		notifier.Info(nil, strings.Join(summaryParts, ", "))
+		notifier.Info(nil, eventsRecorder.Summary().AsString("resource"))
 
 		// errors are already displayed by the `eventsRecorder`, so we return a
 		// "silent" one to ensure that the exit code will be non-zero
@@ -271,21 +258,8 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 		notifier.Info(nil, fmt.Sprintf("Applying %s", grizzly.Pluraliser(resources.Len(), "resource")))
 
 		applyErr := grizzly.Apply(registry, resources, continueOnError, eventsRecorder)
-		summary := eventsRecorder.Summary()
 
-		var summaryParts []string
-		if summary.EventCounts[grizzly.ResourceFailure.ID] > 0 {
-			summaryParts = append(summaryParts, grizzly.Pluraliser(summary.EventCounts[grizzly.ResourceFailure.ID], "error"))
-		}
-		appliedCount := summary.EventCounts[grizzly.ResourceAdded.ID] + summary.EventCounts[grizzly.ResourceUpdated.ID]
-		if appliedCount > 0 {
-			summaryParts = append(summaryParts, fmt.Sprintf("%s applied", grizzly.Pluraliser(appliedCount, "resource")))
-		}
-		if summary.EventCounts[grizzly.ResourceNotChanged.ID] > 0 {
-			summaryParts = append(summaryParts, fmt.Sprintf("%s unchanged", grizzly.Pluraliser(summary.EventCounts[grizzly.ResourceNotChanged.ID], "resource")))
-		}
-
-		notifier.Info(nil, strings.Join(summaryParts, ", "))
+		notifier.Info(nil, eventsRecorder.Summary().AsString("resource"))
 
 		// errors are already displayed by the `eventsRecorder`, so we return a
 		// "silent" one to ensure that the exit code will be non-zero

@@ -3,6 +3,7 @@ package grizzly
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/fatih/color"
 )
@@ -23,11 +24,11 @@ type EventType struct {
 
 var (
 	ResourceAdded      = EventType{ID: "resource-added", Severity: Notice, HumanReadable: "added"}
-	ResourceNotChanged = EventType{ID: "resource-not-changed", Severity: Info, HumanReadable: "no differences"}
+	ResourceNotChanged = EventType{ID: "resource-not-changed", Severity: Info, HumanReadable: "unchanged"}
 	ResourceNotFound   = EventType{ID: "resource-not-found", Severity: Info, HumanReadable: "not found"}
 	ResourceUpdated    = EventType{ID: "resource-updated", Severity: Notice, HumanReadable: "updated"}
 	ResourcePulled     = EventType{ID: "resource-pulled", Severity: Notice, HumanReadable: "pulled"}
-	ResourceFailure    = EventType{ID: "resource-failure", Severity: Error, HumanReadable: "failure"}
+	ResourceFailure    = EventType{ID: "resource-failure", Severity: Error, HumanReadable: "failed"}
 )
 
 type Event struct {
@@ -71,7 +72,21 @@ func EventToColoredText(event Event) string {
 }
 
 type Summary struct {
-	EventCounts map[string]int
+	EventCounts map[EventType]int
+}
+
+func (summary Summary) AsString(resourceLabel string) string {
+	var parts []string
+
+	for eventType, count := range summary.EventCounts {
+		if count == 0 {
+			continue
+		}
+
+		parts = append(parts, fmt.Sprintf("%s %s", Pluraliser(count, resourceLabel), eventType.HumanReadable))
+	}
+
+	return strings.Join(parts, ", ")
 }
 
 type WriterRecorder struct {
@@ -85,13 +100,13 @@ func NewWriterRecorder(out io.Writer, eventFormatter EventFormatter) *WriterReco
 		out:            out,
 		eventFormatter: eventFormatter,
 		summary: &Summary{
-			EventCounts: make(map[string]int),
+			EventCounts: make(map[EventType]int),
 		},
 	}
 }
 
 func (recorder *WriterRecorder) Record(event Event) {
-	recorder.summary.EventCounts[event.Type.ID] += 1
+	recorder.summary.EventCounts[event.Type] += 1
 
 	_, _ = recorder.out.Write([]byte(recorder.eventFormatter(event)))
 }
