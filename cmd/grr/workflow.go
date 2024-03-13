@@ -97,6 +97,8 @@ func pullCmd(registry grizzly.Registry) *cli.Command {
 
 	cmd.Flags().BoolVarP(&continueOnError, "continue-on-error", "e", false, "don't stop pulling on error")
 
+	eventsRecorder := grizzly.NewWriterRecorder(os.Stdout, getEventFormatter())
+
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		format, onlySpec, err := getOutputFormat(opts)
 		if err != nil {
@@ -107,8 +109,32 @@ func pullCmd(registry grizzly.Registry) *cli.Command {
 		if err != nil {
 			return err
 		}
+
 		targets := currentContext.GetTargets(opts.Targets)
-		return grizzly.Pull(registry, args[0], onlySpec, format, targets, continueOnError)
+
+		err = grizzly.Pull(registry, args[0], onlySpec, format, targets, continueOnError, eventsRecorder)
+		summary := eventsRecorder.Summary()
+
+		var summaryParts []string
+		if summary.EventCounts[grizzly.ResourceFailure.ID] > 0 {
+			summaryParts = append(summaryParts, grizzly.Pluraliser(summary.EventCounts[grizzly.ResourceFailure.ID], "error"))
+		}
+		if summary.EventCounts[grizzly.ResourcePulled.ID] > 0 {
+			summaryParts = append(summaryParts, fmt.Sprintf("%s pulled", grizzly.Pluraliser(summary.EventCounts[grizzly.ResourcePulled.ID], "resource")))
+		}
+		if summary.EventCounts[grizzly.ResourceNotFound.ID] > 0 {
+			summaryParts = append(summaryParts, fmt.Sprintf("%s not found", grizzly.Pluraliser(summary.EventCounts[grizzly.ResourceNotFound.ID], "resource")))
+		}
+
+		notifier.Info(nil, strings.Join(summaryParts, ", "))
+
+		// errors are already displayed by the `eventsRecorder`, so we return a
+		// "silent" one to ensure that the exit code will be non-zero
+		if err != nil {
+			return silentError{Err: err}
+		}
+
+		return nil
 	}
 
 	cmd = initialiseOnlySpec(cmd, &opts)
@@ -204,12 +230,7 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 
 	cmd.Flags().BoolVarP(&continueOnError, "continue-on-error", "e", false, "don't stop apply on first error")
 
-	eventFormatter := grizzly.EventToPlainText
-	if terminal.IsTerminal(int(os.Stdout.Fd())) {
-		eventFormatter = grizzly.EventToColoredText
-	}
-
-	eventsRecorder := grizzly.NewWriterRecorder(os.Stdout, eventFormatter)
+	eventsRecorder := grizzly.NewWriterRecorder(os.Stdout, getEventFormatter())
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		resourceKind, folderUID, err := getOnlySpec(opts)
@@ -536,4 +557,12 @@ func getOnlySpec(opts Opts) (string, string, error) {
 		folderUID = opts.FolderUID
 	}
 	return kind, folderUID, nil
+}
+
+func getEventFormatter() grizzly.EventFormatter {
+	if terminal.IsTerminal(int(os.Stdout.Fd())) {
+		return grizzly.EventToColoredText
+	}
+
+	return grizzly.EventToPlainText
 }

@@ -24,7 +24,9 @@ type EventType struct {
 var (
 	ResourceAdded      = EventType{ID: "resource-added", Severity: Notice, HumanReadable: "added"}
 	ResourceNotChanged = EventType{ID: "resource-not-changed", Severity: Info, HumanReadable: "no differences"}
+	ResourceNotFound   = EventType{ID: "resource-not-found", Severity: Info, HumanReadable: "not found"}
 	ResourceUpdated    = EventType{ID: "resource-updated", Severity: Notice, HumanReadable: "updated"}
+	ResourcePulled     = EventType{ID: "resource-pulled", Severity: Notice, HumanReadable: "pulled"}
 	ResourceFailure    = EventType{ID: "resource-failure", Severity: Error, HumanReadable: "failure"}
 )
 

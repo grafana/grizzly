@@ -108,7 +108,7 @@ func ListRemote(registry Registry, targets []string) error {
 // Pull pulls remote resources and stores them in the local file system.
 // The given resourcePath must be a directory, where all resources will be stored.
 // If opts.JSONSpec is true, which is only applicable for dashboards, saves the spec as a JSON file.
-func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat string, targets []string, continueOnError bool) error {
+func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat string, targets []string, continueOnError bool, eventsRecorder eventsRecorder) error {
 	resourcePathIsFile, err := isFile(resourcePath)
 	if err != nil {
 		return err
@@ -131,9 +131,13 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 		UIDs, err := handler.ListRemote()
 		if err != nil {
 			finalErr = multierror.Append(finalErr, err)
+			eventsRecorder.Record(Event{
+				Type:        ResourceFailure,
+				ResourceRef: name,
+				Details:     fmt.Sprintf("failed listing remote values: %s", err),
+			})
 
 			if continueOnError {
-				notifier.Error(notifier.SimpleString(name), fmt.Sprintf("failed listing remote values: %s", err))
 				continue
 			}
 
@@ -153,7 +157,7 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 			resource, err := handler.GetByUID(UID)
 			if errors.Is(err, ErrNotFound) {
 				finalErr = multierror.Append(finalErr, err)
-				notifier.NotFound(notifier.SimpleString(UID))
+				eventsRecorder.Record(Event{Type: ResourceNotFound, ResourceRef: UID})
 				if continueOnError {
 					continue
 				}
@@ -162,9 +166,13 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 			}
 			if err != nil {
 				finalErr = multierror.Append(finalErr, err)
+				eventsRecorder.Record(Event{
+					Type:        ResourceFailure,
+					ResourceRef: UID,
+					Details:     fmt.Sprintf("failed pulling resource: %s", err),
+				})
 
 				if continueOnError {
-					notifier.Error(notifier.SimpleString(UID), fmt.Sprintf("failed pulling resource: %s", err))
 					continue
 				}
 
@@ -176,9 +184,13 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 			content, filename, _, err := Format(registry, resourcePath, resource, outputFormat, onlySpec)
 			if err != nil {
 				finalErr = multierror.Append(finalErr, err)
+				eventsRecorder.Record(Event{
+					Type:        ResourceFailure,
+					ResourceRef: resource.Ref().String(),
+					Details:     fmt.Sprintf("failed formatting resource: %s", err),
+				})
 
 				if continueOnError {
-					notifier.Error(resource, fmt.Sprintf("failed formatting resource: %s", err))
 					continue
 				}
 
@@ -188,16 +200,20 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 			err = WriteFile(filename, content)
 			if err != nil {
 				finalErr = multierror.Append(finalErr, err)
+				eventsRecorder.Record(Event{
+					Type:        ResourceFailure,
+					ResourceRef: resource.Ref().String(),
+					Details:     fmt.Sprintf("failed writing resource to file: %s", err),
+				})
 
 				if continueOnError {
-					notifier.Error(resource, fmt.Sprintf("failed writing resource to file: %s", err))
 					continue
 				}
 
 				return finalErr
 			}
 
-			notifier.Info(resource, "pulled")
+			eventsRecorder.Record(Event{Type: ResourcePulled, ResourceRef: resource.Ref().String()})
 		}
 	}
 
