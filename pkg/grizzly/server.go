@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
+	"github.com/grafana/grizzly/pkg/grizzly/livereload"
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 )
@@ -227,7 +228,7 @@ func (p *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	p.proxy.ServeHTTP(w, r)
+	//p.proxy.ServeHTTP(w, r)
 }
 
 func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
@@ -252,4 +253,19 @@ func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, fmt.Sprintf("Error: %s", err), 500)
 		return
 	}
+}
+
+// Handler is a HandlerFunc handling the livereload
+// Websocket interaction.
+func LiveReloadWSHandler(w http.ResponseWriter, r *http.Request) {
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return
+	}
+	c := livereload.NewConnection(make(chan []byte, 256), ws)
+	livereload.Register(c)
+	defer func() { livereload.Unregister(c) }()
+
+	go c.Writer()
+	c.Reader()
 }
