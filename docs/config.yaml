@@ -19,11 +19,11 @@ menu:
     - name: Home
       url: /
       weight: 1
-    - name: Installation
-      url: /installation/
-      weight: 2
     - name: What is Grizzly?
       url: /what-is-grizzly/
+      weight: 2
+    - name: Installation
+      url: /installation/
       weight: 3
     - name: Setup and Config
       url: /configuration/
@@ -37,15 +37,18 @@ menu:
     - name: Synthetic Monitoring
       url: /synthetic-monitoring/
       weight: 7
+    - name: Grizzly Server
+      url: /server/
+      weight: 8
     - name: Alternate Workflows
       url: /workflows/
-      weight: 8
+      weight: 9
     - name: Using Jsonnet
       url: /jsonnet/
-      weight: 9
+      weight: 10
     - name: Hidden Elements
       url: /hidden-elements/
-      weight: 10
+      weight: 11
     - name: GitHub
       url: https://github.com/grafana/grizzly/
       weight: 12
