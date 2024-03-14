@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -24,6 +25,7 @@ func Initialise() {
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(configdir.LocalConfig("grizzly"))
 }
+
 func override(v *viper.Viper) {
 	bindings := map[string]string{
 		"grafana.url":   "GRAFANA_URL",
@@ -207,13 +209,21 @@ func CreateContext(name string) error {
 
 func Write() error {
 	err := viper.WriteConfig()
-	if err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			configpath := viper.ConfigFileUsed()
-			return viper.WriteConfigAs(configpath)
-		}
+	if err == nil {
+		return nil
 	}
-	return err
+
+	// We only know how to handle `viper.ConfigFileNotFoundError` errors.
+	// Everything else bubbles up.
+	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		return err
+	}
+
+	// Viper failed because no configuration file exists in the "config path".
+	// We explicitly tell it where to write its config: at the most global location.
+	globalConfigPath := filepath.Join(configdir.LocalConfig("grizzly"), "settings.yaml")
+
+	return viper.WriteConfigAs(globalConfigPath)
 }
 
 func (c *Context) GetTargets(overrides []string) []string {
