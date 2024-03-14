@@ -67,7 +67,7 @@ func TestDashboard(t *testing.T) {
 			Commands: []Command{
 				{
 					Command:                "apply no-folder.yml",
-					ExpectedOutputContains: "Dashboard.no-folder no differences\n",
+					ExpectedOutputContains: "Dashboard.no-folder unchanged\n",
 				},
 				{
 					Command:                "get Dashboard.no-folder",
@@ -173,7 +173,7 @@ func TestDashboard(t *testing.T) {
 				{
 					Command:                "apply continue-on-error/workflow",
 					ExpectedCode:           1,
-					ExpectedOutputContains: "Dashboard.dashboard-2 failure: cannot upload dashboard dashboard-2 as folder non-existent-folder not found",
+					ExpectedOutputContains: "Dashboard.dashboard-2 failed: cannot upload dashboard dashboard-2 as folder non-existent-folder not found",
 				},
 			},
 		})
@@ -187,8 +187,8 @@ func TestDashboard(t *testing.T) {
 					Command:      "apply -e continue-on-error/workflow",
 					ExpectedCode: 1,
 					ExpectedOutputContainsAll: []string{
-						"Dashboard.dashboard-2 failure: cannot upload dashboard dashboard-2 as folder non-existent-folder not found",
-						"Dashboard.dashboard-3 failure: cannot upload dashboard dashboard-3 as folder non-existent-folder not found",
+						"Dashboard.dashboard-2 failed: cannot upload dashboard dashboard-2 as folder non-existent-folder not found",
+						"Dashboard.dashboard-3 failed: cannot upload dashboard dashboard-3 as folder non-existent-folder not found",
 					},
 				},
 			},

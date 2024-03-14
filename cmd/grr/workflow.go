@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"text/tabwriter"
 
 	"github.com/go-clix/cli"
@@ -93,6 +92,11 @@ func pullCmd(registry grizzly.Registry) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	var opts Opts
+	var continueOnError bool
+
+	cmd.Flags().BoolVarP(&continueOnError, "continue-on-error", "e", false, "don't stop pulling on error")
+
+	eventsRecorder := grizzly.NewWriterRecorder(os.Stdout, getEventFormatter())
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		format, onlySpec, err := getOutputFormat(opts)
@@ -104,8 +108,20 @@ func pullCmd(registry grizzly.Registry) *cli.Command {
 		if err != nil {
 			return err
 		}
+
 		targets := currentContext.GetTargets(opts.Targets)
-		return grizzly.Pull(registry, args[0], onlySpec, format, targets)
+
+		err = grizzly.Pull(registry, args[0], onlySpec, format, targets, continueOnError, eventsRecorder)
+
+		notifier.Info(nil, eventsRecorder.Summary().AsString("resource"))
+
+		// errors are already displayed by the `eventsRecorder`, so we return a
+		// "silent" one to ensure that the exit code will be non-zero
+		if err != nil {
+			return silentError{Err: err}
+		}
+
+		return nil
 	}
 
 	cmd = initialiseOnlySpec(cmd, &opts)
@@ -201,12 +217,7 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 
 	cmd.Flags().BoolVarP(&continueOnError, "continue-on-error", "e", false, "don't stop apply on first error")
 
-	eventFormatter := grizzly.EventToPlainText
-	if terminal.IsTerminal(int(os.Stdout.Fd())) {
-		eventFormatter = grizzly.EventToColoredText
-	}
-
-	eventsRecorder := grizzly.NewWriterRecorder(os.Stdout, eventFormatter)
+	eventsRecorder := grizzly.NewWriterRecorder(os.Stdout, getEventFormatter())
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		resourceKind, folderUID, err := getOnlySpec(opts)
@@ -247,21 +258,8 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 		notifier.Info(nil, fmt.Sprintf("Applying %s", grizzly.Pluraliser(resources.Len(), "resource")))
 
 		applyErr := grizzly.Apply(registry, resources, continueOnError, eventsRecorder)
-		summary := eventsRecorder.Summary()
 
-		var summaryParts []string
-		if summary.EventCounts[grizzly.ResourceFailure.ID] > 0 {
-			summaryParts = append(summaryParts, grizzly.Pluraliser(summary.EventCounts[grizzly.ResourceFailure.ID], "error"))
-		}
-		appliedCount := summary.EventCounts[grizzly.ResourceAdded.ID] + summary.EventCounts[grizzly.ResourceUpdated.ID]
-		if appliedCount > 0 {
-			summaryParts = append(summaryParts, fmt.Sprintf("%s applied", grizzly.Pluraliser(appliedCount, "resource")))
-		}
-		if summary.EventCounts[grizzly.ResourceNotChanged.ID] > 0 {
-			summaryParts = append(summaryParts, fmt.Sprintf("%s unchanged", grizzly.Pluraliser(summary.EventCounts[grizzly.ResourceNotChanged.ID], "resource")))
-		}
-
-		notifier.Info(nil, strings.Join(summaryParts, ", "))
+		notifier.Info(nil, eventsRecorder.Summary().AsString("resource"))
 
 		// errors are already displayed by the `eventsRecorder`, so we return a
 		// "silent" one to ensure that the exit code will be non-zero
@@ -533,4 +531,12 @@ func getOnlySpec(opts Opts) (string, string, error) {
 		folderUID = opts.FolderUID
 	}
 	return kind, folderUID, nil
+}
+
+func getEventFormatter() grizzly.EventFormatter {
+	if terminal.IsTerminal(int(os.Stdout.Fd())) {
+		return grizzly.EventToColoredText
+	}
+
+	return grizzly.EventToPlainText
 }
