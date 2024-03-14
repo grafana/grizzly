@@ -31,7 +31,7 @@ dashboards and folders into a directory called `resources`.
 
 To push them to a new Grafana instance:
 ```
-$ grr config create-context source
+$ grr config create-context destination
 $ grr config set grafana.url <...destination Grafana URL...>
 $ grr config set grafana.token <...destination Grafana service account token...>
 $ grr config set targets Dashboard,Dashboardfolder
@@ -112,19 +112,6 @@ to provision dashboards that can be picked up immediately by Grafana.
 ```sh
 $ grr export some-mixin.libsonnet my-provisioning-dir
 ```
-
-### grr preview
-When a backend supports preview functionality, this renders Jsonnet and
-uploads previews to endpoint systems.
-
-At present, only Grafana dashboards are supported. With Grafana, it produces
-dashboard snapshots. It then prints out links for each snapshot that was uploaded.
-
-```sh
-$ grr preview my-lib.libsonnet
-```
-Grafana snapshots by default do not expire. Expiration can be set via the
-`-e, --expires` flag which takes a number of seconds as an argument.
 
 ## Flags
 
