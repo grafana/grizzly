@@ -85,7 +85,7 @@ func (h *AlertRuleGroupHandler) Add(resource grizzly.Resource) error {
 
 // Update pushes a alertRuleGroup to Grafana via the API
 func (h *AlertRuleGroupHandler) Update(existing, resource grizzly.Resource) error {
-	return h.putAlertRuleGroup(resource)
+	return h.putAlertRuleGroup(existing, resource)
 }
 
 // getRemoteAlertRuleGroup retrieves a alertRuleGroup object from Grafana
@@ -212,18 +212,52 @@ func (h *AlertRuleGroupHandler) updateAlertRule(rule *models.ProvisionedAlertRul
 	return err
 }
 
-func (h *AlertRuleGroupHandler) putAlertRuleGroup(resource grizzly.Resource) error {
-	// TODO: Turn spec into a real models.AlertRuleGroup object
+func unMarshalAlertRuleGroup(resource grizzly.Resource) (*models.AlertRuleGroup, error) {
 	data, err := json.Marshal(resource.Spec())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var group models.AlertRuleGroup
 	err = json.Unmarshal(data, &group)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	return &group, nil
+}
+
+func updateResourceToHaveUids(existing, resource grizzly.Resource) (*models.AlertRuleGroup, error) {
+	group, err := unMarshalAlertRuleGroup(existing)
+	if err != nil {
+		return nil, err
+	}
+	t := make(map[*string]string)
+	for _, rule := range group.Rules {
+		t[rule.Title] = rule.UID
 	}
 
+	group, err = unMarshalAlertRuleGroup(resource)
+	if err != nil {
+		return nil, err
+	}
+
+	uidsAdded := false
+	for _, rule := range group.Rules {
+		if uid, ok := t[rule.Title]; ok {
+			rule.UID = uid
+			uidsAdded = true
+		}
+	}
+	if !uidsAdded {
+		return nil, errors.New("No UIDs to add")
+	}
+	return group, nil
+}
+
+func (h *AlertRuleGroupHandler) putAlertRuleGroup(existing, resource grizzly.Resource) error {
+	group, err := updateResourceToHaveUids(existing, resource)
+	if err != nil {
+		return err
+	}
 	for _, r := range group.Rules {
 		if err := h.updateAlertRule(r); err != nil {
 			return err
@@ -241,7 +275,7 @@ func (h *AlertRuleGroupHandler) putAlertRuleGroup(resource grizzly.Resource) err
 
 	stringtrue := "true"
 	params := provisioning.NewPutAlertRuleGroupParams().
-		WithBody(&group).
+		WithBody(group).
 		WithGroup(group.Title).
 		WithFolderUID(group.FolderUID).
 		WithXDisableProvenance(&stringtrue)
