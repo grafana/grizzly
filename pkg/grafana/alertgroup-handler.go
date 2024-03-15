@@ -212,7 +212,7 @@ func (h *AlertRuleGroupHandler) updateAlertRule(rule *models.ProvisionedAlertRul
 	return err
 }
 
-func unMarshalAlertRuleGroup(resource grizzly.Resource) (*models.AlertRuleGroup, error) {
+func unmarshalAlertRuleGroup(resource grizzly.Resource) (*models.AlertRuleGroup, error) {
 	data, err := json.Marshal(resource.Spec())
 	if err != nil {
 		return nil, err
@@ -226,31 +226,26 @@ func unMarshalAlertRuleGroup(resource grizzly.Resource) (*models.AlertRuleGroup,
 }
 
 func updateResourceToHaveUids(existing, resource grizzly.Resource) (*models.AlertRuleGroup, error) {
-	group, err := unMarshalAlertRuleGroup(existing)
+	existingGroup, err := unmarshalAlertRuleGroup(existing)
 	if err != nil {
 		return nil, err
 	}
-	t := make(map[*string]string)
-	for _, rule := range group.Rules {
-		t[rule.Title] = rule.UID
+	t := make(map[string]string)
+	for _, rule := range existingGroup.Rules {
+		t[*rule.Title] = rule.UID
 	}
 
-	group, err = unMarshalAlertRuleGroup(resource)
+	updatedGroup, err := unmarshalAlertRuleGroup(resource)
 	if err != nil {
 		return nil, err
 	}
 
-	uidsAdded := false
-	for _, rule := range group.Rules {
-		if uid, ok := t[rule.Title]; ok {
+	for _, rule := range updatedGroup.Rules {
+		if uid, ok := t[*rule.Title]; ok {
 			rule.UID = uid
-			uidsAdded = true
 		}
 	}
-	if !uidsAdded {
-		return nil, errors.New("No UIDs to add")
-	}
-	return group, nil
+	return updatedGroup, nil
 }
 
 func (h *AlertRuleGroupHandler) putAlertRuleGroup(existing, resource grizzly.Resource) error {
