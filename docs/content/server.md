@@ -3,11 +3,12 @@ date: 2024-03-14
 title: Grizzly Server
 ---
 ## An HTTP Server for editing and reviewing
-
-Do you have Grafana resources, dashboards, datasources, alerts, etc, on disk,
-and want a way to edit or review them before publishing?
-
-Grizzly Server is here to help.
+When we manage Grafana dashboards on disk, the Grizzly server makes easy to
+edit and review these resources within an actual Grafana instance, but without
+needing to publish the dashboard to Grafana. Grafana provides the UI and datasources
+to make dashboards look right, Grizzly provides the dashboard, directly from
+local disk. Clicking save will update your local dashboard file, without interacting
+with Grafana itself.
 
 With a Grafana instance configured (as described in the [configuration section](../configuration)),
 you can run Grizzly against one or more local files and it will start up an
@@ -20,9 +21,3 @@ grr serve <mydir>
 By default, this starts an HTTP server on (http://localhost:8080)[http://localhost:8080].
 Visiting this URL will show a list of the resources found in <mydir>. For
 now, this is limited to Grafana Dashboards only.
-
-Clicking on any of these dashboards will take you to your Grafana instance,
-but with load/save events for your dashboards being handled by the Grizzly
-server. Your dashboard won't reach Grafana itself. But Grafana will provide
-the UI plus resolve any datasource requests to make your dashboards look
-pretty!
