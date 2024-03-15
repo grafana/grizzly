@@ -49,7 +49,7 @@ cross: $(GOX)
 container: static
 	docker build -t grafana/grizzly .
 
-docs:
+serve-docs:
 	git submodule init
 	git submodule update
 	hugo server -D -s docs
