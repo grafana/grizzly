@@ -1,7 +1,8 @@
-const fsPromises = require('fs').promises;
-const path = require('path');
 const core = require('@actions/core');
+const tc = require("@actions/tool-cache");
 const { downloadBinary, identifyLatest } = require('./lib/utils');
+
+const toolName = 'grr';
 
 async function setup() {
     try {
@@ -14,21 +15,29 @@ async function setup() {
             console.log(`Latest version is ${version}`);
         }
 
-        const pathToBinary = await downloadBinary(version);
-        const binaryDirectory = path.dirname(pathToBinary);
+        const cachedPath = tc.find(toolName, version)
+        if (cachedPath) {
+            // Note: this cache is only used across runs :(
+            // See: https://github.com/actions/toolkit/issues/58
+            console.log(`Using Grizzly ${version} from cache`);
+            core.addPath(cachedPath);
+            return;
+        }
 
-        await fsPromises.rename(pathToBinary, `${binaryDirectory}/grr`);
-        await fsPromises.chmod(`${binaryDirectory}/grr`, 0o755);
+        const binaryDir = await downloadBinary(version);
+
+        console.log(`Caching Grizzly ${version}`);
+        const grrCacheDir = await tc.cacheDir(binaryDir, toolName, version)
 
         // Expose grizzly by adding it to the PATH
-        console.log('Adding Grizzly to PATH')
-        core.addPath(binaryDirectory);
+        console.log(`Adding Grizzly to PATH: ${grrCacheDir}`)
+        core.addPath(grrCacheDir);
     } catch (e) {
         core.setFailed(e);
     }
 }
 
-module.exports = setup
+module.exports = setup;
 
 if (require.main === module) {
     setup();

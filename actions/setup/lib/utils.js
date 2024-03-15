@@ -1,3 +1,5 @@
+const path = require('path');
+const fsPromises = require('fs').promises;
 const os = require('os');
 const tc = require("@actions/tool-cache");
 
@@ -31,7 +33,13 @@ async function downloadBinary(version) {
 
     console.log(`Downloading Grizzly ${version} from ${binaryURL}`);
 
-    return await tc.downloadTool(binaryURL);
+    const pathToBinary = await tc.downloadTool(binaryURL);
+    const binaryDir = path.dirname(pathToBinary);
+
+    await fsPromises.chmod(pathToBinary, 0o755);
+    await fsPromises.rename(pathToBinary, `${binaryDir}/grr`);
+
+    return binaryDir;
 }
 
 async function identifyLatest() {

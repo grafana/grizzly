@@ -4,10 +4,11 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /***/ 2932:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const fsPromises = (__nccwpck_require__(7147).promises);
-const path = __nccwpck_require__(1017);
 const core = __nccwpck_require__(2186);
+const tc = __nccwpck_require__(7784);
 const { downloadBinary, identifyLatest } = __nccwpck_require__(918);
+
+const toolName = 'grr';
 
 async function setup() {
     try {
@@ -20,21 +21,29 @@ async function setup() {
             console.log(`Latest version is ${version}`);
         }
 
-        const pathToBinary = await downloadBinary(version);
-        const binaryDirectory = path.dirname(pathToBinary);
+        const cachedPath = tc.find(toolName, version)
+        if (cachedPath) {
+            // Note: this cache is only used across runs :(
+            // See: https://github.com/actions/toolkit/issues/58
+            console.log(`Using Grizzly ${version} from cache`);
+            core.addPath(cachedPath);
+            return;
+        }
 
-        await fsPromises.rename(pathToBinary, `${binaryDirectory}/grr`);
-        await fsPromises.chmod(`${binaryDirectory}/grr`, 0o755);
+        const binaryDir = await downloadBinary(version);
+
+        console.log(`Caching Grizzly ${version}`);
+        const grrCacheDir = await tc.cacheDir(binaryDir, toolName, version)
 
         // Expose grizzly by adding it to the PATH
-        console.log('Adding Grizzly to PATH')
-        core.addPath(binaryDirectory);
+        console.log(`Adding Grizzly to PATH: ${grrCacheDir}`)
+        core.addPath(grrCacheDir);
     } catch (e) {
         core.setFailed(e);
     }
 }
 
-module.exports = setup
+module.exports = setup;
 
 if (require.main === require.cache[eval('__filename')]) {
     setup();
@@ -46,6 +55,8 @@ if (require.main === require.cache[eval('__filename')]) {
 /***/ 918:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+const path = __nccwpck_require__(1017);
+const fsPromises = (__nccwpck_require__(7147).promises);
 const os = __nccwpck_require__(2037);
 const tc = __nccwpck_require__(7784);
 
@@ -79,7 +90,13 @@ async function downloadBinary(version) {
 
     console.log(`Downloading Grizzly ${version} from ${binaryURL}`);
 
-    return await tc.downloadTool(binaryURL);
+    const pathToBinary = await tc.downloadTool(binaryURL);
+    const binaryDir = path.dirname(pathToBinary);
+
+    await fsPromises.chmod(pathToBinary, 0o755);
+    await fsPromises.rename(pathToBinary, `${binaryDir}/grr`);
+
+    return binaryDir;
 }
 
 async function identifyLatest() {
