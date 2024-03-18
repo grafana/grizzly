@@ -194,13 +194,22 @@ func (h *AlertRuleGroupHandler) updateAlertRule(rule *models.ProvisionedAlertRul
 		return err
 	}
 
-	_, err = client.Provisioning.GetAlertRule(rule.UID)
-	if err != nil {
-		var gErr *provisioning.GetAlertRuleNotFound
-		if errors.As(err, &gErr) {
-			return h.createAlertRule(rule)
+	if rule.UID != nil {
+		_, err = client.Provisioning.GetAlertRule(rule.UID)
+		if err != nil {
+			var gErr *provisioning.GetAlertRuleNotFound
+			if errors.As(err, &gErr) {
+				return h.createAlertRule(rule)
+			}
+			return fmt.Errorf("fetching alert rule: %w", err)
 		}
-		return fmt.Errorf("fetching alert rule: %w", err)
+	} else {
+		stringtrue := "true"
+		params := provisioning.NewPostAlertRuleParams().
+			withBody(rule).
+			withXDisableProvenance(&stringtrue)
+		_, err = client.Provisioning.PostAlertRule(params, nil)
+		return err
 	}
 
 	stringtrue := "true"
