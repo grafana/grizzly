@@ -119,6 +119,13 @@ To switch to a different context:
 grr config use-context staging
 ```
 
+To see the config for a context, these options are available:
+```sh
+grr config get
+grr config get grafana
+grr config get grafana.url
+```
+
 After selecting a different context, all future `grr` invocations will use the credentials and settings in this
 new context, whether `grr apply` to apply resources or `grr config set` to set configuration values.
 
@@ -159,6 +166,12 @@ To interact with Grafana Synthetic Monitoring, you must have these environment v
 | `GRAFANA_SM_METRICS_ID` | Metrics instance ID | true |
 
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
+
+# Grizzly configuration file
+To get the path of the config file:
+```sh
+grr config path
+```
 
 # Other Configurations
 

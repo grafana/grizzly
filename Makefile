@@ -1,4 +1,4 @@
-.PHONY: dev lint test integration static install uninstall cross run-test-image-locally stop-test-image-locally test-clean
+.PHONY: dev lint test integration static install uninstall cross run-test-image-locally stop-test-image-locally test-clean docs
 VERSION := $(shell git describe --tags --dirty --always)
 BIN_DIR := $(GOPATH)/bin
 GOX := $(BIN_DIR)/gox
@@ -48,3 +48,8 @@ cross: $(GOX)
 # Docker container
 container: static
 	docker build -t grafana/grizzly .
+
+serve-docs:
+	git submodule init
+	git submodule update
+	hugo server -D -s docs
