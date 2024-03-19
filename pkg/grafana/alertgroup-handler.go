@@ -194,7 +194,7 @@ func (h *AlertRuleGroupHandler) updateAlertRule(rule *models.ProvisionedAlertRul
 		return err
 	}
 
-	if rule.UID != nil {
+	if rule.UID != "" {
 		_, err = client.Provisioning.GetAlertRule(rule.UID)
 		if err != nil {
 			var gErr *provisioning.GetAlertRuleNotFound
@@ -206,8 +206,8 @@ func (h *AlertRuleGroupHandler) updateAlertRule(rule *models.ProvisionedAlertRul
 	} else {
 		stringtrue := "true"
 		params := provisioning.NewPostAlertRuleParams().
-			withBody(rule).
-			withXDisableProvenance(&stringtrue)
+			WithBody(rule).
+			WithXDisableProvenance(&stringtrue)
 		_, err = client.Provisioning.PostAlertRule(params, nil)
 		return err
 	}
@@ -234,7 +234,7 @@ func unmarshalAlertRuleGroup(resource grizzly.Resource) (*models.AlertRuleGroup,
 	return &group, nil
 }
 
-func updateResourceToHaveUids(existing, resource grizzly.Resource) (*models.AlertRuleGroup, error) {
+func fillAlertRuleGroupUIDs(existing, resource grizzly.Resource) (*models.AlertRuleGroup, error) {
 	existingGroup, err := unmarshalAlertRuleGroup(existing)
 	if err != nil {
 		return nil, err
@@ -258,7 +258,7 @@ func updateResourceToHaveUids(existing, resource grizzly.Resource) (*models.Aler
 }
 
 func (h *AlertRuleGroupHandler) putAlertRuleGroup(existing, resource grizzly.Resource) error {
-	group, err := updateResourceToHaveUids(existing, resource)
+	group, err := fillAlertRuleGroupUIDs(existing, resource)
 	if err != nil {
 		return err
 	}
