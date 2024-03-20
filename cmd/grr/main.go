@@ -78,6 +78,7 @@ func main() {
 		applyCmd(registry),
 		watchCmd(registry),
 		exportCmd(registry),
+		snapshotCmd(registry),
 		providersCmd(registry),
 		configCmd(),
 		serveCmd(registry),

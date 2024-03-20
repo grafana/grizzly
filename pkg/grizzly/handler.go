@@ -101,6 +101,13 @@ type Handler interface {
 	Detect(map[string]any) bool
 }
 
+// SnapshotHandler describes a handler that has the ability to push a resource as
+// a snapshot
+type SnapshotHandler interface {
+	// Snapshot pushes a resource as a snapshot with an expiry
+	Snapshot(resource Resource, expiresSeconds int) error
+}
+
 // ListenHandler describes a handler that has the ability to watch a single
 // resource for changes, and write changes to that resource to a local file
 type ListenHandler interface {

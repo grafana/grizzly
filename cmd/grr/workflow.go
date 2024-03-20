@@ -331,6 +331,51 @@ func watchCmd(registry grizzly.Registry) *cli.Command {
 	return initialiseCmd(cmd, &opts)
 }
 
+func snapshotCmd(registry grizzly.Registry) *cli.Command {
+	cmd := &cli.Command{
+		Use:   "snapshot <resource-path>",
+		Short: "upload a snapshot to preview resources",
+		Args:  cli.ArgsExact(1),
+	}
+	var opts Opts
+	expires := cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		resourceKind, folderUID, err := getOnlySpec(opts)
+		if err != nil {
+			return err
+		}
+
+		currentContext, err := config.CurrentContext()
+		if err != nil {
+			return err
+		}
+		targets := currentContext.GetTargets(opts.Targets)
+		parser := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(false))
+
+		resources, parseErr := parser.Parse(args[0], grizzly.ParserOptions{
+			DefaultResourceKind: resourceKind,
+			DefaultFolderUID:    folderUID,
+		})
+
+		if parseErr != nil {
+			var parseErrors []error
+			if merr, ok := parseErr.(*multierror.Error); ok {
+				parseErrors = merr.Errors
+			} else {
+				parseErrors = []error{parseErr}
+			}
+
+			for _, e := range parseErrors {
+				notifier.Error(nil, e.Error())
+			}
+			return silentError{Err: parseErr}
+		}
+		return grizzly.Snapshot(registry, resources, *expires)
+	}
+	return initialiseCmd(cmd, &opts)
+}
+
 func serveCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "serve <resources>",
