@@ -103,11 +103,7 @@ func (h *SyntheticMonitoringHandler) GetUID(resource grizzly.Resource) (string, 
 	return fmt.Sprintf("%s.%s", resource.GetMetadata("type"), resource.Name()), nil
 }
 func (h *SyntheticMonitoringHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
-	uid, ok := resource.GetSpecString("XXXXXXX")
-	if !ok {
-		return "", fmt.Errorf("UID not specified")
-	}
-	return uid, nil
+	return "", fmt.Errorf("not implemented")
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID

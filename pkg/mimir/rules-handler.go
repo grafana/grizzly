@@ -56,11 +56,7 @@ func (h *RuleHandler) GetUID(resource grizzly.Resource) (string, error) {
 }
 
 func (h *RuleHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
-	uid, ok := resource.GetSpecString("XXXXXXX")
-	if !ok {
-		return "", fmt.Errorf("UID not specified")
-	}
-	return uid, nil
+	return "", fmt.Errorf("not implemented")
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
