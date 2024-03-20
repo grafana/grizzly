@@ -185,7 +185,7 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string) (Reso
 			return nil, err
 		}
 
-		return Resources{resource}, nil
+		return Resources{*resource}, nil
 	}
 
 	kind := registry.Detect(data)
@@ -220,12 +220,12 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string) (Reso
 			resource.SetMetadata("folder", folderUID)
 		}
 
-		resource, err = handler.Parse(resource)
+		r, err := handler.Parse(resource.Body)
 		if err != nil {
 			return nil, err
 		}
 
-		return Resources{resource}, nil
+		return Resources{*r}, nil
 	}
 
 	walker := walker{}
@@ -365,7 +365,7 @@ func (w *walker) walkObj(obj map[string]any, path trace) error {
 			return err
 		}
 
-		w.Resources = append(w.Resources, resource)
+		w.Resources = append(w.Resources, *resource)
 		return nil
 	}
 

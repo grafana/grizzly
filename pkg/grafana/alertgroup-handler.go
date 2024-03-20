@@ -33,7 +33,7 @@ func (h *AlertRuleGroupHandler) ResourceFilePath(resource grizzly.Resource, file
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *AlertRuleGroupHandler) Parse(m map[string]any) (grizzly.Resource, error) {
+func (h *AlertRuleGroupHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
 	return grizzly.ResourceFromMap(m)
 }
 
@@ -56,11 +56,11 @@ func (h *AlertRuleGroupHandler) Validate(resource grizzly.Resource) error {
 }
 
 func (h *AlertRuleGroupHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
-	spec := resource["spec"].(map[string]interface{})
-	if val, ok := spec["name"]; ok {
-		return val.(string), nil
+	name, ok := resource.GetSpecString("name")
+	if !ok {
+		return "", fmt.Errorf("UID not specified")
 	}
-	return "", fmt.Errorf("UID not specified")
+	return name, nil
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID

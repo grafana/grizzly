@@ -34,7 +34,7 @@ func (h *RuleHandler) ResourceFilePath(resource grizzly.Resource, filetype strin
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *RuleHandler) Parse(m map[string]any) (grizzly.Resource, error) {
+func (h *RuleHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
 	return grizzly.ResourceFromMap(m)
 }
 
@@ -56,11 +56,11 @@ func (h *RuleHandler) GetUID(resource grizzly.Resource) (string, error) {
 }
 
 func (h *RuleHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
-	spec := resource["spec"].(map[string]interface{})
-	if val, ok := spec["XXXXXXX"]; ok {
-		return val.(string), nil
+	uid, ok := resource.GetSpecString("XXXXXXX")
+	if !ok {
+		return "", fmt.Errorf("UID not specified")
 	}
-	return "", fmt.Errorf("UID not specified")
+	return uid, nil
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
