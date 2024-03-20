@@ -56,7 +56,7 @@ func (h *RuleHandler) GetUID(resource grizzly.Resource) (string, error) {
 }
 
 func (h *RuleHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
-	return "", fmt.Errorf("not implemented")
+	return "", fmt.Errorf("GetSpecUID not implemented for prometheus rules")
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
