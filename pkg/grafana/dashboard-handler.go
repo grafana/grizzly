@@ -13,6 +13,7 @@ import (
 	"github.com/grafana/grafana-openapi-client-go/client/search"
 	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -124,6 +125,21 @@ func (h *DashboardHandler) Update(existing, resource grizzly.Resource) error {
 	return h.postDashboard(resource)
 }
 
+// Snapshot pushes dashboards as snapshots
+func (h *DashboardHandler) Snapshot(resource grizzly.Resource, expiresSeconds int) error {
+	s, err := h.postSnapshot(resource, expiresSeconds)
+	if err != nil {
+		return err
+	}
+	notifier.Info(resource, "view: "+s.URL)
+	if expiresSeconds > 0 {
+		notifier.Warn(resource, fmt.Sprintf("Snapshots will expire and be deleted automatically in %d seconds\n", expiresSeconds))
+	} else {
+		notifier.Error(resource, "delete: "+s.DeleteURL)
+	}
+	return nil
+}
+
 // getRemoteDashboard retrieves a dashboard object from Grafana
 func (h *DashboardHandler) getRemoteDashboard(uid string) (*grizzly.Resource, error) {
 	client, err := h.Provider.(ClientProvider).Client()
@@ -217,6 +233,25 @@ func (h *DashboardHandler) postDashboard(resource grizzly.Resource) error {
 
 	_, err = client.Dashboards.PostDashboard(&body)
 	return err
+}
+
+func (h *DashboardHandler) postSnapshot(resource grizzly.Resource, expiresSeconds int) (*models.CreateDashboardSnapshotOKBody, error) {
+	body := models.CreateDashboardSnapshotCommand{
+		Dashboard: resource.Spec(),
+	}
+	if expiresSeconds > 0 {
+		body.Expires = int64(expiresSeconds)
+	}
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := client.Snapshots.CreateDashboardSnapshot(&body, nil)
+	if err != nil {
+		return nil, err
+	}
+	return response.GetPayload(), nil
 }
 
 func (h *DashboardHandler) Detect(data map[string]any) bool {

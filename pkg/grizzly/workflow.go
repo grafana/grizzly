@@ -396,6 +396,26 @@ func applyResource(registry Registry, resource Resource, trailRecorder eventsRec
 	return nil
 }
 
+// Snapshot pushes resources to endpoints as snapshots, if supported
+func Snapshot(registry Registry, resources Resources, expiresSeconds int) error {
+	for _, resource := range resources {
+		handler, err := registry.GetHandler(resource.Kind())
+		if err != nil {
+			return err
+		}
+		snapshotHandler, ok := handler.(SnapshotHandler)
+		if !ok {
+			notifier.NotSupported(resource, "preview")
+			continue
+		}
+		err = snapshotHandler.Snapshot(resource, expiresSeconds)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // WatchParser encapsulates the action of parsing a resource (jsonnet or otherwise)
 type WatchParser interface {
 	Name() string
