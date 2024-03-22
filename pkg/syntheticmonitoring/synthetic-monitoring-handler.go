@@ -211,7 +211,6 @@ func (h *SyntheticMonitoringHandler) getRemoteCheck(uid string) (*grizzly.Resour
 			for _, probeID := range check.Probes {
 				probeNames = append(probeNames, probes.ByID[probeID].Name)
 			}
-			handler := NewSyntheticMonitoringHandler(h.Provider)
 			data, err := json.Marshal(check)
 			if err != nil {
 				return nil, err
@@ -222,7 +221,7 @@ func (h *SyntheticMonitoringHandler) getRemoteCheck(uid string) (*grizzly.Resour
 				return nil, err
 			}
 			specmap["probes"] = probeNames
-			resource, err := grizzly.NewResource(handler.APIVersion(), handler.Kind(), check.Job, specmap)
+			resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), check.Job, specmap)
 			if err != nil {
 				return nil, err
 			}
