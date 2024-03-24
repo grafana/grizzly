@@ -23,7 +23,8 @@ context first, then explain how to use multiple contexts thereafter.
   take precendence over contexts and will thus prevent access to your context configurations.
 
 Settings can be configured via Grizzly itself, using `grr config set`. They are stored
-in an OS specific location.
+in an OS specific location. You may need to create a directory for this manually in order to
+set config. For example, on Mac OSX, you may need to `mkdir -p "$HOME/Library/Application Support/grizzly"` in order for the config file `settings.yaml` to be written to the proper location.
 
 ## Grafana Itself
 
