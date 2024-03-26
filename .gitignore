@@ -6,3 +6,4 @@
 *.orig
 *.swp
 .idea
+/actions/*/node_modules
