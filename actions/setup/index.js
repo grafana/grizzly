@@ -1,8 +1,39 @@
 const core = require('@actions/core');
 const tc = require("@actions/tool-cache");
+const { writeConfig } = require('./lib/config');
 const { downloadBinary, identifyLatest } = require('./lib/utils');
 
 const toolName = 'grr';
+
+const knownConfigOptions = [
+    "grafana.url",
+    "grafana.token",
+    "grafana.user",
+    "mimir.address",
+    "mimir.tenant-id",
+    "mimir.api-key",
+    "synthetic-monitoring.token",
+    "synthetic-monitoring.stack-id",
+    "synthetic-monitoring.metrics-id",
+    "synthetic-monitoring.logs-id",
+    "targets",
+    "output-format",
+    "only-spec",
+];
+
+function grizzlyConfigFromInput() {
+    let config = {};
+
+    knownConfigOptions.forEach(option => {
+        const value =  core.getInput(option);
+
+        if (value) {
+            config[option] = value;
+        }
+    });
+
+    return config;
+}
 
 async function setup() {
     try {
@@ -27,11 +58,20 @@ async function setup() {
         const binaryDir = await downloadBinary(version);
 
         console.log(`Caching Grizzly ${version}`);
-        const grrCacheDir = await tc.cacheDir(binaryDir, toolName, version)
+        const grrCacheDir = await tc.cacheDir(binaryDir, toolName, version);
 
         // Expose grizzly by adding it to the PATH
-        console.log(`Adding Grizzly to PATH: ${grrCacheDir}`)
+        console.log(`Adding Grizzly to PATH: ${grrCacheDir}`);
         core.addPath(grrCacheDir);
+
+        const config = grizzlyConfigFromInput();
+        if (Object.keys(config).length !== 0) {
+            console.log(`Writing configuration`);
+            await writeConfig(config, {
+                stdout: console.log,
+                stderr: console.error,
+            });
+        }
     } catch (e) {
         core.setFailed(e);
     }

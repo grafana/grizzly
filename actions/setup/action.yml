@@ -7,6 +7,46 @@ runs:
 
 inputs:
   version:
-    description: 'Version of grizzly to install'
+    description: 'Version of Grizzly to install'
     required: true
     default: 'latest'
+
+  grafana.url:
+    description: Sets `grafana.url` in the configuration
+    required: false
+  grafana.token:
+    description: Sets `grafana.token` in the configuration
+    required: false
+  grafana.user:
+    description: Sets `grafana.user` in the configuration
+    required: false
+  mimir.address:
+    description: Sets `mimir.address` in the configuration
+    required: false
+  mimir.tenant-id:
+    description: Sets `mimir.tenant-id` in the configuration
+    required: false
+  mimir.api-key:
+    description: Sets `mimir.api-key` in the configuration
+    required: false
+  synthetic-monitoring.token:
+    description: Sets `synthetic-monitoring.token` in the configuration
+    required: false
+  synthetic-monitoring.stack-id:
+    description: Sets `synthetic-monitoring.stack-id` in the configuration
+    required: false
+  synthetic-monitoring.metrics-id:
+    description: Sets `synthetic-monitoring.metrics-id` in the configuration
+    required: false
+  synthetic-monitoring.logs-id:
+    description: Sets `synthetic-monitoring.logs-id` in the configuration
+    required: false
+  targets:
+    description: Sets `targets` in the configuration
+    required: false
+  output-format:
+    description: Sets `output-format` in the configuration
+    required: false
+  only-spec:
+    description: Sets `only-spec` in the configuration
+    required: false

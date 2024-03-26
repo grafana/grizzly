@@ -6,9 +6,40 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 const core = __nccwpck_require__(2186);
 const tc = __nccwpck_require__(7784);
+const { writeConfig } = __nccwpck_require__(88);
 const { downloadBinary, identifyLatest } = __nccwpck_require__(918);
 
 const toolName = 'grr';
+
+const knownConfigOptions = [
+    "grafana.url",
+    "grafana.token",
+    "grafana.user",
+    "mimir.address",
+    "mimir.tenant-id",
+    "mimir.api-key",
+    "synthetic-monitoring.token",
+    "synthetic-monitoring.stack-id",
+    "synthetic-monitoring.metrics-id",
+    "synthetic-monitoring.logs-id",
+    "targets",
+    "output-format",
+    "only-spec",
+];
+
+function grizzlyConfigFromInput() {
+    let config = {};
+
+    knownConfigOptions.forEach(option => {
+        const value =  core.getInput(option);
+
+        if (value) {
+            config[option] = value;
+        }
+    });
+
+    return config;
+}
 
 async function setup() {
     try {
@@ -33,11 +64,20 @@ async function setup() {
         const binaryDir = await downloadBinary(version);
 
         console.log(`Caching Grizzly ${version}`);
-        const grrCacheDir = await tc.cacheDir(binaryDir, toolName, version)
+        const grrCacheDir = await tc.cacheDir(binaryDir, toolName, version);
 
         // Expose grizzly by adding it to the PATH
-        console.log(`Adding Grizzly to PATH: ${grrCacheDir}`)
+        console.log(`Adding Grizzly to PATH: ${grrCacheDir}`);
         core.addPath(grrCacheDir);
+
+        const config = grizzlyConfigFromInput();
+        if (Object.keys(config).length !== 0) {
+            console.log(`Writing configuration`);
+            await writeConfig(config, {
+                stdout: console.log,
+                stderr: console.error,
+            });
+        }
     } catch (e) {
         core.setFailed(e);
     }
@@ -47,6 +87,50 @@ module.exports = setup;
 
 if (require.main === require.cache[eval('__filename')]) {
     setup();
+}
+
+
+/***/ }),
+
+/***/ 88:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const spawn = (__nccwpck_require__(2081).spawn);
+
+function setConfig(key, value, io = {}) {
+    return new Promise(function (resolve, reject) {
+        const process = spawn('grr', ['config', 'set', key, value]);
+        process.on('close', function (code) {
+            resolve(code);
+        });
+        process.on('error', function (err) {
+            throw err;
+        });
+
+        if (io.stdout) {
+            process.stdout.on('data', (data) => {
+                stdout(`${data}`);
+            });
+        }
+        if (io.stderr) {
+            process.stderr.on('data', (data) => {
+                stderr(`${data}`);
+            });
+        }
+    });
+}
+
+async function writeConfig(config, io = {}) {
+    for (const [key, value] of Object.entries(config)) {
+        const exitCode = await setConfig(key, value, io);
+        if (exitCode !== 0) {
+            throw new Error(`could not set config key ${key}`);
+        }
+    }
+}
+
+module.exports = {
+    writeConfig,
 }
 
 
