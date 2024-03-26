@@ -30,6 +30,13 @@ func (ref ResourceRef) String() string {
 // Resource represents a single Resource destined for a single endpoint
 type Resource struct {
 	Body map[string]interface{}
+
+	Provenance struct {
+		Format     string
+		Location   string
+		Path       string
+		Rewritable bool
+	}
 }
 
 func ResourceFromMap(data map[string]interface{}) (*Resource, error) {
@@ -83,6 +90,13 @@ func (r *Resource) Ref() ResourceRef {
 		Kind: r.Kind(),
 		Name: r.Name(),
 	}
+}
+
+func (r *Resource) SetProvenance(format, location, path string, rewritable bool) {
+	r.Provenance.Format = format
+	r.Provenance.Location = location
+	r.Provenance.Path = path
+	r.Provenance.Rewritable = rewritable
 }
 
 func (r Resource) String() string {
