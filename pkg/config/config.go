@@ -219,9 +219,18 @@ func Write() error {
 		return err
 	}
 
+	// Ensure that our configuration directory exists: viper only takes care of
+	// creating the file.
+	configDir := configdir.LocalConfig("grizzly")
+	if _, err := os.Stat(configDir); os.IsNotExist(err) {
+		if err := os.Mkdir(configDir, 0700); err != nil {
+			return err
+		}
+	}
+
 	// Viper failed because no configuration file exists in the "config path".
 	// We explicitly tell it where to write its config: at the most global location.
-	globalConfigPath := filepath.Join(configdir.LocalConfig("grizzly"), "settings.yaml")
+	globalConfigPath := filepath.Join(configDir, "settings.yaml")
 
 	return viper.WriteConfigAs(globalConfigPath)
 }
