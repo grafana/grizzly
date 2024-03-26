@@ -35,12 +35,15 @@ func (h *DatasourceHandler) ResourceFilePath(resource grizzly.Resource, filetype
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *DatasourceHandler) Parse(m map[string]any) (grizzly.Resource, error) {
-	resource, err := grizzly.ResourceFromMap(m)
-	if err != nil {
-		return nil, err
+func (h *DatasourceHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
+	specObj, ok := m["spec"]
+	if !ok {
+		return nil, fmt.Errorf("Datasource has no spec")
 	}
-
+	spec, ok := specObj.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("Datasource spec is not a map")
+	}
 	defaults := map[string]interface{}{
 		"basicAuth":         false,
 		"basicAuthPassword": "",
@@ -54,16 +57,18 @@ func (h *DatasourceHandler) Parse(m map[string]any) (grizzly.Resource, error) {
 		"withCredentials":   false,
 		"readOnly":          false,
 	}
-	spec := resource.Spec()
 	for k := range defaults {
 		_, ok := spec[k]
 		if !ok {
 			spec[k] = defaults[k]
 		}
 	}
-	spec["uid"] = resource.Name()
-	resource["spec"] = spec
-
+	m["spec"] = spec
+	resource, err := grizzly.ResourceFromMap(m)
+	if err != nil {
+		return nil, err
+	}
+	resource.SetSpecValue("uid", resource.Name())
 	return resource, nil
 }
 
@@ -93,11 +98,12 @@ func (h *DatasourceHandler) Validate(resource grizzly.Resource) error {
 }
 
 func (h *DatasourceHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
-	spec := resource["spec"].(map[string]interface{})
-	if val, ok := spec["uid"]; ok {
-		return val.(string), nil
+	uid, ok := resource.GetSpecString("uid")
+	if !ok {
+		return "", fmt.Errorf("UID not specified")
+	} else {
+		return uid, nil
 	}
-	return "", fmt.Errorf("UID not specified")
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID

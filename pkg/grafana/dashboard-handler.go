@@ -43,7 +43,7 @@ func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype 
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *DashboardHandler) Parse(m map[string]any) (grizzly.Resource, error) {
+func (h *DashboardHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
@@ -83,11 +83,11 @@ func (h *DashboardHandler) Validate(resource grizzly.Resource) error {
 }
 
 func (h *DashboardHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
-	spec := resource["spec"].(map[string]interface{})
-	if val, ok := spec["uid"]; ok {
-		return val.(string), nil
+	uid, ok := resource.GetSpecString("uid")
+	if !ok {
+		return "", fmt.Errorf("UID not specified")
 	}
-	return "", fmt.Errorf("UID not specified")
+	return uid, nil
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID

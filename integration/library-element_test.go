@@ -22,7 +22,7 @@ func TestLibraryElements(t *testing.T) {
 
 		var resource grizzly.Resource
 
-		err = json.Unmarshal(libraryElement, &resource)
+		err = json.Unmarshal(libraryElement, &resource.Body)
 		require.NoError(t, err)
 
 		err = handler.Add(resource)

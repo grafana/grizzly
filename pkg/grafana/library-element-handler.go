@@ -43,7 +43,7 @@ func (h *LibraryElementHandler) ResourceFilePath(resource grizzly.Resource, file
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *LibraryElementHandler) Parse(m map[string]any) (grizzly.Resource, error) {
+func (h *LibraryElementHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
@@ -64,10 +64,8 @@ func (h *LibraryElementHandler) Unprepare(resource grizzly.Resource) *grizzly.Re
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *LibraryElementHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	if existing != nil {
-		val := existing.GetSpecValue("version")
-		resource.SetSpecValue("version", val)
-	}
+	val := existing.GetSpecValue("version")
+	resource.SetSpecValue("version", val)
 	resource.DeleteSpecKey("meta")
 	return &resource
 }
@@ -85,11 +83,11 @@ func (h *LibraryElementHandler) Validate(resource grizzly.Resource) error {
 }
 
 func (h *LibraryElementHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
-	spec := resource["spec"].(map[string]interface{})
-	if val, ok := spec["uid"]; ok {
-		return val.(string), nil
+	uid, ok := resource.GetSpecString("uid")
+	if !ok {
+		return "", fmt.Errorf("UID not specified")
 	}
-	return "", fmt.Errorf("UID not specified")
+	return uid, nil
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID

@@ -14,9 +14,11 @@ func TestSyntheticMonitoring(t *testing.T) {
 
 	t.Run("Check getUID is functioning correctly", func(t *testing.T) {
 		resource := grizzly.Resource{
-			"metadata": map[string]interface{}{
-				"name": "test",
-				"type": "http",
+			Body: map[string]any{
+				"metadata": map[string]interface{}{
+					"name": "test",
+					"type": "http",
+				},
 			},
 		}
 		handler := NewSyntheticMonitoringHandler(nil)

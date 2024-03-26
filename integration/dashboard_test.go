@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 	"testing"
 
@@ -224,14 +223,12 @@ func TestDashboardHandler(t *testing.T) {
 	})
 
 	t.Run("post remote dashboard - success", func(t *testing.T) {
-		wd, _ := os.Getwd()
-		log.Printf("PWD: %s", wd)
 		dashboard, err := os.ReadFile("testdata/test_json/post_dashboard.json")
 		require.NoError(t, err)
 
 		var resource grizzly.Resource
 
-		err = json.Unmarshal(dashboard, &resource)
+		err = json.Unmarshal(dashboard, &resource.Body)
 		require.NoError(t, err)
 
 		err = handler.Add(resource)
@@ -245,12 +242,14 @@ func TestDashboardHandler(t *testing.T) {
 	})
 
 	t.Run("post remote dashboard - not found", func(t *testing.T) {
-		resource := map[string]interface{}{
-			"metadata": map[string]interface{}{
-				"folder": "dummy",
-				"name":   "dummy",
+		resource := grizzly.Resource{
+			Body: map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"folder": "dummy",
+					"name":   "dummy",
+				},
+				"spec": map[string]interface{}{},
 			},
-			"spec": map[string]interface{}{},
 		}
 
 		err := handler.Add(resource)
@@ -259,8 +258,10 @@ func TestDashboardHandler(t *testing.T) {
 
 	t.Run("Check getUID is functioning correctly", func(t *testing.T) {
 		resource := grizzly.Resource{
-			"metadata": map[string]interface{}{
-				"name": "test",
+			Body: map[string]any{
+				"metadata": map[string]interface{}{
+					"name": "test",
+				},
 			},
 		}
 		handler := grafana.DashboardHandler{}
@@ -274,12 +275,14 @@ func TestDashboardHandler(t *testing.T) {
 	t.Run("Validate/Prepare", func(t *testing.T) {
 		newResource := func(name string, spec map[string]any) grizzly.Resource {
 			resource := grizzly.Resource{
-				"apiVersion": "apiVersion",
-				"kind":       "Dashboard",
-				"metadata": map[string]interface{}{
-					"name": name,
+				Body: map[string]any{
+					"apiVersion": "apiVersion",
+					"kind":       "Dashboard",
+					"metadata": map[string]interface{}{
+						"name": name,
+					},
+					"spec": spec,
 				},
-				"spec": spec,
 			}
 			return resource
 		}
@@ -317,7 +320,7 @@ func TestDashboardHandler(t *testing.T) {
 					return
 				}
 				require.NoError(t, err)
-				newResource := handler.Prepare(nil, test.Resource)
+				newResource := handler.Prepare(grizzly.Resource{}, test.Resource)
 				uid, _ := handler.GetUID(*newResource)
 				require.Equal(t, uid, test.ExpectedUID)
 			})

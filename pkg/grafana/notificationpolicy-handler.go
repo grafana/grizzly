@@ -35,13 +35,13 @@ func (h *AlertNotificationPolicyHandler) ResourceFilePath(resource grizzly.Resou
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *AlertNotificationPolicyHandler) Parse(m map[string]any) (grizzly.Resource, error) {
+func (h *AlertNotificationPolicyHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
 	}
 
-	return resource, h.Validate(resource)
+	return resource, h.Validate(*resource)
 }
 
 // Validate returns the uid of resource
@@ -53,11 +53,7 @@ func (h *AlertNotificationPolicyHandler) Validate(resource grizzly.Resource) err
 }
 
 func (h *AlertNotificationPolicyHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
-	spec := resource["spec"].(map[string]interface{})
-	if val, ok := spec["XXXXXXX"]; ok {
-		return val.(string), nil
-	}
-	return "", fmt.Errorf("UID not specified")
+	return "", fmt.Errorf("GetSpecUID not implemented for notification policies")
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID

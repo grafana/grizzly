@@ -45,7 +45,7 @@ func TestFolders(t *testing.T) {
 
 		var resource grizzly.Resource
 
-		err = json.Unmarshal(folder, &resource)
+		err = json.Unmarshal(folder, &resource.Body)
 		require.NoError(t, err)
 
 		err = handler.Add(resource)
@@ -71,7 +71,7 @@ func TestFolders(t *testing.T) {
 
 		var resource grizzly.Resource
 
-		err = json.Unmarshal(folder, &resource)
+		err = json.Unmarshal(folder, &resource.Body)
 		require.NoError(t, err)
 
 		resource.SetSpecString("title", "Azure Data Explorer")

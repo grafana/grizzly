@@ -44,7 +44,7 @@ func TestDatasources(t *testing.T) {
 
 		var resource grizzly.Resource
 
-		err = json.Unmarshal(datasource, &resource)
+		err = json.Unmarshal(datasource, &resource.Body)
 		require.NoError(t, err)
 
 		err = handler.Add(resource)
@@ -58,7 +58,7 @@ func TestDatasources(t *testing.T) {
 		t.Run("put remote datasource - update", func(t *testing.T) {
 			ds.SetSpecString("type", "new-type")
 
-			err := handler.Update(nil, *ds)
+			err := handler.Update(grizzly.Resource{}, *ds)
 			require.NoError(t, err)
 
 			updatedDS, err := handler.GetByUID("appdynamics")
@@ -74,7 +74,7 @@ func TestDatasources(t *testing.T) {
 
 		var resource grizzly.Resource
 
-		err = json.Unmarshal(datasource, &resource)
+		err = json.Unmarshal(datasource, &resource.Body)
 		require.NoError(t, err)
 
 		resource.SetSpecString("name", "AppDynamics")
@@ -87,8 +87,10 @@ func TestDatasources(t *testing.T) {
 
 	t.Run("Check getUID is functioning correctly", func(t *testing.T) {
 		resource := grizzly.Resource{
-			"metadata": map[string]interface{}{
-				"name": "test",
+			Body: map[string]any{
+				"metadata": map[string]interface{}{
+					"name": "test",
+				},
 			},
 		}
 		handler := grafana.DatasourceHandler{}

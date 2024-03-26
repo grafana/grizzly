@@ -28,13 +28,17 @@ func (ref ResourceRef) String() string {
 }
 
 // Resource represents a single Resource destined for a single endpoint
-type Resource map[string]interface{}
+type Resource struct {
+	Body map[string]interface{}
+}
 
-func ResourceFromMap(data map[string]interface{}) (Resource, error) {
-	r := Resource(data)
+func ResourceFromMap(data map[string]interface{}) (*Resource, error) {
+	r := Resource{
+		Body: data,
+	}
 
 	// Ensure that the spec is a map
-	spec := r["spec"]
+	spec := r.Body["spec"]
 	if spec == nil {
 		return nil, fmt.Errorf("resource %s has no spec", r.Name())
 	}
@@ -42,30 +46,32 @@ func ResourceFromMap(data map[string]interface{}) (Resource, error) {
 		return nil, fmt.Errorf("resource %s has an invalid spec. Expected a map, got a value of type %T", r.Name(), spec)
 	}
 
-	return r, nil
+	return &r, nil
 }
 
 // NewResource returns a new Resource object
 func NewResource(apiVersion, kind, name string, spec map[string]interface{}) (Resource, error) {
 	resource := Resource{
-		"apiVersion": apiVersion,
-		"kind":       kind,
-		"metadata": map[string]interface{}{
-			"name": name,
+		Body: map[string]any{
+			"apiVersion": apiVersion,
+			"kind":       kind,
+			"metadata": map[string]interface{}{
+				"name": name,
+			},
+			"spec": spec,
 		},
-		"spec": spec,
 	}
 	return resource, nil
 }
 
 // APIVersion returns the group and version of the provider of the resource
 func (r *Resource) APIVersion() string {
-	return (*r)["apiVersion"].(string)
+	return r.Body["apiVersion"].(string)
 }
 
 // Kind returns the 'kind' of the resource, i.e. the type of the handler
 func (r *Resource) Kind() string {
-	return (*r)["kind"].(string)
+	return r.Body["kind"].(string)
 }
 
 func (r *Resource) Name() string {
@@ -83,59 +89,59 @@ func (r Resource) String() string {
 	return r.Ref().String()
 }
 
+func (r Resource) metadata() map[string]any {
+	return r.Body["metadata"].(map[string]interface{})
+}
+
 func (r *Resource) HasMetadata(key string) bool {
-	metadata := (*r)["metadata"].(map[string]interface{})
-	_, ok := metadata[key]
+	_, ok := r.metadata()[key]
 	return ok
 }
 
 func (r *Resource) GetMetadata(key string) string {
-	metadata := (*r)["metadata"].(map[string]interface{})
-	if _, ok := metadata[key]; !ok {
+	if !r.HasMetadata(key) {
 		return ""
 	}
-	return metadata[key].(string)
+	return r.metadata()[key].(string)
 }
 
 func (r *Resource) SetMetadata(key, value string) {
-	metadata := (*r)["metadata"].(map[string]interface{})
+	metadata := r.metadata()
 	metadata[key] = value
-	(*r)["metadata"] = metadata
+	r.Body["metadata"] = metadata
 }
 
 func (r *Resource) GetSpecString(key string) (string, bool) {
-	spec := (*r)["spec"].(map[string]interface{})
-	if val, ok := spec[key]; ok {
+	if val, ok := r.Spec()[key]; ok {
 		return val.(string), true
 	}
 	return "", false
 }
 
 func (r *Resource) SetSpecString(key, value string) {
-	spec := (*r)["spec"].(map[string]interface{})
+	spec := r.Spec()
 	spec[key] = value
-	(*r)["spec"] = spec
+	r.Body["spec"] = spec
 }
 
 func (r *Resource) GetSpecValue(key string) interface{} {
-	spec := (*r)["spec"].(map[string]interface{})
-	return spec[key]
+	return r.Spec()[key]
 }
 
 func (r *Resource) SetSpecValue(key string, value interface{}) {
-	spec := (*r)["spec"].(map[string]interface{})
+	spec := r.Spec()
 	spec[key] = value
-	(*r)["spec"] = spec
+	r.Body["spec"] = spec
 }
 
 func (r *Resource) DeleteSpecKey(key string) {
-	spec := (*r)["spec"].(map[string]interface{})
+	spec := r.Spec()
 	delete(spec, key)
-	(*r)["spec"] = spec
+	r.Body["spec"] = spec
 }
 
 func (r *Resource) Spec() map[string]interface{} {
-	return (*r)["spec"].(map[string]interface{})
+	return r.Body["spec"].(map[string]interface{})
 }
 
 func (r *Resource) SpecAsJSON() (string, error) {

@@ -26,73 +26,89 @@ func TestValidateEnvelope(t *testing.T) {
 		}{
 			{
 				Name: "missing kind",
-				Resource: map[string]any{
-					"metadata": metadata,
-					"spec":     spec,
+				Resource: grizzly.Resource{
+					Body: map[string]any{
+						"metadata": metadata,
+						"spec":     spec,
+					},
 				},
 				ExpectedError: "kind missing",
 			},
 			{
 				Name: "missing metadata",
-				Resource: map[string]any{
-					"kind": kind,
-					"spec": spec,
+				Resource: grizzly.Resource{
+					Body: map[string]any{
+						"kind": kind,
+						"spec": spec,
+					},
 				},
 				ExpectedError: "metadata missing",
 			},
 			{
 				Name: "missing name",
-				Resource: map[string]any{
-					"kind":     kind,
-					"metadata": map[string]any{},
-					"spec":     spec,
+				Resource: grizzly.Resource{
+					Body: map[string]any{
+						"kind":     kind,
+						"metadata": map[string]any{},
+						"spec":     spec,
+					},
 				},
 				ExpectedError: "metadata/name missing",
 			},
 			{
 				Name: "missing spec",
-				Resource: map[string]any{
-					"kind":     kind,
-					"metadata": metadata,
+				Resource: grizzly.Resource{
+					Body: map[string]any{
+						"kind":     kind,
+						"metadata": metadata,
+					},
 				},
 				ExpectedError: "spec missing",
 			},
 			{
 				Name: "empty spec",
-				Resource: map[string]any{
-					"kind":     kind,
-					"metadata": metadata,
-					"spec":     map[string]any{},
+				Resource: grizzly.Resource{
+					Body: map[string]any{
+						"kind":     kind,
+						"metadata": metadata,
+						"spec":     map[string]any{},
+					},
 				},
 				ExpectedError: "spec should not be empty",
 			},
 			{
 				Name: "invalid spec",
-				Resource: map[string]any{
-					"kind":     kind,
-					"metadata": metadata,
-					"spec":     "a string spec",
+				Resource: grizzly.Resource{
+					Body: map[string]any{
+						"kind":     kind,
+						"metadata": metadata,
+						"spec":     "a string spec",
+					},
 				},
 				ExpectedError: "spec is not a map",
 			},
 			{
-				Name:          "empty resource",
-				Resource:      map[string]any{},
+				Name: "empty resource",
+				Resource: grizzly.Resource{
+					Body: map[string]any{},
+				},
 				ExpectedError: "kind missing, metadata missing, spec missing",
 			},
+
 			{
 				Name: "everything correct",
-				Resource: map[string]any{
-					"kind":     kind,
-					"metadata": metadata,
-					"spec":     spec,
+				Resource: grizzly.Resource{
+					Body: map[string]any{
+						"kind":     kind,
+						"metadata": metadata,
+						"spec":     spec,
+					},
 				},
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.Name, func(t *testing.T) {
-				m := map[string]any(test.Resource)
-				err := grizzly.ValidateEnvelope(m)
+				err := grizzly.ValidateEnvelope(test.Resource.Body)
 				if test.ExpectedError != "" {
 					require.Error(t, err)
 					require.Equal(t, "errors parsing resource: "+test.ExpectedError, err.Error())

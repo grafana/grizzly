@@ -55,7 +55,7 @@ func (h *SyntheticMonitoringHandler) ResourceFilePath(resource grizzly.Resource,
 }
 
 // Parse parses a manifest object into a struct for this resource type
-func (h *SyntheticMonitoringHandler) Parse(m map[string]any) (grizzly.Resource, error) {
+func (h *SyntheticMonitoringHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
 	resource, err := grizzly.ResourceFromMap(m)
 	if err != nil {
 		return nil, err
@@ -103,11 +103,7 @@ func (h *SyntheticMonitoringHandler) GetUID(resource grizzly.Resource) (string, 
 	return fmt.Sprintf("%s.%s", resource.GetMetadata("type"), resource.Name()), nil
 }
 func (h *SyntheticMonitoringHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
-	spec := resource["spec"].(map[string]interface{})
-	if val, ok := spec["XXXXXXX"]; ok {
-		return val.(string), nil
-	}
-	return "", fmt.Errorf("UID not specified")
+	return "", fmt.Errorf("GetSpecUID not implemented for Synthetic Monitoring")
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
@@ -300,7 +296,7 @@ func (h *SyntheticMonitoringHandler) updateCheck(resource grizzly.Resource) erro
 
 func (h *SyntheticMonitoringHandler) SpecToCheck(r *grizzly.Resource) (synthetic_monitoring.Check, error) {
 	var smCheck synthetic_monitoring.Check
-	data, err := json.Marshal((*r)["spec"])
+	data, err := json.Marshal(r.Body["spec"])
 	if err != nil {
 		return synthetic_monitoring.Check{}, nil
 	}
