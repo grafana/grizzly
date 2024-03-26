@@ -237,7 +237,7 @@ func (h *DashboardHandler) postDashboard(resource grizzly.Resource) error {
 
 func (h *DashboardHandler) postSnapshot(resource grizzly.Resource, expiresSeconds int) (*models.CreateDashboardSnapshotOKBody, error) {
 	body := models.CreateDashboardSnapshotCommand{
-		Dashboard: resource.Spec(),
+		Dashboard: &models.Unstructured{Object: resource.Spec()},
 	}
 	if expiresSeconds > 0 {
 		body.Expires = int64(expiresSeconds)
