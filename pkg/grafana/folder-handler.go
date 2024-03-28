@@ -138,6 +138,9 @@ func (h *FolderHandler) Update(existing, resource grizzly.Resource) error {
 
 // getRemoteFolder retrieves a folder object from Grafana
 func (h *FolderHandler) getRemoteFolder(uid string) (*grizzly.Resource, error) {
+	if uid == "" {
+		return nil, fmt.Errorf("No folder UID provided")
+	}
 	var folder *models.Folder
 	if uid == "General" || uid == "general" {
 		folder = &models.Folder{
@@ -150,9 +153,6 @@ func (h *FolderHandler) getRemoteFolder(uid string) (*grizzly.Resource, error) {
 		client, err := h.Provider.(ClientProvider).Client()
 		if err != nil {
 			return nil, err
-		}
-		if uid == "" {
-			return nil, fmt.Errorf("No folder UID provided")
 		}
 
 		folderOk, err := client.Folders.GetFolderByUID(uid)
