@@ -151,6 +151,9 @@ func (h *FolderHandler) getRemoteFolder(uid string) (*grizzly.Resource, error) {
 		if err != nil {
 			return nil, err
 		}
+		if uid == "" {
+			return nil, fmt.Errorf("No folder UID provided")
+		}
 
 		folderOk, err := client.Folders.GetFolderByUID(uid)
 		if err != nil {
