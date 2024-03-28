@@ -34,7 +34,7 @@ func (parser *JSONParser) Parse(file string, options ParserOptions) (Resources, 
 		return nil, err
 	}
 
-	resources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID)
+	resources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID, "json", file, true)
 	if err != nil {
 		return nil, err
 	}

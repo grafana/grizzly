@@ -45,7 +45,9 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 	}
 	var opts Opts
 	var isRemote bool
+	var isVerbose bool
 	cmd.Flags().BoolVarP(&isRemote, "remote", "r", false, "list remote resources")
+	cmd.Flags().BoolVarP(&isVerbose, "verbose", "v", false, "show more information about resources")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		currentContext, err := config.CurrentContext()
@@ -80,7 +82,7 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		return grizzly.List(registry, resources)
+		return grizzly.List(registry, resources, isVerbose)
 	}
 	return initialiseCmd(cmd, &opts)
 }

@@ -46,7 +46,7 @@ func (parser *YAMLParser) Parse(file string, options ParserOptions) (Resources, 
 			return nil, err
 		}
 
-		parsedResources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID)
+		parsedResources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID, "yaml", file, true)
 		if err != nil {
 			return nil, err
 		}
