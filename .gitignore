@@ -6,3 +6,5 @@
 *.orig
 *.swp
 .idea
+test-docker-compose/*.crt
+test-docker-compose/*.key

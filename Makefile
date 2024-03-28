@@ -9,6 +9,7 @@ lint:
 	go vet ./...
 
 run-test-image-locally: test-clean
+	(cd test-docker-compose && go run .)
 	$(DOCKER_COMPOSE) up --force-recreate --detach --remove-orphans --wait
 
 stop-test-image-locally:
