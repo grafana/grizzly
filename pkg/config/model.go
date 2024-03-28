@@ -1,9 +1,11 @@
 package config
 
 type GrafanaConfig struct {
-	URL   string `yaml:"url" mapstructure:"url"`
-	User  string `yaml:"user" mapstructure:"user"`
-	Token string `yaml:"token" mapstructure:"token"`
+	URL                string `yaml:"url" mapstructure:"url"`
+	User               string `yaml:"user" mapstructure:"user"`
+	Token              string `yaml:"token" mapstructure:"token"`
+	InsecureSkipVerify bool   `yaml:"insecure-skip-verify" mapstructure:"insecure-skip-verify"`
+	TLSHost            string `yaml:"tls-host" mapstructure:"tls-host"`
 }
 
 type MimirConfig struct {
