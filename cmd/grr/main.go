@@ -43,7 +43,12 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	registry := createRegistry()
+	context, err := config.CurrentContext()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	registry := createRegistry(context)
 	// workflow commands
 	rootCmd.AddCommand(
 		getCmd(registry),
@@ -71,11 +76,7 @@ func main() {
 	}
 }
 
-func createRegistry() grizzly.Registry {
-	context, err := config.CurrentContext()
-	if err != nil {
-		log.Fatalln(err)
-	}
+func createRegistry(context *config.Context) grizzly.Registry {
 	providerInitFuncs := []func() (grizzly.Provider, error){
 		func() (grizzly.Provider, error) { return grafana.NewProvider(&context.Grafana) },
 		func() (grizzly.Provider, error) { return mimir.NewProvider(&context.Mimir) },
