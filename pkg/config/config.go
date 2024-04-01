@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/kirsle/configdir"
@@ -120,7 +121,7 @@ func UseContext(context string) error {
 			return Write()
 		}
 	}
-	return fmt.Errorf("Context %s not found", context)
+	return fmt.Errorf("context %s not found", context)
 }
 
 func CurrentContext() (*Context, error) {
@@ -149,9 +150,9 @@ var acceptableKeys = map[string]string{
 	"mimir.tenant-id":                 "string",
 	"mimir.api-key":                   "string",
 	"synthetic-monitoring.token":      "string",
-	"synthetic-monitoring.stack-id":   "string",
-	"synthetic-monitoring.metrics-id": "string",
-	"synthetic-monitoring.logs-id":    "string",
+	"synthetic-monitoring.stack-id":   "int",
+	"synthetic-monitoring.metrics-id": "int",
+	"synthetic-monitoring.logs-id":    "int",
 	"targets":                         "[]string",
 	"output-format":                   "string",
 	"only-spec":                       "bool",
@@ -191,14 +192,20 @@ func Set(path string, value string) error {
 				val = strings.Split(value, ",")
 			case "bool":
 				val = strings.ToLower(value) == "true"
+			case "int":
+				intValue, err := strconv.Atoi(value)
+				if err != nil {
+					return fmt.Errorf("key %s should be an integer: %s", key, err)
+				}
+				val = intValue
 			default:
-				return fmt.Errorf("Unknown config key type %s for key %s", typ, key)
+				return fmt.Errorf("unknown config key type %s for key %s", typ, key)
 			}
 			viper.Set(fullPath, val)
 			return Write()
 		}
 	}
-	return fmt.Errorf("Key not recognised: %s", path)
+	return fmt.Errorf("key not recognised: %s", path)
 }
 
 func CreateContext(name string) error {
