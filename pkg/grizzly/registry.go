@@ -10,6 +10,7 @@ import (
 
 // Provider describes a single Endpoint Provider
 type Provider interface {
+	Name() string
 	Group() string
 	Version() string
 	APIVersion() string

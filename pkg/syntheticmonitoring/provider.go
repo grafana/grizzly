@@ -39,6 +39,10 @@ func NewProvider(config *config.SyntheticMonitoringConfig) (*Provider, error) {
 	}, nil
 }
 
+func (p *Provider) Name() string {
+	return "Synthetic Monitoring"
+}
+
 // Group returns the group name of the Grafana provider
 func (p *Provider) Group() string {
 	return "grizzly.grafana.com"
