@@ -35,6 +35,10 @@ func NewProvider(config *config.MimirConfig) (*Provider, error) {
 	}, nil
 }
 
+func (p *Provider) Name() string {
+	return "Mimir"
+}
+
 // Group returns the group name of the Grafana provider
 func (p *Provider) Group() string {
 	return "grizzly.grafana.com"

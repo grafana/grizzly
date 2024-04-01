@@ -33,6 +33,10 @@ func NewProvider(config *config.GrafanaConfig) (*Provider, error) {
 	}, nil
 }
 
+func (p *Provider) Name() string {
+	return "Grafana"
+}
+
 // Group returns the group name of the Grafana provider
 func (p *Provider) Group() string {
 	return "grizzly.grafana.com"
