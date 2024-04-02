@@ -55,7 +55,7 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 
 // Client creates a new client for synthetic monitoring go client
 func (p *Provider) Client() (*smapi.Client, error) {
-	if err := p.validate(); err != nil {
+	if err := p.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -77,7 +77,7 @@ func (p *Provider) Client() (*smapi.Client, error) {
 	return smClient, nil
 }
 
-func (p *Provider) validate() error {
+func (p *Provider) Validate() error {
 	if p.config.StackID == 0 {
 		return fmt.Errorf("stack id is not set")
 	}

@@ -45,7 +45,7 @@ func (p *Provider) Version() string {
 }
 
 func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
-	if err := p.validate(); err != nil {
+	if err := p.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -121,7 +121,7 @@ func (p *Provider) SetupProxy() (*httputil.ReverseProxy, error) {
 	return proxy, nil
 }
 
-func (p *Provider) validate() error {
+func (p *Provider) Validate() error {
 	if p.config.URL == "" {
 		return fmt.Errorf("grafana URL is not set")
 	}

@@ -52,13 +52,13 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 }
 
 func (p *Provider) ClientConfig() (*config.MimirConfig, error) {
-	if err := p.validate(); err != nil {
+	if err := p.Validate(); err != nil {
 		return nil, err
 	}
 	return p.config, nil
 }
 
-func (p *Provider) validate() error {
+func (p *Provider) Validate() error {
 	if _, err := exec.LookPath("cortextool"); err != nil {
 		return err
 	}
