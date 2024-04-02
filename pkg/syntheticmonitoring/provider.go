@@ -21,22 +21,10 @@ type ClientProvider interface {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(config *config.SyntheticMonitoringConfig) (*Provider, error) {
-	if config.StackID == 0 {
-		return nil, fmt.Errorf("stack id is not set")
-	}
-	if config.MetricsID == 0 {
-		return nil, fmt.Errorf("metrics id is not set")
-	}
-	if config.LogsID == 0 {
-		return nil, fmt.Errorf("logs id is not set")
-	}
-	if config.Token == "" {
-		return nil, fmt.Errorf("token is not set")
-	}
+func NewProvider(config *config.SyntheticMonitoringConfig) *Provider {
 	return &Provider{
 		config: config,
-	}, nil
+	}
 }
 
 func (p *Provider) Name() string {
@@ -65,8 +53,12 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 	}
 }
 
-// NewClient creates a new client for synthetic monitoring go client
+// Client creates a new client for synthetic monitoring go client
 func (p *Provider) Client() (*smapi.Client, error) {
+	if err := p.validate(); err != nil {
+		return nil, err
+	}
+
 	client, err := NewHttpClient()
 	if err != nil {
 		return nil, err
@@ -83,4 +75,21 @@ func (p *Provider) Client() (*smapi.Client, error) {
 	}
 
 	return smClient, nil
+}
+
+func (p *Provider) validate() error {
+	if p.config.StackID == 0 {
+		return fmt.Errorf("stack id is not set")
+	}
+	if p.config.MetricsID == 0 {
+		return fmt.Errorf("metrics id is not set")
+	}
+	if p.config.LogsID == 0 {
+		return fmt.Errorf("logs id is not set")
+	}
+	if p.config.Token == "" {
+		return fmt.Errorf("token is not set")
+	}
+
+	return nil
 }

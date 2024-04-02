@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"text/tabwriter"
 
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/config"
@@ -461,28 +460,17 @@ func exportCmd(registry grizzly.Registry) *cli.Command {
 func providersCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "providers",
-		Short: "Lists all providers registered with Grizzly",
+		Short: "Configuration of each provider available",
 		Args:  cli.ArgsExact(0),
 	}
-	var opts LoggingOpts
 
-	cmd.Run = func(cmd *cli.Command, args []string) error {
-		f := "%s\t%s\n"
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+	cmd.AddCommand(providersHandlersCmd(registry))
+	cmd.AddCommand(providersStatusCmd(registry))
 
-		fmt.Fprintf(w, f, "API VERSION", "KIND")
-		for _, provider := range registry.Providers {
-			for _, handler := range provider.GetHandlers() {
-				fmt.Fprintf(w, f, provider.APIVersion(), handler.Kind())
-			}
-		}
-		return w.Flush()
-	}
-
-	return initialiseLogging(cmd, &opts)
+	return cmd
 }
 
-func configCmd() *cli.Command {
+func configCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "config <sub-command>",
 		Short: "Show, select or configure configuration",
@@ -496,6 +484,7 @@ func configCmd() *cli.Command {
 	cmd.AddCommand(getConfigCmd())
 	cmd.AddCommand(setCmd())
 	cmd.AddCommand(createContextCmd())
+	cmd.AddCommand(providersCmd(registry))
 	return cmd
 }
 

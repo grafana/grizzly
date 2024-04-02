@@ -24,13 +24,10 @@ type ClientProvider interface {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(config *config.GrafanaConfig) (*Provider, error) {
-	if config.URL == "" {
-		return nil, fmt.Errorf("grafana URL is not set")
-	}
+func NewProvider(config *config.GrafanaConfig) *Provider {
 	return &Provider{
 		config: config,
-	}, nil
+	}
 }
 
 func (p *Provider) Name() string {
@@ -48,6 +45,10 @@ func (p *Provider) Version() string {
 }
 
 func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
+	if err := p.validate(); err != nil {
+		return nil, err
+	}
+
 	if p.client != nil {
 		return p.client, nil
 	}
@@ -118,4 +119,12 @@ func (p *Provider) SetupProxy() (*httputil.ReverseProxy, error) {
 		},
 	}
 	return proxy, nil
+}
+
+func (p *Provider) validate() error {
+	if p.config.URL == "" {
+		return fmt.Errorf("grafana URL is not set")
+	}
+
+	return nil
 }

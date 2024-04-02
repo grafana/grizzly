@@ -21,7 +21,7 @@ type ProxyProvider interface {
 	SetupProxy() (*httputil.ReverseProxy, error)
 }
 
-// ProviderSet records providers
+// Registry records providers
 type Registry struct {
 	Providers    []Provider
 	Handlers     map[string]Handler

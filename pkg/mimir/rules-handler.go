@@ -109,7 +109,10 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 	namespace := parts[0]
 	name := parts[1]
 
-	mimirConfig := h.Provider.(ClientConfigProvider).ClientConfig()
+	mimirConfig, err := h.Provider.(ClientConfigProvider).ClientConfig()
+	if err != nil {
+		return nil, err
+	}
 	out, err := cortexTool(mimirConfig, "rules", "print", "--disable-color")
 	if err != nil {
 		return nil, err
@@ -141,7 +144,10 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 
 // getRemoteRuleGroupList retrieves a datasource object from Grafana
 func (h *RuleHandler) getRemoteRuleGroupList() ([]string, error) {
-	mimirConfig := h.Provider.(ClientConfigProvider).ClientConfig()
+	mimirConfig, err := h.Provider.(ClientConfigProvider).ClientConfig()
+	if err != nil {
+		return nil, err
+	}
 	out, err := cortexTool(mimirConfig, "rules", "print", "--disable-color")
 	if err != nil {
 		return nil, err
@@ -182,7 +188,7 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 	}
 	newGroup := PrometheusRuleGroup{
 		Name: resource.Name(),
-		//Rules: resource.Spec()["rules"].([]map[string]interface{}),
+		// Rules: resource.Spec()["rules"].([]map[string]interface{}),
 		Rules: []map[string]interface{}{},
 	}
 	rules := resource.Spec()["rules"].([]interface{})
@@ -200,7 +206,10 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 	}
 	os.WriteFile(tmpfile.Name(), out, 0644)
 
-	mimirConfig := h.Provider.(ClientConfigProvider).ClientConfig()
+	mimirConfig, err := h.Provider.(ClientConfigProvider).ClientConfig()
+	if err != nil {
+		return err
+	}
 	output, err := cortexTool(mimirConfig, "rules", "load", tmpfile.Name())
 	if err != nil {
 		log.Println(output)

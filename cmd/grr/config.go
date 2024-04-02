@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"text/tabwriter"
 
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/config"
+	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/spf13/viper"
 )
 
@@ -160,5 +163,61 @@ func createContextCmd() *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		return config.CreateContext(args[0])
 	}
+	return initialiseLogging(cmd, &opts)
+}
+
+func providersHandlersCmd(registry grizzly.Registry) *cli.Command {
+	cmd := &cli.Command{
+		Use:   "handlers",
+		Short: "Lists all handlers for each provider",
+		Args:  cli.ArgsExact(0),
+	}
+
+	var opts LoggingOpts
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		f := "%s\t%s\t%s\n"
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+
+		fmt.Fprintf(w, "\n"+f, "PROVIDER", "API VERSION", "KIND")
+		for _, provider := range registry.Providers {
+			for _, handler := range provider.GetHandlers() {
+				fmt.Fprintf(w, f, provider.Name(), provider.APIVersion(), handler.Kind())
+			}
+		}
+		fmt.Fprintf(w, "\n")
+		return w.Flush()
+	}
+
+	return initialiseLogging(cmd, &opts)
+}
+
+func providersStatusCmd(registry grizzly.Registry) *cli.Command {
+	cmd := &cli.Command{
+		Use:   "status",
+		Short: "Lists all providers status and reason",
+		Args:  cli.ArgsExact(0),
+	}
+
+	var opts LoggingOpts
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		f := "%s\t%s\t%s\n"
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+
+		fmt.Fprintf(w, "\n"+f, "PROVIDER", "STATUS", "MISSING CONFIGURATION")
+		for _, provider := range registry.Providers {
+			status := "active"
+			reason := ""
+			if err := provider.Validate(); err != nil {
+				status = "inactive"
+				reason = err.Error()
+			}
+			fmt.Fprintf(w, f, provider.Name(), status, reason)
+		}
+		fmt.Fprintf(w, "\n")
+		return w.Flush()
+	}
+
 	return initialiseLogging(cmd, &opts)
 }

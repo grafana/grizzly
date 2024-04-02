@@ -15,24 +15,14 @@ type Provider struct {
 }
 
 type ClientConfigProvider interface {
-	ClientConfig() *config.MimirConfig
+	ClientConfig() (*config.MimirConfig, error)
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(config *config.MimirConfig) (*Provider, error) {
-	if _, err := exec.LookPath("cortextool"); err != nil {
-		return nil, err
-	}
-	if config.Address == "" {
-		return nil, fmt.Errorf("mimir address is not set")
-	}
-	if config.ApiKey == "" {
-		return nil, fmt.Errorf("mimir api key is not set")
-	}
-
+func NewProvider(config *config.MimirConfig) *Provider {
 	return &Provider{
 		config: config,
-	}, nil
+	}
 }
 
 func (p *Provider) Name() string {
@@ -61,6 +51,23 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 	}
 }
 
-func (p *Provider) ClientConfig() *config.MimirConfig {
-	return p.config
+func (p *Provider) ClientConfig() (*config.MimirConfig, error) {
+	if err := p.validate(); err != nil {
+		return nil, err
+	}
+	return p.config, nil
+}
+
+func (p *Provider) validate() error {
+	if _, err := exec.LookPath("cortextool"); err != nil {
+		return err
+	}
+	if p.config.Address == "" {
+		return fmt.Errorf("mimir address is not set")
+	}
+	if p.config.ApiKey == "" {
+		return fmt.Errorf("mimir api key is not set")
+	}
+
+	return nil
 }
