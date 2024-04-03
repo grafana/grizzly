@@ -12,8 +12,7 @@ import (
 )
 
 func TestDatasources(t *testing.T) {
-	provider, err := grafana.NewProvider(&testutil.TestContext().Grafana)
-	require.NoError(t, err)
+	provider := grafana.NewProvider(&testutil.TestContext().Grafana)
 	handler := grafana.NewDatasourceHandler(provider)
 
 	t.Run("get remote datasource - success", func(t *testing.T) {

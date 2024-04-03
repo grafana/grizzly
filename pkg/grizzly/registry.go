@@ -38,6 +38,10 @@ func NewRegistry(providers []Provider) Registry {
 
 	registry.Providers = providers
 	for _, provider := range providers {
+		if provider.Validate() != nil {
+			continue
+		}
+
 		for _, handler := range provider.GetHandlers() {
 			registry.Handlers[handler.Kind()] = handler
 			registry.HandlerOrder = append(registry.HandlerOrder, handler)
