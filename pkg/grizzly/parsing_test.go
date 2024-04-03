@@ -2,6 +2,7 @@ package grizzly_test
 
 import (
 	"fmt"
+	"github.com/grafana/grizzly/pkg/config"
 	"testing"
 
 	"github.com/grafana/grizzly/pkg/grafana"
@@ -124,7 +125,9 @@ func TestParseKindDetection(t *testing.T) {
 	t.Run("Parse kind detection", func(t *testing.T) {
 		registry := grizzly.NewRegistry(
 			[]grizzly.Provider{
-				&grafana.Provider{},
+				grafana.NewProvider(&config.GrafanaConfig{
+					URL: "dummy",
+				}),
 			},
 		)
 		tests := []struct {
