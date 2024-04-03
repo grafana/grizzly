@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/stretchr/testify/require"
 
@@ -15,10 +14,13 @@ import (
 var errCortextoolClient = errors.New("error coming from cortextool client")
 
 func TestRules(t *testing.T) {
-	h := NewRuleHandler(&Provider{})
+	cortexTool := &FakeCortexTool{}
+	h := RuleHandler{
+		BaseHandler: grizzly.NewBaseHandler(&Provider{}, "PrometheusRuleGroup", false),
+		cortexTool:  cortexTool,
+	}
 	t.Run("get remote rule group", func(t *testing.T) {
-		mockCortexTool(t, "testdata/list_rules.yaml", nil)
-
+		cortexTool.mockResponse(t, true, nil)
 		res, err := h.getRemoteRuleGroup("first_rules.grizzly_alerts")
 		require.NoError(t, err)
 		uid, err := h.GetUID(*res)
@@ -30,40 +32,35 @@ func TestRules(t *testing.T) {
 	})
 
 	t.Run("get remote rule group - error from cortextool client", func(t *testing.T) {
-		mockCortexTool(t, "", errCortextoolClient)
-
+		cortexTool.mockResponse(t, false, errCortextoolClient)
 		res, err := h.getRemoteRuleGroup("first_rules.grizzly_alerts")
 		require.Error(t, err)
 		require.Nil(t, res)
 	})
 
 	t.Run("get remote rule group - return not found", func(t *testing.T) {
-		mockCortexTool(t, "testdata/list_rules.yaml", nil)
-
+		cortexTool.mockResponse(t, true, nil)
 		res, err := h.getRemoteRuleGroup("name.name")
 		require.Error(t, err)
 		require.Nil(t, res)
 	})
 
 	t.Run("get remote rule group list", func(t *testing.T) {
-		mockCortexTool(t, "testdata/list_rules.yaml", nil)
-
+		cortexTool.mockResponse(t, true, nil)
 		res, err := h.getRemoteRuleGroupList()
 		require.NoError(t, err)
 		require.Equal(t, "first_rules.grizzly_alerts", res[0])
 	})
 
 	t.Run("get remote rule group list", func(t *testing.T) {
-		mockCortexTool(t, "", errCortextoolClient)
-
+		cortexTool.mockResponse(t, false, errCortextoolClient)
 		res, err := h.getRemoteRuleGroupList()
 		require.Error(t, err)
 		require.Nil(t, res)
 	})
 
 	t.Run("write rule group", func(t *testing.T) {
-		mockCortexTool(t, "", nil)
-
+		cortexTool.mockResponse(t, false, nil)
 		spec := make(map[string]interface{})
 		file, err := os.ReadFile("testdata/rules.yaml")
 		require.NoError(t, err)
@@ -77,8 +74,7 @@ func TestRules(t *testing.T) {
 	})
 
 	t.Run("write rule group - error from the cortextool client", func(t *testing.T) {
-		mockCortexTool(t, "", errCortextoolClient)
-
+		cortexTool.mockResponse(t, false, errCortextoolClient)
 		spec := make(map[string]interface{})
 		file, err := os.ReadFile("testdata/rules.yaml")
 		require.NoError(t, err)
@@ -106,19 +102,28 @@ func TestRules(t *testing.T) {
 	})
 }
 
-func mockCortexTool(t *testing.T, file string, err error) {
-	origCorexTool := cortexTool
-	cortexTool = func(mimirConfig *config.MimirConfig, args ...string) ([]byte, error) {
-		if file != "" {
-			bytes, errFile := os.ReadFile("testdata/list_rules.yaml")
-			require.NoError(t, errFile)
+type FakeCortexTool struct {
+	hasFile       bool
+	expectedError error
+}
 
-			return bytes, nil
-		}
-
-		return nil, err
-	}
+func (f *FakeCortexTool) mockResponse(t *testing.T, hasFile bool, expectedError error) {
+	f.hasFile = hasFile
+	f.expectedError = expectedError
 	t.Cleanup(func() {
-		cortexTool = origCorexTool
+		f.hasFile = false
+		f.expectedError = nil
 	})
+}
+
+func (f *FakeCortexTool) ExecuteCortexTool(_ ...string) ([]byte, error) {
+	if f.expectedError != nil {
+		return nil, f.expectedError
+	}
+
+	if f.hasFile {
+		return os.ReadFile("testdata/list_rules.yaml")
+	}
+
+	return nil, nil
 }

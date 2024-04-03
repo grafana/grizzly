@@ -14,10 +14,6 @@ type Provider struct {
 	config *config.MimirConfig
 }
 
-type ClientConfigProvider interface {
-	ClientConfig() *config.MimirConfig
-}
-
 // NewProvider instantiates a new Provider.
 func NewProvider(config *config.MimirConfig) (*Provider, error) {
 	if _, err := exec.LookPath("cortextool"); err != nil {
@@ -59,8 +55,4 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 	return []grizzly.Handler{
 		NewRuleHandler(p),
 	}
-}
-
-func (p *Provider) ClientConfig() *config.MimirConfig {
-	return p.config
 }
