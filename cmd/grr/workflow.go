@@ -464,7 +464,7 @@ func providersCmd(registry grizzly.Registry) *cli.Command {
 		Args:  cli.ArgsExact(0),
 	}
 
-	cmd.AddCommand(providersHandlersCmd(registry))
+	cmd.AddCommand(providersKindsCmd(registry))
 	cmd.AddCommand(providersStatusCmd(registry))
 
 	return cmd

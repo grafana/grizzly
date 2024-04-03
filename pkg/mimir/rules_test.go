@@ -15,7 +15,16 @@ import (
 var errCortextoolClient = errors.New("error coming from cortextool client")
 
 func TestRules(t *testing.T) {
-	h := NewRuleHandler(&Provider{})
+	mimirProvider := &Provider{
+		config: &config.MimirConfig{
+			Address:  "address",
+			TenantID: 0,
+			ApiKey:   "key",
+		},
+		pathLooker: &FakePathLooker{},
+	}
+
+	h := NewRuleHandler(mimirProvider)
 	t.Run("get remote rule group", func(t *testing.T) {
 		mockCortexTool(t, "testdata/list_rules.yaml", nil)
 
@@ -108,7 +117,10 @@ func TestRules(t *testing.T) {
 
 func mockCortexTool(t *testing.T, file string, err error) {
 	origCorexTool := cortexTool
+
 	cortexTool = func(mimirConfig *config.MimirConfig, args ...string) ([]byte, error) {
+		mimirConfig.ApiKey = "key"
+		mimirConfig.Address = "address"
 		if file != "" {
 			bytes, errFile := os.ReadFile("testdata/list_rules.yaml")
 			require.NoError(t, errFile)
@@ -118,6 +130,7 @@ func mockCortexTool(t *testing.T, file string, err error) {
 
 		return nil, err
 	}
+
 	t.Cleanup(func() {
 		cortexTool = origCorexTool
 	})

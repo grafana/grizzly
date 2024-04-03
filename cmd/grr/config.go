@@ -166,10 +166,10 @@ func createContextCmd() *cli.Command {
 	return initialiseLogging(cmd, &opts)
 }
 
-func providersHandlersCmd(registry grizzly.Registry) *cli.Command {
+func providersKindsCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
-		Use:   "handlers",
-		Short: "Lists all handlers for each provider",
+		Use:   "kinds",
+		Short: "Lists all kinds for each provider",
 		Args:  cli.ArgsExact(0),
 	}
 

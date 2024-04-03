@@ -2,7 +2,6 @@ package mimir
 
 import (
 	"fmt"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/grafana/grizzly/pkg/config"
@@ -11,7 +10,8 @@ import (
 
 // Provider is a grizzly.Provider implementation for Grafana.
 type Provider struct {
-	config *config.MimirConfig
+	config     *config.MimirConfig
+	pathLooker PathLooker
 }
 
 type ClientConfigProvider interface {
@@ -21,7 +21,8 @@ type ClientConfigProvider interface {
 // NewProvider instantiates a new Provider.
 func NewProvider(config *config.MimirConfig) *Provider {
 	return &Provider{
-		config: config,
+		config:     config,
+		pathLooker: &RealPathLooker{},
 	}
 }
 
@@ -59,7 +60,7 @@ func (p *Provider) ClientConfig() (*config.MimirConfig, error) {
 }
 
 func (p *Provider) Validate() error {
-	if _, err := exec.LookPath("cortextool"); err != nil {
+	if _, err := p.pathLooker.LookPath("cortextool"); err != nil {
 		return err
 	}
 	if p.config.Address == "" {
