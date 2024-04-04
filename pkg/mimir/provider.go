@@ -12,6 +12,7 @@ import (
 // Provider is a grizzly.Provider implementation for Grafana.
 type Provider struct {
 	config *config.MimirConfig
+	client *Client
 }
 
 type ClientConfigProvider interface {
@@ -30,8 +31,14 @@ func NewProvider(config *config.MimirConfig) (*Provider, error) {
 		return nil, fmt.Errorf("mimir api key is not set")
 	}
 
+	client, err := NewHttpClient(config)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Provider{
 		config: config,
+		client: client,
 	}, nil
 }
 
