@@ -14,10 +14,6 @@ type Provider struct {
 	pathLooker PathLooker
 }
 
-type ClientConfigProvider interface {
-	ClientConfig() (*config.MimirConfig, error)
-}
-
 // NewProvider instantiates a new Provider.
 func NewProvider(config *config.MimirConfig) *Provider {
 	return &Provider{
@@ -50,13 +46,6 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 	return []grizzly.Handler{
 		NewRuleHandler(p),
 	}
-}
-
-func (p *Provider) ClientConfig() (*config.MimirConfig, error) {
-	if err := p.Validate(); err != nil {
-		return nil, err
-	}
-	return p.config, nil
 }
 
 func (p *Provider) Validate() error {

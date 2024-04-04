@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"strings"
 
-	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"gopkg.in/yaml.v3"
 )
@@ -15,12 +13,14 @@ import (
 // RuleHandler is a Grizzly Handler for Prometheus Rules
 type RuleHandler struct {
 	grizzly.BaseHandler
+	cortexTool CortexTool
 }
 
 // NewRuleHandler returns a new Grizzly Handler for Prometheus Rules
-func NewRuleHandler(provider grizzly.Provider) *RuleHandler {
+func NewRuleHandler(provider *Provider) *RuleHandler {
 	return &RuleHandler{
 		BaseHandler: grizzly.NewBaseHandler(provider, "PrometheusRuleGroup", false),
+		cortexTool:  NewCortexTool(provider.config),
 	}
 }
 
@@ -85,35 +85,13 @@ func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
 	return h.writeRuleGroup(resource)
 }
 
-var cortexTool = func(mimirConfig *config.MimirConfig, args ...string) ([]byte, error) {
-	path := os.Getenv("CORTEXTOOL_PATH")
-	if path == "" {
-		var err error
-		path, err = exec.LookPath("cortextool")
-		if err != nil {
-			return nil, err
-		} else if path == "" {
-			return nil, fmt.Errorf("cortextool not found")
-		}
-	}
-	cmd := exec.Command(path, args...)
-	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_ADDRESS=%s", mimirConfig.Address))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_TENANT_ID=%d", mimirConfig.TenantID))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_API_KEY=%s", mimirConfig.ApiKey))
-	return exec.Command(path, args...).Output()
-}
-
 // getRemoteRuleGroup retrieves a datasource object from Grafana
 func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 	parts := strings.SplitN(uid, ".", 2)
 	namespace := parts[0]
 	name := parts[1]
 
-	mimirConfig, err := h.Provider.(ClientConfigProvider).ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-	out, err := cortexTool(mimirConfig, "rules", "print", "--disable-color")
+	out, err := h.cortexTool.ExecuteCortexTool("rules", "print", "--disable-color")
 	if err != nil {
 		return nil, err
 	}
@@ -144,11 +122,7 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 
 // getRemoteRuleGroupList retrieves a datasource object from Grafana
 func (h *RuleHandler) getRemoteRuleGroupList() ([]string, error) {
-	mimirConfig, err := h.Provider.(ClientConfigProvider).ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-	out, err := cortexTool(mimirConfig, "rules", "print", "--disable-color")
+	out, err := h.cortexTool.ExecuteCortexTool("rules", "print", "--disable-color")
 	if err != nil {
 		return nil, err
 	}
@@ -206,11 +180,7 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 	}
 	os.WriteFile(tmpfile.Name(), out, 0644)
 
-	mimirConfig, err := h.Provider.(ClientConfigProvider).ClientConfig()
-	if err != nil {
-		return err
-	}
-	output, err := cortexTool(mimirConfig, "rules", "load", tmpfile.Name())
+	output, err := h.cortexTool.ExecuteCortexTool("rules", "load", tmpfile.Name())
 	if err != nil {
 		log.Println(output)
 		return err
