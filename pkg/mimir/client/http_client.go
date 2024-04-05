@@ -1,9 +1,10 @@
-package mimir
+package client
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/grafana/grizzly/pkg/mimir"
 	"gopkg.in/yaml.v3"
 	"io"
 	"net/http"
@@ -31,14 +32,14 @@ func NewHttpClient(config *config.MimirConfig) (*Client, error) {
 	return &Client{config: config, client: client}, nil
 }
 
-func (c *Client) ListRules() (map[string][]PrometheusRuleGroup, error) {
+func (c *Client) ListRules() (map[string][]mimir.PrometheusRuleGroup, error) {
 	url := fmt.Sprintf(listRulesEndpoint, c.config.Address)
 	res, err := c.doRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var group map[string][]PrometheusRuleGroup
+	var group map[string][]mimir.PrometheusRuleGroup
 	if err := yaml.Unmarshal(res, &group); err != nil {
 		return nil, err
 	}
@@ -46,7 +47,7 @@ func (c *Client) ListRules() (map[string][]PrometheusRuleGroup, error) {
 	return group, nil
 }
 
-func (c *Client) LoadRules(resource PrometheusRuleGrouping) (string, error) {
+func (c *Client) LoadRules(resource mimir.PrometheusRuleGrouping) (string, error) {
 	url := fmt.Sprintf(loadRulesEndpoint, c.config.Address, resource.Namespace)
 	out, err := yaml.Marshal(resource.Groups)
 	if err != nil {
