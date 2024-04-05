@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/grafana/grizzly/pkg/mimir"
-	"gopkg.in/yaml.v3"
 	"io"
 	"net/http"
 	"os"
@@ -13,33 +11,29 @@ import (
 	"time"
 
 	"github.com/grafana/grizzly/pkg/config"
+	"github.com/grafana/grizzly/pkg/mimir/models"
+	"gopkg.in/yaml.v3"
 )
 
 var loadRulesEndpoint = "%s/prometheus/config/v1/rules/%s"
 var listRulesEndpoint = "%s/prometheus/api/v1/alerts"
 
 type Client struct {
-	client *http.Client
 	config *config.MimirConfig
 }
 
-func NewHttpClient(config *config.MimirConfig) (*Client, error) {
-	client, err := createHttpClient()
-	if err != nil {
-		return nil, err
-	}
-
-	return &Client{config: config, client: client}, nil
+func NewHttpClient(config *config.MimirConfig) Mimir {
+	return &Client{config: config}
 }
 
-func (c *Client) ListRules() (map[string][]mimir.PrometheusRuleGroup, error) {
+func (c *Client) ListRules() (map[string][]models.PrometheusRuleGroup, error) {
 	url := fmt.Sprintf(listRulesEndpoint, c.config.Address)
 	res, err := c.doRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var group map[string][]mimir.PrometheusRuleGroup
+	var group map[string][]models.PrometheusRuleGroup
 	if err := yaml.Unmarshal(res, &group); err != nil {
 		return nil, err
 	}
@@ -47,7 +41,7 @@ func (c *Client) ListRules() (map[string][]mimir.PrometheusRuleGroup, error) {
 	return group, nil
 }
 
-func (c *Client) LoadRules(resource mimir.PrometheusRuleGrouping) (string, error) {
+func (c *Client) LoadRules(resource models.PrometheusRuleGrouping) (string, error) {
 	url := fmt.Sprintf(loadRulesEndpoint, c.config.Address, resource.Namespace)
 	out, err := yaml.Marshal(resource.Groups)
 	if err != nil {
@@ -74,7 +68,12 @@ func (c *Client) doRequest(method string, url string, body []byte) ([]byte, erro
 		req.Header.Set("X-Scope-OrgID", fmt.Sprintf("%d", c.config.TenantID))
 	}
 
-	res, err := c.client.Do(req)
+	client, err := createHttpClient()
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("request to load rules failed: %s", err)
 	}

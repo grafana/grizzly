@@ -17,7 +17,7 @@ func TestRules(t *testing.T) {
 	cortexTool := &FakeCortexTool{}
 	h := RuleHandler{
 		BaseHandler: grizzly.NewBaseHandler(&Provider{}, "PrometheusRuleGroup", false),
-		cortexTool:  cortexTool,
+		clientTool:  cortexTool,
 	}
 	t.Run("get remote rule group", func(t *testing.T) {
 		cortexTool.mockResponse(t, true, nil)
@@ -107,6 +107,45 @@ type FakeCortexTool struct {
 	expectedError error
 }
 
+func (f *FakeCortexTool) ListRules() (map[string][]PrometheusRuleGroup, error) {
+	if f.expectedError != nil {
+		return nil, f.expectedError
+	}
+
+	if f.hasFile {
+		res, err := os.ReadFile("testdata/list_rules.yaml")
+		if err != nil {
+			return nil, err
+		}
+
+		var group map[string][]PrometheusRuleGroup
+		if err := yaml.Unmarshal(res, &group); err != nil {
+			return nil, err
+		}
+
+		return group, nil
+	}
+
+	return nil, nil
+}
+
+func (f *FakeCortexTool) LoadRules(resource PrometheusRuleGrouping) (string, error) {
+	if f.expectedError != nil {
+		return "", f.expectedError
+	}
+
+	if f.hasFile {
+		res, err := os.ReadFile("testdata/list_rules.yaml")
+		if err != nil {
+			return "", err
+		}
+
+		return string(res), nil
+	}
+
+	return "", nil
+}
+
 func (f *FakeCortexTool) mockResponse(t *testing.T, hasFile bool, expectedError error) {
 	f.hasFile = hasFile
 	f.expectedError = expectedError
@@ -114,16 +153,4 @@ func (f *FakeCortexTool) mockResponse(t *testing.T, hasFile bool, expectedError 
 		f.hasFile = false
 		f.expectedError = nil
 	})
-}
-
-func (f *FakeCortexTool) ExecuteCortexTool(_ ...string) ([]byte, error) {
-	if f.expectedError != nil {
-		return nil, f.expectedError
-	}
-
-	if f.hasFile {
-		return os.ReadFile("testdata/list_rules.yaml")
-	}
-
-	return nil, nil
 }

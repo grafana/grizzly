@@ -2,24 +2,24 @@ package client
 
 import (
 	"fmt"
-	"github.com/grafana/grizzly/pkg/mimir"
-	"gopkg.in/yaml.v3"
 	"os"
 	"os/exec"
 
 	"github.com/grafana/grizzly/pkg/config"
+	"github.com/grafana/grizzly/pkg/mimir/models"
+	"gopkg.in/yaml.v3"
 )
 
 type CortexTool struct {
 	config *config.MimirConfig
 }
 
-func NewCortexTool(config *config.MimirConfig) *CortexTool {
+func NewCortexTool(config *config.MimirConfig) Mimir {
 	return &CortexTool{config: config}
 }
 
-func (c *CortexTool) ListRules() (map[string][]mimir.PrometheusRuleGroup, error) {
-	cmd := exec.Command("rules", "print", "--disable-color")
+func (c *CortexTool) ListRules() (map[string][]models.PrometheusRuleGroup, error) {
+	cmd := exec.Command("cortextool", "rules", "print", "--disable-color")
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_ADDRESS=%s", c.config.Address))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_TENANT_ID=%d", c.config.TenantID))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_API_KEY=%s", c.config.ApiKey))
@@ -28,7 +28,7 @@ func (c *CortexTool) ListRules() (map[string][]mimir.PrometheusRuleGroup, error)
 		return nil, err
 	}
 
-	var group map[string][]mimir.PrometheusRuleGroup
+	var group map[string][]models.PrometheusRuleGroup
 	if err := yaml.Unmarshal(res, &group); err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func (c *CortexTool) ListRules() (map[string][]mimir.PrometheusRuleGroup, error)
 	return group, nil
 }
 
-func (c *CortexTool) LoadRules(resource mimir.PrometheusRuleGrouping) (string, error) {
+func (c *CortexTool) LoadRules(resource models.PrometheusRuleGrouping) (string, error) {
 	tmpFile, err := createTmpFile(resource)
 	if err != nil {
 		return "", err
@@ -46,7 +46,7 @@ func (c *CortexTool) LoadRules(resource mimir.PrometheusRuleGrouping) (string, e
 		_ = os.Remove(tmpFile)
 	}()
 
-	cmd := exec.Command("rules", "load", tmpFile)
+	cmd := exec.Command("cortextool", "rules", "load", tmpFile)
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_ADDRESS=%s", c.config.Address))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_TENANT_ID=%d", c.config.TenantID))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_API_KEY=%s", c.config.ApiKey))
@@ -54,7 +54,7 @@ func (c *CortexTool) LoadRules(resource mimir.PrometheusRuleGrouping) (string, e
 	return string(res), err
 }
 
-func createTmpFile(resource mimir.PrometheusRuleGrouping) (string, error) {
+func createTmpFile(resource models.PrometheusRuleGrouping) (string, error) {
 	tmpfile, err := os.CreateTemp("", "cortextool-*")
 	if err != nil {
 		return "", err

@@ -7,9 +7,12 @@ type GrafanaConfig struct {
 }
 
 type MimirConfig struct {
-	Address  string `yaml:"address" mapstructure:"address"`
-	TenantID int64  `yaml:"tenant-id" mapstructure:"tenant-id"`
-	ApiKey   string `yaml:"api-key" mapstructure:"api-key"`
+	CortexToolPath string `yaml:"cortextool-path" mapstructure:"cortextool-path"`
+	MimirToolPath  string `yaml:"mimirtool-path" mapstructure:"mimirtool-path"`
+	Address        string `yaml:"address" mapstructure:"address"`
+	TenantID       any    `yaml:"tenant-id" mapstructure:"tenant-id"`
+	ApiKey         string `yaml:"api-key" mapstructure:"api-key"`
+	AuthKey        string `yaml:"auth-token" mapstructure:"auth-token"`
 }
 
 type SyntheticMonitoringConfig struct {

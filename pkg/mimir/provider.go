@@ -2,6 +2,7 @@ package mimir
 
 import (
 	"fmt"
+	"github.com/grafana/grizzly/pkg/mimir/client"
 	"os/exec"
 	"path/filepath"
 
@@ -11,30 +12,31 @@ import (
 
 // Provider is a grizzly.Provider implementation for Grafana.
 type Provider struct {
-	config *config.MimirConfig
-	client *Client
+	config     *config.MimirConfig
+	clientTool client.Mimir
 }
 
 // NewProvider instantiates a new Provider.
 func NewProvider(config *config.MimirConfig) (*Provider, error) {
-	if _, err := exec.LookPath("cortextool"); err != nil {
-		return nil, err
+	var clientTool client.Mimir
+	if isBinarySet(config.MimirToolPath, "mimirtool") {
+		clientTool = client.NewMimirTool(config)
+	} else if isBinarySet(config.CortexToolPath, "cortextool") {
+		clientTool = client.NewCortexTool(config)
+	} else {
+		clientTool = client.NewHttpClient(config)
 	}
+
 	if config.Address == "" {
 		return nil, fmt.Errorf("mimir address is not set")
 	}
-	if config.ApiKey == "" {
-		return nil, fmt.Errorf("mimir api key is not set")
-	}
-
-	client, err := NewHttpClient(config)
-	if err != nil {
-		return nil, err
+	if config.TenantID == 0 {
+		return nil, fmt.Errorf("mimir tenant id is not set")
 	}
 
 	return &Provider{
-		config: config,
-		client: client,
+		config:     config,
+		clientTool: clientTool,
 	}, nil
 }
 
@@ -60,6 +62,19 @@ func (p *Provider) APIVersion() string {
 // GetHandlers identifies the handlers for the Grafana provider
 func (p *Provider) GetHandlers() []grizzly.Handler {
 	return []grizzly.Handler{
-		NewRuleHandler(p),
+		NewRuleHandler(p, p.clientTool),
 	}
+}
+
+func isBinarySet(path string, tool string) bool {
+	if path != "" {
+		return true
+	}
+
+	_, err := exec.LookPath(tool)
+	if err != nil {
+		return false
+	}
+
+	return true
 }

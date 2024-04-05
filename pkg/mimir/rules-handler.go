@@ -3,6 +3,7 @@ package mimir
 import (
 	"fmt"
 	"github.com/grafana/grizzly/pkg/mimir/client"
+	"github.com/grafana/grizzly/pkg/mimir/models"
 	"log"
 	"strings"
 
@@ -12,14 +13,14 @@ import (
 // RuleHandler is a Grizzly Handler for Prometheus Rules
 type RuleHandler struct {
 	grizzly.BaseHandler
-	cortexTool client.Mimir
+	clientTool client.Mimir
 }
 
 // NewRuleHandler returns a new Grizzly Handler for Prometheus Rules
-func NewRuleHandler(provider *Provider) *RuleHandler {
+func NewRuleHandler(provider *Provider, clientTool client.Mimir) *RuleHandler {
 	return &RuleHandler{
 		BaseHandler: grizzly.NewBaseHandler(provider, "PrometheusRuleGroup", false),
-		cortexTool:  client.NewCortexTool(provider.config),
+		clientTool:  clientTool,
 	}
 }
 
@@ -90,7 +91,7 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 	namespace := parts[0]
 	name := parts[1]
 
-	groupings, err := h.cortexTool.ListRules()
+	groupings, err := h.clientTool.ListRules()
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +118,7 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 
 // getRemoteRuleGroupList retrieves a datasource object from Grafana
 func (h *RuleHandler) getRemoteRuleGroupList() ([]string, error) {
-	groupings, err := h.cortexTool.ListRules()
+	groupings, err := h.clientTool.ListRules()
 	if err != nil {
 		return nil, err
 	}
@@ -132,21 +133,8 @@ func (h *RuleHandler) getRemoteRuleGroupList() ([]string, error) {
 	return IDs, nil
 }
 
-// PrometheusRuleGroup encapsulates a list of rules
-type PrometheusRuleGroup struct {
-	Namespace string                   `yaml:"-"`
-	Name      string                   `yaml:"name"`
-	Rules     []map[string]interface{} `yaml:"rules"`
-}
-
-// PrometheusRuleGrouping encapsulates a set of named rule groups
-type PrometheusRuleGrouping struct {
-	Namespace string                `json:"namespace"`
-	Groups    []PrometheusRuleGroup `json:"groups"`
-}
-
 func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
-	newGroup := PrometheusRuleGroup{
+	newGroup := models.PrometheusRuleGroup{
 		Name: resource.Name(),
 		// Rules: resource.Spec()["rules"].([]map[string]interface{}),
 		Rules: []map[string]interface{}{},
@@ -156,12 +144,12 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 		rule := ruleIf.(map[string]interface{})
 		newGroup.Rules = append(newGroup.Rules, rule)
 	}
-	grouping := PrometheusRuleGrouping{
+	grouping := models.PrometheusRuleGrouping{
 		Namespace: resource.GetMetadata("namespace"),
-		Groups:    []PrometheusRuleGroup{newGroup},
+		Groups:    []models.PrometheusRuleGroup{newGroup},
 	}
 
-	output, err := h.cortexTool.LoadRules(grouping)
+	output, err := h.clientTool.LoadRules(grouping)
 	if err != nil {
 		log.Println(output)
 		return err
