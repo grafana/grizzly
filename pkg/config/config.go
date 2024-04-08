@@ -38,9 +38,12 @@ func override(v *viper.Viper) {
 		"synthetic-monitoring.logs-id":    "GRAFANA_SM_LOGS_ID",
 		"synthetic-monitoring.metrics-id": "GRAFANA_SM_METRICS_ID",
 
-		"mimir.address":   "CORTEX_ADDRESS",
-		"mimir.tenant-id": "CORTEX_TENANT_ID",
-		"mimir.api-key":   "CORTEX_API_KEY",
+		"mimir.address":         "CORTEX_ADDRESS",
+		"mimir.tenant-id":       "CORTEX_TENANT_ID",
+		"mimir.api-key":         "CORTEX_API_KEY",
+		"mimir.auth-key":        "CORTEX_AUTH_KEY",
+		"mimir.cortextool-path": "CORTEX_CORTEXTOOL_PATH",
+		"mimir.mimirtool-path":  "CORTEX_MIMIRTOOL_PATH",
 	}
 	for key, env := range bindings {
 		val := os.Getenv(env)
@@ -149,6 +152,10 @@ var acceptableKeys = map[string]string{
 	"mimir.address":                   "string",
 	"mimir.tenant-id":                 "string",
 	"mimir.api-key":                   "string",
+	"mimir.auth-key":                  "string",
+	"mimir.mimirtool-path":            "string",
+	"mimir.cortextool-path":           "string",
+	"mimir.client":                    "string",
 	"synthetic-monitoring.token":      "string",
 	"synthetic-monitoring.stack-id":   "int",
 	"synthetic-monitoring.metrics-id": "int",

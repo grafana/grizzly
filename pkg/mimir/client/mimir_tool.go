@@ -21,7 +21,7 @@ func NewMimirTool(config *config.MimirConfig) Mimir {
 func (c *MimirTool) ListRules() (map[string][]models.PrometheusRuleGroup, error) {
 	cmd := exec.Command("mimirtool", "rules", "print", "--disable-color")
 	cmd.Env = append(cmd.Env, fmt.Sprintf("MIMIR_ADDRESS=%s", c.config.Address))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("MIMIR_TENANT_ID=%d", c.config.TenantID))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("MIMIR_TENANT_ID=%s", c.config.TenantID))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("MIMIR_API_KEY=%s", c.config.ApiKey))
 	res, err := cmd.Output()
 	if err != nil {
@@ -48,7 +48,7 @@ func (c *MimirTool) LoadRules(resource models.PrometheusRuleGrouping) (string, e
 
 	cmd := exec.Command("mimirtool", "rules", "load", tmpFile)
 	cmd.Env = append(cmd.Env, fmt.Sprintf("MIMIR_ADDRESS=%s", c.config.Address))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("MIMIR_TENANT_ID=%d", c.config.TenantID))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("MIMIR_TENANT_ID=%s", c.config.TenantID))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("MIMIR_API_KEY=%s", c.config.ApiKey))
 	res, err := cmd.Output()
 	return string(res), err

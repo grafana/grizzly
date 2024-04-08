@@ -16,7 +16,20 @@ import (
 )
 
 var loadRulesEndpoint = "%s/prometheus/config/v1/rules/%s"
-var listRulesEndpoint = "%s/prometheus/api/v1/alerts"
+var listRulesEndpoint = "%s/prometheus/api/v1/rules"
+
+type ListGroupResponse struct {
+	Status string `yaml:"status"`
+	Data   struct {
+		DataGroups []DataGroups `yaml:"groups"`
+	} `yaml:"data"`
+}
+
+type DataGroups struct {
+	Name  string                   `yaml:"name"`
+	File  string                   `yaml:"file"`
+	Rules []map[string]interface{} `yaml:"rules"`
+}
 
 type Client struct {
 	config *config.MimirConfig
@@ -33,12 +46,21 @@ func (c *Client) ListRules() (map[string][]models.PrometheusRuleGroup, error) {
 		return nil, err
 	}
 
-	var group map[string][]models.PrometheusRuleGroup
-	if err := yaml.Unmarshal(res, &group); err != nil {
+	var response ListGroupResponse
+	if err := yaml.Unmarshal(res, &response); err != nil {
 		return nil, err
 	}
 
-	return group, nil
+	groups := make(map[string][]models.PrometheusRuleGroup)
+	for _, g := range response.Data.DataGroups {
+		groups[g.File] = append(groups[g.File], models.PrometheusRuleGroup{
+			Namespace: g.File,
+			Name:      g.Name,
+			Rules:     g.Rules,
+		})
+	}
+
+	return groups, nil
 }
 
 func (c *Client) LoadRules(resource models.PrometheusRuleGrouping) (string, error) {
@@ -53,19 +75,18 @@ func (c *Client) LoadRules(resource models.PrometheusRuleGrouping) (string, erro
 }
 
 func (c *Client) doRequest(method string, url string, body []byte) ([]byte, error) {
-	if c.config.ApiKey == "" {
-		return nil, errors.New("missing Mimir's APIKey")
+	if c.config.TenantID == "" {
+		return nil, errors.New("missing tenant-id")
 	}
-
 	req, err := http.NewRequest(method, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/yaml")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.config.ApiKey))
-	if c.config.TenantID != 0 {
-		req.Header.Set("X-Scope-OrgID", fmt.Sprintf("%d", c.config.TenantID))
+	req.Header.Set("X-Scope-OrgID", fmt.Sprintf("%s", c.config.TenantID))
+	if c.config.ApiKey != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.config.ApiKey))
 	}
 
 	client, err := createHttpClient()

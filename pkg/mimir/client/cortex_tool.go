@@ -21,7 +21,7 @@ func NewCortexTool(config *config.MimirConfig) Mimir {
 func (c *CortexTool) ListRules() (map[string][]models.PrometheusRuleGroup, error) {
 	cmd := exec.Command("cortextool", "rules", "print", "--disable-color")
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_ADDRESS=%s", c.config.Address))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_TENANT_ID=%d", c.config.TenantID))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_TENANT_ID=%s", c.config.TenantID))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_API_KEY=%s", c.config.ApiKey))
 	res, err := cmd.Output()
 	if err != nil {
@@ -48,7 +48,7 @@ func (c *CortexTool) LoadRules(resource models.PrometheusRuleGrouping) (string, 
 
 	cmd := exec.Command("cortextool", "rules", "load", tmpFile)
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_ADDRESS=%s", c.config.Address))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_TENANT_ID=%d", c.config.TenantID))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_TENANT_ID=%s", c.config.TenantID))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_API_KEY=%s", c.config.ApiKey))
 	res, err := cmd.Output()
 	return string(res), err

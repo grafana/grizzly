@@ -10,9 +10,10 @@ type MimirConfig struct {
 	CortexToolPath string `yaml:"cortextool-path" mapstructure:"cortextool-path"`
 	MimirToolPath  string `yaml:"mimirtool-path" mapstructure:"mimirtool-path"`
 	Address        string `yaml:"address" mapstructure:"address"`
-	TenantID       any    `yaml:"tenant-id" mapstructure:"tenant-id"`
+	TenantID       string `yaml:"tenant-id" mapstructure:"tenant-id"`
 	ApiKey         string `yaml:"api-key" mapstructure:"api-key"`
 	AuthKey        string `yaml:"auth-token" mapstructure:"auth-token"`
+	Client         string `yaml:"client" mapstructure:"client"`
 }
 
 type SyntheticMonitoringConfig struct {

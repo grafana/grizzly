@@ -10,6 +10,12 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
+const (
+	MimirTool  string = "mimirtool"
+	CortexTool string = "cortextool"
+	Http       string = "http"
+)
+
 // Provider is a grizzly.Provider implementation for Grafana.
 type Provider struct {
 	config     *config.MimirConfig
@@ -19,18 +25,28 @@ type Provider struct {
 // NewProvider instantiates a new Provider.
 func NewProvider(config *config.MimirConfig) (*Provider, error) {
 	var clientTool client.Mimir
-	if isBinarySet(config.MimirToolPath, "mimirtool") {
+	switch config.Client {
+	case MimirTool:
+		if !isBinarySet(config.MimirToolPath, MimirTool) {
+			return nil, ErrNoBinarySet{name: MimirTool}
+		}
 		clientTool = client.NewMimirTool(config)
-	} else if isBinarySet(config.CortexToolPath, "cortextool") {
+	case CortexTool:
+		if !isBinarySet(config.MimirToolPath, CortexTool) {
+			return nil, ErrNoBinarySet{name: CortexTool}
+		}
 		clientTool = client.NewCortexTool(config)
-	} else {
+	case Http:
 		clientTool = client.NewHttpClient(config)
+	default:
+		// Uses cortextool as we were using from the beginning.
+		clientTool = client.NewCortexTool(config)
 	}
 
 	if config.Address == "" {
 		return nil, fmt.Errorf("mimir address is not set")
 	}
-	if config.TenantID == 0 {
+	if config.TenantID == "" {
 		return nil, fmt.Errorf("mimir tenant id is not set")
 	}
 
