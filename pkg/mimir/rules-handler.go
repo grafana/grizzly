@@ -148,7 +148,7 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 		Groups:    []models.PrometheusRuleGroup{newGroup},
 	}
 
-	output, err := h.clientTool.LoadRules(grouping)
+	output, err := h.clientTool.CreateRules(grouping)
 	if err != nil {
 		log.Println(output)
 		return err

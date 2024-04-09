@@ -129,7 +129,7 @@ func (f *FakeCortexTool) ListRules() (map[string][]models.PrometheusRuleGroup, e
 	return nil, nil
 }
 
-func (f *FakeCortexTool) LoadRules(_ models.PrometheusRuleGrouping) (string, error) {
+func (f *FakeCortexTool) CreateRules(_ models.PrometheusRuleGrouping) (string, error) {
 	if f.expectedError != nil {
 		return "", f.expectedError
 	}

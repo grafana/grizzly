@@ -62,8 +62,11 @@ func (c *Client) ListRules() (map[string][]models.PrometheusRuleGroup, error) {
 	return groups, nil
 }
 
-func (c *Client) LoadRules(resource models.PrometheusRuleGrouping) (string, error) {
+func (c *Client) CreateRules(resource models.PrometheusRuleGrouping) (string, error) {
 	url := fmt.Sprintf(loadRulesEndpoint, c.config.Address, resource.Namespace)
+	if len(resource.Groups) > 1 {
+		return "", errors.New("http mode isn't able to send more that one rule group at once. Use `mimirtool` to load multiple rule groups")
+	}
 	out, err := yaml.Marshal(resource.Groups[0])
 	if err != nil {
 		return "", fmt.Errorf("cannot marshall groups: %s", err)

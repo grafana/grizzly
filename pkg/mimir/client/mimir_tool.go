@@ -36,7 +36,7 @@ func (c *MimirTool) ListRules() (map[string][]models.PrometheusRuleGroup, error)
 	return group, nil
 }
 
-func (c *MimirTool) LoadRules(resource models.PrometheusRuleGrouping) (string, error) {
+func (c *MimirTool) CreateRules(resource models.PrometheusRuleGrouping) (string, error) {
 	tmpFile, err := createTmpFile(resource)
 	if err != nil {
 		return "", err

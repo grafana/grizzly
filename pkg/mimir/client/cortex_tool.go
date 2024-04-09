@@ -36,7 +36,7 @@ func (c *CortexTool) ListRules() (map[string][]models.PrometheusRuleGroup, error
 	return group, nil
 }
 
-func (c *CortexTool) LoadRules(resource models.PrometheusRuleGrouping) (string, error) {
+func (c *CortexTool) CreateRules(resource models.PrometheusRuleGrouping) (string, error) {
 	tmpFile, err := createTmpFile(resource)
 	if err != nil {
 		return "", err
