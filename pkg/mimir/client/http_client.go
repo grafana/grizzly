@@ -26,9 +26,9 @@ type ListGroupResponse struct {
 }
 
 type DataGroups struct {
-	Name  string                   `yaml:"name"`
-	File  string                   `yaml:"file"`
-	Rules []map[string]interface{} `yaml:"rules"`
+	Name  string        `yaml:"name"`
+	File  string        `yaml:"file"`
+	Rules []interface{} `yaml:"rules"`
 }
 
 type Client struct {
@@ -54,9 +54,8 @@ func (c *Client) ListRules() (map[string][]models.PrometheusRuleGroup, error) {
 	groups := make(map[string][]models.PrometheusRuleGroup)
 	for _, g := range response.Data.DataGroups {
 		groups[g.File] = append(groups[g.File], models.PrometheusRuleGroup{
-			Namespace: g.File,
-			Name:      g.Name,
-			Rules:     g.Rules,
+			Name:  g.Name,
+			Rules: g.Rules,
 		})
 	}
 
@@ -65,7 +64,7 @@ func (c *Client) ListRules() (map[string][]models.PrometheusRuleGroup, error) {
 
 func (c *Client) LoadRules(resource models.PrometheusRuleGrouping) (string, error) {
 	url := fmt.Sprintf(loadRulesEndpoint, c.config.Address, resource.Namespace)
-	out, err := yaml.Marshal(resource.Groups)
+	out, err := yaml.Marshal(resource.Groups[0])
 	if err != nil {
 		return "", fmt.Errorf("cannot marshall groups: %s", err)
 	}

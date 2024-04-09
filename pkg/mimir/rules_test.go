@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/mimir/models"
 	"github.com/stretchr/testify/require"
-
 	"gopkg.in/yaml.v3"
 )
 
@@ -107,7 +107,7 @@ type FakeCortexTool struct {
 	expectedError error
 }
 
-func (f *FakeCortexTool) ListRules() (map[string][]PrometheusRuleGroup, error) {
+func (f *FakeCortexTool) ListRules() (map[string][]models.PrometheusRuleGroup, error) {
 	if f.expectedError != nil {
 		return nil, f.expectedError
 	}
@@ -118,7 +118,7 @@ func (f *FakeCortexTool) ListRules() (map[string][]PrometheusRuleGroup, error) {
 			return nil, err
 		}
 
-		var group map[string][]PrometheusRuleGroup
+		var group map[string][]models.PrometheusRuleGroup
 		if err := yaml.Unmarshal(res, &group); err != nil {
 			return nil, err
 		}
@@ -129,7 +129,7 @@ func (f *FakeCortexTool) ListRules() (map[string][]PrometheusRuleGroup, error) {
 	return nil, nil
 }
 
-func (f *FakeCortexTool) LoadRules(resource PrometheusRuleGrouping) (string, error) {
+func (f *FakeCortexTool) LoadRules(_ models.PrometheusRuleGrouping) (string, error) {
 	if f.expectedError != nil {
 		return "", f.expectedError
 	}

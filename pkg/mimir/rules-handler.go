@@ -135,9 +135,8 @@ func (h *RuleHandler) getRemoteRuleGroupList() ([]string, error) {
 
 func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 	newGroup := models.PrometheusRuleGroup{
-		Name: resource.Name(),
-		// Rules: resource.Spec()["rules"].([]map[string]interface{}),
-		Rules: []map[string]interface{}{},
+		Name:  resource.Name(),
+		Rules: []interface{}{},
 	}
 	rules := resource.Spec()["rules"].([]interface{})
 	for _, ruleIf := range rules {

@@ -152,7 +152,6 @@ var acceptableKeys = map[string]string{
 	"mimir.address":                   "string",
 	"mimir.tenant-id":                 "string",
 	"mimir.api-key":                   "string",
-	"mimir.auth-key":                  "string",
 	"mimir.mimirtool-path":            "string",
 	"mimir.cortextool-path":           "string",
 	"mimir.client":                    "string",

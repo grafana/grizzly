@@ -12,8 +12,7 @@ type MimirConfig struct {
 	Address        string `yaml:"address" mapstructure:"address"`
 	TenantID       string `yaml:"tenant-id" mapstructure:"tenant-id"`
 	ApiKey         string `yaml:"api-key" mapstructure:"api-key"`
-	AuthKey        string `yaml:"auth-token" mapstructure:"auth-token"`
-	Client         string `yaml:"client" mapstructure:"client"`
+	Client         string `yaml:"client-tool" mapstructure:"client"`
 }
 
 type SyntheticMonitoringConfig struct {
