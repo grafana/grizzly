@@ -99,6 +99,6 @@ func createRegistry(context *config.Context) grizzly.Registry {
 		providerList = append(providerList, provider.Name()+" - active")
 		providers = append(providers, provider)
 	}
-	notifier.Info(nil, "Providers: "+strings.Join(providerList, ", "))
+	notifier.InfoStderr(nil, "Providers: "+strings.Join(providerList, ", "))
 	return grizzly.NewRegistry(providers)
 }
