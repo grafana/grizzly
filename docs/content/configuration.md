@@ -42,7 +42,7 @@ To interact with Grafana Cloud Prometheus (aka Mimir), use these settings:
 ```sh
 grr config set mimir.address https://mimir.example.com # URL for Grafana Cloud Prometheus instance
 grr config set mimir.tenant-id 1234567 # Tenant ID for your Grafana Cloud Prometheus account
-grr config set mimir.api-key abcdef12345 # Authentication token (if you are using GrafanaCloud)
+grr config set mimir.api-key abcdef12345 # Authentication token (if you are using Grafana Cloud)
 grr config set mimir.mimirtool-path /path/to/mimirtool # (Optional) If you want to define mimirtool binary by configuration.
 grr config set mimir.cortextool-path /path/to/cortextool # (Optional) If you want to define cortextool binary by configuration.
 grr config set mimir.client cortextool # Used to select the tool to interact with mimir (mimirtool/cortextool/http). cortextool is the default one.
@@ -51,6 +51,7 @@ grr config set mimir.client cortextool # Used to select the tool to interact wit
 **Notes** 
 * This will also work with other Cortex installations, alongside Grafana Cloud Prometheus/Mimir.
 * If you have `mimirtool` or `cortextool` binary installed in your system, using the default way to do it, you don't need to set the path by configuration. 
+* Be sure to set `api-key` when you need to interact with Grafana Cloud.
 
 ## Grafana Synthetic Monitoring
 To interact with Grafana Synthetic Monitoring, you must configure the below settings:
