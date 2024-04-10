@@ -169,7 +169,7 @@ func (r *Resource) SpecAsJSON() (string, error) {
 
 // YAML Gets the string representation for this resource
 func (r *Resource) YAML() (string, error) {
-	y, err := yaml.Marshal(*r)
+	y, err := yaml.Marshal(r.Spec())
 	if err != nil {
 		return "", err
 	}
