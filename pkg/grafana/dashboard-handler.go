@@ -416,6 +416,10 @@ func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server) http.Handl
 			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 404)
 			return
 		}
+		if !existing.Source.Rewritable {
+			grizzly.SendError(w, "The source for this dashboard is not rewritable", fmt.Errorf("the source for this dashboard is not rewritable"), 400)
+			return
+		}
 
 		err = os.WriteFile(existing.Source.Path, out, 0644)
 		if err != nil {
