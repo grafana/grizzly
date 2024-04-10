@@ -353,8 +353,9 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server) http.Handle
 			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 404)
 			return
 		}
-		resource.SetSpecValue("version", 1)
-
+		if resource.GetSpecValue("version") == nil {
+			resource.SetSpecValue("version", 1)
+		}
 		meta := map[string]interface{}{
 			"type":      "db",
 			"isStarred": false,
