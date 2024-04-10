@@ -2,12 +2,15 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/grizzly/pkg/mimir"
 	"github.com/grafana/grizzly/pkg/syntheticmonitoring"
 	log "github.com/sirupsen/logrus"
@@ -85,16 +88,17 @@ func createRegistry(context *config.Context) grizzly.Registry {
 	}
 
 	var providers []grizzly.Provider
-	initMessage := "Providers:"
+
+	var providerList []string
 	for _, initFunc := range providerInitFuncs {
 		provider, err := initFunc()
 		if err != nil {
-			initMessage += "\n  " + provider.Name() + " - inactive: " + err.Error()
+			providerList = append(providerList, fmt.Sprintf("%s - inactive (%s)", provider.Name(), err.Error()))
 			continue
 		}
-		initMessage += "\n  " + provider.Name() + " - active"
+		providerList = append(providerList, provider.Name()+" - active")
 		providers = append(providers, provider)
 	}
-	log.Info(initMessage)
+	notifier.Info(nil, "Providers: "+strings.Join(providerList, ", "))
 	return grizzly.NewRegistry(providers)
 }
