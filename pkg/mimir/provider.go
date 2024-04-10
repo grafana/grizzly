@@ -2,12 +2,12 @@ package mimir
 
 import (
 	"fmt"
-	"github.com/grafana/grizzly/pkg/mimir/client"
 	"os/exec"
 	"path/filepath"
-
+	
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/mimir/client"
 )
 
 const (
@@ -42,14 +42,14 @@ func NewProvider(config *config.MimirConfig) (*Provider, error) {
 		// Uses cortextool as we were using from the beginning.
 		clientTool = client.NewCortexTool(config)
 	}
-
+	
 	if config.Address == "" {
 		return nil, fmt.Errorf("mimir address is not set")
 	}
 	if config.TenantID == "" {
 		return nil, fmt.Errorf("mimir tenant id is not set")
 	}
-
+	
 	return &Provider{
 		config:     config,
 		clientTool: clientTool,
@@ -86,11 +86,11 @@ func isBinarySet(path string, tool string) bool {
 	if path != "" {
 		return true
 	}
-
+	
 	_, err := exec.LookPath(tool)
 	if err != nil {
 		return false
 	}
-
+	
 	return true
 }

@@ -44,6 +44,7 @@ func override(v *viper.Viper) {
 		"mimir.auth-key":        "CORTEX_AUTH_KEY",
 		"mimir.cortextool-path": "CORTEX_CORTEXTOOL_PATH",
 		"mimir.mimirtool-path":  "CORTEX_MIMIRTOOL_PATH",
+		"mimir.client":          "CORTEX_CLIENT",
 	}
 	for key, env := range bindings {
 		val := os.Getenv(env)
