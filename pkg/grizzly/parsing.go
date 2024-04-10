@@ -370,6 +370,7 @@ func (w *walker) walkObj(obj map[string]any, path trace) error {
 
 		source := w.source
 		source.Location = path.Full()
+		source.Rewritable = false
 		resource.SetSource(source)
 		w.Resources = append(w.Resources, *resource)
 		return nil
