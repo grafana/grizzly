@@ -85,9 +85,9 @@ func List(registry Registry, resources Resources, verbose bool) error {
 				handler.APIVersion(),
 				handler.Kind(),
 				resource.Name(),
-				resource.Provenance.Path,
-				resource.Provenance.Location,
-				resource.Provenance.Format)
+				resource.Source.Path,
+				resource.Source.Location,
+				resource.Source.Format)
 		} else {
 			fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), resource.Name())
 		}

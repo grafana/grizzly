@@ -165,7 +165,7 @@ func (parser *ChainParser) parseFile(file string, options ParserOptions) (Resour
 	return nil, fmt.Errorf("unrecognized format for %s", file)
 }
 
-func parseAny(registry Registry, data any, resourceKind, folderUID, format, resourcePath string, isRewritable bool) (Resources, error) {
+func parseAny(registry Registry, data any, resourceKind, folderUID string, source Source) (Resources, error) {
 	hasEnvelope := DetectEnvelope(data)
 	if hasEnvelope {
 		m := data.(map[string]any)
@@ -183,7 +183,7 @@ func parseAny(registry Registry, data any, resourceKind, folderUID, format, reso
 		if err != nil {
 			return nil, err
 		}
-		resource.SetProvenance(format, "", resourcePath, isRewritable)
+		resource.SetSource(source)
 		return Resources{*resource}, nil
 	}
 
@@ -208,7 +208,7 @@ func parseAny(registry Registry, data any, resourceKind, folderUID, format, reso
 		if err != nil {
 			return nil, err
 		}
-		resource.SetProvenance(format, "", resourcePath, isRewritable)
+		resource.SetSource(source)
 
 		uid, err := handler.GetSpecUID(resource)
 		if err != nil {
@@ -229,9 +229,7 @@ func parseAny(registry Registry, data any, resourceKind, folderUID, format, reso
 	}
 
 	walker := walker{
-		format:       format,
-		resourcePath: resourcePath,
-		isRewritable: isRewritable,
+		source: source,
 	}
 	err := walker.Walk(data)
 
@@ -313,10 +311,8 @@ func ValidateEnvelope(data any) error {
 }
 
 type walker struct {
-	Resources    Resources
-	format       string
-	resourcePath string
-	isRewritable bool
+	Resources Resources
+	source    Source
 }
 
 // Walk scans the raw interface{} for objects that look like enveloped objects and
@@ -371,7 +367,10 @@ func (w *walker) walkObj(obj map[string]any, path trace) error {
 		if err != nil {
 			return err
 		}
-		resource.SetProvenance(w.format, path.Full(), w.resourcePath, w.isRewritable)
+
+		source := w.source
+		source.Location = path.Full()
+		resource.SetSource(source)
 		w.Resources = append(w.Resources, *resource)
 		return nil
 	}

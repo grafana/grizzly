@@ -48,7 +48,12 @@ func (parser *JsonnetParser) Parse(file string, options ParserOptions) (Resource
 		return nil, err
 	}
 
-	resources, err := parseAny(parser.registry, data, options.DefaultResourceKind, options.DefaultFolderUID, "jsonnet", file, false)
+	source := Source{
+		Format:     "jsonnet",
+		Path:       file,
+		Rewritable: false,
+	}
+	resources, err := parseAny(parser.registry, data, options.DefaultResourceKind, options.DefaultFolderUID, source)
 	if err != nil {
 		return nil, err
 	}

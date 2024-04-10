@@ -27,16 +27,19 @@ func (ref ResourceRef) String() string {
 	return fmt.Sprintf("%s.%s", ref.Kind, ref.Name)
 }
 
+// Source represents the on disk (etc) location of a resource
+type Source struct {
+	Format     string
+	Location   string
+	Path       string
+	Rewritable bool
+}
+
 // Resource represents a single Resource destined for a single endpoint
 type Resource struct {
 	Body map[string]interface{}
 
-	Provenance struct {
-		Format     string
-		Location   string
-		Path       string
-		Rewritable bool
-	}
+	Source Source
 }
 
 func ResourceFromMap(data map[string]interface{}) (*Resource, error) {
@@ -92,11 +95,8 @@ func (r *Resource) Ref() ResourceRef {
 	}
 }
 
-func (r *Resource) SetProvenance(format, location, path string, rewritable bool) {
-	r.Provenance.Format = format
-	r.Provenance.Location = location
-	r.Provenance.Path = path
-	r.Provenance.Rewritable = rewritable
+func (r *Resource) SetSource(source Source) {
+	r.Source = source
 }
 
 func (r Resource) String() string {
@@ -174,15 +174,6 @@ func (r *Resource) YAML() (string, error) {
 		return "", err
 	}
 	return string(y), nil
-}
-
-// JSON Gets the string representation for this resource
-func (r *Resource) JSON() (string, error) {
-	j, err := json.MarshalIndent(*r, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
 }
 
 // Resources represents a set of resources

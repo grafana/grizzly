@@ -34,7 +34,12 @@ func (parser *JSONParser) Parse(file string, options ParserOptions) (Resources, 
 		return nil, err
 	}
 
-	resources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID, "json", file, true)
+	source := Source{
+		Format:     "json",
+		Path:       file,
+		Rewritable: true,
+	}
+	resources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID, source)
 	if err != nil {
 		return nil, err
 	}
