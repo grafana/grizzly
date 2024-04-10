@@ -32,7 +32,7 @@ establish authentication credentials.
 
 ```sh
 grr config set grafana.url http://localhost:3000 # URL for the root of your Grafana instance
-grr config set grafana.user admin # Optional: Username if using basic auth
+grr config set grafana.user admin # (Optional) Username if using basic auth
 grr config set grafana.token abcd12345 # Service account token (or basic auth password)
 ```
 
@@ -42,19 +42,24 @@ To interact with Grafana Cloud Prometheus (aka Mimir), use these settings:
 ```sh
 grr config set mimir.address https://mimir.example.com # URL for Grafana Cloud Prometheus instance
 grr config set mimir.tenant-id 1234567 # Tenant ID for your Grafana Cloud Prometheus account
-grr config set mimir.api-key abcdef12345 # Authentication token
+grr config set mimir.api-key abcdef12345 # Authentication token (if you are using GrafanaCloud)
+grr config set mimir.mimirtool-path /path/to/mimirtool # (Optional) If you want to define mimirtool binary by configuration.
+grr config set mimir.cortextool-path /path/to/cortextool # (Optional) If you want to define cortextool binary by configuration.
+grr config set mimir.client cortextool # Used to select the tool to interact with mimir (mimirtool/cortextool/http). cortextool is the default one.
 ```
 
-Note, this will also work with other Cortex installations, alongside Grafana Cloud Prometheus/Mimir.
+**Notes** 
+* This will also work with other Cortex installations, alongside Grafana Cloud Prometheus/Mimir.
+* If you have `mimirtool` or `cortextool` binary installed in your system, using the default way to do it, you don't need to set the path by configuration. 
 
 ## Grafana Synthetic Monitoring
 To interact with Grafana Synthetic Monitoring, you must configure the below settings:
 
 ```sh
 grr config set synthetic-monitoring.token abcdef123456 # API key (must have MetricsPublisher permissions)
-grr config set synthetic-monitoring.stack-id # Grafana stack ID
-grr config set synthetic-monitoring.metrics-id # Metrics instance ID
-grr config set synthetic-monitoring.logs-id # Logs instance ID
+grr config set synthetic-monitoring.stack-id 123 # Grafana stack ID
+grr config set synthetic-monitoring.metrics-id 123 # Metrics instance ID
+grr config set synthetic-monitoring.logs-id 123 # Logs instance ID
 ```
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
 

@@ -31,15 +31,13 @@ func NewProvider(config *config.MimirConfig) (*Provider, error) {
 			return nil, ErrNoBinarySet{name: MimirTool}
 		}
 		clientTool = client.NewMimirTool(config)
-	case CortexTool:
-		if !isBinarySet(config.CortexToolPath, CortexTool) {
-			return nil, ErrNoBinarySet{name: CortexTool}
-		}
-		clientTool = client.NewCortexTool(config)
 	case Http:
 		clientTool = client.NewHttpClient(config)
 	default:
 		// Uses cortextool as we were using from the beginning.
+		if !isBinarySet(config.CortexToolPath, CortexTool) {
+			return nil, ErrNoBinarySet{name: CortexTool}
+		}
 		clientTool = client.NewCortexTool(config)
 	}
 
