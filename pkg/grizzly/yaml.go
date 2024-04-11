@@ -29,13 +29,13 @@ func (parser *YAMLParser) Accept(file string) bool {
 func (parser *YAMLParser) Parse(file string, options ParserOptions) (Resources, error) {
 	f, err := os.Open(file)
 	if err != nil {
-		return nil, err
+		return Resources{}, err
 	}
 	defer f.Close()
 
 	reader := bufio.NewReader(f)
 	decoder := yaml.NewDecoder(reader)
-	var resources Resources
+	resources := NewResources()
 	for i := 0; ; i++ {
 		var m map[string]any
 		err = decoder.Decode(&m)
@@ -43,7 +43,7 @@ func (parser *YAMLParser) Parse(file string, options ParserOptions) (Resources, 
 			break
 		}
 		if err != nil {
-			return nil, err
+			return Resources{}, err
 		}
 
 		source := Source{
@@ -53,10 +53,10 @@ func (parser *YAMLParser) Parse(file string, options ParserOptions) (Resources, 
 		}
 		parsedResources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID, source)
 		if err != nil {
-			return nil, err
+			return Resources{}, err
 		}
 
-		resources = append(resources, parsedResources...)
+		resources.Merge(parsedResources)
 	}
 
 	return resources, nil

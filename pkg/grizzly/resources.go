@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"gopkg.in/yaml.v3"
 )
 
@@ -177,30 +178,97 @@ func (r *Resource) YAML() (string, error) {
 }
 
 // Resources represents a set of resources
-type Resources []Resource
+type Resources struct {
+	collection *orderedmap.OrderedMap[ResourceRef, Resource]
+}
 
-func (r Resources) Find(ref ResourceRef) (Resource, bool) {
-	for _, resource := range r {
-		if resource.Ref().Equal(ref) {
-			return resource, true
-		}
+func NewResources(resources ...Resource) Resources {
+	r := Resources{
+		collection: orderedmap.New[ResourceRef, Resource](),
 	}
 
-	return Resource{}, false
+	r.Add(resources...)
+
+	return r
+}
+
+func (r Resources) Add(resources ...Resource) {
+	for _, resource := range resources {
+		r.collection.Set(resource.Ref(), resource)
+	}
+}
+
+func (r Resources) Merge(resources Resources) {
+	_ = resources.ForEach(func(resource Resource) error {
+		r.Add(resource)
+		return nil
+	})
+}
+
+func (r Resources) First() Resource {
+	return r.collection.Oldest().Value
+}
+
+func (r Resources) Find(ref ResourceRef) (Resource, bool) {
+	return r.collection.Get(ref)
 }
 
 func (r Resources) Filter(predicate func(Resource) bool) Resources {
-	filtered := make(Resources, 0)
+	filtered := make([]Resource, 0)
 
-	for _, resource := range r {
+	_ = r.ForEach(func(resource Resource) error {
 		if predicate(resource) {
 			filtered = append(filtered, resource)
 		}
+		return nil
+	})
+
+	return NewResources(filtered...)
+}
+
+func (r Resources) ForEach(callback func(Resource) error) error {
+	for pair := r.collection.Oldest(); pair != nil; pair = pair.Next() {
+		if err := callback(pair.Value); err != nil {
+			return err
+		}
 	}
 
-	return filtered
+	return nil
+}
+
+func (r Resources) AsList() []Resource {
+	if r.collection == nil {
+		return nil
+	}
+
+	list := make([]Resource, 0, r.Len())
+
+	_ = r.ForEach(func(resource Resource) error {
+		list = append(list, resource)
+		return nil
+	})
+
+	return list
+}
+
+func (r Resources) GroupByKind() map[string]Resources {
+	resourceByKind := map[string]Resources{}
+	_ = r.ForEach(func(resource Resource) error {
+		if _, ok := resourceByKind[resource.Kind()]; !ok {
+			resourceByKind[resource.Kind()] = NewResources()
+		}
+
+		resourceByKind[resource.Kind()].Add(resource)
+		return nil
+	})
+
+	return resourceByKind
 }
 
 func (r Resources) Len() int {
-	return len(r)
+	if r.collection == nil {
+		return 0
+	}
+
+	return r.collection.Len()
 }

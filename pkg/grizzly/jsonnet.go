@@ -33,19 +33,19 @@ func (parser *JsonnetParser) Accept(file string) bool {
 // Parse evaluates a jsonnet file and parses it into an object tree
 func (parser *JsonnetParser) Parse(file string, options ParserOptions) (Resources, error) {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return nil, fmt.Errorf("file does not exist: %s", file)
+		return Resources{}, fmt.Errorf("file does not exist: %s", file)
 	}
 	currentWorkingDirectory, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return Resources{}, err
 	}
 	result, err := evaluateJsonnet(file, currentWorkingDirectory, parser.jsonnetPaths)
 	if err != nil {
-		return nil, err
+		return Resources{}, err
 	}
 	var data interface{}
 	if err := json.Unmarshal([]byte(result), &data); err != nil {
-		return nil, err
+		return Resources{}, err
 	}
 
 	source := Source{
@@ -53,12 +53,8 @@ func (parser *JsonnetParser) Parse(file string, options ParserOptions) (Resource
 		Path:       file,
 		Rewritable: false,
 	}
-	resources, err := parseAny(parser.registry, data, options.DefaultResourceKind, options.DefaultFolderUID, source)
-	if err != nil {
-		return nil, err
-	}
 
-	return resources, nil
+	return parseAny(parser.registry, data, options.DefaultResourceKind, options.DefaultFolderUID, source)
 }
 
 // extendedImporter does stuff

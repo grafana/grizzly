@@ -156,12 +156,12 @@ func (p *Server) Start() error {
 			if err != nil {
 				return err
 			}
-			if len(resources) > 1 {
+			if resources.Len() > 1 {
 				url = fmt.Sprintf("http://localhost:%d", p.Port)
-			} else if len(resources) == 0 {
+			} else if resources.Len() == 0 {
 				return fmt.Errorf("no resources found to proxy")
 			} else {
-				resource := resources[0]
+				resource := resources.First()
 				handler, err := p.Registry.GetHandler(resource.Kind())
 				if err != nil {
 					return err
@@ -240,7 +240,7 @@ func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	templateVars := map[string]any{
-		"Resources":   resources,
+		"Resources":   resources.AsList(),
 		"ParseErrors": parseErrors,
 		"ServerPort":  p.Port,
 	}

@@ -78,7 +78,7 @@ func List(registry Registry, resources Resources, format string) error {
 	log.Infof("Listing %d resources", resources.Len())
 
 	listedResources := []listedResource{}
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
@@ -299,7 +299,7 @@ func Show(registry Registry, resources Resources, outputFormat string) error {
 	log.Infof("Showing %d resources", resources.Len())
 
 	var items []term.PageItem
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
@@ -331,7 +331,7 @@ func Show(registry Registry, resources Resources, outputFormat string) error {
 func Diff(registry Registry, resources Resources, onlySpec bool, outputFormat string) error {
 	log.Infof("Diff-ing %d resources", resources.Len())
 
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
@@ -389,7 +389,7 @@ type eventsRecorder interface {
 func Apply(registry Registry, resources Resources, continueOnError bool, eventsRecorder eventsRecorder) error {
 	var finalErr error
 
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		err := applyResource(registry, resource, eventsRecorder)
 		if err != nil {
 			finalErr = multierror.Append(finalErr, err)
@@ -472,7 +472,7 @@ func applyResource(registry Registry, resource Resource, trailRecorder eventsRec
 
 // Snapshot pushes resources to endpoints as snapshots, if supported
 func Snapshot(registry Registry, resources Resources, expiresSeconds int) error {
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
@@ -573,7 +573,7 @@ func Export(registry Registry, exportDir string, resources Resources, onlySpec b
 		}
 	}
 
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		updatedResourceBytes, _, extension, err := Format(registry, "", &resource, outputFormat, onlySpec)
 		if err != nil {
 			return err
