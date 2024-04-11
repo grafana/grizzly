@@ -18,6 +18,6 @@ func Pluraliser(count int, name string) string {
 }
 
 func SendError(w http.ResponseWriter, msg string, err error, code int) {
-	http.Error(w, msg, 400)
+	http.Error(w, msg, code)
 	log.Printf("%d - %s: %s", code, msg, err.Error())
 }
