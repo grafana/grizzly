@@ -135,7 +135,6 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 	}
 
 	var finalErr error
-
 	log.Infof("Pulling resources to %s", resourcePath)
 	for name, handler := range registry.Handlers {
 		if !registry.HandlerMatchesTarget(handler, targets) {

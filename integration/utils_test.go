@@ -81,7 +81,7 @@ func runTest(t *testing.T, test GrizzlyTest) {
 func runLocalGrizzly(t *testing.T, dir string, command string) (stdout, stderr string, err error) {
 	t.Helper()
 
-	args := []string{}
+	var args []string
 	args = append(args, strings.Split(command, " ")...)
 	cwd, _ := os.Getwd()
 	stdErrBuf := &strings.Builder{}

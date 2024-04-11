@@ -15,13 +15,14 @@ type Provider interface {
 	Version() string
 	APIVersion() string
 	GetHandlers() []Handler
+	Validate() error
 }
 
 type ProxyProvider interface {
 	SetupProxy() (*httputil.ReverseProxy, error)
 }
 
-// ProviderSet records providers
+// Registry records providers
 type Registry struct {
 	Providers    []Provider
 	Handlers     map[string]Handler
@@ -37,6 +38,10 @@ func NewRegistry(providers []Provider) Registry {
 
 	registry.Providers = providers
 	for _, provider := range providers {
+		if provider.Validate() != nil {
+			continue
+		}
+
 		for _, handler := range provider.GetHandlers() {
 			registry.Handlers[handler.Kind()] = handler
 			registry.HandlerOrder = append(registry.HandlerOrder, handler)

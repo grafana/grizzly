@@ -61,7 +61,7 @@ func main() {
 		exportCmd(registry),
 		snapshotCmd(registry),
 		providersCmd(registry),
-		configCmd(),
+		configCmd(registry),
 		serveCmd(registry),
 		selfUpdateCmd(),
 	)
@@ -78,23 +78,10 @@ func main() {
 }
 
 func createRegistry(context *config.Context) grizzly.Registry {
-	providerInitFuncs := []func() (grizzly.Provider, error){
-		func() (grizzly.Provider, error) { return grafana.NewProvider(&context.Grafana) },
-		func() (grizzly.Provider, error) { return mimir.NewProvider(&context.Mimir) },
-		func() (grizzly.Provider, error) { return syntheticmonitoring.NewProvider(&context.SyntheticMonitoring) },
+	providers := []grizzly.Provider{
+		grafana.NewProvider(&context.Grafana),
+		mimir.NewProvider(&context.Mimir),
+		syntheticmonitoring.NewProvider(&context.SyntheticMonitoring),
 	}
-
-	var providers []grizzly.Provider
-	initMessage := "Providers:"
-	for _, initFunc := range providerInitFuncs {
-		provider, err := initFunc()
-		if err != nil {
-			initMessage += "\n  " + provider.Name() + " - inactive: " + err.Error()
-			continue
-		}
-		initMessage += "\n  " + provider.Name() + " - active"
-		providers = append(providers, provider)
-	}
-	log.Info(initMessage)
 	return grizzly.NewRegistry(providers)
 }

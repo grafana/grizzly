@@ -2,7 +2,6 @@ package mimir
 
 import (
 	"fmt"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/grafana/grizzly/pkg/config"
@@ -11,24 +10,16 @@ import (
 
 // Provider is a grizzly.Provider implementation for Grafana.
 type Provider struct {
-	config *config.MimirConfig
+	config     *config.MimirConfig
+	pathLooker PathLooker
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(config *config.MimirConfig) (*Provider, error) {
-	if _, err := exec.LookPath("cortextool"); err != nil {
-		return nil, err
-	}
-	if config.Address == "" {
-		return nil, fmt.Errorf("mimir address is not set")
-	}
-	if config.ApiKey == "" {
-		return nil, fmt.Errorf("mimir api key is not set")
-	}
-
+func NewProvider(config *config.MimirConfig) *Provider {
 	return &Provider{
-		config: config,
-	}, nil
+		config:     config,
+		pathLooker: &RealPathLooker{},
+	}
 }
 
 func (p *Provider) Name() string {
@@ -55,4 +46,18 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 	return []grizzly.Handler{
 		NewRuleHandler(p),
 	}
+}
+
+func (p *Provider) Validate() error {
+	if _, err := p.pathLooker.LookPath("cortextool"); err != nil {
+		return err
+	}
+	if p.config.Address == "" {
+		return fmt.Errorf("mimir address is not set")
+	}
+	if p.config.ApiKey == "" {
+		return fmt.Errorf("mimir api key is not set")
+	}
+
+	return nil
 }
