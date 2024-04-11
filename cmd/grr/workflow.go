@@ -45,9 +45,9 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 	}
 	var opts Opts
 	var isRemote bool
-	var isVerbose bool
+	var format string
 	cmd.Flags().BoolVarP(&isRemote, "remote", "r", false, "list remote resources")
-	cmd.Flags().BoolVarP(&isVerbose, "verbose", "v", false, "show more information about resources")
+	cmd.Flags().StringVarP(&format, "format", "f", "default", "format for listing, one of default, wide, json, yaml")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		currentContext, err := config.CurrentContext()
@@ -62,7 +62,7 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 				return nil
 			}
 
-			return grizzly.ListRemote(registry, targets)
+			return grizzly.ListRemote(registry, targets, format)
 		}
 		if len(args) == 0 {
 			notifier.Error(nil, "resource-path required when listing local resources")
@@ -82,7 +82,7 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		return grizzly.List(registry, resources, isVerbose)
+		return grizzly.List(registry, resources, format)
 	}
 	return initialiseCmd(cmd, &opts)
 }
