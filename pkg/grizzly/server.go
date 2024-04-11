@@ -79,9 +79,7 @@ var blockJSONget = map[string]string{
 	"/api/search":       "[]",
 	"/api/usage/*":      "[]",
 
-	"/api/access-control/user/actions": `{
-        "dashboards:write": true,
-	}`,
+	"/api/access-control/user/actions": `{"dashboards:write": true}`,
 	"/api/prometheus/grafana/api/v1/rules": `{
       "status": "success",
       "data": { "groups": [] }
@@ -115,7 +113,6 @@ func (p *Server) Start() error {
 	for _, handler := range p.Registry.Handlers {
 		proxyHandler, ok := handler.(ProxyHandler)
 		if ok {
-			log.Printf("Handler: %s IS PROXY", handler.Kind())
 			for _, endpoint := range proxyHandler.GetProxyEndpoints(*p) {
 				switch endpoint.Method {
 				case "GET":

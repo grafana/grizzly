@@ -46,7 +46,12 @@ func (parser *YAMLParser) Parse(file string, options ParserOptions) (Resources, 
 			return nil, err
 		}
 
-		parsedResources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID)
+		source := Source{
+			Format:     "yaml",
+			Path:       file,
+			Rewritable: true,
+		}
+		parsedResources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID, source)
 		if err != nil {
 			return nil, err
 		}

@@ -2,6 +2,9 @@ package grizzly
 
 import (
 	"fmt"
+	"net/http"
+
+	"log"
 )
 
 // Pluraliser returns a string describing the count of items, with a plural 's'
@@ -12,4 +15,9 @@ func Pluraliser(count int, name string) string {
 	}
 
 	return fmt.Sprintf("%d %ss", count, name)
+}
+
+func SendError(w http.ResponseWriter, msg string, err error, code int) {
+	http.Error(w, msg, code)
+	log.Printf("%d - %s: %s", code, msg, err.Error())
 }

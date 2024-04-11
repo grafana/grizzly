@@ -62,19 +62,35 @@ func Get(registry Registry, UID string, onlySpec bool, outputFormat string) erro
 }
 
 // List outputs the keys resources found in resulting json.
-func List(registry Registry, resources Resources) error {
+func List(registry Registry, resources Resources, verbose bool) error {
 	log.Infof("Listing %d resources", resources.Len())
 
-	f := "%s\t%s\t%s\n"
+	var f string
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 
-	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
+	if verbose {
+		f = "%s\t%s\t%s\t%s\t%s\t%s\n"
+		fmt.Fprintf(w, f, "API VERSION", "KIND", "UID", "PATH", "LOCATION", "FORMAT")
+	} else {
+		f = "%s\t%s\t%s\n"
+		fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
+	}
 	for _, resource := range resources {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), resource.Name())
+		if verbose {
+			fmt.Fprintf(w, f,
+				handler.APIVersion(),
+				handler.Kind(),
+				resource.Name(),
+				resource.Source.Path,
+				resource.Source.Location,
+				resource.Source.Format)
+		} else {
+			fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), resource.Name())
+		}
 	}
 	return w.Flush()
 }
