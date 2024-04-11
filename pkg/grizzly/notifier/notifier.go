@@ -56,7 +56,7 @@ func Info(obj fmt.Stringer, msg string) {
 // Info announces a message in green (to stderr)
 func InfoStderr(obj fmt.Stringer, msg string) {
 	if obj == nil {
-		os.Stderr.WriteString(green(msg))
+		os.Stderr.WriteString(green(msg) + "\n")
 	} else {
 		os.Stderr.WriteString(fmt.Sprintf("%s %s\n", obj.String(), green(msg)))
 	}

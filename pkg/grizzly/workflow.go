@@ -1,7 +1,9 @@
 package grizzly
 
 import (
+	"bytes"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -17,6 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
+	"gopkg.in/yaml.v3"
 )
 
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
@@ -61,48 +64,42 @@ func Get(registry Registry, UID string, onlySpec bool, outputFormat string) erro
 	return nil
 }
 
+type listedResource struct {
+	Handler  string `yaml:"handler" json:"handler"`
+	Kind     string `yaml:"kind" json:"kind"`
+	Name     string `yaml:"name" json:"name"`
+	Path     string `yaml:"path" json:"path"`
+	Location string `yaml:"location" json:"location"`
+	Format   string `yaml:"format" json:"format"`
+}
+
 // List outputs the keys resources found in resulting json.
-func List(registry Registry, resources Resources, verbose bool) error {
+func List(registry Registry, resources Resources, format string) error {
 	log.Infof("Listing %d resources", resources.Len())
 
-	var f string
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-
-	if verbose {
-		f = "%s\t%s\t%s\t%s\t%s\t%s\n"
-		fmt.Fprintf(w, f, "API VERSION", "KIND", "UID", "PATH", "LOCATION", "FORMAT")
-	} else {
-		f = "%s\t%s\t%s\n"
-		fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
-	}
+	listedResources := []listedResource{}
 	for _, resource := range resources {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
 		}
-		if verbose {
-			fmt.Fprintf(w, f,
-				handler.APIVersion(),
-				handler.Kind(),
-				resource.Name(),
-				resource.Source.Path,
-				resource.Source.Location,
-				resource.Source.Format)
-		} else {
-			fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), resource.Name())
-		}
+		listedResources = append(listedResources, listedResource{
+			Handler:  handler.APIVersion(),
+			Kind:     handler.Kind(),
+			Name:     resource.Name(),
+			Path:     resource.Source.Path,
+			Location: resource.Source.Location,
+			Format:   resource.Source.Format,
+		})
 	}
-	return w.Flush()
+	return listResources(listedResources, format)
 }
 
 // ListRetmote outputs the keys of remote resources
-func ListRemote(registry Registry, targets []string) error {
+func ListRemote(registry Registry, targets []string, format string) error {
 	log.Info("Listing remotes")
 
-	f := "%s\t%s\t%s\n"
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-
-	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
+	listedResources := []listedResource{}
 	for name, handler := range registry.Handlers {
 		if !registry.HandlerMatchesTarget(handler, targets) {
 			continue
@@ -113,12 +110,73 @@ func ListRemote(registry Registry, targets []string) error {
 			return err
 		}
 		for _, id := range IDs {
-			if registry.ResourceMatchesTarget(handler.Kind(), id, targets) {
-				fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), id)
-			}
+			listedResources = append(listedResources, listedResource{
+				Handler: handler.APIVersion(),
+				Kind:    handler.Kind(),
+				Name:    id,
+			})
 		}
 	}
-	return w.Flush()
+	return listResources(listedResources, format)
+}
+
+func listResources(listedResources []listedResource, format string) error {
+	var output []byte
+	var err error
+	switch format {
+	case "yaml":
+		output, err = yaml.Marshal(listedResources)
+	case "json":
+		output, err = json.MarshalIndent(listedResources, "  ", "")
+	case "default":
+		output, err = listDefault(listedResources)
+	case "wide":
+		output, err = listWide(listedResources)
+	}
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(output))
+	return nil
+}
+
+func listDefault(listedResources []listedResource) ([]byte, error) {
+
+	var out bytes.Buffer
+	var f string
+	w := tabwriter.NewWriter(&out, 0, 0, 4, ' ', 0)
+
+	f = "%s\t%s\t%s\n"
+	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
+
+	for _, resource := range listedResources {
+		fmt.Fprintf(w, f, resource.Handler, resource.Kind, resource.Name)
+	}
+	err := w.Flush()
+	return out.Bytes(), err
+}
+
+func listWide(listedResources []listedResource) ([]byte, error) {
+
+	var out bytes.Buffer
+	var f string
+	w := tabwriter.NewWriter(&out, 0, 0, 4, ' ', 0)
+
+	f = "%s\t%s\t%s\t%s\t%s\t%s\n"
+	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID", "PATH", "LOCATION", "FORMAT")
+
+	for _, resource := range listedResources {
+		fmt.Fprintf(w, f,
+			resource.Handler,
+			resource.Kind,
+			resource.Name,
+			resource.Path,
+			resource.Location,
+			resource.Format)
+	}
+
+	err := w.Flush()
+	return out.Bytes(), err
 }
 
 // Pull pulls remote resources and stores them in the local file system.
