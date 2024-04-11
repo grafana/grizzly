@@ -61,14 +61,28 @@ $ grr get Dashboard.my-uid
 ### grr list
 List all resources found after executing Jsonnet file.
 ```sh
-$ grr list my-lib.libsonnet
+$ grr list my-dir
 ```
+
+You can change the format of your `list` output with `-f`, choices are `default`, `wide`, `yaml` and `json`:
+
+```sh
+$ grr list -f yaml my-dir
+```
+
+You can also list remote resources, using `-r`:
+
+```sh
+$ grr list -r
+```
+
+This will show remote resources for all configured providers.
 
 ### grr show
 Shows the resources found after executing Jsonnet, rendered as expected for each resource type:
 
 ```sh
-$ grr show my-lib.libsonnet
+$ grr show my-dir
 ```
 
 ### grr diff
@@ -112,6 +126,20 @@ to provision dashboards that can be picked up immediately by Grafana.
 ```sh
 $ grr export some-mixin.libsonnet my-provisioning-dir
 ```
+
+### grr snapshot
+When a backend supports snapshot functionality, this deploys resources as snapshots.
+
+At present, only Grafana dashboards are supported, and will print out links for each
+snapshot that was uploaded.
+
+```sh
+$ grr preview my-lib.libsonnet
+```
+
+Grafana snapshots by default do not expire. Expiration can be set via the
+`-e, --expires` flag which takes a number of seconds as an argument.
+
 
 ## Flags
 
