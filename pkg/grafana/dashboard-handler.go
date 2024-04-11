@@ -403,18 +403,18 @@ func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server) http.Handl
 
 		out, _, _, err := grizzly.Format(p.Registry, p.ResourcePath, &resource, p.OutputFormat, p.OnlySpec)
 		if err != nil {
-			grizzly.SendError(w, "Error formatting content", err, 400)
+			grizzly.SendError(w, "Error formatting content", err, 500)
 			return
 		}
 
 		resources, err := p.Parser.Parse()
 		if err != nil {
-			grizzly.SendError(w, "Error parsing existing resources", err, 400)
+			grizzly.SendError(w, "Error parsing existing resources", err, 500)
 			return
 		}
 		existing, found := resources.Find(grizzly.NewResourceRef("Dashboard", uid))
 		if !found {
-			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 404)
+			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 500)
 			return
 		}
 		if !existing.Source.Rewritable {
@@ -424,7 +424,7 @@ func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server) http.Handl
 
 		err = os.WriteFile(existing.Source.Path, out, 0644)
 		if err != nil {
-			grizzly.SendError(w, fmt.Sprintf("Error writing file: %s", err), err, 400)
+			grizzly.SendError(w, fmt.Sprintf("Error writing file: %s", err), err, 500)
 			return
 		}
 
