@@ -62,18 +62,20 @@ func (c *Client) ListRules() (map[string][]models.PrometheusRuleGroup, error) {
 	return groups, nil
 }
 
-func (c *Client) CreateRules(resource models.PrometheusRuleGrouping) (string, error) {
+func (c *Client) CreateRules(resource models.PrometheusRuleGrouping) error {
 	url := fmt.Sprintf(loadRulesEndpoint, c.config.Address, resource.Namespace)
-	if len(resource.Groups) > 1 {
-		return "", errors.New("http mode isn't able to send more that one rule group at once. Use `mimirtool` to load multiple rule groups")
-	}
-	out, err := yaml.Marshal(resource.Groups[0])
-	if err != nil {
-		return "", fmt.Errorf("cannot marshall groups: %s", err)
+	for _, group := range resource.Groups {
+		out, err := yaml.Marshal(group)
+		if err != nil {
+			return fmt.Errorf("cannot marshall groups: %s", err)
+		}
+
+		if _, err = c.doRequest(http.MethodPost, url, out); err != nil {
+			return fmt.Errorf("error found creating rule group: %s", group.Name)
+		}
 	}
 
-	res, err := c.doRequest(http.MethodPost, url, out)
-	return string(res), err
+	return nil
 }
 
 func (c *Client) doRequest(method string, url string, body []byte) ([]byte, error) {

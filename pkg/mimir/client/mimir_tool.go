@@ -36,10 +36,10 @@ func (c *MimirTool) ListRules() (map[string][]models.PrometheusRuleGroup, error)
 	return group, nil
 }
 
-func (c *MimirTool) CreateRules(resource models.PrometheusRuleGrouping) (string, error) {
+func (c *MimirTool) CreateRules(resource models.PrometheusRuleGrouping) error {
 	tmpFile, err := createTmpFile(resource)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	defer func() {
@@ -50,6 +50,6 @@ func (c *MimirTool) CreateRules(resource models.PrometheusRuleGrouping) (string,
 	cmd.Env = append(cmd.Env, fmt.Sprintf("MIMIR_ADDRESS=%s", c.config.Address))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("MIMIR_TENANT_ID=%s", c.config.TenantID))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("MIMIR_API_KEY=%s", c.config.ApiKey))
-	res, err := cmd.Output()
-	return string(res), err
+	_, err = cmd.Output()
+	return err
 }

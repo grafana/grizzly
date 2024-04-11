@@ -9,5 +9,5 @@ type MimirFunc func(config.MimirConfig) Mimir
 
 type Mimir interface {
 	ListRules() (map[string][]models.PrometheusRuleGroup, error)
-	CreateRules(resource models.PrometheusRuleGrouping) (string, error)
+	CreateRules(resource models.PrometheusRuleGrouping) error
 }

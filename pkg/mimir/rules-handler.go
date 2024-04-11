@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/grafana/grizzly/pkg/mimir/client"
 	"github.com/grafana/grizzly/pkg/mimir/models"
-	"log"
 	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -148,10 +147,5 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 		Groups:    []models.PrometheusRuleGroup{newGroup},
 	}
 
-	output, err := h.clientTool.CreateRules(grouping)
-	if err != nil {
-		log.Println(output)
-		return err
-	}
-	return err
+	return h.clientTool.CreateRules(grouping)
 }
