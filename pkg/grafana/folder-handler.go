@@ -67,14 +67,14 @@ func (h *FolderHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
 
 // Sort sorts according to handler needs
 func (h *FolderHandler) Sort(resources grizzly.Resources) grizzly.Resources {
-	result := grizzly.Resources{}
+	result := grizzly.NewResources()
 	addedToResult := map[string]bool{}
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		addedToResult[resource.Name()] = false
 	}
 	for {
 		continueLoop := false
-		for _, resource := range resources {
+		for _, resource := range resources.AsList() {
 			if addedToResult[resource.Name()] {
 				// already added
 				continue
@@ -83,14 +83,14 @@ func (h *FolderHandler) Sort(resources grizzly.Resources) grizzly.Resources {
 			// Add root folders
 			if !hasParentUID {
 				addedToResult[resource.Name()] = true
-				result = append(result, resource)
+				result.Add(resource)
 				continue
 			}
 			parentAdded, parentExists := addedToResult[parentUID.(string)]
 			// Add folders with parents which aren't declared in Grizzly, or which have already been added
 			if !parentExists || parentAdded {
 				addedToResult[resource.Name()] = true
-				result = append(result, resource)
+				result.Add(resource)
 				continue
 			}
 

@@ -212,9 +212,9 @@ func TestParseKindDetection(t *testing.T) {
 				}
 				require.NoError(t, err)
 				if test.ExpectedResources == 0 { // i.e. the default, which actually means 1
-					require.Len(t, resources, 1, "Expected one resource from parsing")
+					require.Equal(t, 1, resources.Len(), "Expected one resource from parsing")
 				} else {
-					require.Equal(t, test.ExpectedResources, len(resources), fmt.Sprintf("Expected %d resources from parsing", test.ExpectedResources))
+					require.Equal(t, test.ExpectedResources, resources.Len(), fmt.Sprintf("Expected %d resources from parsing", test.ExpectedResources))
 				}
 			})
 		}

@@ -99,16 +99,15 @@ func (r *Registry) ResourceMatchesTarget(kind string, UID string, targets []stri
 }
 
 func (r *Registry) Sort(resources Resources) Resources {
-	resourceByKind := map[string]Resources{}
-	for _, resource := range resources {
-		resourceByKind[resource.Kind()] = append(resourceByKind[resource.Kind()], resource)
-	}
-	resources = Resources{}
+	sorted := NewResources()
+	resourceByKind := resources.GroupByKind()
+
 	for _, handler := range r.HandlerOrder {
 		handlerResources := resourceByKind[handler.Kind()]
-		resources = append(resources, handler.Sort(handlerResources)...)
+		sorted.Merge(handler.Sort(handlerResources))
 	}
-	return resources
+
+	return sorted
 }
 
 func (r *Registry) Detect(data any) string {

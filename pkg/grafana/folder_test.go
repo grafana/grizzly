@@ -87,9 +87,9 @@ func TestSortFolders(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			sorted := handler.Sort(tc.folders)
-			require.Len(t, sorted, len(tc.expected))
-			for i, resource := range sorted {
+			sorted := handler.Sort(grizzly.NewResources(tc.folders...))
+			require.Equal(t, len(tc.expected), sorted.Len())
+			for i, resource := range sorted.AsList() {
 				require.Equal(t, tc.expected[i], resource.Name())
 			}
 		})
