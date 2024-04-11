@@ -129,21 +129,21 @@ func (f *FakeCortexTool) ListRules() (map[string][]models.PrometheusRuleGroup, e
 	return nil, nil
 }
 
-func (f *FakeCortexTool) CreateRules(_ models.PrometheusRuleGrouping) (string, error) {
+func (f *FakeCortexTool) CreateRules(_ models.PrometheusRuleGrouping) error {
 	if f.expectedError != nil {
-		return "", f.expectedError
+		return f.expectedError
 	}
 
 	if f.hasFile {
-		res, err := os.ReadFile("testdata/list_rules.yaml")
+		_, err := os.ReadFile("testdata/list_rules.yaml")
 		if err != nil {
-			return "", err
+			return err
 		}
 
-		return string(res), nil
+		return nil
 	}
 
-	return "", nil
+	return nil
 }
 
 func (f *FakeCortexTool) mockResponse(t *testing.T, hasFile bool, expectedError error) {
