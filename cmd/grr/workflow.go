@@ -396,14 +396,12 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		if err != nil {
 			return err
 		}
+
 		targets := currentContext.GetTargets(opts.Targets)
-		parser := &jsonnetWatchParser{
-			resourcePath: args[0],
-			registry:     registry,
-			resourceKind: resourceKind,
-			folderUID:    folderUID,
-			targets:      targets,
-			jsonnetPaths: opts.JsonnetPaths,
+		parser := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(true))
+		parserOpts := grizzly.ParserOptions{
+			DefaultResourceKind: resourceKind,
+			DefaultFolderUID:    folderUID,
 		}
 
 		format, onlySpec, err := getOutputFormat(opts)
@@ -411,7 +409,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		return grizzly.Serve(registry, parser, args[0], opts.ProxyPort, opts.OpenBrowser, onlySpec, format)
+		return grizzly.Serve(registry, parser, parserOpts, args[0], opts.ProxyPort, opts.OpenBrowser, onlySpec, format)
 	}
 	cmd.Flags().BoolVarP(&opts.OpenBrowser, "open-browser", "b", false, "Open Grizzly in default browser")
 	cmd.Flags().IntVarP(&opts.ProxyPort, "port", "p", 8080, "Port on which the server will listen")
