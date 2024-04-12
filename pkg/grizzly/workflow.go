@@ -439,13 +439,13 @@ func applyResource(registry Registry, resource Resource, trailRecorder eventsRec
 
 	log.Debugf("`%s` was found, updating it...", resource.Ref())
 
+	resource = *handler.Prepare(existingResource, resource)
+
 	resourceRepresentation, err := resource.YAML()
 	if err != nil {
 		return err
 	}
 
-	log.Printf("")
-	resource = *handler.Prepare(existingResource, resource)
 	existingResource = handler.Unprepare(*existingResource)
 	existingResourceRepresentation, err := existingResource.YAML()
 	if err != nil {
