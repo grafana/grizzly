@@ -256,27 +256,27 @@ func (h *DashboardHandler) Detect(data map[string]any) bool {
 	return true
 }
 
-func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.ProxyEndpoint {
-	return []grizzly.ProxyEndpoint{
+func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server, config grizzly.HttpEndpointConfig) []grizzly.HttpEndpoint {
+	return []grizzly.HttpEndpoint{
 		{
 			Method:  "GET",
 			URL:     "/d/{uid}/{slug}",
-			Handler: h.resourceFromQueryParameterMiddleware(p, "grizzly_from_file", h.RootDashboardPageHandler(p)),
+			Handler: h.resourceFromQueryParameterMiddleware(p, "grizzly_from_file", h.RootDashboardPageHandler(p, config)),
 		},
 		{
 			Method:  "GET",
 			URL:     "/api/dashboards/uid/{uid}",
-			Handler: h.DashboardJSONGetHandler(p),
+			Handler: h.DashboardJSONGetHandler(p, config),
 		},
 		{
 			Method:  "POST",
 			URL:     "/api/dashboards/db",
-			Handler: h.DashboardJSONPostHandler(p),
+			Handler: h.DashboardJSONPostHandler(p, config),
 		},
 		{
 			Method:  "POST",
 			URL:     "/api/dashboards/db/",
-			Handler: h.DashboardJSONPostHandler(p),
+			Handler: h.DashboardJSONPostHandler(p, config),
 		},
 	}
 }
@@ -294,7 +294,7 @@ func (h *DashboardHandler) resourceFromQueryParameterMiddleware(p grizzly.Server
 	}
 }
 
-func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server) http.HandlerFunc {
+func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server, endpointConfig grizzly.HttpEndpointConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html")
 		config := h.Provider.(ClientProvider).Config()
@@ -335,7 +335,7 @@ func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server) http.Handl
 	}
 }
 
-func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server) http.HandlerFunc {
+func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server, config grizzly.HttpEndpointConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		uid := chi.URLParam(r, "uid")
 		if uid == "" {
@@ -368,7 +368,7 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server) http.Handle
 	}
 }
 
-func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server) http.HandlerFunc {
+func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server, config grizzly.HttpEndpointConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		resp := struct {
 			Dashboard map[string]any `json:"dashboard"`

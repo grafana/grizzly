@@ -7,13 +7,16 @@ import (
 	"net/http/httputil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
+	"github.com/grafana/grizzly/pkg/grizzly/livereload"
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/fsnotify.v1"
 )
 
 type Server struct {
@@ -31,6 +34,7 @@ type Server struct {
 	ResourcePath string
 	OnlySpec     bool
 	OutputFormat string
+	Watch        bool
 }
 
 var upgrader = websocket.Upgrader{
@@ -39,7 +43,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions, resourcePath string, port int, openBrowser bool, onlySpec bool, outputFormat string) (*Server, error) {
+func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions, resourcePath string, port int, openBrowser, watch, onlySpec bool, outputFormat string) (*Server, error) {
 	prov, err := registry.GetProxyProvider()
 	if err != nil {
 		return nil, err
@@ -62,6 +66,7 @@ func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions
 		OnlySpec:     onlySpec,
 		OutputFormat: outputFormat,
 		proxy:        proxy,
+		Watch:        watch,
 	}, nil
 }
 
@@ -116,10 +121,13 @@ func (p *Server) Start() error {
 	r.Use(middleware.Logger)
 	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
 
+	httpEndpointConfig := HttpEndpointConfig{
+		Port: p.port,
+	}
 	for _, handler := range p.Registry.Handlers {
 		proxyHandler, ok := handler.(ProxyHandler)
 		if ok {
-			for _, endpoint := range proxyHandler.GetProxyEndpoints(*p) {
+			for _, endpoint := range proxyHandler.GetProxyEndpoints(*p, httpEndpointConfig) {
 				switch endpoint.Method {
 				case "GET":
 					r.Get(endpoint.URL, endpoint.Handler)
@@ -145,6 +153,9 @@ func (p *Server) Start() error {
 	}
 	r.Get("/", p.RootHandler)
 
+	livereload.Initialize()
+	r.Get("/livereload.js", livereload.LiveReloadJSHandler)
+	r.Get("/livereload", livereload.LiveReloadHandlerFunc(upgrader))
 	r.Get("/api/live/ws", p.wsHandler)
 
 	if err := p.ParseResources(p.ResourcePath); err != nil {
@@ -185,6 +196,12 @@ func (p *Server) Start() error {
 		}
 
 		p.openInBrowser(p.URL(path))
+	}
+	if p.Watch {
+		err := p.setupWatch()
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("Listening on %s\n", p.URL("/"))
@@ -229,6 +246,76 @@ func (p *Server) openInBrowser(url string) {
 	}
 }
 
+func (p *Server) setupWatch() error {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+	defer watcher.Close()
+
+	//done := make(chan bool)
+	go func() {
+		log.Info("Watching for changes")
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					log.Info("Changes detected. Parsing ")
+					resources, err := p.parser.Parse(event.Name, p.parserOpts)
+					if err != nil {
+						log.Error("Error: ", err)
+					}
+					resource, bool := resources.FindByFilename(event.Name)
+					if bool {
+						handler, err := p.Registry.GetHandler(resource.Kind())
+						if err != nil {
+							log.Printf("Error: %v", err)
+						} else {
+							proxyHandler, ok := handler.(ProxyHandler)
+							if ok {
+								u, err := proxyHandler.ProxyURL(resource)
+								if err != nil {
+									log.Print(err)
+								} else {
+									livereload.Reload(u)
+								}
+							}
+						}
+					} else {
+						log.Printf("%s not found in resources", event.Name)
+					}
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Error("error: ", err)
+			}
+		}
+	}()
+
+	err = filepath.WalkDir(p.ResourcePath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return watcher.Add(path)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	//<-done
+
+	return nil
+}
 func (p *Server) blockHandler(response string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -245,12 +332,6 @@ func (p *Server) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
-	_, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-	}
-
-	p.proxy.ServeHTTP(w, r)
 }
 
 func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
