@@ -251,9 +251,21 @@ func (p *Server) setupWatch() error {
 	if err != nil {
 		return err
 	}
-	defer watcher.Close()
+	//defer watcher.Close()
 
-	//done := make(chan bool)
+	err = filepath.WalkDir(p.ResourcePath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return watcher.Add(path)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		log.Info("Watching for changes")
 		for {
@@ -263,29 +275,10 @@ func (p *Server) setupWatch() error {
 					return
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Info("Changes detected. Parsing ")
-					resources, err := p.parser.Parse(event.Name, p.parserOpts)
+					log.Info("Changes detected. Parsing")
+					err := p.updateWatchedResource(event.Name)
 					if err != nil {
-						log.Error("Error: ", err)
-					}
-					resource, bool := resources.FindByFilename(event.Name)
-					if bool {
-						handler, err := p.Registry.GetHandler(resource.Kind())
-						if err != nil {
-							log.Printf("Error: %v", err)
-						} else {
-							proxyHandler, ok := handler.(ProxyHandler)
-							if ok {
-								u, err := proxyHandler.ProxyURL(resource)
-								if err != nil {
-									log.Print(err)
-								} else {
-									livereload.Reload(u)
-								}
-							}
-						}
-					} else {
-						log.Printf("%s not found in resources", event.Name)
+						log.Error("error: ", err)
 					}
 				}
 			case err, ok := <-watcher.Errors:
@@ -296,24 +289,33 @@ func (p *Server) setupWatch() error {
 			}
 		}
 	}()
-
-	err = filepath.WalkDir(p.ResourcePath, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() {
-			return watcher.Add(path)
-		}
-
-		return nil
-	})
+	return nil
+}
+func (p *Server) updateWatchedResource(name string) error {
+	log.Info("Changes detected. Applying ", name)
+	resources, err := p.parser.Parse(name, p.parserOpts)
 	if err != nil {
-		return err
+		log.Error("Error: ", err)
 	}
-
-	//<-done
-
+	resource, exists := resources.FindByFilename(name)
+	if exists {
+		handler, err := p.Registry.GetHandler(resource.Kind())
+		if err != nil {
+			log.Printf("Error: %v", err)
+		} else {
+			proxyHandler, ok := handler.(ProxyHandler)
+			if ok {
+				u, err := proxyHandler.ProxyURL(resource)
+				if err != nil {
+					log.Print(err)
+				} else {
+					livereload.Reload(u)
+				}
+			}
+		}
+	} else {
+		log.Printf("%s not found in resources", name)
+	}
 	return nil
 }
 func (p *Server) blockHandler(response string) http.HandlerFunc {
