@@ -45,6 +45,15 @@ func (h *FolderHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
 	return resource, nil
 }
 
+// Prepare gets a resource ready for dispatch to the remote endpoint
+func (h *FolderHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
+	uid, _ := resource.GetSpecString("uid")
+	if uid == "" {
+		resource.SetSpecString("uid", resource.Name())
+	}
+	return &resource
+}
+
 // Validate returns the uid of resource
 func (h *FolderHandler) Validate(resource grizzly.Resource) error {
 	uid, exist := resource.GetSpecString("uid")

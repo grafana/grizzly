@@ -422,6 +422,7 @@ func applyResource(registry Registry, resource Resource, trailRecorder eventsRec
 	if errors.Is(err, ErrNotFound) {
 		log.Debugf("`%s` was not found, adding it...", resource.Ref())
 
+		resource = *handler.Prepare(existingResource, resource)
 		if err := handler.Add(resource); err != nil {
 			return err
 		}
@@ -443,7 +444,8 @@ func applyResource(registry Registry, resource Resource, trailRecorder eventsRec
 		return err
 	}
 
-	resource = *handler.Prepare(*existingResource, resource)
+	log.Printf("")
+	resource = *handler.Prepare(existingResource, resource)
 	existingResource = handler.Unprepare(*existingResource)
 	existingResourceRepresentation, err := existingResource.YAML()
 	if err != nil {

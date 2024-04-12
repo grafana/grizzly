@@ -63,7 +63,7 @@ func (h *LibraryElementHandler) Unprepare(resource grizzly.Resource) *grizzly.Re
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *LibraryElementHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
+func (h *LibraryElementHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
 	val := existing.GetSpecValue("version")
 	resource.SetSpecValue("version", val)
 	resource.DeleteSpecKey("meta")

@@ -34,7 +34,7 @@ func (h *BaseHandler) Unprepare(resource Resource) *Resource {
 	return &resource
 }
 
-func (h *BaseHandler) Prepare(existing, resource Resource) *Resource {
+func (h *BaseHandler) Prepare(existing *Resource, resource Resource) *Resource {
 	return &resource
 }
 
@@ -65,7 +65,7 @@ type Handler interface {
 	Unprepare(resource Resource) *Resource
 
 	// Prepare gets a resource ready for dispatch to the remote endpoint
-	Prepare(existing, resource Resource) *Resource
+	Prepare(existing *Resource, resource Resource) *Resource
 
 	// Retrieves a UID for a resource
 	GetUID(resource Resource) (string, error)

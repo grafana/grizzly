@@ -64,7 +64,7 @@ func (h *DashboardHandler) Unprepare(resource grizzly.Resource) *grizzly.Resourc
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
+func (h *DashboardHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
 	uid, _ := resource.GetSpecString("uid")
 	if uid == "" {
 		resource.SetSpecString("uid", resource.Name())
