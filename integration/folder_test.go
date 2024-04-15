@@ -17,6 +17,61 @@ func TestFolders(t *testing.T) {
 	require.NoError(t, err)
 	handler := grafana.NewFolderHandler(provider)
 
+	dir := "testdata/folders"
+	setupContexts(t, dir)
+
+	t.Run("Apply folder with no UID twice", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:      "apply folder-no-uid.json",
+					ExpectedCode: 0,
+				},
+				{
+					Command:      "apply folder-no-uid.json",
+					ExpectedCode: 0,
+				},
+			},
+		})
+	})
+
+	t.Run("Apply nested folder with no UID twice", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:      "apply nested-folder-no-uid.json",
+					ExpectedCode: 0,
+				},
+				{
+					Command:      "apply nested-folder-no-uid.json",
+					ExpectedCode: 0,
+				},
+			},
+		})
+	})
+
+	t.Run("Diff folder should show no changes", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir:       dir,
+			RunOnContexts: allContexts,
+			Commands: []Command{
+				{
+					Command:      "apply folder-with-uid.json",
+					ExpectedCode: 0,
+				},
+				{
+					Command:        "diff folder-with-uid.json",
+					ExpectedCode:   0,
+					ExpectedOutput: "DashboardFolder.new-folder-with-uid no differences",
+				},
+			},
+		})
+	})
+
 	t.Run("get remote folder - success", func(t *testing.T) {
 		resource, err := handler.GetByUID("abcdefghi")
 		require.NoError(t, err)
@@ -36,7 +91,7 @@ func TestFolders(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NotNil(t, resources)
-		require.Len(t, resources, 1)
+		require.Len(t, resources, 4)
 	})
 
 	t.Run("post remote folder - success", func(t *testing.T) {
