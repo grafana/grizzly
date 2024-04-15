@@ -32,11 +32,6 @@ func (h *AlertRuleGroupHandler) ResourceFilePath(resource grizzly.Resource, file
 	return fmt.Sprintf(alertRuleGroupPattern, resource.Name(), filetype)
 }
 
-// Parse parses a manifest object into a struct for this resource type
-func (h *AlertRuleGroupHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
-	return grizzly.ResourceFromMap(m)
-}
-
 // Validate checks that the uid format is valid
 func (h *AlertRuleGroupHandler) Validate(resource grizzly.Resource) error {
 	data, err := json.Marshal(resource.Spec())

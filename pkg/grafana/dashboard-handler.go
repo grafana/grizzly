@@ -41,21 +41,6 @@ func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype 
 	return fmt.Sprintf(dashboardPattern, resource.GetMetadata("folder"), resource.Name(), filetype)
 }
 
-// Parse parses a manifest object into a struct for this resource type
-func (h *DashboardHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
-	resource, err := grizzly.ResourceFromMap(m)
-	if err != nil {
-		return nil, err
-	}
-
-	resource.SetSpecString("uid", resource.Name())
-	if !resource.HasMetadata("folder") {
-		resource.SetMetadata("folder", generalFolderUID)
-	}
-
-	return resource, nil
-}
-
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *DashboardHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
 	resource.DeleteSpecKey("id")
@@ -64,10 +49,12 @@ func (h *DashboardHandler) Unprepare(resource grizzly.Resource) *grizzly.Resourc
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	uid, _ := resource.GetSpecString("uid")
-	if uid == "" {
+func (h *DashboardHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
+	if !resource.HasSpecString("uid") {
 		resource.SetSpecString("uid", resource.Name())
+	}
+	if !resource.HasMetadata("folder") {
+		resource.SetMetadata("folder", generalFolderUID)
 	}
 	return &resource
 }

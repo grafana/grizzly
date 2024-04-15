@@ -140,7 +140,6 @@ func (parser *ChainParser) Parse(resourcePath string, options ParserOptions) (Re
 				return nil
 			}
 		}
-
 		parsedResources.Merge(r)
 
 		return nil
@@ -173,13 +172,7 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string, sourc
 		if err != nil {
 			return Resources{}, err
 		}
-
-		handler, err := registry.GetHandler(m["kind"].(string))
-		if err != nil {
-			return Resources{}, err
-		}
-
-		resource, err := handler.Parse(m)
+		resource, err := ResourceFromMap(m)
 		if err != nil {
 			return Resources{}, err
 		}
@@ -221,15 +214,11 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string, sourc
 			resource.SetMetadata("folder", folderUID)
 		}
 
-		r, err := handler.Parse(resource.Body)
-		if err != nil {
-			return Resources{}, err
-		}
-
-		return NewResources(*r), nil
+		return NewResources(resource), nil
 	}
 
 	walker := walker{
+		registry:  registry,
 		source:    source,
 		resources: NewResources(),
 	}
@@ -313,6 +302,7 @@ func ValidateEnvelope(data any) error {
 }
 
 type walker struct {
+	registry  Registry
 	resources Resources
 	source    Source
 }
@@ -369,7 +359,6 @@ func (w *walker) walkObj(obj map[string]any, path trace) error {
 		if err != nil {
 			return err
 		}
-
 		source := w.source
 		source.Location = path.Full()
 		source.Rewritable = false

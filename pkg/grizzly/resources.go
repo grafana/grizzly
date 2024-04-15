@@ -126,6 +126,11 @@ func (r *Resource) SetMetadata(key, value string) {
 	r.Body["metadata"] = metadata
 }
 
+func (r *Resource) HasSpecString(key string) bool {
+	_, ok := r.Spec()[key]
+	return ok
+}
+
 func (r *Resource) GetSpecString(key string) (string, bool) {
 	if val, ok := r.Spec()[key]; ok {
 		return val.(string), true
