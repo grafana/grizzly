@@ -17,13 +17,18 @@ import (
 )
 
 type Server struct {
-	proxy        *httputil.ReverseProxy
-	Port         int
+	proxy       *httputil.ReverseProxy
+	port        int
+	openBrowser bool
+
+	parser     Parser
+	parserOpts ParserOptions
+	parserErr  error
+
 	Registry     Registry
-	Parser       WatchParser
+	Resources    Resources
 	UserAgent    string
 	ResourcePath string
-	OpenBrowser  bool
 	OnlySpec     bool
 	OutputFormat string
 }
@@ -34,7 +39,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func NewGrizzlyServer(registry Registry, parser WatchParser, resourcePath string, port int, openBrowser bool, onlySpec bool, outputFormat string) (*Server, error) {
+func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions, resourcePath string, port int, openBrowser bool, onlySpec bool, outputFormat string) (*Server, error) {
 	prov, err := registry.GetProxyProvider()
 	if err != nil {
 		return nil, err
@@ -45,18 +50,19 @@ func NewGrizzlyServer(registry Registry, parser WatchParser, resourcePath string
 		return nil, err
 	}
 
-	server := Server{
+	return &Server{
 		Registry:     registry,
-		Parser:       parser,
+		Resources:    NewResources(),
+		parser:       parser,
+		parserOpts:   parserOpts,
 		UserAgent:    "grizzly",
 		ResourcePath: resourcePath,
-		Port:         port,
-		OpenBrowser:  openBrowser,
+		port:         port,
+		openBrowser:  openBrowser,
 		OnlySpec:     onlySpec,
 		OutputFormat: outputFormat,
 		proxy:        proxy,
-	}
-	return &server, nil
+	}, nil
 }
 
 var mustProxyGET = []string{
@@ -141,53 +147,71 @@ func (p *Server) Start() error {
 
 	r.Get("/api/live/ws", p.wsHandler)
 
-	if p.OpenBrowser {
-		var url string
+	if err := p.ParseResources(p.ResourcePath); err != nil {
+		return err
+	}
+
+	if p.openBrowser {
+		path := "/"
 
 		stat, err := os.Stat(p.ResourcePath)
 		if err != nil {
 			return err
 		}
 
-		if stat.IsDir() {
-			url = fmt.Sprintf("http://localhost:%d", p.Port)
-		} else {
-			resources, err := p.Parser.Parse()
+		if !stat.IsDir() && p.Resources.Len() == 0 {
+			return fmt.Errorf("no resources found to proxy")
+		}
+
+		if !stat.IsDir() && p.Resources.Len() == 1 {
+			resource := p.Resources.First()
+			handler, err := p.Registry.GetHandler(resource.Kind())
 			if err != nil {
 				return err
 			}
-			if resources.Len() > 1 {
-				url = fmt.Sprintf("http://localhost:%d", p.Port)
-			} else if resources.Len() == 0 {
-				return fmt.Errorf("no resources found to proxy")
-			} else {
-				resource := resources.First()
-				handler, err := p.Registry.GetHandler(resource.Kind())
+			proxyHandler, ok := handler.(ProxyHandler)
+			if !ok {
+				uid, err := handler.GetUID(resource)
 				if err != nil {
 					return err
 				}
-				proxyHandler, ok := handler.(ProxyHandler)
-				if !ok {
-					uid, err := handler.GetUID(resource)
-					if err != nil {
-						return err
-					}
-					return fmt.Errorf("kind %s (for resource %s) does not support proxying", resource.Kind(), uid)
-				}
-				proxyURL, err := proxyHandler.ProxyURL(resource)
-				if err != nil {
-					return err
-				}
-				url = fmt.Sprintf("http://localhost:%d%s", p.Port, proxyURL)
+				return fmt.Errorf("kind %s (for resource %s) does not support proxying", resource.Kind(), uid)
 			}
+			proxyURL, err := proxyHandler.ProxyURL(resource)
+			if err != nil {
+				return err
+			}
+			path = proxyURL
 		}
-		p.openBrowser(url)
+
+		p.openInBrowser(p.URL(path))
 	}
-	fmt.Printf("Listening on http://localhost:%d\n", p.Port)
-	return http.ListenAndServe(fmt.Sprintf(":%d", p.Port), r)
+
+	fmt.Printf("Listening on %s\n", p.URL("/"))
+	return http.ListenAndServe(fmt.Sprintf(":%d", p.port), r)
 }
 
-func (p *Server) openBrowser(url string) {
+func (p *Server) ParseResources(resourcesPath string) error {
+	resources, err := p.parser.Parse(resourcesPath, p.parserOpts)
+	p.parserErr = err
+	if err != nil {
+		return err
+	}
+
+	p.Resources.Merge(resources)
+
+	return nil
+}
+
+func (p *Server) URL(path string) string {
+	if len(path) == 0 || path[0] != '/' {
+		path = "/" + path
+	}
+
+	return fmt.Sprintf("http://localhost:%d%s", p.port, path)
+}
+
+func (p *Server) openInBrowser(url string) {
 	var err error
 
 	switch runtime.GOOS {
@@ -230,23 +254,21 @@ func (p *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 	var parseErrors []error
 
-	resources, err := p.Parser.Parse()
-	if err != nil {
-		if merr, ok := err.(*multierror.Error); ok {
+	if p.parserErr != nil {
+		if merr, ok := p.parserErr.(*multierror.Error); ok {
 			parseErrors = merr.Errors
 		} else {
-			parseErrors = []error{err}
+			parseErrors = []error{p.parserErr}
 		}
 	}
 
 	templateVars := map[string]any{
-		"Resources":   resources.AsList(),
+		"Resources":   p.Resources.AsList(),
 		"ParseErrors": parseErrors,
-		"ServerPort":  p.Port,
+		"ServerPort":  p.port,
 	}
 	if err := templates.ExecuteTemplate(w, "proxy/index.html.tmpl", templateVars); err != nil {
-		log.Error("Error while executing template: ", err)
-		http.Error(w, fmt.Sprintf("Error: %s", err), 500)
+		SendError(w, "Error while executing template", err, 500)
 		return
 	}
 }

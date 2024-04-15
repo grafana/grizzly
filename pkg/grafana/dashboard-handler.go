@@ -273,7 +273,7 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.ProxyEn
 		{
 			Method:  "GET",
 			Url:     "/d/{uid}/{slug}",
-			Handler: h.RootDashboardPageHandler(p),
+			Handler: h.resourceFromQueryParameterMiddleware(p, "grizzly_from_file", h.RootDashboardPageHandler(p)),
 		},
 		{
 			Method:  "GET",
@@ -290,6 +290,19 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.ProxyEn
 			Url:     "/api/dashboards/db/",
 			Handler: h.DashboardJSONPostHandler(p),
 		},
+	}
+}
+
+func (h *DashboardHandler) resourceFromQueryParameterMiddleware(p grizzly.Server, parameterName string, next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if fromFilePath := r.URL.Query().Get(parameterName); fromFilePath != "" {
+			if err := p.ParseResources(fromFilePath); err != nil {
+				grizzly.SendError(w, "could not parse resource", fmt.Errorf("could not parse resource"), http.StatusBadRequest)
+				return
+			}
+		}
+
+		next.ServeHTTP(w, r)
 	}
 }
 
@@ -342,13 +355,7 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server) http.Handle
 			return
 		}
 
-		resources, err := p.Parser.Parse()
-		if err != nil {
-			grizzly.SendError(w, "Error parsing dashboard JSON", err, 500)
-			return
-		}
-
-		resource, found := resources.Find(grizzly.NewResourceRef("Dashboard", uid))
+		resource, found := p.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
 		if !found {
 			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 404)
 			return
@@ -407,12 +414,7 @@ func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server) http.Handl
 			return
 		}
 
-		resources, err := p.Parser.Parse()
-		if err != nil {
-			grizzly.SendError(w, "Error parsing existing resources", err, 500)
-			return
-		}
-		existing, found := resources.Find(grizzly.NewResourceRef("Dashboard", uid))
+		existing, found := p.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
 		if !found {
 			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 500)
 			return
