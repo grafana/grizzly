@@ -33,11 +33,6 @@ func (h *RuleHandler) ResourceFilePath(resource grizzly.Resource, filetype strin
 	return fmt.Sprintf(prometheusRuleGroupPattern, resource.Name(), filetype)
 }
 
-// Parse parses a manifest object into a struct for this resource type
-func (h *RuleHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
-	return grizzly.ResourceFromMap(m)
-}
-
 // Validate returns the uid of resource
 func (h *RuleHandler) Validate(resource grizzly.Resource) error {
 	uid, exist := resource.GetSpecString("uid")

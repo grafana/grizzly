@@ -34,44 +34,6 @@ func (h *DatasourceHandler) ResourceFilePath(resource grizzly.Resource, filetype
 	return fmt.Sprintf(datasourcePattern, resource.Name(), filetype)
 }
 
-// Parse parses a manifest object into a struct for this resource type
-func (h *DatasourceHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
-	specObj, ok := m["spec"]
-	if !ok {
-		return nil, fmt.Errorf("Datasource has no spec")
-	}
-	spec, ok := specObj.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("Datasource spec is not a map")
-	}
-	defaults := map[string]interface{}{
-		"basicAuth":         false,
-		"basicAuthPassword": "",
-		"basicAuthUser":     "",
-		"database":          "",
-		"orgId":             1,
-		"password":          "",
-		"secureJsonFields":  map[string]interface{}{},
-		"typeLogoUrl":       "",
-		"user":              "",
-		"withCredentials":   false,
-		"readOnly":          false,
-	}
-	for k := range defaults {
-		_, ok := spec[k]
-		if !ok {
-			spec[k] = defaults[k]
-		}
-	}
-	m["spec"] = spec
-	resource, err := grizzly.ResourceFromMap(m)
-	if err != nil {
-		return nil, err
-	}
-	resource.SetSpecValue("uid", resource.Name())
-	return resource, nil
-}
-
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *DatasourceHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
 	resource.DeleteSpecKey("version")
@@ -80,9 +42,12 @@ func (h *DatasourceHandler) Unprepare(resource grizzly.Resource) *grizzly.Resour
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *DatasourceHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
+func (h *DatasourceHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
 	resource.SetSpecValue("id", existing.GetSpecValue("id"))
 	resource.DeleteSpecKey("version")
+	if !resource.HasSpecString("uid") {
+		resource.SetSpecValue("uid", resource.Name())
+	}
 	return &resource
 }
 
