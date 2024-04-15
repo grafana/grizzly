@@ -33,16 +33,24 @@ func (h *FolderHandler) ResourceFilePath(resource grizzly.Resource, filetype str
 	return fmt.Sprintf(folderPattern, resource.Name(), filetype)
 }
 
-// Parse parses a manifest object into a struct for this resource type
-func (h *FolderHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
-	resource, err := grizzly.ResourceFromMap(m)
-	if err != nil {
-		return nil, err
+// Prepare gets a resource ready for dispatch to the remote endpoint
+func (h *FolderHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
+	if !resource.HasSpecString("uid") {
+		resource.SetSpecString("uid", resource.Name())
 	}
+	return &resource
+}
 
-	resource.SetSpecString("uid", resource.Name())
-
-	return resource, nil
+// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
+func (h *FolderHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
+	for _, key := range []string{"id", "version", "canAdmin", "canDelete", "canEdit", "canSave", "created", "createdBy", "updated", "updatedBy", "url"} {
+		resource.DeleteSpecKey(key)
+	}
+	value := resource.GetSpecValue("parents")
+	if value == nil {
+		resource.DeleteSpecKey("parents")
+	}
+	return &resource
 }
 
 // Validate returns the uid of resource
