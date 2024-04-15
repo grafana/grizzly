@@ -273,7 +273,7 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.ProxyEn
 		{
 			Method:  "GET",
 			Url:     "/d/{uid}/{slug}",
-			Handler: h.RootDashboardPageHandler(p),
+			Handler: h.resourceFromQueryParameterMiddleware(p, "grizzly_from_file", h.RootDashboardPageHandler(p)),
 		},
 		{
 			Method:  "GET",
@@ -290,6 +290,19 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.ProxyEn
 			Url:     "/api/dashboards/db/",
 			Handler: h.DashboardJSONPostHandler(p),
 		},
+	}
+}
+
+func (h *DashboardHandler) resourceFromQueryParameterMiddleware(p grizzly.Server, parameterName string, next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if fromFilePath := r.URL.Query().Get(parameterName); fromFilePath != "" {
+			if err := p.ParseResources(fromFilePath); err != nil {
+				grizzly.SendError(w, "could not parse resource", fmt.Errorf("could not parse resource"), http.StatusBadRequest)
+				return
+			}
+		}
+
+		next.ServeHTTP(w, r)
 	}
 }
 
