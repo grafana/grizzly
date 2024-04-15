@@ -163,7 +163,7 @@ func (p *Server) Start() error {
 			return fmt.Errorf("no resources found to proxy")
 		}
 
-		if !stat.IsDir() && p.Resources.Len() != 0 {
+		if !stat.IsDir() && p.Resources.Len() == 1 {
 			resource := p.Resources.First()
 			handler, err := p.Registry.GetHandler(resource.Kind())
 			if err != nil {
