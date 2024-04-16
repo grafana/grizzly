@@ -8,7 +8,7 @@ type GrafanaConfig struct {
 
 type MimirConfig struct {
 	Address  string `yaml:"address" mapstructure:"address"`
-	TenantID int64  `yaml:"tenant-id" mapstructure:"tenant-id"`
+	TenantID string `yaml:"tenant-id" mapstructure:"tenant-id"`
 	ApiKey   string `yaml:"api-key" mapstructure:"api-key"`
 }
 

@@ -1,0 +1,15 @@
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: RuleGroup3
+metadata:
+  name: test-rules-3
+spec:
+  name: MyRules3
+  rules:
+    - alert: MyAlertName
+      expr: up == 0
+      labels:
+        severity: warning
+    - alert: Other
+      expr: up == 1
+      labels:
+        severity: debug

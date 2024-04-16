@@ -1,4 +1,4 @@
-version: '3'
+version: '3.4'
 services:
   grafana:
     image: &image grafana/grafana:10.2.0
@@ -41,14 +41,16 @@ services:
       retries: 30
       start_period: 10s
   nginx:
-    depends_on:
-      grafana_subpath:
-        condition: service_healthy
     image: nginx:latest
+    depends_on:
+      - mimir
+      - grafana_subpath
     ports:
-      - 3003:3003
+      - "3003:3003"
+      - "9009:9009"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./provisioning/mimir/htpasswd:/etc/nginx/.htpasswd:ro
 
   grafana_basic_auth:
     image: *image
@@ -64,3 +66,10 @@ services:
       interval: 1s
       retries: 30
       start_period: 10s
+
+  mimir:
+    image: grafana/mimir:latest
+    command: [ "-config.file=/etc/mimir.yaml" ]
+    hostname: mimir
+    volumes:
+      - ./provisioning/mimir/mimir.yaml:/etc/mimir.yaml
