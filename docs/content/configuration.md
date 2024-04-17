@@ -40,17 +40,12 @@ grr config set grafana.token abcd12345 # Service account token (or basic auth pa
 To interact with Grafana Cloud Prometheus (aka Mimir), use these settings:
 
 ```sh
-grr config set mimir.address https://mimir.example.com # URL for Grafana Cloud Prometheus instance
-grr config set mimir.tenant-id 1234567 # Tenant ID for your Grafana Cloud Prometheus account
+grr config set mimir.address https://mimir.example.com # URL for Mimir instance or Grafana Cloud Prometheus instance
+grr config set mimir.tenant-id "myTenant" # Tenant ID for your Grafana Cloud Prometheus account
 grr config set mimir.api-key abcdef12345 # Authentication token (if you are using Grafana Cloud)
-grr config set mimir.mimirtool-path /path/to/mimirtool # (Optional) If you want to define mimirtool binary by configuration.
-grr config set mimir.cortextool-path /path/to/cortextool # (Optional) If you want to define cortextool binary by configuration.
-grr config set mimir.client cortextool # Used to select the tool to interact with mimir (mimirtool/cortextool/http). cortextool is the default one.
 ```
 
 **Notes** 
-* This will also work with other Cortex installations, alongside Grafana Cloud Prometheus/Mimir.
-* If you have `mimirtool` or `cortextool` binary installed in your system, using the default way to do it, you don't need to set the path by configuration. 
 * Be sure to set `api-key` when you need to interact with Grafana Cloud.
 
 ## Grafana Synthetic Monitoring
@@ -153,13 +148,13 @@ docs](https://grafana.com/docs/grafana/latest/http_api/auth/) for more info.
 ## Grafana Cloud Prometheus
 To interact with Grafana Cloud Prometheus, you must have these environment variables set:
 
-| Name | Description | Required |
-| --- | --- | --- |
-| `CORTEX_ADDRESS` | URL for Grafana Cloud Prometheus instance | true |
-| `CORTEX_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true |
-| `CORTEX_API_KEY` | Authentication token/api key | true |
+| Name               | Description | Required |
+|--------------------| --- |----------|
+| `MIMIR_ADDRESS`    | URL for Grafana Cloud Prometheus instance | true     |
+| `MIMIR_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true     |
+| `MIMIR_API_KEY`   | Authentication token/api key | false    |
 
-Note, this will also work with other Cortex installations, alongside Grafana Cloud Prometheus.
+Note, this will also work with other Mimir installations, alongside Grafana Cloud Prometheus.
 
 ## Grafana Synthetic Monitoring
 To interact with Grafana Synthetic Monitoring, you must have these environment variable set:
