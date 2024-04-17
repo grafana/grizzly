@@ -2,10 +2,10 @@
   "apiVersion": "grizzly.grafana.com/v1alpha1",
   "kind": "DashboardFolder",
   "metadata": {
-    "name": "newFolder"
+    "name": "new-folder-with-uid"
   },
   "spec": {
-    "title": "New Folder",
-    "uid": "newFolder"
+    "title": "Folder with UID",
+    "uid": "new-folder-with-uid"
   }
 }

@@ -24,20 +24,21 @@ func (parser *JSONParser) Accept(file string) bool {
 func (parser *JSONParser) Parse(file string, options ParserOptions) (Resources, error) {
 	f, err := os.Open(file)
 	if err != nil {
-		return nil, err
+		return Resources{}, err
 	}
 	defer f.Close()
 
 	m := map[string]any{}
 	err = json.NewDecoder(f).Decode(&m)
 	if err != nil {
-		return nil, err
+		return Resources{}, err
 	}
 
-	resources, err := parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID)
-	if err != nil {
-		return nil, err
+	source := Source{
+		Format:     "json",
+		Path:       file,
+		Rewritable: true,
 	}
 
-	return resources, err
+	return parseAny(parser.registry, m, options.DefaultResourceKind, options.DefaultFolderUID, source)
 }

@@ -42,18 +42,6 @@ func (h *LibraryElementHandler) ResourceFilePath(resource grizzly.Resource, file
 	return fmt.Sprintf(libraryElementPattern, kind, resource.Name(), filetype)
 }
 
-// Parse parses a manifest object into a struct for this resource type
-func (h *LibraryElementHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
-	resource, err := grizzly.ResourceFromMap(m)
-	if err != nil {
-		return nil, err
-	}
-
-	resource.SetSpecString("uid", resource.Name())
-
-	return resource, nil
-}
-
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *LibraryElementHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
 	resource.DeleteSpecKey("meta")
@@ -63,10 +51,17 @@ func (h *LibraryElementHandler) Unprepare(resource grizzly.Resource) *grizzly.Re
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *LibraryElementHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	val := existing.GetSpecValue("version")
-	resource.SetSpecValue("version", val)
+func (h *LibraryElementHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
+	if existing != nil {
+		val := existing.GetSpecValue("version")
+		resource.SetSpecValue("version", val)
+	}
 	resource.DeleteSpecKey("meta")
+
+	uid, _ := resource.GetSpecString("uid")
+	if uid == "" {
+		resource.SetSpecString("uid", resource.Name())
+	}
 	return &resource
 }
 

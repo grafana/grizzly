@@ -14,7 +14,6 @@ import (
 	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
-	log "github.com/sirupsen/logrus"
 )
 
 // Moved from utils.go
@@ -42,21 +41,6 @@ func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype 
 	return fmt.Sprintf(dashboardPattern, resource.GetMetadata("folder"), resource.Name(), filetype)
 }
 
-// Parse parses a manifest object into a struct for this resource type
-func (h *DashboardHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
-	resource, err := grizzly.ResourceFromMap(m)
-	if err != nil {
-		return nil, err
-	}
-
-	resource.SetSpecString("uid", resource.Name())
-	if !resource.HasMetadata("folder") {
-		resource.SetMetadata("folder", generalFolderUID)
-	}
-
-	return resource, nil
-}
-
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *DashboardHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
 	resource.DeleteSpecKey("id")
@@ -65,10 +49,12 @@ func (h *DashboardHandler) Unprepare(resource grizzly.Resource) *grizzly.Resourc
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *DashboardHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
-	uid, _ := resource.GetSpecString("uid")
-	if uid == "" {
+func (h *DashboardHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
+	if !resource.HasSpecString("uid") {
 		resource.SetSpecString("uid", resource.Name())
+	}
+	if !resource.HasMetadata("folder") {
+		resource.SetMetadata("folder", generalFolderUID)
 	}
 	return &resource
 }
@@ -274,12 +260,17 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.ProxyEn
 		{
 			Method:  "GET",
 			Url:     "/d/{uid}/{slug}",
-			Handler: h.RootDashboardPageHandler(p),
+			Handler: h.resourceFromQueryParameterMiddleware(p, "grizzly_from_file", h.RootDashboardPageHandler(p)),
 		},
 		{
 			Method:  "GET",
 			Url:     "/api/dashboards/uid/{uid}",
 			Handler: h.DashboardJSONGetHandler(p),
+		},
+		{
+			Method:  "POST",
+			Url:     "/api/dashboards/db",
+			Handler: h.DashboardJSONPostHandler(p),
 		},
 		{
 			Method:  "POST",
@@ -289,19 +280,30 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.ProxyEn
 	}
 }
 
+func (h *DashboardHandler) resourceFromQueryParameterMiddleware(p grizzly.Server, parameterName string, next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if fromFilePath := r.URL.Query().Get(parameterName); fromFilePath != "" {
+			if err := p.ParseResources(fromFilePath); err != nil {
+				grizzly.SendError(w, "could not parse resource", fmt.Errorf("could not parse resource"), http.StatusBadRequest)
+				return
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	}
+}
+
 func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html")
 		config := h.Provider.(ClientProvider).Config()
 		if config.URL == "" {
-			w.WriteHeader(400)
-			fmt.Fprintf(w, "<p><b>Error:</b> No URL provided")
+			grizzly.SendError(w, "Error: No Grafana URL configured", fmt.Errorf("no Grafana URL configured"), 400)
 			return
 		}
 		req, err := http.NewRequest("GET", config.URL+r.URL.Path, nil)
 		if err != nil {
-			log.Print(err)
-			http.Error(w, http.StatusText(500), 500)
+			grizzly.SendError(w, http.StatusText(500), err, 500)
 			return
 		}
 		req.Header.Set("Authorization", "Bearer "+config.Token)
@@ -336,23 +338,18 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server) http.Handle
 	return func(w http.ResponseWriter, r *http.Request) {
 		uid := chi.URLParam(r, "uid")
 		if uid == "" {
-			http.Error(w, "No UID specified", 400)
+			grizzly.SendError(w, "No UID specified", fmt.Errorf("no UID specified within the URL"), 400)
 			return
 		}
 
-		resources, err := p.Parser.Parse()
-		if err != nil {
-			log.Error("Error: ", err)
-			http.Error(w, fmt.Sprintf("Error: %s", err), 500)
-			return
-		}
-
-		resource, found := resources.Find(grizzly.NewResourceRef("Dashboard", uid))
+		resource, found := p.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
 		if !found {
-			http.Error(w, fmt.Sprintf("Dashboard with UID %s not found", uid), 404)
+			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 404)
 			return
 		}
-
+		if resource.GetSpecValue("version") == nil {
+			resource.SetSpecValue("version", 1)
+		}
 		meta := map[string]interface{}{
 			"type":      "db",
 			"isStarred": false,
@@ -372,36 +369,51 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server) http.Handle
 
 func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		dash := map[string]interface{}{}
+		resp := struct {
+			Dashboard map[string]any `json:"dashboard"`
+		}{}
 		content, _ := io.ReadAll(r.Body)
-		err := json.Unmarshal(content, &dash)
+		err := json.Unmarshal(content, &resp)
 		if err != nil {
-			http.Error(w, "Error parsing JSON", 400)
+			grizzly.SendError(w, "Error parsing JSON", err, 400)
 			return
 		}
-
-		resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), "dummy", dash)
+		resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), "dummy", resp.Dashboard)
 		if err != nil {
-			http.Error(w, "Error creating resource", 400)
+			grizzly.SendError(w, "Error creating resource", err, 400)
 			return
 		}
-		uid, err := h.GetUID(resource)
+		uid, err := h.GetSpecUID(resource)
 		if err != nil {
-			http.Error(w, "Error getting dashboard UID", 400)
+			grizzly.SendError(w, "Error getting dashboard UID", err, 400)
+			return
+		}
+		if uid == "" {
+			grizzly.SendError(w, "Dashboard has no UID", fmt.Errorf("dashboard has no UID"), 400)
 			return
 		}
 		resource.SetMetadata("name", uid)
+		resource.SetSpecString("uid", uid)
 
 		out, _, _, err := grizzly.Format(p.Registry, p.ResourcePath, &resource, p.OutputFormat, p.OnlySpec)
 		if err != nil {
-			http.Error(w, "Error formatting content", 400)
+			grizzly.SendError(w, "Error formatting content", err, 500)
 			return
 		}
 
-		err = os.WriteFile(p.ResourcePath, out, 0644)
+		existing, found := p.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
+		if !found {
+			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 500)
+			return
+		}
+		if !existing.Source.Rewritable {
+			grizzly.SendError(w, "The source for this dashboard is not rewritable", fmt.Errorf("the source for this dashboard is not rewritable"), 400)
+			return
+		}
+
+		err = os.WriteFile(existing.Source.Path, out, 0644)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error writing file: %s", err), 400)
+			grizzly.SendError(w, fmt.Sprintf("Error writing file: %s", err), err, 500)
 			return
 		}
 

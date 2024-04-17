@@ -320,7 +320,7 @@ func TestDashboardHandler(t *testing.T) {
 					return
 				}
 				require.NoError(t, err)
-				newResource := handler.Prepare(grizzly.Resource{}, test.Resource)
+				newResource := handler.Prepare(nil, test.Resource)
 				uid, _ := handler.GetUID(*newResource)
 				require.Equal(t, uid, test.ExpectedUID)
 			})

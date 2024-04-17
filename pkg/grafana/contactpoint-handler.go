@@ -30,25 +30,20 @@ func (h *AlertContactPointHandler) ResourceFilePath(resource grizzly.Resource, f
 	return fmt.Sprintf(contactPointPattern, resource.Name(), filetype)
 }
 
-// Parse parses a manifest object into a struct for this resource type
-func (h *AlertContactPointHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
-	resource, err := grizzly.ResourceFromMap(m)
-	if err != nil {
-		return nil, err
+// Prepare gets a resource ready for dispatch to the remote endpoint
+func (h *AlertContactPointHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
+	uid, _ := resource.GetSpecString("uid")
+	if uid == "" {
+		resource.SetSpecString("uid", resource.Name())
 	}
-
-	resource.SetSpecString("uid", resource.Name())
-
-	return resource, nil
+	return &resource
 }
 
 // Validate returns the uid of resource
 func (h *AlertContactPointHandler) Validate(resource grizzly.Resource) error {
 	uid, exist := resource.GetSpecString("uid")
-	if exist {
-		if uid != resource.Name() {
-			return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
-		}
+	if exist && uid != resource.Name() {
+		return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
 	}
 	return nil
 }

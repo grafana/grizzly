@@ -1,7 +1,9 @@
 package grizzly
 
 import (
+	"bytes"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -17,6 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/fsnotify.v1"
+	"gopkg.in/yaml.v3"
 )
 
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
@@ -61,32 +64,42 @@ func Get(registry Registry, UID string, onlySpec bool, outputFormat string) erro
 	return nil
 }
 
+type listedResource struct {
+	Handler  string `yaml:"handler" json:"handler"`
+	Kind     string `yaml:"kind" json:"kind"`
+	Name     string `yaml:"name" json:"name"`
+	Path     string `yaml:"path" json:"path"`
+	Location string `yaml:"location" json:"location"`
+	Format   string `yaml:"format" json:"format"`
+}
+
 // List outputs the keys resources found in resulting json.
-func List(registry Registry, resources Resources) error {
+func List(registry Registry, resources Resources, format string) error {
 	log.Infof("Listing %d resources", resources.Len())
 
-	f := "%s\t%s\t%s\n"
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-
-	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
-	for _, resource := range resources {
+	listedResources := []listedResource{}
+	for _, resource := range resources.AsList() {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), resource.Name())
+		listedResources = append(listedResources, listedResource{
+			Handler:  handler.APIVersion(),
+			Kind:     handler.Kind(),
+			Name:     resource.Name(),
+			Path:     resource.Source.Path,
+			Location: resource.Source.Location,
+			Format:   resource.Source.Format,
+		})
 	}
-	return w.Flush()
+	return listResources(listedResources, format)
 }
 
 // ListRetmote outputs the keys of remote resources
-func ListRemote(registry Registry, targets []string) error {
+func ListRemote(registry Registry, targets []string, format string) error {
 	log.Info("Listing remotes")
 
-	f := "%s\t%s\t%s\n"
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-
-	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
+	listedResources := []listedResource{}
 	for name, handler := range registry.Handlers {
 		if !registry.HandlerMatchesTarget(handler, targets) {
 			continue
@@ -97,12 +110,73 @@ func ListRemote(registry Registry, targets []string) error {
 			return err
 		}
 		for _, id := range IDs {
-			if registry.ResourceMatchesTarget(handler.Kind(), id, targets) {
-				fmt.Fprintf(w, f, handler.APIVersion(), handler.Kind(), id)
-			}
+			listedResources = append(listedResources, listedResource{
+				Handler: handler.APIVersion(),
+				Kind:    handler.Kind(),
+				Name:    id,
+			})
 		}
 	}
-	return w.Flush()
+	return listResources(listedResources, format)
+}
+
+func listResources(listedResources []listedResource, format string) error {
+	var output []byte
+	var err error
+	switch format {
+	case "yaml":
+		output, err = yaml.Marshal(listedResources)
+	case "json":
+		output, err = json.MarshalIndent(listedResources, "  ", "")
+	case "default":
+		output, err = listDefault(listedResources)
+	case "wide":
+		output, err = listWide(listedResources)
+	}
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(output))
+	return nil
+}
+
+func listDefault(listedResources []listedResource) ([]byte, error) {
+
+	var out bytes.Buffer
+	var f string
+	w := tabwriter.NewWriter(&out, 0, 0, 4, ' ', 0)
+
+	f = "%s\t%s\t%s\n"
+	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID")
+
+	for _, resource := range listedResources {
+		fmt.Fprintf(w, f, resource.Handler, resource.Kind, resource.Name)
+	}
+	err := w.Flush()
+	return out.Bytes(), err
+}
+
+func listWide(listedResources []listedResource) ([]byte, error) {
+
+	var out bytes.Buffer
+	var f string
+	w := tabwriter.NewWriter(&out, 0, 0, 4, ' ', 0)
+
+	f = "%s\t%s\t%s\t%s\t%s\t%s\n"
+	fmt.Fprintf(w, f, "API VERSION", "KIND", "UID", "PATH", "LOCATION", "FORMAT")
+
+	for _, resource := range listedResources {
+		fmt.Fprintf(w, f,
+			resource.Handler,
+			resource.Kind,
+			resource.Name,
+			resource.Path,
+			resource.Location,
+			resource.Format)
+	}
+
+	err := w.Flush()
+	return out.Bytes(), err
 }
 
 // Pull pulls remote resources and stores them in the local file system.
@@ -225,7 +299,7 @@ func Show(registry Registry, resources Resources, outputFormat string) error {
 	log.Infof("Showing %d resources", resources.Len())
 
 	var items []term.PageItem
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
@@ -257,7 +331,7 @@ func Show(registry Registry, resources Resources, outputFormat string) error {
 func Diff(registry Registry, resources Resources, onlySpec bool, outputFormat string) error {
 	log.Infof("Diff-ing %d resources", resources.Len())
 
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
@@ -315,7 +389,7 @@ type eventsRecorder interface {
 func Apply(registry Registry, resources Resources, continueOnError bool, eventsRecorder eventsRecorder) error {
 	var finalErr error
 
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		err := applyResource(registry, resource, eventsRecorder)
 		if err != nil {
 			finalErr = multierror.Append(finalErr, err)
@@ -348,6 +422,7 @@ func applyResource(registry Registry, resource Resource, trailRecorder eventsRec
 	if errors.Is(err, ErrNotFound) {
 		log.Debugf("`%s` was not found, adding it...", resource.Ref())
 
+		resource = *handler.Prepare(nil, resource)
 		if err := handler.Add(resource); err != nil {
 			return err
 		}
@@ -369,7 +444,7 @@ func applyResource(registry Registry, resource Resource, trailRecorder eventsRec
 		return err
 	}
 
-	resource = *handler.Prepare(*existingResource, resource)
+	resource = *handler.Prepare(existingResource, resource)
 	existingResource = handler.Unprepare(*existingResource)
 	existingResourceRepresentation, err := existingResource.YAML()
 	if err != nil {
@@ -398,7 +473,7 @@ func applyResource(registry Registry, resource Resource, trailRecorder eventsRec
 
 // Snapshot pushes resources to endpoints as snapshots, if supported
 func Snapshot(registry Registry, resources Resources, expiresSeconds int) error {
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		handler, err := registry.GetHandler(resource.Kind())
 		if err != nil {
 			return err
@@ -482,8 +557,8 @@ func Watch(registry Registry, watchDir string, parser WatchParser, trailRecorder
 // Serve starts an HTTP server that can be used to navigate Grizzly resources,
 // as well as allowing visualisation of resources handed to Grizzly.
 // If pure files, they can be saved too.
-func Serve(registry Registry, parser WatchParser, resourcePath string, port int, openBrowser, onlySpec bool, outputFormat string) error {
-	server, err := NewGrizzlyServer(registry, parser, resourcePath, port, openBrowser, onlySpec, outputFormat)
+func Serve(registry Registry, parser Parser, parserOpts ParserOptions, resourcePath string, port int, openBrowser, onlySpec bool, outputFormat string) error {
+	server, err := NewGrizzlyServer(registry, parser, parserOpts, resourcePath, port, openBrowser, onlySpec, outputFormat)
 	if err != nil {
 		return err
 	}
@@ -499,7 +574,7 @@ func Export(registry Registry, exportDir string, resources Resources, onlySpec b
 		}
 	}
 
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		updatedResourceBytes, _, extension, err := Format(registry, "", &resource, outputFormat, onlySpec)
 		if err != nil {
 			return err

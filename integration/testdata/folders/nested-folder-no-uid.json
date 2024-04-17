@@ -1,11 +1,13 @@
 {
+  "folders": [
+    {
   "apiVersion": "grizzly.grafana.com/v1alpha1",
   "kind": "DashboardFolder",
   "metadata": {
-    "name": "newFolder"
+    "name": "new-nested-folder-no-uid"
   },
   "spec": {
-    "title": "New Folder",
-    "uid": "newFolder"
+    "title": "Nested Folder without UID"
   }
+}]
 }

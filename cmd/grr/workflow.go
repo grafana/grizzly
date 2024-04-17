@@ -45,7 +45,9 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 	}
 	var opts Opts
 	var isRemote bool
+	var format string
 	cmd.Flags().BoolVarP(&isRemote, "remote", "r", false, "list remote resources")
+	cmd.Flags().StringVarP(&format, "format", "f", "default", "format for listing, one of default, wide, json, yaml")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		currentContext, err := config.CurrentContext()
@@ -60,7 +62,7 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 				return nil
 			}
 
-			return grizzly.ListRemote(registry, targets)
+			return grizzly.ListRemote(registry, targets, format)
 		}
 		if len(args) == 0 {
 			notifier.Error(nil, "resource-path required when listing local resources")
@@ -80,7 +82,7 @@ func listCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		return grizzly.List(registry, resources)
+		return grizzly.List(registry, resources, format)
 	}
 	return initialiseCmd(cmd, &opts)
 }
@@ -380,7 +382,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "serve <resources>",
 		Short: "Run Grizzly server",
-		Args:  cli.ArgsExact(1),
+		Args:  cli.ArgsRange(0, 1),
 	}
 	var opts Opts
 
@@ -394,14 +396,17 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		if err != nil {
 			return err
 		}
+
+		resourcesPath := ""
+		if len(args) > 0 {
+			resourcesPath = args[0]
+		}
+
 		targets := currentContext.GetTargets(opts.Targets)
-		parser := &jsonnetWatchParser{
-			resourcePath: args[0],
-			registry:     registry,
-			resourceKind: resourceKind,
-			folderUID:    folderUID,
-			targets:      targets,
-			jsonnetPaths: opts.JsonnetPaths,
+		parser := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(true))
+		parserOpts := grizzly.ParserOptions{
+			DefaultResourceKind: resourceKind,
+			DefaultFolderUID:    folderUID,
 		}
 
 		format, onlySpec, err := getOutputFormat(opts)
@@ -409,7 +414,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		return grizzly.Serve(registry, parser, args[0], opts.ProxyPort, opts.OpenBrowser, onlySpec, format)
+		return grizzly.Serve(registry, parser, parserOpts, resourcesPath, opts.ProxyPort, opts.OpenBrowser, onlySpec, format)
 	}
 	cmd.Flags().BoolVarP(&opts.OpenBrowser, "open-browser", "b", false, "Open Grizzly in default browser")
 	cmd.Flags().IntVarP(&opts.ProxyPort, "port", "p", 8080, "Port on which the server will listen")

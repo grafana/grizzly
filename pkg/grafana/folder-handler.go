@@ -33,16 +33,24 @@ func (h *FolderHandler) ResourceFilePath(resource grizzly.Resource, filetype str
 	return fmt.Sprintf(folderPattern, resource.Name(), filetype)
 }
 
-// Parse parses a manifest object into a struct for this resource type
-func (h *FolderHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
-	resource, err := grizzly.ResourceFromMap(m)
-	if err != nil {
-		return nil, err
+// Prepare gets a resource ready for dispatch to the remote endpoint
+func (h *FolderHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
+	if !resource.HasSpecString("uid") {
+		resource.SetSpecString("uid", resource.Name())
 	}
+	return &resource
+}
 
-	resource.SetSpecString("uid", resource.Name())
-
-	return resource, nil
+// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
+func (h *FolderHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
+	for _, key := range []string{"id", "version", "canAdmin", "canDelete", "canEdit", "canSave", "created", "createdBy", "updated", "updatedBy", "url"} {
+		resource.DeleteSpecKey(key)
+	}
+	value := resource.GetSpecValue("parents")
+	if value == nil {
+		resource.DeleteSpecKey("parents")
+	}
+	return &resource
 }
 
 // Validate returns the uid of resource
@@ -67,14 +75,14 @@ func (h *FolderHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
 
 // Sort sorts according to handler needs
 func (h *FolderHandler) Sort(resources grizzly.Resources) grizzly.Resources {
-	result := grizzly.Resources{}
+	result := grizzly.NewResources()
 	addedToResult := map[string]bool{}
-	for _, resource := range resources {
+	for _, resource := range resources.AsList() {
 		addedToResult[resource.Name()] = false
 	}
 	for {
 		continueLoop := false
-		for _, resource := range resources {
+		for _, resource := range resources.AsList() {
 			if addedToResult[resource.Name()] {
 				// already added
 				continue
@@ -83,14 +91,14 @@ func (h *FolderHandler) Sort(resources grizzly.Resources) grizzly.Resources {
 			// Add root folders
 			if !hasParentUID {
 				addedToResult[resource.Name()] = true
-				result = append(result, resource)
+				result.Add(resource)
 				continue
 			}
 			parentAdded, parentExists := addedToResult[parentUID.(string)]
 			// Add folders with parents which aren't declared in Grizzly, or which have already been added
 			if !parentExists || parentAdded {
 				addedToResult[resource.Name()] = true
-				result = append(result, resource)
+				result.Add(resource)
 				continue
 			}
 

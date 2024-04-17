@@ -107,19 +107,19 @@ func NewChainParser(formatParsers []FormatParser, continueOnError bool) *ChainPa
 
 func (parser *ChainParser) Parse(resourcePath string, options ParserOptions) (Resources, error) {
 	if resourcePath == "" {
-		return nil, nil
+		return NewResources(), nil
 	}
 
 	stat, err := os.Stat(resourcePath)
 	if err != nil {
-		return nil, err
+		return Resources{}, err
 	}
 
 	if !stat.IsDir() {
 		return parser.parseFile(resourcePath, options)
 	}
 
-	var parsedResources Resources
+	parsedResources := NewResources()
 	var finalErr error
 	_ = filepath.WalkDir(resourcePath, func(path string, info fs.DirEntry, err error) error {
 		if err != nil {
@@ -140,8 +140,7 @@ func (parser *ChainParser) Parse(resourcePath string, options ParserOptions) (Re
 				return nil
 			}
 		}
-
-		parsedResources = append(parsedResources, r...)
+		parsedResources.Merge(r)
 
 		return nil
 	})
@@ -157,35 +156,29 @@ func (parser *ChainParser) parseFile(file string, options ParserOptions) (Resour
 
 		resources, err := l.Parse(file, options)
 		if err != nil {
-			return nil, ParseError{File: file, Err: err}
+			return Resources{}, ParseError{File: file, Err: err}
 		}
-
 		return resources, nil
 	}
 
-	return nil, fmt.Errorf("unrecognized format for %s", file)
+	return Resources{}, fmt.Errorf("unrecognized format for %s", file)
 }
 
-func parseAny(registry Registry, data any, resourceKind, folderUID string) (Resources, error) {
+func parseAny(registry Registry, data any, resourceKind, folderUID string, source Source) (Resources, error) {
 	hasEnvelope := DetectEnvelope(data)
 	if hasEnvelope {
 		m := data.(map[string]any)
 		err := ValidateEnvelope(m)
 		if err != nil {
-			return nil, err
+			return Resources{}, err
 		}
-
-		handler, err := registry.GetHandler(m["kind"].(string))
+		resource, err := ResourceFromMap(m)
 		if err != nil {
-			return nil, err
+			return Resources{}, err
 		}
+		resource.SetSource(source)
 
-		resource, err := handler.Parse(m)
-		if err != nil {
-			return nil, err
-		}
-
-		return Resources{*resource}, nil
+		return NewResources(*resource), nil
 	}
 
 	kind := registry.Detect(data)
@@ -196,23 +189,24 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string) (Reso
 	if kind != "" {
 		handler, err := registry.GetHandler(kind)
 		if err != nil {
-			return nil, err
+			return Resources{}, err
 		}
 
 		if handler.UsesFolders() && folderUID == "" {
 			// TODO: the error shouldn't assume a CLI environment
-			return nil, fmt.Errorf("folder (-f) required with --onlyspec")
+			return Resources{}, fmt.Errorf("folder (-f) required with --onlyspec")
 		}
 
 		m := data.(map[string]any)
 		resource, err := NewResource(handler.APIVersion(), handler.Kind(), "dummy", m)
 		if err != nil {
-			return nil, err
+			return Resources{}, err
 		}
+		resource.SetSource(source)
 
 		uid, err := handler.GetSpecUID(resource)
 		if err != nil {
-			return nil, err
+			return Resources{}, err
 		}
 
 		resource.SetMetadata("name", uid)
@@ -220,18 +214,17 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string) (Reso
 			resource.SetMetadata("folder", folderUID)
 		}
 
-		r, err := handler.Parse(resource.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		return Resources{*r}, nil
+		return NewResources(resource), nil
 	}
 
-	walker := walker{}
+	walker := walker{
+		registry:  registry,
+		source:    source,
+		resources: NewResources(),
+	}
 	err := walker.Walk(data)
 
-	return walker.Resources, err
+	return walker.resources, err
 }
 
 // DetectEnvelope identifies whether this resource is enveloped or not
@@ -309,7 +302,9 @@ func ValidateEnvelope(data any) error {
 }
 
 type walker struct {
-	Resources Resources
+	registry  Registry
+	resources Resources
+	source    Source
 }
 
 // Walk scans the raw interface{} for objects that look like enveloped objects and
@@ -364,8 +359,11 @@ func (w *walker) walkObj(obj map[string]any, path trace) error {
 		if err != nil {
 			return err
 		}
-
-		w.Resources = append(w.Resources, *resource)
+		source := w.source
+		source.Location = path.Full()
+		source.Rewritable = false
+		resource.SetSource(source)
+		w.resources.Add(*resource)
 		return nil
 	}
 

@@ -54,18 +54,6 @@ func (h *SyntheticMonitoringHandler) ResourceFilePath(resource grizzly.Resource,
 	return fmt.Sprintf(syntheticMonitoringPattern, resource.Name(), filetype)
 }
 
-// Parse parses a manifest object into a struct for this resource type
-func (h *SyntheticMonitoringHandler) Parse(m map[string]any) (*grizzly.Resource, error) {
-	resource, err := grizzly.ResourceFromMap(m)
-	if err != nil {
-		return nil, err
-	}
-
-	resource.SetSpecString("job", resource.GetMetadata("name"))
-
-	return resource, nil
-}
-
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *SyntheticMonitoringHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
 	resource.DeleteSpecKey("tenantId")
@@ -76,9 +64,13 @@ func (h *SyntheticMonitoringHandler) Unprepare(resource grizzly.Resource) *grizz
 }
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
-func (h *SyntheticMonitoringHandler) Prepare(existing, resource grizzly.Resource) *grizzly.Resource {
+func (h *SyntheticMonitoringHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
 	resource.SetSpecValue("tenantId", existing.GetSpecValue("tenantId"))
 	resource.SetSpecValue("id", existing.GetSpecValue("id"))
+	_, exists := resource.GetSpecString("job")
+	if !exists {
+		resource.SetSpecString("job", resource.GetMetadata("name"))
+	}
 	return &resource
 }
 
