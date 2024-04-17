@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	
+
 	"github.com/kirsle/configdir"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -22,7 +22,7 @@ const (
 func Initialise() {
 	viper.SetConfigName("settings")
 	viper.SetConfigType("yaml")
-	
+
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(configdir.LocalConfig("grizzly"))
 }
@@ -32,12 +32,12 @@ func override(v *viper.Viper) {
 		"grafana.url":   "GRAFANA_URL",
 		"grafana.user":  "GRAFANA_USER",
 		"grafana.token": "GRAFANA_TOKEN",
-		
+
 		"synthetic-monitoring.token":      "GRAFANA_SM_TOKEN",
 		"synthetic-monitoring.stack-id":   "GRAFANA_SM_STACK_ID",
 		"synthetic-monitoring.logs-id":    "GRAFANA_SM_LOGS_ID",
 		"synthetic-monitoring.metrics-id": "GRAFANA_SM_METRICS_ID",
-		
+
 		"mimir.address":   "MIMIR_ADDRESS",
 		"mimir.tenant-id": "MIMIR_TENANT_ID",
 		"mimir.api-key":   "MIMIR_API_KEY",
@@ -219,13 +219,13 @@ func Write() error {
 	if err == nil {
 		return nil
 	}
-	
+
 	// We only know how to handle `viper.ConfigFileNotFoundError` errors.
 	// Everything else bubbles up.
 	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 		return err
 	}
-	
+
 	// Ensure that our configuration directory exists: viper only takes care of
 	// creating the file.
 	configDir := configdir.LocalConfig("grizzly")
@@ -234,11 +234,11 @@ func Write() error {
 			return err
 		}
 	}
-	
+
 	// Viper failed because no configuration file exists in the "config path".
 	// We explicitly tell it where to write its config: at the most global location.
 	globalConfigPath := filepath.Join(configDir, "settings.yaml")
-	
+
 	return viper.WriteConfigAs(globalConfigPath)
 }
 
