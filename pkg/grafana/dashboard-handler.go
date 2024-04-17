@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -284,7 +284,7 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server, config grizzly.Ht
 func (h *DashboardHandler) resourceFromQueryParameterMiddleware(p grizzly.Server, parameterName string, next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if fromFilePath := r.URL.Query().Get(parameterName); fromFilePath != "" {
-			if err := p.ParseResources(fromFilePath); err != nil {
+			if _, err := p.ParseResources(fromFilePath); err != nil {
 				grizzly.SendError(w, "could not parse resource", fmt.Errorf("could not parse resource"), http.StatusBadRequest)
 				return
 			}
@@ -343,6 +343,9 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server, config griz
 			return
 		}
 
+		for i, r := range p.Resources.AsList() {
+			log.Printf("%d: %s", i, r.Name())
+		}
 		resource, found := p.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
 		if !found {
 			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 404)
@@ -396,28 +399,11 @@ func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server, config gri
 		resource.SetMetadata("name", uid)
 		resource.SetSpecString("uid", uid)
 
-		out, _, _, err := grizzly.Format(p.Registry, p.ResourcePath, &resource, p.OutputFormat, p.OnlySpec)
+		err = p.UpdateResource(uid, resource)
 		if err != nil {
-			grizzly.SendError(w, "Error formatting content", err, 500)
+			grizzly.SendError(w, err.Error(), err, 500)
 			return
 		}
-
-		existing, found := p.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
-		if !found {
-			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 500)
-			return
-		}
-		if !existing.Source.Rewritable {
-			grizzly.SendError(w, "The source for this dashboard is not rewritable", fmt.Errorf("the source for this dashboard is not rewritable"), 400)
-			return
-		}
-
-		err = os.WriteFile(existing.Source.Path, out, 0644)
-		if err != nil {
-			grizzly.SendError(w, fmt.Sprintf("Error writing file: %s", err), err, 500)
-			return
-		}
-
 		jout := map[string]interface{}{
 			"id":      1,
 			"slug":    "slug",

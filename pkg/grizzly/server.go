@@ -158,8 +158,8 @@ func (p *Server) Start() error {
 	r.Get("/livereload", livereload.LiveReloadHandlerFunc(upgrader))
 	r.Get("/api/live/ws", p.wsHandler)
 
-	if err := p.ParseResources(p.ResourcePath); err != nil {
-		return err
+	if _, err := p.ParseResources(p.ResourcePath); err != nil {
+		fmt.Print(err)
 	}
 
 	if p.openBrowser {
@@ -208,16 +208,11 @@ func (p *Server) Start() error {
 	return http.ListenAndServe(fmt.Sprintf(":%d", p.port), r)
 }
 
-func (p *Server) ParseResources(resourcesPath string) error {
+func (p *Server) ParseResources(resourcesPath string) (Resources, error) {
 	resources, err := p.parser.Parse(resourcesPath, p.parserOpts)
 	p.parserErr = err
-	if err != nil {
-		return err
-	}
-
 	p.Resources.Merge(resources)
-
-	return nil
+	return resources, err
 }
 
 func (p *Server) URL(path string) string {
@@ -293,28 +288,26 @@ func (p *Server) setupWatch() error {
 }
 func (p *Server) updateWatchedResource(name string) error {
 	log.Info("Changes detected. Applying ", name)
-	resources, err := p.parser.Parse(name, p.parserOpts)
+	resources, err := p.ParseResources(name)
 	if err != nil {
 		log.Error("Error: ", err)
+		return err
 	}
-	resource, exists := resources.FindByFilename(name)
-	if exists {
+	for _, resource := range resources.AsList() {
 		handler, err := p.Registry.GetHandler(resource.Kind())
 		if err != nil {
 			log.Printf("Error: %v", err)
-		} else {
-			proxyHandler, ok := handler.(ProxyHandler)
-			if ok {
-				u, err := proxyHandler.ProxyURL(resource)
-				if err != nil {
-					log.Print(err)
-				} else {
-					livereload.Reload(u)
-				}
-			}
+			continue
 		}
-	} else {
-		log.Printf("%s not found in resources", name)
+		proxyHandler, ok := handler.(ProxyHandler)
+		if ok {
+			u, err := proxyHandler.ProxyURL(resource)
+			if err != nil {
+				log.Print(err)
+				continue
+			}
+			livereload.Reload(u)
+		}
 	}
 	return nil
 }
@@ -356,4 +349,20 @@ func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 		SendError(w, "Error while executing template", err, 500)
 		return
 	}
+}
+
+func (p *Server) UpdateResource(name string, resource Resource) error {
+	out, _, _, err := Format(p.Registry, p.ResourcePath, &resource, p.OutputFormat, p.OnlySpec)
+	if err != nil {
+		return fmt.Errorf("error formatting content: %s", err)
+	}
+
+	existing, found := p.Resources.Find(NewResourceRef("Dashboard", name))
+	if !found {
+		return fmt.Errorf("dashboard with UID %s not found", name)
+	}
+	if !existing.Source.Rewritable {
+		return fmt.Errorf("the source for this dashboard is not rewritable")
+	}
+	return os.WriteFile(existing.Source.Path, out, 0644)
 }

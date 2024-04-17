@@ -156,6 +156,7 @@ func (parser *ChainParser) parseFile(file string, options ParserOptions) (Resour
 
 		resources, err := l.Parse(file, options)
 		if err != nil {
+			log.Printf("PARSE ERROR %s", err)
 			return Resources{}, ParseError{File: file, Err: err}
 		}
 		return resources, nil
