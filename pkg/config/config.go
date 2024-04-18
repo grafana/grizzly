@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -206,6 +207,49 @@ func Set(path string, value string) error {
 		}
 	}
 	return fmt.Errorf("key not recognised: %s", path)
+}
+
+func Unset(path string) error {
+	exists := false
+	for k := range acceptableKeys {
+		if path == k {
+			exists = true
+			break
+		}
+	}
+
+	if !exists {
+		return fmt.Errorf("%s is not a valid path", path)
+	}
+
+	ctx := viper.GetString(CURRENT_CONTEXT)
+	fullPath := fmt.Sprintf("contexts.%s.%s", ctx, path)
+
+	if !viper.InConfig(fullPath) {
+		return fmt.Errorf("key %s is already unset", path)
+	}
+
+	parts := strings.Split(path, ".")
+	allConfig := viper.AllSettings()
+	deleteValue(allConfig, parts[1], "contexts", ctx, parts[0])
+
+	encodedConfig, err := json.MarshalIndent(allConfig, "", "	")
+	if err != nil {
+		return fmt.Errorf("error encoding new configuration: %s", err)
+	}
+
+	if err = viper.ReadConfig(bytes.NewReader(encodedConfig)); err != nil {
+		return fmt.Errorf("error reading new configuration: %s", err)
+	}
+
+	return viper.WriteConfig()
+}
+
+func deleteValue(settings map[string]any, deleteKey string, iteratorKeys ...string) {
+	for _, k := range iteratorKeys {
+		settings = settings[k].(map[string]any)
+	}
+	delete(settings, deleteKey)
 }
 
 func CreateContext(name string) error {

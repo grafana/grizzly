@@ -60,4 +60,52 @@ func TestContexts(t *testing.T) {
 			},
 		})
 	})
+
+	t.Run("Unset value", func(t *testing.T) {
+		runTest(t, GrizzlyTest{
+			TestDir: dir,
+			Commands: []Command{
+				{
+					Command:             "config set mimir.invalid http://mimir:9009",
+					ExpectedLogsContain: "key not recognised: mimir.invalid",
+					ExpectedCode:        1,
+				},
+				{
+					Command: "config set mimir.address http://mimir:9009",
+				},
+				{
+					Command: "config set mimir.tenant-id tenant-id",
+				},
+				{
+					Command:        "config get mimir -o yaml",
+					ExpectedOutput: "address: http://mimir:9009\ntenant-id: tenant-id",
+				},
+				{
+					Command: "config unset mimir.address",
+				},
+				{
+					Command:        "config get mimir -o yaml",
+					ExpectedOutput: "tenant-id: tenant-id",
+				},
+				{
+					Command: "config unset mimir.tenant-id",
+				},
+				{
+					Command:             "config get mimir -o yaml",
+					ExpectedLogsContain: "key not found: mimir",
+					ExpectedCode:        1,
+				},
+				{
+					Command:             "config unset mimir.invalid",
+					ExpectedLogsContain: "mimir.invalid is not a valid path",
+					ExpectedCode:        1,
+				},
+				{
+					Command:             "config unset mimir.tenant-id",
+					ExpectedLogsContain: "key mimir.tenant-id is already unset",
+					ExpectedCode:        1,
+				},
+			},
+		})
+	})
 }

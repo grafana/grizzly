@@ -137,8 +137,8 @@ func getConfigCmd() *cli.Command {
 
 func setCmd() *cli.Command {
 	cmd := &cli.Command{
-		Use:   "set configuration value",
-		Short: "set a configuration value",
+		Use:   "set [provider.key value]",
+		Short: "Set a configuration value for the current context",
 		Args:  cli.ArgsExact(2),
 	}
 	var opts LoggingOpts
@@ -147,6 +147,19 @@ func setCmd() *cli.Command {
 		return config.Set(args[0], args[1])
 	}
 	return initialiseLogging(cmd, &opts)
+}
+
+func unsetCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "unset [provider.key]",
+		Short: "Unset a configuration value for the current context",
+		Args:  cli.ArgsExact(1),
+		Run: func(cmd *cli.Command, args []string) error {
+			return config.Unset(args[0])
+		},
+	}
+
+	return initialiseLogging(cmd, &LoggingOpts{})
 }
 
 func createContextCmd() *cli.Command {
