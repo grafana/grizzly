@@ -6,9 +6,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"runtime"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -16,7 +13,6 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly/livereload"
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/fsnotify.v1"
 )
 
 type Server struct {
@@ -163,42 +159,18 @@ func (p *Server) Start() error {
 	}
 
 	if p.openBrowser {
-		path := "/"
-
-		stat, err := os.Stat(p.ResourcePath)
+		browser, err := NewBrowserInterface(p.Registry, p.ResourcePath, p.port)
 		if err != nil {
 			return err
 		}
-
-		if !stat.IsDir() && p.Resources.Len() == 0 {
-			return fmt.Errorf("no resources found to proxy")
-		}
-
-		if !stat.IsDir() && p.Resources.Len() == 1 {
-			resource := p.Resources.First()
-			handler, err := p.Registry.GetHandler(resource.Kind())
-			if err != nil {
-				return err
-			}
-			proxyHandler, ok := handler.(ProxyHandler)
-			if !ok {
-				uid, err := handler.GetUID(resource)
-				if err != nil {
-					return err
-				}
-				return fmt.Errorf("kind %s (for resource %s) does not support proxying", resource.Kind(), uid)
-			}
-			proxyURL, err := proxyHandler.ProxyURL(resource)
-			if err != nil {
-				return err
-			}
-			path = proxyURL
-		}
-
-		p.openInBrowser(p.URL(path))
+		browser.Open(p.Resources)
 	}
 	if p.Watch {
-		err := p.setupWatch()
+		watcher, err := NewWatcher(p.updateWatchedResource)
+		if err != nil {
+			return err
+		}
+		err = watcher.Watch(p.ResourcePath)
 		if err != nil {
 			return err
 		}
@@ -223,69 +195,6 @@ func (p *Server) URL(path string) string {
 	return fmt.Sprintf("http://localhost:%d%s", p.port, path)
 }
 
-func (p *Server) openInBrowser(url string) {
-	var err error
-
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		err = exec.Command("open", url).Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
-	}
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func (p *Server) setupWatch() error {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return err
-	}
-	//defer watcher.Close()
-
-	err = filepath.WalkDir(p.ResourcePath, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return watcher.Add(path)
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		log.Info("Watching for changes")
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Info("Changes detected. Parsing")
-					err := p.updateWatchedResource(event.Name)
-					if err != nil {
-						log.Error("error: ", err)
-					}
-				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				log.Error("error: ", err)
-			}
-		}
-	}()
-	return nil
-}
 func (p *Server) updateWatchedResource(name string) error {
 	log.Info("Changes detected. Applying ", name)
 	resources, err := p.ParseResources(name)

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -343,9 +342,6 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server, config griz
 			return
 		}
 
-		for i, r := range p.Resources.AsList() {
-			log.Printf("%d: %s", i, r.Name())
-		}
 		resource, found := p.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
 		if !found {
 			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 404)
