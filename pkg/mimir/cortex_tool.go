@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	
+
 	"github.com/grafana/grizzly/pkg/config"
 )
 
