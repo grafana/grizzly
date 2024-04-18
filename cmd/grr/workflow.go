@@ -500,6 +500,7 @@ func configCmd() *cli.Command {
 	cmd.AddCommand(configImportCmd())
 	cmd.AddCommand(getConfigCmd())
 	cmd.AddCommand(setCmd())
+	cmd.AddCommand(unsetCmd())
 	cmd.AddCommand(createContextCmd())
 	return cmd
 }
