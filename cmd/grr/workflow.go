@@ -24,6 +24,8 @@ func getCmd(registry grizzly.Registry) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	var opts Opts
+	var output string
+	cmd.Flags().StringVarP(&output, "output-file", "O", "", "write resource to specific file")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		uid := args[0]
@@ -31,7 +33,7 @@ func getCmd(registry grizzly.Registry) *cli.Command {
 		if err != nil {
 			return err
 		}
-		return grizzly.Get(registry, uid, onlySpec, format)
+		return grizzly.Get(registry, uid, onlySpec, format, output)
 	}
 	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)

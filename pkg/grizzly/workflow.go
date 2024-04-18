@@ -25,7 +25,7 @@ import (
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 // Get retrieves a resource from a remote endpoint using its UID
-func Get(registry Registry, UID string, onlySpec bool, outputFormat string) error {
+func Get(registry Registry, UID string, onlySpec bool, outputFormat, output string) error {
 	log.Info("Getting ", UID)
 
 	count := strings.Count(UID, ".")
@@ -40,7 +40,7 @@ func Get(registry Registry, UID string, onlySpec bool, outputFormat string) erro
 		resourceID = parts[2]
 
 	} else {
-		return fmt.Errorf("UID must be <provider>.<uid>: %s", UID)
+		return fmt.Errorf("UID must be <kind>.<uid>: %s", UID)
 	}
 
 	handler, err := registry.GetHandler(handlerName)
@@ -60,7 +60,15 @@ func Get(registry Registry, UID string, onlySpec bool, outputFormat string) erro
 		return err
 	}
 
-	fmt.Println(string(content))
+	if output == "" {
+		fmt.Println(string(content))
+	} else {
+		err := os.WriteFile(output, content, 0644)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
