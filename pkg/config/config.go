@@ -157,7 +157,7 @@ var acceptableKeys = map[string]string{
 	"synthetic-monitoring.stack-id":   "int",
 	"synthetic-monitoring.metrics-id": "int",
 	"synthetic-monitoring.logs-id":    "int",
-	"synthetic-monitoring.region-id":  "string",
+	"synthetic-monitoring.region":     "string",
 	"targets":                         "[]string",
 	"output-format":                   "string",
 	"only-spec":                       "bool",
