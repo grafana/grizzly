@@ -55,9 +55,10 @@ grr config set synthetic-monitoring.token abcdef123456 # API key (must have Metr
 grr config set synthetic-monitoring.stack-id # Grafana stack ID
 grr config set synthetic-monitoring.metrics-id # Metrics instance ID
 grr config set synthetic-monitoring.logs-id # Logs instance ID
-grr config set synthetic-monitoring.region # Region of your backend address.
+grr config set synthetic-monitoring.url # Synthetic Monitoring instance URL
 ```
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
+You can find your instance URL under your Synthetic Monitoring configuration.
 
 ## Configuring Targets
 Grizzly supports a number of resource types (`grr providers` will list those supported). Often, however, we do not
@@ -165,9 +166,10 @@ To interact with Grafana Synthetic Monitoring, you must have these environment v
 | `GRAFANA_SM_STACK_ID`   | Grafana instance/stack ID                                             | true     |
 | `GRAFANA_SM_LOGS_ID`    | Logs instance ID                                                      | true     |
 | `GRAFANA_SM_METRICS_ID` | Metrics instance ID                                                   | true     |
-| `GRAFANA_SM_REGION`     | Region of your instance                                               | true     |
+| `GRAFANA_SM_URL`        | Synthetic Monitoring instance URL                                     | true     |
 
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
+You can find your instance URL under your Synthetic Monitoring configuration.
 
 # Grizzly configuration file
 To get the path of the config file:

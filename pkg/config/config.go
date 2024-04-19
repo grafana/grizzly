@@ -38,7 +38,7 @@ func override(v *viper.Viper) {
 		"synthetic-monitoring.stack-id":   "GRAFANA_SM_STACK_ID",
 		"synthetic-monitoring.logs-id":    "GRAFANA_SM_LOGS_ID",
 		"synthetic-monitoring.metrics-id": "GRAFANA_SM_METRICS_ID",
-		"synthetic-monitoring.region":     "GRAFANA_SM_REGION",
+		"synthetic-monitoring.url":        "GRAFANA_SM_URL",
 
 		"mimir.address":   "CORTEX_ADDRESS",
 		"mimir.tenant-id": "CORTEX_TENANT_ID",
@@ -157,7 +157,7 @@ var acceptableKeys = map[string]string{
 	"synthetic-monitoring.stack-id":   "int",
 	"synthetic-monitoring.metrics-id": "int",
 	"synthetic-monitoring.logs-id":    "int",
-	"synthetic-monitoring.region":     "string",
+	"synthetic-monitoring.url":        "string",
 	"targets":                         "[]string",
 	"output-format":                   "string",
 	"only-spec":                       "bool",

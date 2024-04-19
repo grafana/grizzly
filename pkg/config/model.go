@@ -19,7 +19,7 @@ type SyntheticMonitoringConfig struct {
 	StackID   int64  `yaml:"stack-id" mapstructure:"stack-id"`
 	LogsID    int64  `yaml:"logs-id" mapstructure:"logs-id"`
 	MetricsID int64  `yaml:"metrics-id" mapstructure:"metrics-id"`
-	Region    string `yaml:"region" mapstructure:"region"`
+	URL       string `yaml:"url" mapstructure:"url"`
 }
 
 type Context struct {

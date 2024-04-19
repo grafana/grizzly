@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/grafana/grizzly/pkg/config"
@@ -31,6 +30,9 @@ type ClientProvider interface {
 
 // NewProvider instantiates a new Provider.
 func NewProvider(config *config.SyntheticMonitoringConfig) (*Provider, error) {
+	if config.URL == "" {
+		return nil, fmt.Errorf("url is not set")
+	}
 	if config.StackID == 0 {
 		return nil, fmt.Errorf("stack id is not set")
 	}
@@ -42,9 +44,6 @@ func NewProvider(config *config.SyntheticMonitoringConfig) (*Provider, error) {
 	}
 	if config.Token == "" {
 		return nil, fmt.Errorf("token is not set")
-	}
-	if config.Region == "" {
-		return nil, fmt.Errorf("region is not set")
 	}
 
 	return &Provider{
@@ -85,12 +84,7 @@ func (p *Provider) Client() (*smapi.Client, error) {
 		return nil, err
 	}
 
-	url := smAPIURLsExceptions[p.config.Region]
-	if url == "" {
-		url = fmt.Sprintf("https://synthetic-monitoring-api-%s.grafana.net", strings.TrimPrefix(p.config.Region, "prod-"))
-	}
-
-	smClient := smapi.NewClient(url, "", client)
+	smClient := smapi.NewClient(p.config.URL, "", client)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
