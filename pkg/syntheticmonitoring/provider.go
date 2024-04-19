@@ -23,7 +23,7 @@ type ClientProvider interface {
 // NewProvider instantiates a new Provider.
 func NewProvider(config *config.SyntheticMonitoringConfig) (*Provider, error) {
 	if config.URL == "" {
-		return nil, fmt.Errorf("url is not set")
+		config.URL = "https://synthetic-monitoring-api.grafana.net"
 	}
 	if config.StackID == 0 {
 		return nil, fmt.Errorf("stack id is not set")
