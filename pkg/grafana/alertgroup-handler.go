@@ -158,7 +158,9 @@ func (h *AlertRuleGroupHandler) createAlertRuleGroup(resource grizzly.Resource) 
 		return err
 	}
 	var group models.AlertRuleGroup
-	err = json.Unmarshal(data, &group)
+	if err := json.Unmarshal(data, &group); err != nil {
+		return err
+	}
 
 	for _, r := range group.Rules {
 		if err := h.createAlertRule(r); err != nil {

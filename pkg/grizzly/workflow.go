@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pmezard/go-difflib/difflib"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh/terminal"
+	terminal "golang.org/x/term"
 	"gopkg.in/fsnotify.v1"
 	"gopkg.in/yaml.v3"
 )

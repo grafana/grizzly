@@ -314,7 +314,7 @@ func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server) http.Handl
 
 		if err == nil {
 			body, _ := io.ReadAll(resp.Body)
-			w.Write(body)
+			writeOrLog(w, body)
 			return
 		}
 
@@ -363,7 +363,7 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server) http.Handle
 		}
 
 		out, _ := json.Marshal(wrapper)
-		w.Write(out)
+		writeOrLog(w, out)
 	}
 }
 
@@ -426,7 +426,7 @@ func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server) http.Handl
 			"version": 1,
 		}
 		body, _ := json.Marshal(jout)
-		w.Write(body)
+		writeOrLog(w, body)
 	}
 }
 
