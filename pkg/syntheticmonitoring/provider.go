@@ -11,14 +11,6 @@ import (
 	smapi "github.com/grafana/synthetic-monitoring-api-go-client"
 )
 
-var smAPIURLsExceptions = map[string]string{
-	"au":              "https://synthetic-monitoring-api-au-southeast.grafana.net",
-	"eu":              "https://synthetic-monitoring-api-eu-west.grafana.net",
-	"prod-gb-south-0": "https://synthetic-monitoring-api-gb-south.grafana.net",
-	"us":              "https://synthetic-monitoring-api.grafana.net",
-	"us-azure":        "https://synthetic-monitoring-api-us-central2.grafana.net",
-}
-
 // Provider is a grizzly.Provider implementation for Grafana.
 type Provider struct {
 	config *config.SyntheticMonitoringConfig
