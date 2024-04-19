@@ -1,6 +1,7 @@
 package grafana
 
 import (
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"net/http/httputil"
@@ -61,6 +62,13 @@ func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
 		WithHost(parsedUrl.Host).
 		WithSchemes([]string{parsedUrl.Scheme}).
 		WithBasePath(filepath.Join(parsedUrl.Path, "api"))
+
+	if parsedUrl.Scheme == "https" && p.config.InsecureSkipVerify {
+		transportConfig.TLSConfig = &tls.Config{
+			InsecureSkipVerify: true,
+			ServerName:         p.config.TLSHost,
+		}
+	}
 
 	if p.config.Token != "" {
 		if p.config.User != "" {
