@@ -26,6 +26,7 @@ import (
  */
 
 const smBaseURL = "https://synthetic-monitoring-api.grafana.net"
+const smRegionURL = "https://synthetic-monitoring-api-%s.grafana.net"
 
 type Probes struct {
 	ByID   map[int64]synthetic_monitoring.Probe

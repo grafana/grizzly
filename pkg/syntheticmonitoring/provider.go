@@ -72,7 +72,12 @@ func (p *Provider) Client() (*smapi.Client, error) {
 		return nil, err
 	}
 
-	smClient := smapi.NewClient(smBaseURL, "", client)
+	url := smBaseURL
+	if p.config.Region != "" {
+		url = fmt.Sprintf(smRegionURL, p.config.Region)
+	}
+
+	smClient := smapi.NewClient(url, "", client)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
