@@ -4,12 +4,21 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	smapi "github.com/grafana/synthetic-monitoring-api-go-client"
 )
+
+var smAPIURLsExceptions = map[string]string{
+	"au":              "https://synthetic-monitoring-api-au-southeast.grafana.net",
+	"eu":              "https://synthetic-monitoring-api-eu-west.grafana.net",
+	"prod-gb-south-0": "https://synthetic-monitoring-api-gb-south.grafana.net",
+	"us":              "https://synthetic-monitoring-api.grafana.net",
+	"us-azure":        "https://synthetic-monitoring-api-us-central2.grafana.net",
+}
 
 // Provider is a grizzly.Provider implementation for Grafana.
 type Provider struct {
@@ -34,6 +43,10 @@ func NewProvider(config *config.SyntheticMonitoringConfig) (*Provider, error) {
 	if config.Token == "" {
 		return nil, fmt.Errorf("token is not set")
 	}
+	if config.Region == "" {
+		return nil, fmt.Errorf("region is not set")
+	}
+
 	return &Provider{
 		config: config,
 	}, nil
@@ -72,9 +85,9 @@ func (p *Provider) Client() (*smapi.Client, error) {
 		return nil, err
 	}
 
-	url := smBaseURL
-	if p.config.Region != "" {
-		url = fmt.Sprintf(smRegionURL, p.config.Region)
+	url := smAPIURLsExceptions[p.config.Region]
+	if url == "" {
+		url = fmt.Sprintf("https://synthetic-monitoring-api-%s.grafana.net", strings.TrimPrefix(p.config.Region, "prod-"))
 	}
 
 	smClient := smapi.NewClient(url, "", client)

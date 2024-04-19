@@ -58,7 +58,6 @@ grr config set synthetic-monitoring.logs-id # Logs instance ID
 grr config set synthetic-monitoring.region # Region of your backend address.
 ```
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
-You can check the regions under Synthetic Monitoring configuration. For example, if your backend URL is `synthetic-monitoring-api-gb-south.grafana.net`, your region should be `gb-south`. Default value is `synthetic-monitoring-api.grafana.net`.
 
 ## Configuring Targets
 Grizzly supports a number of resource types (`grr providers` will list those supported). Often, however, we do not
@@ -166,10 +165,9 @@ To interact with Grafana Synthetic Monitoring, you must have these environment v
 | `GRAFANA_SM_STACK_ID`   | Grafana instance/stack ID                                             | true     |
 | `GRAFANA_SM_LOGS_ID`    | Logs instance ID                                                      | true     |
 | `GRAFANA_SM_METRICS_ID` | Metrics instance ID                                                   | true     |
-| `GRAFANA_SM_REGION`     | Region of your instance                                               | false    |
+| `GRAFANA_SM_REGION`     | Region of your instance                                               | true     |
 
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
-You can check the regions under Synthetic Monitoring configuration. For example, if your backend URL is `synthetic-monitoring-api-gb-south.grafana.net`, your region should be `gb-south`. Default value is `synthetic-monitoring-api.grafana.net`.
 
 # Grizzly configuration file
 To get the path of the config file:
