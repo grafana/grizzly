@@ -25,22 +25,22 @@ import (
 var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 
 // Get retrieves a resource from a remote endpoint using its UID
-func Get(registry Registry, UID string, onlySpec bool, outputFormat string) error {
-	log.Info("Getting ", UID)
+func Get(registry Registry, uid string, onlySpec bool, outputFormat string) error {
+	log.Info("Getting ", uid)
 
-	count := strings.Count(UID, ".")
+	count := strings.Count(uid, ".")
 	var handlerName, resourceID string
-	if count == 1 {
-		parts := strings.SplitN(UID, ".", 2)
+	switch count {
+	case 1:
+		parts := strings.SplitN(uid, ".", 2)
 		handlerName = parts[0]
 		resourceID = parts[1]
-	} else if count == 2 {
-		parts := strings.SplitN(UID, ".", 3)
+	case 2:
+		parts := strings.SplitN(uid, ".", 3)
 		handlerName = parts[0] + "." + parts[1]
 		resourceID = parts[2]
-
-	} else {
-		return fmt.Errorf("UID must be <provider>.<uid>: %s", UID)
+	default:
+		return fmt.Errorf("UID must be <provider>.<uid>: %s", uid)
 	}
 
 	handler, err := registry.GetHandler(handlerName)
@@ -124,13 +124,13 @@ func listResources(listedResources []listedResource, format string) error {
 	var output []byte
 	var err error
 	switch format {
-	case "yaml":
+	case formatYAML:
 		output, err = yaml.Marshal(listedResources)
-	case "json":
+	case formatJSON:
 		output, err = json.MarshalIndent(listedResources, "  ", "")
-	case "default":
+	case formatDefault:
 		output, err = listDefault(listedResources)
-	case "wide":
+	case formatWide:
 		output, err = listWide(listedResources)
 	}
 	if err != nil {
@@ -141,7 +141,6 @@ func listResources(listedResources []listedResource, format string) error {
 }
 
 func listDefault(listedResources []listedResource) ([]byte, error) {
-
 	var out bytes.Buffer
 	var f string
 	w := tabwriter.NewWriter(&out, 0, 0, 4, ' ', 0)
@@ -157,7 +156,6 @@ func listDefault(listedResources []listedResource) ([]byte, error) {
 }
 
 func listWide(listedResources []listedResource) ([]byte, error) {
-
 	var out bytes.Buffer
 	var f string
 	w := tabwriter.NewWriter(&out, 0, 0, 4, ' ', 0)

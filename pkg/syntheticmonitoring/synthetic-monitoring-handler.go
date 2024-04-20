@@ -98,8 +98,8 @@ func (h *SyntheticMonitoringHandler) GetSpecUID(resource grizzly.Resource) (stri
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	return h.getRemoteCheck(UID)
+func (h *SyntheticMonitoringHandler) GetByUID(uid string) (*grizzly.Resource, error) {
+	return h.getRemoteCheck(uid)
 }
 
 // GetRemote retrieves a datasource as a Resource

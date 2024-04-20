@@ -11,7 +11,7 @@ type GrafanaConfig struct {
 type MimirConfig struct {
 	Address  string `yaml:"address" mapstructure:"address"`
 	TenantID string `yaml:"tenant-id" mapstructure:"tenant-id"`
-	ApiKey   string `yaml:"api-key" mapstructure:"api-key"`
+	APIKey   string `yaml:"api-key" mapstructure:"api-key"`
 }
 
 type SyntheticMonitoringConfig struct {

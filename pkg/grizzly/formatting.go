@@ -8,6 +8,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	formatJSON    = "json"
+	formatYAML    = "yaml"
+	formatWide    = "wide"
+	formatDefault = "default"
+)
+
 func Format(registry Registry, resourcePath string, resource *Resource, format string, onlySpec bool) ([]byte, string, string, error) {
 	var content []byte
 	var filename string
@@ -19,15 +26,15 @@ func Format(registry Registry, resourcePath string, resource *Resource, format s
 		spec = resource.Spec()
 	}
 
-	if format == "json" {
-		extension = "json"
+	if format == formatJSON {
+		extension = formatJSON
 		j, err := json.MarshalIndent(spec, "", "  ")
 		if err != nil {
 			return nil, "", "", err
 		}
 		content = j
 	} else {
-		extension = "yaml"
+		extension = formatYAML
 		y, err := yaml.Marshal(spec)
 		if err != nil {
 			return nil, "", "", err

@@ -86,10 +86,10 @@ func (h *LibraryElementHandler) GetSpecUID(resource grizzly.Resource) (string, e
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *LibraryElementHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	resource, err := h.getRemoteLibraryElement(UID)
+func (h *LibraryElementHandler) GetByUID(uid string) (*grizzly.Resource, error) {
+	resource, err := h.getRemoteLibraryElement(uid)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving library element %s: %w", UID, err)
+		return nil, fmt.Errorf("Error retrieving library element %s: %w", uid, err)
 	}
 
 	return resource, nil

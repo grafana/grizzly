@@ -114,7 +114,7 @@ type ListenHandler interface {
 
 type ProxyEndpoint struct {
 	Method  string
-	Url     string
+	URL     string
 	Handler func(http.ResponseWriter, *http.Request)
 }
 
