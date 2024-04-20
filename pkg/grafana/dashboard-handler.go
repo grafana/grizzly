@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
@@ -17,7 +18,7 @@ import (
 )
 
 // Moved from utils.go
-const generalFolderId = 0
+const generalFolderID = 0
 const generalFolderUID = "general"
 
 // DashboardHandler is a Grizzly Handler for Grafana dashboards
@@ -77,10 +78,10 @@ func (h *DashboardHandler) GetSpecUID(resource grizzly.Resource) (string, error)
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *DashboardHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	resource, err := h.getRemoteDashboard(UID)
+func (h *DashboardHandler) GetByUID(uid string) (*grizzly.Resource, error) {
+	resource, err := h.getRemoteDashboard(uid)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving dashboard %s: %w", UID, err)
+		return nil, fmt.Errorf("Error retrieving dashboard %s: %w", uid, err)
 	}
 	return resource, nil
 }
@@ -152,8 +153,8 @@ func (h *DashboardHandler) getRemoteDashboard(uid string) (*grizzly.Resource, er
 	if err != nil {
 		return nil, err
 	}
-	folderUid := extractFolderUID(client, *dashboard)
-	resource.SetMetadata("folder", folderUid)
+	folderUID := extractFolderUID(client, *dashboard)
+	resource.SetMetadata("folder", folderUID)
 	return &resource, nil
 }
 
@@ -192,7 +193,7 @@ func (h *DashboardHandler) getRemoteDashboardList() ([]string, error) {
 func (h *DashboardHandler) postDashboard(resource grizzly.Resource) error {
 	folderUID := resource.GetMetadata("folder")
 	var folderID int64
-	if !(folderUID == "General" || folderUID == "general") {
+	if !(folderUID == DefaultFolder || folderUID == strings.ToLower(DefaultFolder)) {
 		folderHandler := NewFolderHandler(h.Provider)
 		folder, err := folderHandler.getRemoteFolder(folderUID)
 		if err != nil {
@@ -204,7 +205,7 @@ func (h *DashboardHandler) postDashboard(resource grizzly.Resource) error {
 		}
 		folderID = int64(folder.GetSpecValue("id").(float64))
 	} else {
-		folderID = generalFolderId
+		folderID = generalFolderID
 	}
 
 	body := models.SaveDashboardCommand{
@@ -259,22 +260,22 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.ProxyEn
 	return []grizzly.ProxyEndpoint{
 		{
 			Method:  "GET",
-			Url:     "/d/{uid}/{slug}",
+			URL:     "/d/{uid}/{slug}",
 			Handler: h.resourceFromQueryParameterMiddleware(p, "grizzly_from_file", h.RootDashboardPageHandler(p)),
 		},
 		{
 			Method:  "GET",
-			Url:     "/api/dashboards/uid/{uid}",
+			URL:     "/api/dashboards/uid/{uid}",
 			Handler: h.DashboardJSONGetHandler(p),
 		},
 		{
 			Method:  "POST",
-			Url:     "/api/dashboards/db",
+			URL:     "/api/dashboards/db",
 			Handler: h.DashboardJSONPostHandler(p),
 		},
 		{
 			Method:  "POST",
-			Url:     "/api/dashboards/db/",
+			URL:     "/api/dashboards/db/",
 			Handler: h.DashboardJSONPostHandler(p),
 		},
 	}

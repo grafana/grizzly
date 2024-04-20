@@ -47,7 +47,7 @@ func (h *AlertNotificationPolicyHandler) GetSpecUID(resource grizzly.Resource) (
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *AlertNotificationPolicyHandler) GetByUID(UID string) (*grizzly.Resource, error) {
+func (h *AlertNotificationPolicyHandler) GetByUID(uid string) (*grizzly.Resource, error) {
 	return h.getRemoteAlertNotificationPolicy()
 }
 
@@ -117,7 +117,6 @@ func (h *AlertNotificationPolicyHandler) putAlertNotificationPolicy(resource gri
 	if err != nil {
 		return err
 	}
-	stringtrue := "true"
 	params := provisioning.NewPutPolicyTreeParams().
 		WithBody(&alertNotificationPolicy).
 		WithXDisableProvenance(&stringtrue)

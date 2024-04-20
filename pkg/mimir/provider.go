@@ -22,7 +22,7 @@ func NewProvider(config *config.MimirConfig) (*Provider, error) {
 	if config.Address == "" {
 		return nil, fmt.Errorf("mimir address is not set")
 	}
-	if config.ApiKey == "" {
+	if config.APIKey == "" {
 		return nil, fmt.Errorf("mimir api key is not set")
 	}
 

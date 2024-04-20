@@ -170,7 +170,6 @@ func (r *Resource) SpecAsJSON() (string, error) {
 		return "", err
 	}
 	return string(j), nil
-
 }
 
 // YAML Gets the string representation for this resource

@@ -57,8 +57,8 @@ func (h *AlertContactPointHandler) GetSpecUID(resource grizzly.Resource) (string
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *AlertContactPointHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	return h.getRemoteContactPoint(UID)
+func (h *AlertContactPointHandler) GetByUID(uid string) (*grizzly.Resource, error) {
+	return h.getRemoteContactPoint(uid)
 }
 
 // GetRemote retrieves a contactPoint as a Resource
@@ -151,7 +151,6 @@ func (h *AlertContactPointHandler) postContactPoint(resource grizzly.Resource) e
 	if err != nil {
 		return err
 	}
-	stringtrue := "true"
 	params := provisioning.NewPostContactpointsParams().
 		WithBody(&contactPoint).
 		WithXDisableProvenance(&stringtrue)
@@ -176,7 +175,6 @@ func (h *AlertContactPointHandler) putContactPoint(resource grizzly.Resource) er
 	if err != nil {
 		return err
 	}
-	stringtrue := "true"
 	params := provisioning.NewPutContactpointParams().
 		WithUID(resource.Name()).
 		WithBody(&modelContactPoint).

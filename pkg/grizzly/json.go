@@ -35,7 +35,7 @@ func (parser *JSONParser) Parse(file string, options ParserOptions) (Resources, 
 	}
 
 	source := Source{
-		Format:     "json",
+		Format:     formatJSON,
 		Path:       file,
 		Rewritable: true,
 	}

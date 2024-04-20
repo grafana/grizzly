@@ -29,7 +29,6 @@ func TestPull(t *testing.T) {
 				assert.FileExists(t, filepath.Join(pullDir, "dashboards", "abcdefghi", "dashboard-ReciqtgGk.yaml"))
 				assert.DirExists(t, filepath.Join(pullDir, "datasources"))
 				assert.DirExists(t, filepath.Join(pullDir, "folders"))
-
 			},
 		})
 	})

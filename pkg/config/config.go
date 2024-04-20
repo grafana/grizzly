@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	API_VERSION     = "v1alpha1"
-	CURRENT_CONTEXT = "current-context"
+	CurrentContextSetting = "current-context"
 )
 
 func Initialise() {
@@ -70,7 +69,7 @@ func Mock(values map[string]interface{}) {
 }
 
 func Import() error {
-	name := viper.GetString(CURRENT_CONTEXT)
+	name := viper.GetString(CurrentContextSetting)
 	if name == "" {
 		NewConfig()
 		return Import()
@@ -90,13 +89,13 @@ func Import() error {
 
 func NewConfig() {
 	viper.Set("apiVersion", "v1alpha1")
-	viper.Set(CURRENT_CONTEXT, "default")
+	viper.Set(CurrentContextSetting, "default")
 	viper.Set("contexts.default.name", "default")
 }
 
 func GetContexts() error {
 	contexts := map[string]interface{}{}
-	currentContext := viper.GetString(CURRENT_CONTEXT)
+	currentContext := viper.GetString(CurrentContextSetting)
 	if err := viper.UnmarshalKey("contexts", &contexts); err != nil {
 		return err
 	}
@@ -122,7 +121,7 @@ func UseContext(context string) error {
 	}
 	for k := range contexts {
 		if k == context {
-			viper.Set(CURRENT_CONTEXT, context)
+			viper.Set(CurrentContextSetting, context)
 			return Write()
 		}
 	}
@@ -130,7 +129,7 @@ func UseContext(context string) error {
 }
 
 func CurrentContext() (*Context, error) {
-	name := viper.GetString(CURRENT_CONTEXT)
+	name := viper.GetString(CurrentContextSetting)
 	if name == "" {
 		NewConfig()
 		return CurrentContext()
@@ -168,7 +167,7 @@ var acceptableKeys = map[string]string{
 }
 
 func Get(path, outputFormat string) (string, error) {
-	ctx := viper.GetString(CURRENT_CONTEXT)
+	ctx := viper.GetString(CurrentContextSetting)
 	fullPath := fmt.Sprintf("contexts.%s", ctx)
 	if path != "" {
 		fullPath = fmt.Sprintf("%s.%s", fullPath, path)
@@ -191,7 +190,7 @@ func Get(path, outputFormat string) (string, error) {
 func Set(path string, value string) error {
 	for key, typ := range acceptableKeys {
 		if path == key {
-			ctx := viper.GetString(CURRENT_CONTEXT)
+			ctx := viper.GetString(CurrentContextSetting)
 			fullPath := fmt.Sprintf("contexts.%s.%s", ctx, path)
 			var val any
 			switch typ {
@@ -230,7 +229,7 @@ func Unset(path string) error {
 		return fmt.Errorf("%s is not a valid path", path)
 	}
 
-	ctx := viper.GetString(CURRENT_CONTEXT)
+	ctx := viper.GetString(CurrentContextSetting)
 	fullPath := fmt.Sprintf("contexts.%s.%s", ctx, path)
 
 	if !viper.InConfig(fullPath) {
@@ -261,7 +260,7 @@ func deleteValue(settings map[string]any, deleteKey string, iteratorKeys ...stri
 }
 
 func CreateContext(name string) error {
-	viper.Set(CURRENT_CONTEXT, name)
+	viper.Set(CurrentContextSetting, name)
 	viper.Set(fmt.Sprintf("contexts.%s.name", name), name)
 	return Write()
 }

@@ -34,6 +34,6 @@ func (c *Cortex) ExecuteCortexTool(args ...string) ([]byte, error) {
 	cmd := exec.Command(path, args...)
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_ADDRESS=%s", c.config.Address))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_TENANT_ID=%s", c.config.TenantID))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_API_KEY=%s", c.config.ApiKey))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("CORTEX_API_KEY=%s", c.config.APIKey))
 	return exec.Command(path, args...).Output()
 }

@@ -67,7 +67,7 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 
 // NewClient creates a new client for synthetic monitoring go client
 func (p *Provider) Client() (*smapi.Client, error) {
-	client, err := NewHttpClient()
+	client, err := NewHTTPClient()
 	if err != nil {
 		return nil, err
 	}

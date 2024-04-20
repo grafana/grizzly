@@ -122,9 +122,9 @@ func (p *Server) Start() error {
 			for _, endpoint := range proxyHandler.GetProxyEndpoints(*p) {
 				switch endpoint.Method {
 				case "GET":
-					r.Get(endpoint.Url, endpoint.Handler)
+					r.Get(endpoint.URL, endpoint.Handler)
 				case "POST":
-					r.Post(endpoint.Url, endpoint.Handler)
+					r.Post(endpoint.URL, endpoint.Handler)
 				default:
 					return fmt.Errorf("unknown endpoint method %s for handler %s", endpoint.Method, handler.Kind())
 				}
