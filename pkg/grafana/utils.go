@@ -15,10 +15,10 @@ func extractFolderUID(client *gclient.GrafanaHTTPAPI, d models.DashboardFullWith
 	if folderUid == "" {
 		urlPaths := folderURLRegex.FindStringSubmatch(d.Meta.FolderURL)
 		if len(urlPaths) == 0 {
-			if d.Meta.FolderID == generalFolderId {
+			if d.Meta.FolderID == generalFolderId { // nolint:staticcheck
 				return generalFolderUID
 			}
-			folder, err := getFolderById(client, d.Meta.FolderID)
+			folder, err := getFolderById(client, d.Meta.FolderID) // nolint:staticcheck
 			if err != nil {
 				return ""
 			}

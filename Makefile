@@ -5,8 +5,11 @@ GOX := $(BIN_DIR)/gox
 DOCKER_COMPOSE := docker compose -f ./test-docker-compose/docker-compose.yml
 
 lint:
-	test -z $$(gofmt -s -l cmd/ pkg/)
-	go vet ./...
+	docker run \
+		--rm \
+		--volume "$(shell pwd):/src" \
+		--workdir "/src" \
+		golangci/golangci-lint:v1.57 golangci-lint run ./... -v
 
 run-test-image-locally: test-clean
 	$(DOCKER_COMPOSE) up --force-recreate --detach --remove-orphans --wait

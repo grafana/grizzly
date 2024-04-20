@@ -233,7 +233,9 @@ func (p *Server) blockHandler(response string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(response))
+		if _, err := w.Write([]byte(response)); err != nil {
+			log.Errorf("error writing response: %v", err)
+		}
 	}
 }
 

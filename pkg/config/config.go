@@ -97,7 +97,9 @@ func NewConfig() {
 func GetContexts() error {
 	contexts := map[string]interface{}{}
 	currentContext := viper.GetString(CURRENT_CONTEXT)
-	viper.UnmarshalKey("contexts", &contexts)
+	if err := viper.UnmarshalKey("contexts", &contexts); err != nil {
+		return err
+	}
 	keys := make([]string, 0, len(contexts))
 	for k := range contexts {
 		keys = append(keys, k)
@@ -115,7 +117,9 @@ func GetContexts() error {
 
 func UseContext(context string) error {
 	contexts := map[string]interface{}{}
-	viper.UnmarshalKey("contexts", &contexts)
+	if err := viper.UnmarshalKey("contexts", &contexts); err != nil {
+		return err
+	}
 	for k := range contexts {
 		if k == context {
 			viper.Set(CURRENT_CONTEXT, context)
@@ -138,7 +142,9 @@ func CurrentContext() (*Context, error) {
 	}
 	override(ctx)
 	var context Context
-	ctx.Unmarshal(&context)
+	if err := ctx.Unmarshal(&context); err != nil {
+		return nil, err
+	}
 	context.Name = name
 	return &context, nil
 }

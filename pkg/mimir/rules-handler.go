@@ -173,7 +173,9 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 	if err != nil {
 		return err
 	}
-	os.WriteFile(tmpfile.Name(), out, 0644)
+	if err := os.WriteFile(tmpfile.Name(), out, 0644); err != nil {
+		return err
+	}
 
 	output, err := h.cortexTool.ExecuteCortexTool("rules", "load", tmpfile.Name())
 	if err != nil {

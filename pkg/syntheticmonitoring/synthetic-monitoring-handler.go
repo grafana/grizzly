@@ -35,7 +35,6 @@ type Probes struct {
 // SyntheticMonitoringHandler is a Grizzly Handler for Grafana Synthetic Monitoring
 type SyntheticMonitoringHandler struct {
 	grizzly.BaseHandler
-	smProvider Provider
 }
 
 // NewSyntheticMonitoringHandler returns a Grizzly Handler for Grafana Synthetic Monitoring
