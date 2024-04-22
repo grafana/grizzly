@@ -2,7 +2,10 @@ package grafana
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // ErrUidsMissing reports UIDs are missing for Dashboards
@@ -16,4 +19,10 @@ type APIResponse interface {
 	Code() int
 	Error() string
 	String() string
+}
+
+func writeOrLog(w http.ResponseWriter, content []byte) {
+	if _, err := w.Write(content); err != nil {
+		log.Errorf("error writing response: %v", err)
+	}
 }

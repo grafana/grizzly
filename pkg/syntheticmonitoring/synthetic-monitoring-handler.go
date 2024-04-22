@@ -25,8 +25,6 @@ import (
  *    them to IDs, having requested an ID<->string mapping from the API.
  */
 
-const smBaseURL = "https://synthetic-monitoring-api.grafana.net"
-
 type Probes struct {
 	ByID   map[int64]synthetic_monitoring.Probe
 	ByName map[string]synthetic_monitoring.Probe
@@ -35,7 +33,6 @@ type Probes struct {
 // SyntheticMonitoringHandler is a Grizzly Handler for Grafana Synthetic Monitoring
 type SyntheticMonitoringHandler struct {
 	grizzly.BaseHandler
-	smProvider Provider
 }
 
 // NewSyntheticMonitoringHandler returns a Grizzly Handler for Grafana Synthetic Monitoring
@@ -99,8 +96,8 @@ func (h *SyntheticMonitoringHandler) GetSpecUID(resource grizzly.Resource) (stri
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *SyntheticMonitoringHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	return h.getRemoteCheck(UID)
+func (h *SyntheticMonitoringHandler) GetByUID(uid string) (*grizzly.Resource, error) {
+	return h.getRemoteCheck(uid)
 }
 
 // GetRemote retrieves a datasource as a Resource

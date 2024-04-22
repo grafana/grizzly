@@ -83,7 +83,7 @@ func TestFolders(t *testing.T) {
 
 	t.Run("get remote folder - not found", func(t *testing.T) {
 		_, err := handler.GetByUID("dummy")
-		require.ErrorContains(t, err, "Couldn't fetch folder 'dummy' from remote: not found")
+		require.ErrorContains(t, err, "couldn't fetch folder 'dummy' from remote: not found")
 	})
 
 	t.Run("get folders list", func(t *testing.T) {

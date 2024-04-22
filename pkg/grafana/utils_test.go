@@ -45,7 +45,7 @@ func TestExtractFolderUID(t *testing.T) {
 		dashboard := models.DashboardFullWithMeta{
 			Meta: &meta,
 		}
-		getFolderById = func(client *gclient.GrafanaHTTPAPI, folderId int64) (*models.Folder, error) {
+		getFolderByID = func(client *gclient.GrafanaHTTPAPI, folderId int64) (*models.Folder, error) {
 			return &models.Folder{
 				UID: "12345",
 			}, nil

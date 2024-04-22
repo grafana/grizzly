@@ -59,8 +59,8 @@ func (h *AlertRuleGroupHandler) GetSpecUID(resource grizzly.Resource) (string, e
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *AlertRuleGroupHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	return h.getRemoteAlertRuleGroup(UID)
+func (h *AlertRuleGroupHandler) GetByUID(uid string) (*grizzly.Resource, error) {
+	return h.getRemoteAlertRuleGroup(uid)
 }
 
 // GetRemote retrieves a alertRuleGroup as a Resource
@@ -146,7 +146,6 @@ func (h *AlertRuleGroupHandler) createAlertRule(rule *models.ProvisionedAlertRul
 		return err
 	}
 
-	stringtrue := "true"
 	params := provisioning.NewPostAlertRuleParams().WithBody(rule).WithXDisableProvenance(&stringtrue)
 	_, err = client.Provisioning.PostAlertRule(params, nil)
 	return err
@@ -158,7 +157,9 @@ func (h *AlertRuleGroupHandler) createAlertRuleGroup(resource grizzly.Resource) 
 		return err
 	}
 	var group models.AlertRuleGroup
-	err = json.Unmarshal(data, &group)
+	if err := json.Unmarshal(data, &group); err != nil {
+		return err
+	}
 
 	for _, r := range group.Rules {
 		if err := h.createAlertRule(r); err != nil {
@@ -171,7 +172,6 @@ func (h *AlertRuleGroupHandler) createAlertRuleGroup(resource grizzly.Resource) 
 		return err
 	}
 
-	stringtrue := "true"
 	params := provisioning.NewPutAlertRuleGroupParams().
 		WithBody(&group).
 		WithGroup(group.Title).
@@ -199,7 +199,6 @@ func (h *AlertRuleGroupHandler) updateAlertRule(rule *models.ProvisionedAlertRul
 			return fmt.Errorf("fetching alert rule: %w", err)
 		}
 	} else {
-		stringtrue := "true"
 		params := provisioning.NewPostAlertRuleParams().
 			WithBody(rule).
 			WithXDisableProvenance(&stringtrue)
@@ -207,7 +206,6 @@ func (h *AlertRuleGroupHandler) updateAlertRule(rule *models.ProvisionedAlertRul
 		return err
 	}
 
-	stringtrue := "true"
 	params := provisioning.NewPutAlertRuleParams().
 		WithUID(rule.UID).
 		WithBody(rule).
@@ -272,7 +270,6 @@ func (h *AlertRuleGroupHandler) putAlertRuleGroup(existing, resource grizzly.Res
 		return err
 	}
 
-	stringtrue := "true"
 	params := provisioning.NewPutAlertRuleGroupParams().
 		WithBody(group).
 		WithGroup(group.Title).

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func NewHttpClient() (*http.Client, error) {
+func NewHTTPClient() (*http.Client, error) {
 	timeout := 10 * time.Second
 	if timeoutStr := os.Getenv("GRIZZLY_HTTP_TIMEOUT"); timeoutStr != "" {
 		timeoutSeconds, err := strconv.Atoi(timeoutStr)

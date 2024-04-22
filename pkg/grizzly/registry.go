@@ -73,14 +73,14 @@ func (r *Registry) HandlerMatchesTarget(handler Handler, targets []string) bool 
 }
 
 // ResourceMatchesTarget identifies whether a resource is in a target list
-func (r *Registry) ResourceMatchesTarget(kind string, UID string, targets []string) bool {
+func (r *Registry) ResourceMatchesTarget(kind string, uid string, targets []string) bool {
 	if len(targets) == 0 {
 		return true
 	}
 	// I mistakenly assumed 'dot' was a special character for globs, so opted for '/' as separator.
 	// This keeps back-compat
-	slashKey := fmt.Sprintf("%s/%s", kind, UID)
-	dotKey := fmt.Sprintf("%s.%s", kind, UID)
+	slashKey := fmt.Sprintf("%s/%s", kind, uid)
+	dotKey := fmt.Sprintf("%s.%s", kind, uid)
 	for _, target := range targets {
 		if strings.Contains(target, ".") || strings.Contains(target, "/") {
 			g, err := glob.Compile(target)
@@ -131,7 +131,7 @@ func (r *Registry) GetProxyProvider() (*ProxyProvider, error) {
 			if proxyProvider == nil {
 				proxyProvider = &pp
 			} else {
-				return nil, fmt.Errorf("Only one proxy provider currently supported")
+				return nil, fmt.Errorf("only one proxy provider currently supported")
 			}
 		}
 	}

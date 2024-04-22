@@ -1,0 +1,24 @@
+[linters]
+disable-all = true
+enable = [
+  "dogsled",
+  "errcheck",
+  "exportloopref",
+  "goconst",
+  "gocritic",
+  "gocyclo",
+  "goimports",
+  "goprintffuncname",
+  "gosimple",
+  "govet",
+  "ineffassign",
+  "misspell",
+  "nakedret",
+  "rowserrcheck",
+  "staticcheck",
+  "stylecheck",
+  "typecheck",
+  "unconvert",
+  "unused",
+  "whitespace"
+]

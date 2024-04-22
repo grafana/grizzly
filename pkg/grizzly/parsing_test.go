@@ -199,7 +199,7 @@ func TestParseKindDetection(t *testing.T) {
 		parser := grizzly.DefaultParser(registry, nil, nil)
 		parseOpts := grizzly.ParserOptions{
 			DefaultResourceKind: "",
-			DefaultFolderUID:    "General",
+			DefaultFolderUID:    grafana.DefaultFolder,
 		}
 
 		for _, test := range tests {

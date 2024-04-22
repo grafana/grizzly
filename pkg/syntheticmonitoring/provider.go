@@ -22,6 +22,9 @@ type ClientProvider interface {
 
 // NewProvider instantiates a new Provider.
 func NewProvider(config *config.SyntheticMonitoringConfig) (*Provider, error) {
+	if config.URL == "" {
+		config.URL = "https://synthetic-monitoring-api.grafana.net"
+	}
 	if config.StackID == 0 {
 		return nil, fmt.Errorf("stack id is not set")
 	}
@@ -34,6 +37,7 @@ func NewProvider(config *config.SyntheticMonitoringConfig) (*Provider, error) {
 	if config.Token == "" {
 		return nil, fmt.Errorf("token is not set")
 	}
+
 	return &Provider{
 		config: config,
 	}, nil
@@ -67,12 +71,12 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 
 // NewClient creates a new client for synthetic monitoring go client
 func (p *Provider) Client() (*smapi.Client, error) {
-	client, err := NewHttpClient()
+	client, err := NewHTTPClient()
 	if err != nil {
 		return nil, err
 	}
 
-	smClient := smapi.NewClient(smBaseURL, "", client)
+	smClient := smapi.NewClient(p.config.URL, "", client)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

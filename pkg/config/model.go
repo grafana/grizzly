@@ -1,15 +1,17 @@
 package config
 
 type GrafanaConfig struct {
-	URL   string `yaml:"url" mapstructure:"url"`
-	User  string `yaml:"user" mapstructure:"user"`
-	Token string `yaml:"token" mapstructure:"token"`
+	URL                string `yaml:"url" mapstructure:"url"`
+	User               string `yaml:"user" mapstructure:"user"`
+	Token              string `yaml:"token" mapstructure:"token"`
+	InsecureSkipVerify bool   `yaml:"insecure-skip-verify" mapstructure:"insecure-skip-verify"`
+	TLSHost            string `yaml:"tls-host" mapstructure:"tls-host"`
 }
 
 type MimirConfig struct {
 	Address  string `yaml:"address" mapstructure:"address"`
 	TenantID string `yaml:"tenant-id" mapstructure:"tenant-id"`
-	ApiKey   string `yaml:"api-key" mapstructure:"api-key"`
+	APIKey   string `yaml:"api-key" mapstructure:"api-key"`
 }
 
 type SyntheticMonitoringConfig struct {
@@ -17,6 +19,7 @@ type SyntheticMonitoringConfig struct {
 	StackID   int64  `yaml:"stack-id" mapstructure:"stack-id"`
 	LogsID    int64  `yaml:"logs-id" mapstructure:"logs-id"`
 	MetricsID int64  `yaml:"metrics-id" mapstructure:"metrics-id"`
+	URL       string `yaml:"url" mapstructure:"url"`
 }
 
 type Context struct {

@@ -47,7 +47,7 @@ func (parser *YAMLParser) Parse(file string, options ParserOptions) (Resources, 
 		}
 
 		source := Source{
-			Format:     "yaml",
+			Format:     formatYAML,
 			Path:       file,
 			Rewritable: true,
 		}

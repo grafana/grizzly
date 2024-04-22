@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/folders"
@@ -11,6 +12,8 @@ import (
 	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
+
+const DefaultFolder = "General"
 
 // FolderHandler is a Grizzly Handler for Grafana dashboard folders
 type FolderHandler struct {
@@ -115,10 +118,10 @@ func (h *FolderHandler) Sort(resources grizzly.Resources) grizzly.Resources {
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *FolderHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	resource, err := h.getRemoteFolder(UID)
+func (h *FolderHandler) GetByUID(uid string) (*grizzly.Resource, error) {
+	resource, err := h.getRemoteFolder(uid)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving dashboard folder %s: %w", UID, err)
+		return nil, fmt.Errorf("Error retrieving dashboard folder %s: %w", uid, err)
 	}
 
 	return resource, nil
@@ -147,14 +150,14 @@ func (h *FolderHandler) Update(existing, resource grizzly.Resource) error {
 // getRemoteFolder retrieves a folder object from Grafana
 func (h *FolderHandler) getRemoteFolder(uid string) (*grizzly.Resource, error) {
 	if uid == "" {
-		return nil, fmt.Errorf("No folder UID provided")
+		return nil, fmt.Errorf("no folder UID provided")
 	}
 	var folder *models.Folder
-	if uid == "General" || uid == "general" {
+	if uid == DefaultFolder || uid == strings.ToLower(DefaultFolder) {
 		folder = &models.Folder{
 			ID:    0,
 			UID:   uid,
-			Title: "General",
+			Title: DefaultFolder,
 			// URL: ??
 		}
 	} else {
@@ -168,7 +171,7 @@ func (h *FolderHandler) getRemoteFolder(uid string) (*grizzly.Resource, error) {
 			var gErrNotFound *folders.GetFolderByUIDNotFound
 			var gErrForbidden *folders.GetFolderByUIDForbidden
 			if errors.As(err, &gErrNotFound) || errors.As(err, &gErrForbidden) {
-				return nil, fmt.Errorf("Couldn't fetch folder '%s' from remote: %w", uid, grizzly.ErrNotFound)
+				return nil, fmt.Errorf("couldn't fetch folder '%s' from remote: %w", uid, grizzly.ErrNotFound)
 			}
 			return nil, err
 		}
@@ -193,7 +196,7 @@ func (h *FolderHandler) getRemoteFolderList() ([]string, error) {
 		limit            = int64(1000)
 		page       int64 = 0
 		uids       []string
-		folderType string = "dash-folder"
+		folderType = "dash-folder"
 	)
 
 	params := search.NewSearchParams().WithLimit(&limit)
@@ -223,7 +226,7 @@ func (h *FolderHandler) getRemoteFolderList() ([]string, error) {
 
 func (h *FolderHandler) postFolder(resource grizzly.Resource) error {
 	name := resource.Name()
-	if name == "General" || name == "general" {
+	if name == DefaultFolder || name == strings.ToLower(DefaultFolder) {
 		return nil
 	}
 
@@ -285,7 +288,7 @@ func (h *FolderHandler) putFolder(resource grizzly.Resource) error {
 	return err
 }
 
-var getFolderById = func(client *gclient.GrafanaHTTPAPI, folderId int64) (*models.Folder, error) {
+var getFolderByID = func(client *gclient.GrafanaHTTPAPI, folderId int64) (*models.Folder, error) {
 	folderOk, err := client.Folders.GetFolderByID(folderId)
 	if err != nil {
 		return nil, err

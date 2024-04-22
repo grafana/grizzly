@@ -41,7 +41,7 @@ To interact with Grafana Cloud Prometheus (aka Mimir), use these settings:
 
 ```sh
 grr config set mimir.address https://mimir.example.com # URL for Mimir instance or Grafana Cloud Prometheus instance
-grr config set mimir.tenant-id "myTenant" # Tenant ID for your Grafana Cloud Prometheus account
+grr config set mimir.tenant-id myTenant # Tenant ID for your Grafana Cloud Prometheus account
 grr config set mimir.api-key abcdef12345 # Authentication token (if you are using Grafana Cloud)
 ```
 
@@ -56,8 +56,10 @@ grr config set synthetic-monitoring.token abcdef123456 # API key (must have Metr
 grr config set synthetic-monitoring.stack-id 123 # Grafana stack ID
 grr config set synthetic-monitoring.metrics-id 123 # Metrics instance ID
 grr config set synthetic-monitoring.logs-id 123 # Logs instance ID
+grr config set synthetic-monitoring.url https://synthetic-monitoring-api.grafana.net # Synthetic Monitoring instance URL
 ```
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
+You can find your instance URL under your Synthetic Monitoring configuration.
 
 ## Configuring Targets
 Grizzly supports a number of resource types (`grr providers` will list those supported). Often, however, we do not
@@ -136,11 +138,11 @@ In some circumstances (e.g. when used within automated pipelines) it makes sense
 with environment variables as opposed to contexts. Environment variables, when set, take precedence over
 Grizzly contexts as described above. Below are the variables that can be used for this.
 
-| Name | Description | Required | Default |
-| --- | --- | --- | --- |
-| `GRAFANA_URL` | Fully qualified domain name of your Grafana instance. | true | - |
-| `GRAFANA_USER` | Basic auth username if applicable. | false | `api_key` |
-| `GRAFANA_TOKEN` | Basic auth password or API token. | false | - |
+| Name            | Description                                           | Required | Default   |
+|-----------------|-------------------------------------------------------|----------|-----------|
+| `GRAFANA_URL`   | Fully qualified domain name of your Grafana instance. | true     | -         |
+| `GRAFANA_USER`  | Basic auth username if applicable.                    | false    | `api_key` |
+| `GRAFANA_TOKEN` | Basic auth password or API token.                     | false    | -         |
 
 See Grafana's [Authentication API
 docs](https://grafana.com/docs/grafana/latest/http_api/auth/) for more info.
@@ -148,25 +150,35 @@ docs](https://grafana.com/docs/grafana/latest/http_api/auth/) for more info.
 ## Grafana Cloud Prometheus
 To interact with Grafana Cloud Prometheus, you must have these environment variables set:
 
+<<<<<<< HEAD
 | Name               | Description | Required |
 |--------------------| --- |----------|
 | `MIMIR_ADDRESS`    | URL for Grafana Cloud Prometheus instance | true     |
 | `MIMIR_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true     |
 | `MIMIR_API_KEY`   | Authentication token/api key | false    |
+=======
+| Name               | Description                                         | Required |
+|--------------------|-----------------------------------------------------|----------|
+| `CORTEX_ADDRESS`   | URL for Grafana Cloud Prometheus instance           | true     |
+| `CORTEX_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true     |
+| `CORTEX_API_KEY`   | Authentication token/api key                        | true     |
+>>>>>>> f7c171e48e49970e97686a84c2d505c742b5bc9a
 
 Note, this will also work with other Mimir installations, alongside Grafana Cloud Prometheus.
 
 ## Grafana Synthetic Monitoring
 To interact with Grafana Synthetic Monitoring, you must have these environment variable set:
 
-| Name | Description | Required |
-| --- | --- | --- |
-| `GRAFANA_SM_TOKEN` | Authentication token/api key (must have MetricsPublisher permissions) | true |
-| `GRAFANA_SM_STACK_ID` | Grafana instance/stack ID | true |
-| `GRAFANA_SM_LOGS_ID` | Logs instance ID | true |
-| `GRAFANA_SM_METRICS_ID` | Metrics instance ID | true |
+| Name                    | Description                                                           | Required |
+|-------------------------|-----------------------------------------------------------------------|----------|
+| `GRAFANA_SM_TOKEN`      | Authentication token/api key (must have MetricsPublisher permissions) | true     |
+| `GRAFANA_SM_STACK_ID`   | Grafana instance/stack ID                                             | true     |
+| `GRAFANA_SM_LOGS_ID`    | Logs instance ID                                                      | true     |
+| `GRAFANA_SM_METRICS_ID` | Metrics instance ID                                                   | true     |
+| `GRAFANA_SM_URL`        | Synthetic Monitoring instance URL                                     | true     |
 
 Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
+You can find your instance URL under your Synthetic Monitoring configuration.
 
 # Grizzly configuration file
 To get the path of the config file:
