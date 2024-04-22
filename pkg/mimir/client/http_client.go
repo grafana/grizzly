@@ -118,6 +118,7 @@ func (c *Client) doRequest(method string, url string, body []byte) ([]byte, erro
 
 func createHttpClient() (*http.Client, error) {
 	timeout := 10 * time.Second
+	// TODO: Move this configuration to the global configuration
 	if timeoutStr := os.Getenv("GRIZZLY_HTTP_TIMEOUT"); timeoutStr != "" {
 		timeoutSeconds, err := strconv.Atoi(timeoutStr)
 		if err != nil {
