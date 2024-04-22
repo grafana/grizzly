@@ -35,7 +35,7 @@ type Client struct {
 	config *config.MimirConfig
 }
 
-func NewHttpClient(config *config.MimirConfig) Mimir {
+func NewHTTPClient(config *config.MimirConfig) Mimir {
 	return &Client{config: config}
 }
 
@@ -91,10 +91,10 @@ func (c *Client) doRequest(method string, url string, body []byte) ([]byte, erro
 	if c.config.APIKey != "" {
 		req.SetBasicAuth(c.config.TenantID, c.config.APIKey)
 	} else {
-		req.Header.Set("X-Scope-OrgID", fmt.Sprintf("%s", c.config.TenantID))
+		req.Header.Set("X-Scope-OrgID", c.config.TenantID)
 	}
 
-	client, err := createHttpClient()
+	client, err := createHTTPClient()
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (c *Client) doRequest(method string, url string, body []byte) ([]byte, erro
 	return b, nil
 }
 
-func createHttpClient() (*http.Client, error) {
+func createHTTPClient() (*http.Client, error) {
 	timeout := 10 * time.Second
 	// TODO: Move this configuration to the global configuration
 	if timeoutStr := os.Getenv("GRIZZLY_HTTP_TIMEOUT"); timeoutStr != "" {

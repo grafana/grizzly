@@ -9,10 +9,6 @@ import (
 	"github.com/grafana/grizzly/pkg/mimir/client"
 )
 
-const (
-	Http string = "http"
-)
-
 // Provider is a grizzly.Provider implementation for Grafana.
 type Provider struct {
 	config     *config.MimirConfig
@@ -21,7 +17,7 @@ type Provider struct {
 
 // NewProvider instantiates a new Provider.
 func NewProvider(config *config.MimirConfig) (*Provider, error) {
-	clientTool := client.NewHttpClient(config)
+	clientTool := client.NewHTTPClient(config)
 	if config.Address == "" {
 		return nil, fmt.Errorf("mimir address is not set")
 	}
