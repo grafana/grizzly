@@ -6,3 +6,5 @@
 *.orig
 *.swp
 .idea
+
+/resources
