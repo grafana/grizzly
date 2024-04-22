@@ -3,10 +3,10 @@ package mimir
 import (
 	"fmt"
 	"strings"
-	
+
 	"github.com/grafana/grizzly/pkg/mimir/client"
 	"github.com/grafana/grizzly/pkg/mimir/models"
-	
+
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
