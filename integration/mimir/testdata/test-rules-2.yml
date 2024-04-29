@@ -2,6 +2,7 @@ apiVersion: grizzly.grafana.com/v1alpha1
 kind: RuleGroup2
 metadata:
   name: test-rules-2
+  namespace: test-rules-2
 spec:
   name: MyRules2
   rules:

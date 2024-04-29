@@ -12,7 +12,7 @@ func TestContext() *config.Context {
 		Mimir: config.MimirConfig{
 			Address:  "http://localhost:9009",
 			TenantID: "demo",
-			ApiKey:   "abc",
+			APIKey:   "abc",
 		},
 	}
 	return &ctx

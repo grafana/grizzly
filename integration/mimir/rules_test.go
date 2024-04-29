@@ -1,24 +1,24 @@
 package mimir
 
 import (
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"testing"
+
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/mimir"
 	"github.com/grafana/grizzly/pkg/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
-	"os"
-	"path/filepath"
-	"sort"
-	"strings"
-	"testing"
 )
 
 func TestRules(t *testing.T) {
 	provider, err := mimir.NewProvider(&testutil.TestContext().Mimir)
 	require.NoError(t, err)
-
-	handler := mimir.NewRuleHandler(provider)
+	handler := provider.GetHandlers()[0]
 
 	t.Run("create rule group", func(t *testing.T) {
 		dirs, err := os.ReadDir("testdata")
