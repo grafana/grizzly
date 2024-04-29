@@ -2,32 +2,32 @@ package mimir
 
 import (
 	"fmt"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
+	"github.com/grafana/grizzly/pkg/mimir/client"
 )
 
 // Provider is a grizzly.Provider implementation for Grafana.
 type Provider struct {
-	config *config.MimirConfig
+	config     *config.MimirConfig
+	clientTool client.Mimir
 }
 
 // NewProvider instantiates a new Provider.
 func NewProvider(config *config.MimirConfig) (*Provider, error) {
-	if _, err := exec.LookPath("cortextool"); err != nil {
-		return nil, err
-	}
+	clientTool := client.NewHTTPClient(config)
 	if config.Address == "" {
 		return nil, fmt.Errorf("mimir address is not set")
 	}
-	if config.APIKey == "" {
-		return nil, fmt.Errorf("mimir api key is not set")
+	if config.TenantID == "" {
+		return nil, fmt.Errorf("mimir tenant id is not set")
 	}
 
 	return &Provider{
-		config: config,
+		config:     config,
+		clientTool: clientTool,
 	}, nil
 }
 
@@ -53,6 +53,6 @@ func (p *Provider) APIVersion() string {
 // GetHandlers identifies the handlers for the Grafana provider
 func (p *Provider) GetHandlers() []grizzly.Handler {
 	return []grizzly.Handler{
-		NewRuleHandler(p),
+		NewRuleHandler(p, p.clientTool),
 	}
 }

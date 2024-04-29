@@ -39,16 +39,35 @@ func override(v *viper.Viper) {
 		"synthetic-monitoring.metrics-id": "GRAFANA_SM_METRICS_ID",
 		"synthetic-monitoring.url":        "GRAFANA_SM_URL",
 
-		"mimir.address":   "CORTEX_ADDRESS",
-		"mimir.tenant-id": "CORTEX_TENANT_ID",
-		"mimir.api-key":   "CORTEX_API_KEY",
+		"mimir.address":   "MIMIR_ADDRESS",
+		"mimir.tenant-id": "MIMIR_TENANT_ID",
+		"mimir.api-key":   "MIMIR_API_KEY",
 	}
+
+	// To keep retro compatibility
+	legacyBindings := map[string]string{
+		"MIMIR_ADDRESS":   "CORTEX_ADDRESS",
+		"MIMIR_TENANT_ID": "CORTEX_TENANT_ID",
+		"MIMIR_API_KEY":   "CORTEX_API_KEY",
+	}
+
 	for key, env := range bindings {
-		val := os.Getenv(env)
-		if val != "" {
+		if val := getVal(env, legacyBindings); val != "" {
 			v.Set(key, val)
 		}
 	}
+}
+
+func getVal(env string, alternativeMap map[string]string) string {
+	if val := os.Getenv(env); val != "" {
+		return val
+	}
+
+	if alternativeMap[env] != "" {
+		return getVal(alternativeMap[env], nil)
+	}
+
+	return ""
 }
 
 func Read() error {

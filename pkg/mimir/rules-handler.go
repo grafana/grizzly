@@ -2,25 +2,25 @@ package mimir
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"strings"
 
+	"github.com/grafana/grizzly/pkg/mimir/client"
+	"github.com/grafana/grizzly/pkg/mimir/models"
+
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"gopkg.in/yaml.v3"
 )
 
 // RuleHandler is a Grizzly Handler for Prometheus Rules
 type RuleHandler struct {
 	grizzly.BaseHandler
-	cortexTool CortexTool
+	clientTool client.Mimir
 }
 
 // NewRuleHandler returns a new Grizzly Handler for Prometheus Rules
-func NewRuleHandler(provider *Provider) *RuleHandler {
+func NewRuleHandler(provider *Provider, clientTool client.Mimir) *RuleHandler {
 	return &RuleHandler{
 		BaseHandler: grizzly.NewBaseHandler(provider, "PrometheusRuleGroup", false),
-		cortexTool:  NewCortexTool(provider.config),
+		clientTool:  clientTool,
 	}
 }
 
@@ -86,15 +86,11 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 	namespace := parts[0]
 	name := parts[1]
 
-	out, err := h.cortexTool.ExecuteCortexTool("rules", "print", "--disable-color")
+	groupings, err := h.clientTool.ListRules()
 	if err != nil {
 		return nil, err
 	}
-	groupings := map[string][]PrometheusRuleGroup{}
-	err = yaml.Unmarshal(out, &groupings)
-	if err != nil {
-		return nil, err
-	}
+
 	for key, grouping := range groupings {
 		if key == namespace {
 			for _, group := range grouping {
@@ -117,17 +113,12 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 
 // getRemoteRuleGroupList retrieves a datasource object from Grafana
 func (h *RuleHandler) getRemoteRuleGroupList() ([]string, error) {
-	out, err := h.cortexTool.ExecuteCortexTool("rules", "print", "--disable-color")
-	if err != nil {
-		return nil, err
-	}
-	groupings := map[string][]PrometheusRuleGroup{}
-	err = yaml.Unmarshal(out, &groupings)
+	groupings, err := h.clientTool.ListRules()
 	if err != nil {
 		return nil, err
 	}
 
-	IDs := []string{}
+	var IDs []string
 	for namespace, grouping := range groupings {
 		for _, group := range grouping {
 			uid := fmt.Sprintf("%s.%s", namespace, group.Name)
@@ -137,51 +128,20 @@ func (h *RuleHandler) getRemoteRuleGroupList() ([]string, error) {
 	return IDs, nil
 }
 
-// PrometheusRuleGroup encapsulates a list of rules
-type PrometheusRuleGroup struct {
-	Namespace string                   `yaml:"-"`
-	Name      string                   `yaml:"name"`
-	Rules     []map[string]interface{} `yaml:"rules"`
-}
-
-// PrometheusRuleGrouping encapsulates a set of named rule groups
-type PrometheusRuleGrouping struct {
-	Namespace string                `json:"namespace"`
-	Groups    []PrometheusRuleGroup `json:"groups"`
-}
-
 func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
-	tmpfile, err := os.CreateTemp("", "cortextool-*")
-	if err != nil {
-		return err
-	}
-	newGroup := PrometheusRuleGroup{
-		Name: resource.Name(),
-		// Rules: resource.Spec()["rules"].([]map[string]interface{}),
-		Rules: []map[string]interface{}{},
+	newGroup := models.PrometheusRuleGroup{
+		Name:  resource.Name(),
+		Rules: []interface{}{},
 	}
 	rules := resource.Spec()["rules"].([]interface{})
 	for _, ruleIf := range rules {
 		rule := ruleIf.(map[string]interface{})
 		newGroup.Rules = append(newGroup.Rules, rule)
 	}
-	grouping := PrometheusRuleGrouping{
+	grouping := models.PrometheusRuleGrouping{
 		Namespace: resource.GetMetadata("namespace"),
-		Groups:    []PrometheusRuleGroup{newGroup},
-	}
-	out, err := yaml.Marshal(grouping)
-	if err != nil {
-		return err
-	}
-	if err := os.WriteFile(tmpfile.Name(), out, 0644); err != nil {
-		return err
+		Groups:    []models.PrometheusRuleGroup{newGroup},
 	}
 
-	output, err := h.cortexTool.ExecuteCortexTool("rules", "load", tmpfile.Name())
-	if err != nil {
-		log.Println(output)
-		return err
-	}
-	os.Remove(tmpfile.Name())
-	return err
+	return h.clientTool.CreateRules(grouping)
 }
