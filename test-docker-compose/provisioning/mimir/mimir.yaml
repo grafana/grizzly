@@ -5,3 +5,4 @@ ruler_storage:
 
 ruler:
   enable_api: true
+  poll_interval: 1s

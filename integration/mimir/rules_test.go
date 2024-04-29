@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/mimir"
@@ -33,6 +34,9 @@ func TestRules(t *testing.T) {
 			assert.NoError(t, handler.Add(resource))
 		}
 	})
+
+	// Mimir takes some seconds in sync the rules. If we get the list of them immediately, it could return an empty list.
+	time.Sleep(1 * time.Second)
 
 	t.Run("get remote rule list", func(t *testing.T) {
 		ids, err := handler.ListRemote()
