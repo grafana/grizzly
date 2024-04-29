@@ -72,8 +72,8 @@ func (h *DatasourceHandler) GetSpecUID(resource grizzly.Resource) (string, error
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
-func (h *DatasourceHandler) GetByUID(UID string) (*grizzly.Resource, error) {
-	return h.getRemoteDatasource(UID)
+func (h *DatasourceHandler) GetByUID(uid string) (*grizzly.Resource, error) {
+	return h.getRemoteDatasource(uid)
 }
 
 // GetRemote retrieves a datasource as a Resource

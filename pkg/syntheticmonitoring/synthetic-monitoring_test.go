@@ -11,7 +11,6 @@ import (
 )
 
 func TestSyntheticMonitoring(t *testing.T) {
-
 	t.Run("Check getUID is functioning correctly", func(t *testing.T) {
 		resource := grizzly.Resource{
 			Body: map[string]any{

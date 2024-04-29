@@ -8,25 +8,28 @@ import (
 	"github.com/grafana/grafana-openapi-client-go/models"
 )
 
-var folderURLRegex = regexp.MustCompile("/dashboards/f/([^/]+)")
+var (
+	stringtrue     = "true"
+	folderURLRegex = regexp.MustCompile("/dashboards/f/([^/]+)")
+)
 
 func extractFolderUID(client *gclient.GrafanaHTTPAPI, d models.DashboardFullWithMeta) string {
-	folderUid := d.Meta.FolderUID
-	if folderUid == "" {
+	folderUID := d.Meta.FolderUID
+	if folderUID == "" {
 		urlPaths := folderURLRegex.FindStringSubmatch(d.Meta.FolderURL)
 		if len(urlPaths) == 0 {
-			if d.Meta.FolderID == generalFolderId {
+			if d.Meta.FolderID == generalFolderID { // nolint:staticcheck
 				return generalFolderUID
 			}
-			folder, err := getFolderById(client, d.Meta.FolderID)
+			folder, err := getFolderByID(client, d.Meta.FolderID) // nolint:staticcheck
 			if err != nil {
 				return ""
 			}
 			return folder.UID
 		}
-		folderUid = urlPaths[1]
+		folderUID = urlPaths[1]
 	}
-	return folderUid
+	return folderUID
 }
 
 func structToMap(s interface{}) (map[string]interface{}, error) {

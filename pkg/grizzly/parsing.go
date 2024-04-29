@@ -288,10 +288,8 @@ func ValidateEnvelope(data any) error {
 		s, ok := spec.(map[string]any)
 		if !ok {
 			errors = append(errors, "spec is not a map")
-		} else {
-			if len(s) == 0 {
-				errors = append(errors, "spec should not be empty")
-			}
+		} else if len(s) == 0 {
+			errors = append(errors, "spec should not be empty")
 		}
 	}
 

@@ -12,7 +12,7 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh/terminal"
+	terminal "golang.org/x/term"
 )
 
 const generalFolderUID = "general"
@@ -508,7 +508,9 @@ func configCmd() *cli.Command {
 func initialiseCmd(cmd *cli.Command, opts *Opts) *cli.Command {
 	// Keep the old flags for backwards compatibility
 	cmd.Flags().BoolVarP(&opts.Directory, "directory", "d", false, "treat resource path as a directory")
-	cmd.Flags().MarkDeprecated("directory", "now it is inferred from the operating system")
+	if err := cmd.Flags().MarkDeprecated("directory", "now it is inferred from the operating system"); err != nil {
+		log.Fatal(err)
+	}
 
 	cmd.Flags().StringSliceVarP(&opts.Targets, "target", "t", nil, "resources to target")
 	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")

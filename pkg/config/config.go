@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	API_VERSION     = "v1alpha1"
-	CURRENT_CONTEXT = "current-context"
+	CurrentContextSetting = "current-context"
 )
 
 func Initialise() {
@@ -38,17 +37,37 @@ func override(v *viper.Viper) {
 		"synthetic-monitoring.stack-id":   "GRAFANA_SM_STACK_ID",
 		"synthetic-monitoring.logs-id":    "GRAFANA_SM_LOGS_ID",
 		"synthetic-monitoring.metrics-id": "GRAFANA_SM_METRICS_ID",
+		"synthetic-monitoring.url":        "GRAFANA_SM_URL",
 
-		"mimir.address":   "CORTEX_ADDRESS",
-		"mimir.tenant-id": "CORTEX_TENANT_ID",
-		"mimir.api-key":   "CORTEX_API_KEY",
+		"mimir.address":   "MIMIR_ADDRESS",
+		"mimir.tenant-id": "MIMIR_TENANT_ID",
+		"mimir.api-key":   "MIMIR_API_KEY",
 	}
+
+	// To keep retro compatibility
+	legacyBindings := map[string]string{
+		"MIMIR_ADDRESS":   "CORTEX_ADDRESS",
+		"MIMIR_TENANT_ID": "CORTEX_TENANT_ID",
+		"MIMIR_API_KEY":   "CORTEX_API_KEY",
+	}
+
 	for key, env := range bindings {
-		val := os.Getenv(env)
-		if val != "" {
+		if val := getVal(env, legacyBindings); val != "" {
 			v.Set(key, val)
 		}
 	}
+}
+
+func getVal(env string, alternativeMap map[string]string) string {
+	if val := os.Getenv(env); val != "" {
+		return val
+	}
+
+	if alternativeMap[env] != "" {
+		return getVal(alternativeMap[env], nil)
+	}
+
+	return ""
 }
 
 func Read() error {
@@ -70,7 +89,7 @@ func Mock(values map[string]interface{}) {
 }
 
 func Import() error {
-	name := viper.GetString(CURRENT_CONTEXT)
+	name := viper.GetString(CurrentContextSetting)
 	if name == "" {
 		NewConfig()
 		return Import()
@@ -90,14 +109,16 @@ func Import() error {
 
 func NewConfig() {
 	viper.Set("apiVersion", "v1alpha1")
-	viper.Set(CURRENT_CONTEXT, "default")
+	viper.Set(CurrentContextSetting, "default")
 	viper.Set("contexts.default.name", "default")
 }
 
 func GetContexts() error {
 	contexts := map[string]interface{}{}
-	currentContext := viper.GetString(CURRENT_CONTEXT)
-	viper.UnmarshalKey("contexts", &contexts)
+	currentContext := viper.GetString(CurrentContextSetting)
+	if err := viper.UnmarshalKey("contexts", &contexts); err != nil {
+		return err
+	}
 	keys := make([]string, 0, len(contexts))
 	for k := range contexts {
 		keys = append(keys, k)
@@ -115,10 +136,12 @@ func GetContexts() error {
 
 func UseContext(context string) error {
 	contexts := map[string]interface{}{}
-	viper.UnmarshalKey("contexts", &contexts)
+	if err := viper.UnmarshalKey("contexts", &contexts); err != nil {
+		return err
+	}
 	for k := range contexts {
 		if k == context {
-			viper.Set(CURRENT_CONTEXT, context)
+			viper.Set(CurrentContextSetting, context)
 			return Write()
 		}
 	}
@@ -126,7 +149,7 @@ func UseContext(context string) error {
 }
 
 func CurrentContext() (*Context, error) {
-	name := viper.GetString(CURRENT_CONTEXT)
+	name := viper.GetString(CurrentContextSetting)
 	if name == "" {
 		NewConfig()
 		return CurrentContext()
@@ -138,7 +161,9 @@ func CurrentContext() (*Context, error) {
 	}
 	override(ctx)
 	var context Context
-	ctx.Unmarshal(&context)
+	if err := ctx.Unmarshal(&context); err != nil {
+		return nil, err
+	}
 	context.Name = name
 	return &context, nil
 }
@@ -147,6 +172,8 @@ var acceptableKeys = map[string]string{
 	"grafana.url":                     "string",
 	"grafana.token":                   "string",
 	"grafana.user":                    "string",
+	"grafana.insecure-skip-verify":    "bool",
+	"grafana.tls-host":                "string",
 	"mimir.address":                   "string",
 	"mimir.tenant-id":                 "string",
 	"mimir.api-key":                   "string",
@@ -154,13 +181,14 @@ var acceptableKeys = map[string]string{
 	"synthetic-monitoring.stack-id":   "int",
 	"synthetic-monitoring.metrics-id": "int",
 	"synthetic-monitoring.logs-id":    "int",
+	"synthetic-monitoring.url":        "string",
 	"targets":                         "[]string",
 	"output-format":                   "string",
 	"only-spec":                       "bool",
 }
 
 func Get(path, outputFormat string) (string, error) {
-	ctx := viper.GetString(CURRENT_CONTEXT)
+	ctx := viper.GetString(CurrentContextSetting)
 	fullPath := fmt.Sprintf("contexts.%s", ctx)
 	if path != "" {
 		fullPath = fmt.Sprintf("%s.%s", fullPath, path)
@@ -183,7 +211,7 @@ func Get(path, outputFormat string) (string, error) {
 func Set(path string, value string) error {
 	for key, typ := range acceptableKeys {
 		if path == key {
-			ctx := viper.GetString(CURRENT_CONTEXT)
+			ctx := viper.GetString(CurrentContextSetting)
 			fullPath := fmt.Sprintf("contexts.%s.%s", ctx, path)
 			var val any
 			switch typ {
@@ -222,7 +250,7 @@ func Unset(path string) error {
 		return fmt.Errorf("%s is not a valid path", path)
 	}
 
-	ctx := viper.GetString(CURRENT_CONTEXT)
+	ctx := viper.GetString(CurrentContextSetting)
 	fullPath := fmt.Sprintf("contexts.%s.%s", ctx, path)
 
 	if !viper.InConfig(fullPath) {
@@ -253,7 +281,7 @@ func deleteValue(settings map[string]any, deleteKey string, iteratorKeys ...stri
 }
 
 func CreateContext(name string) error {
-	viper.Set(CURRENT_CONTEXT, name)
+	viper.Set(CurrentContextSetting, name)
 	viper.Set(fmt.Sprintf("contexts.%s.name", name), name)
 	return Write()
 }

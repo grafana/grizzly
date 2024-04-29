@@ -122,9 +122,9 @@ func (p *Server) Start() error {
 			for _, endpoint := range proxyHandler.GetProxyEndpoints(*p) {
 				switch endpoint.Method {
 				case "GET":
-					r.Get(endpoint.Url, endpoint.Handler)
+					r.Get(endpoint.URL, endpoint.Handler)
 				case "POST":
-					r.Post(endpoint.Url, endpoint.Handler)
+					r.Post(endpoint.URL, endpoint.Handler)
 				default:
 					return fmt.Errorf("unknown endpoint method %s for handler %s", endpoint.Method, handler.Kind())
 				}
@@ -233,7 +233,9 @@ func (p *Server) blockHandler(response string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(response))
+		if _, err := w.Write([]byte(response)); err != nil {
+			log.Errorf("error writing response: %v", err)
+		}
 	}
 }
 
