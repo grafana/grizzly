@@ -150,19 +150,11 @@ docs](https://grafana.com/docs/grafana/latest/http_api/auth/) for more info.
 ## Grafana Cloud Prometheus
 To interact with Grafana Cloud Prometheus, you must have these environment variables set:
 
-<<<<<<< HEAD
-| Name               | Description | Required |
-|--------------------| --- |----------|
-| `MIMIR_ADDRESS`    | URL for Grafana Cloud Prometheus instance | true     |
+| Name              | Description                                         | Required |
+|-------------------|-----------------------------------------------------|----------|
+| `MIMIR_ADDRESS`   | URL for Grafana Cloud Prometheus instance           | true     |
 | `MIMIR_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true     |
-| `MIMIR_API_KEY`   | Authentication token/api key | false    |
-=======
-| Name               | Description                                         | Required |
-|--------------------|-----------------------------------------------------|----------|
-| `CORTEX_ADDRESS`   | URL for Grafana Cloud Prometheus instance           | true     |
-| `CORTEX_TENANT_ID` | Tenant ID for your Grafana Cloud Prometheus account | true     |
-| `CORTEX_API_KEY`   | Authentication token/api key                        | true     |
->>>>>>> f7c171e48e49970e97686a84c2d505c742b5bc9a
+| `MIMIR_API_KEY`   | Authentication token/api key                        | false    |
 
 Note, this will also work with other Mimir installations, alongside Grafana Cloud Prometheus.
 

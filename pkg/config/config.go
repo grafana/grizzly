@@ -45,14 +45,14 @@ func override(v *viper.Viper) {
 	}
 
 	// To keep retro compatibility
-	mimirBindings := map[string]string{
+	legacyBindings := map[string]string{
 		"MIMIR_ADDRESS":   "CORTEX_ADDRESS",
 		"MIMIR_TENANT_ID": "CORTEX_TENANT_ID",
 		"MIMIR_API_KEY":   "CORTEX_API_KEY",
 	}
 
 	for key, env := range bindings {
-		if val := getVal(env, mimirBindings); val != "" {
+		if val := getVal(env, legacyBindings); val != "" {
 			v.Set(key, val)
 		}
 	}
