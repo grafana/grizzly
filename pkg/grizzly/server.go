@@ -1,6 +1,7 @@
 package grizzly
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -117,13 +118,10 @@ func (p *Server) Start() error {
 	r.Use(middleware.Logger)
 	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
 
-	httpEndpointConfig := HttpEndpointConfig{
-		Port: p.port,
-	}
 	for _, handler := range p.Registry.Handlers {
 		proxyHandler, ok := handler.(ProxyHandler)
 		if ok {
-			for _, endpoint := range proxyHandler.GetProxyEndpoints(*p, httpEndpointConfig) {
+			for _, endpoint := range proxyHandler.GetProxyEndpoints(*p) {
 				switch endpoint.Method {
 				case "GET":
 					r.Get(endpoint.URL, endpoint.Handler)
@@ -193,8 +191,11 @@ func (p *Server) URL(path string) string {
 }
 
 func (p *Server) updateWatchedResource(name string) error {
-	log.Info("Changes detected. Applying ", name)
 	resources, err := p.ParseResources(name)
+	if errors.As(err, &UnrecognisedFormatError{}) {
+		log.Printf("Skipping %s", name)
+		return nil
+	}
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -207,10 +208,13 @@ func (p *Server) updateWatchedResource(name string) error {
 		}
 		_, ok := handler.(ProxyHandler)
 		if ok {
+			log.Info("Changes detected. Applying ", name)
 			err = livereload.Reload(resource.Kind(), resource.Name(), resource.Spec())
 			if err != nil {
 				return err
 			}
+		} else {
+
 		}
 	}
 	return nil

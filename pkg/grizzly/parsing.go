@@ -162,7 +162,7 @@ func (parser *ChainParser) parseFile(file string, options ParserOptions) (Resour
 		return resources, nil
 	}
 
-	return Resources{}, fmt.Errorf("unrecognized format for %s", file)
+	return Resources{}, NewUnrecognisedFormatError(file)
 }
 
 func parseAny(registry Registry, data any, resourceKind, folderUID string, source Source) (Resources, error) {
