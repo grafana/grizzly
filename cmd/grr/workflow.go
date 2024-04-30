@@ -276,26 +276,6 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 	return initialiseCmd(cmd, &opts)
 }
 
-type jsonnetWatchParser struct {
-	resourcePath string
-	registry     grizzly.Registry
-	resourceKind string
-	folderUID    string
-	targets      []string
-	jsonnetPaths []string
-}
-
-func (p *jsonnetWatchParser) Name() string {
-	return p.resourcePath
-}
-
-func (p *jsonnetWatchParser) Parse() (grizzly.Resources, error) {
-	return grizzly.DefaultParser(p.registry, p.targets, p.jsonnetPaths, grizzly.ParserContinueOnError(true)).Parse(p.resourcePath, grizzly.ParserOptions{
-		DefaultResourceKind: p.resourceKind,
-		DefaultFolderUID:    p.folderUID,
-	})
-}
-
 func watchCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "watch <dir-to-watch> <resource-path>",
@@ -315,20 +295,17 @@ func watchCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 		targets := currentContext.GetTargets(opts.Targets)
-		parser := &jsonnetWatchParser{
-			resourcePath: args[1],
-			registry:     registry,
-			resourceKind: resourceKind,
-			folderUID:    folderUID,
-			targets:      targets,
-			jsonnetPaths: opts.JsonnetPaths,
-		}
 
 		watchDir := args[0]
 
 		trailRecorder := grizzly.NewWriterRecorder(os.Stdout, grizzly.EventToPlainText)
 
-		return grizzly.Watch(registry, watchDir, parser, trailRecorder)
+		parser := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(true))
+		parserOpts := grizzly.ParserOptions{
+			DefaultResourceKind: resourceKind,
+			DefaultFolderUID:    folderUID,
+		}
+		return grizzly.Watch(registry, watchDir, parser, parserOpts, trailRecorder)
 	}
 	return initialiseCmd(cmd, &opts)
 }

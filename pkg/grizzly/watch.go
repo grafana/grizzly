@@ -65,3 +65,9 @@ func (w *Watcher) Watch(path string) error {
 	}()
 	return nil
 }
+
+func (w *Watcher) Wait() error {
+	done := make(chan bool)
+	<-done
+	return nil
+}

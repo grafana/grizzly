@@ -6,9 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
-	"path/filepath"
 	"strings"
 	"text/tabwriter"
 
@@ -18,7 +16,6 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 	log "github.com/sirupsen/logrus"
 	terminal "golang.org/x/term"
-	"gopkg.in/fsnotify.v1"
 	"gopkg.in/yaml.v3"
 )
 
@@ -497,58 +494,32 @@ type WatchParser interface {
 
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
 // when changes are noticed.
-func Watch(registry Registry, watchDir string, parser WatchParser, trailRecorder eventsRecorder) error {
-	watcher, err := fsnotify.NewWatcher()
+func Watch(registry Registry, watchDir string, parser Parser, parserOpts ParserOptions, trailRecorder eventsRecorder) error {
+
+	updateWatchedResource := func(path string) error {
+		log.Info("Changes detected. Applying ", path)
+		resources, err := parser.Parse(path, parserOpts)
+		if err != nil {
+			log.Error("Error: ", err)
+		}
+		err = Apply(registry, resources, false, trailRecorder) // TODO?
+		if err != nil {
+			log.Error("Error: ", err)
+		}
+		return nil
+	}
+	watcher, err := NewWatcher(updateWatchedResource)
 	if err != nil {
 		return err
 	}
-	defer watcher.Close()
-
-	done := make(chan bool)
-	go func() {
-		log.Info("Watching for changes")
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Info("Changes detected. Applying ", parser.Name())
-					resources, err := parser.Parse()
-					if err != nil {
-						log.Error("Error: ", err)
-					}
-					err = Apply(registry, resources, false, trailRecorder) // TODO?
-					if err != nil {
-						log.Error("Error: ", err)
-					}
-				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				log.Error("error: ", err)
-			}
-		}
-	}()
-
-	if err := filepath.WalkDir(watchDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() {
-			return watcher.Add(path)
-		}
-
-		return nil
-	}); err != nil {
+	err = watcher.Watch(watchDir)
+	if err != nil {
 		return err
 	}
-
-	<-done
-
+	err = watcher.Wait()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
