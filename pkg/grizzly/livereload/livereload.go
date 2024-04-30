@@ -9,8 +9,40 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// Handler is a HandlerFunc handling the livereload
-// Websocket interaction.
+type hub struct {
+	connections map[*connection]bool
+	register    chan *connection
+	unregister  chan *connection
+}
+
+var wsHub = hub{
+	register:    make(chan *connection),
+	unregister:  make(chan *connection),
+	connections: make(map[*connection]bool),
+}
+
+func Register(c *connection) {
+	wsHub.register <- c
+}
+
+func Unregister(c *connection) {
+	wsHub.unregister <- c
+}
+
+func Initialize() {
+	go func() {
+		for {
+			select {
+			case c := <-wsHub.register:
+				wsHub.connections[c] = true
+			case c := <-wsHub.unregister:
+				delete(wsHub.connections, c)
+				c.close()
+			}
+		}
+	}()
+}
+
 func LiveReloadHandlerFunc(upgrader websocket.Upgrader) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ws, err := upgrader.Upgrade(w, r, nil)
@@ -25,16 +57,16 @@ func LiveReloadHandlerFunc(upgrader websocket.Upgrader) func(http.ResponseWriter
 	}
 }
 
-// Initialize starts the Websocket Hub handling live reloads.
-func Initialize() {
-	go wsHub.run()
-}
-
 func Reload(kind, name string, spec map[string]any) error {
 	log.Printf("Reloading %s/%s", kind, name)
 	if kind != "Dashboard" {
 		return fmt.Errorf("only dashboards supported for live reload at present")
 	}
-	wsHub.NotifyDashboard(name, spec)
+	for c := range wsHub.connections {
+		err := c.NotifyDashboard(name, spec)
+		if err != nil {
+			log.Printf("Error notifying %s: %s", c.clientID, err)
+		}
+	}
 	return nil
 }
