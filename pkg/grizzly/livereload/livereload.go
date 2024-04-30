@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/websocket"
 )
@@ -31,24 +30,11 @@ func Initialize() {
 	go wsHub.run()
 }
 
-func Reload(path string) {
-	log.Printf("Reloading %s", path)
-	msg := fmt.Sprintf(`{"command":"reload","path":"%s","originalPath":"%s"}`, path, path)
-	wsHub.broadcast <- []byte(msg)
-}
-
-// This is a patched version, see https://github.com/livereload/livereload-js/pull/84, cloned from github.com/gohugoio/hugo
-//
-//go:embed livereload.js
-var livereloadJS []byte
-
-func LiveReloadJSHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/javascript")
-	w.Write(livereloadJS)
-}
-
-func Inject(html []byte, port int) []byte {
-	inject := `<script src="/livereload.js?mindelay=10&amp;v=2&amp;path=livereload" data-no-instant="" defer=""></script>`
-	//inject := fmt.Sprintf(fmtstr, port)
-	return []byte(strings.ReplaceAll(string(html), "<head>", "<head>\n"+inject))
+func Reload(kind, name string, spec map[string]any) error {
+	log.Printf("Reloading %s/%s", kind, name)
+	if kind != "Dashboard" {
+		return fmt.Errorf("only dashboards supported for live reload at present")
+	}
+	wsHub.NotifyDashboard(name, spec)
+	return nil
 }

@@ -13,12 +13,11 @@
 
 package livereload
 
+import "log"
+
 type hub struct {
 	// Registered connections.
 	connections map[*connection]bool
-
-	// Inbound messages from the connections.
-	broadcast chan []byte
 
 	// Register requests from the connections.
 	register chan *connection
@@ -28,7 +27,6 @@ type hub struct {
 }
 
 var wsHub = hub{
-	broadcast:   make(chan []byte),
 	register:    make(chan *connection),
 	unregister:  make(chan *connection),
 	connections: make(map[*connection]bool),
@@ -42,6 +40,15 @@ func Unregister(c *connection) {
 	wsHub.unregister <- c
 }
 
+func (h *hub) NotifyDashboard(uid string, spec map[string]any) {
+	for c := range h.connections {
+		err := c.NotifyDashboard(uid, spec)
+		if err != nil {
+			log.Printf("Error notifying %s: %s", c.clientID, err)
+		}
+	}
+}
+
 func (h *hub) run() {
 	for {
 		select {
@@ -50,15 +57,6 @@ func (h *hub) run() {
 		case c := <-h.unregister:
 			delete(h.connections, c)
 			c.close()
-		case m := <-h.broadcast:
-			for c := range h.connections {
-				select {
-				case c.send <- m:
-				default:
-					delete(h.connections, c)
-					c.close()
-				}
-			}
 		}
 	}
 }

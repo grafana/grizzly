@@ -148,11 +148,7 @@ func (p *Server) Start() error {
 		r.Post(pattern, p.blockHandler(response))
 	}
 	r.Get("/", p.RootHandler)
-
-	livereload.Initialize()
-	r.Get("/livereload.js", livereload.LiveReloadJSHandler)
-	r.Get("/livereload", livereload.LiveReloadHandlerFunc(upgrader))
-	r.Get("/api/live/ws", p.wsHandler)
+	r.Get("/api/live/ws", livereload.LiveReloadHandlerFunc(upgrader))
 
 	if _, err := p.ParseResources(p.ResourcePath); err != nil {
 		fmt.Print(err)
@@ -166,6 +162,7 @@ func (p *Server) Start() error {
 		browser.Open(p.Resources)
 	}
 	if p.Watch {
+		livereload.Initialize()
 		watcher, err := NewWatcher(p.updateWatchedResource)
 		if err != nil {
 			return err
@@ -208,14 +205,12 @@ func (p *Server) updateWatchedResource(name string) error {
 			log.Printf("Error: %v", err)
 			continue
 		}
-		proxyHandler, ok := handler.(ProxyHandler)
+		_, ok := handler.(ProxyHandler)
 		if ok {
-			u, err := proxyHandler.ProxyURL(resource)
+			err = livereload.Reload(resource.Kind(), resource.Name(), resource.Spec())
 			if err != nil {
-				log.Print(err)
-				continue
+				return err
 			}
-			livereload.Reload(u)
 		}
 	}
 	return nil
@@ -233,9 +228,6 @@ func (p *Server) blockHandler(response string) http.HandlerFunc {
 // ProxyRequestHandler handles the http request using proxy
 func (p *Server) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	p.proxy.ServeHTTP(w, r)
-}
-
-func (p *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
