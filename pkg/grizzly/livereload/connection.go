@@ -166,14 +166,14 @@ type pushResponseUser struct {
 	Login string `json:"login"`
 }
 type pushResponseDashboard struct {
-	Uid      string         `json:"uid"`
+	UID      string         `json:"uid"`
 	FolderID int            `json:"folderID"`
 	IsFolder bool           `json:"IsFolder"`
 	Data     map[string]any `json:"data"`
 }
 
 type pushResponseData struct {
-	Uid       string                `json:"uid"`
+	UID       string                `json:"uid"`
 	Action    string                `json:"action"`
 	User      pushResponseUser      `json:"user"`
 	Dashboard pushResponseDashboard `json:"dashboard"`
@@ -197,14 +197,14 @@ func (c *connection) NotifyDashboard(uid string, spec map[string]any) error {
 			Channel: fmt.Sprintf("1/grafana/dashboard/uid/%s", uid),
 			Pub: pushResponsePub{
 				Data: pushResponseData{
-					Uid:    uid,
+					UID:    uid,
 					Action: "saved",
 					User: pushResponseUser{
 						ID:    1,
 						Login: "admin",
 					},
 					Dashboard: pushResponseDashboard{
-						Uid:      uid,
+						UID:      uid,
 						FolderID: 0,
 						IsFolder: false,
 						Data:     spec,

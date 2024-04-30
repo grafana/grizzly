@@ -157,7 +157,10 @@ func (p *Server) Start() error {
 		if err != nil {
 			return err
 		}
-		browser.Open(p.Resources)
+		err = browser.Open(p.Resources)
+		if err != nil {
+			return err
+		}
 	}
 	if p.Watch {
 		livereload.Initialize()
@@ -213,8 +216,6 @@ func (p *Server) updateWatchedResource(name string) error {
 			if err != nil {
 				return err
 			}
-		} else {
-
 		}
 	}
 	return nil

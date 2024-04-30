@@ -255,8 +255,8 @@ func (h *DashboardHandler) Detect(data map[string]any) bool {
 	return true
 }
 
-func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.HttpEndpoint {
-	return []grizzly.HttpEndpoint{
+func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.HTTPEndpoint {
+	return []grizzly.HTTPEndpoint{
 		{
 			Method:  "GET",
 			URL:     "/d/{uid}/{slug}",

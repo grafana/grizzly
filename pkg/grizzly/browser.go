@@ -27,7 +27,6 @@ func NewBrowserInterface(registry Registry, resourcePath string, port int) (*Bro
 }
 
 func (i BrowserInterface) Open(resources Resources) error {
-
 	path := "/"
 
 	if i.isDir {

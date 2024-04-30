@@ -486,16 +486,9 @@ func Snapshot(registry Registry, resources Resources, expiresSeconds int) error 
 	return nil
 }
 
-// WatchParser encapsulates the action of parsing a resource (jsonnet or otherwise)
-type WatchParser interface {
-	Name() string
-	Parse() (Resources, error)
-}
-
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
 // when changes are noticed.
 func Watch(registry Registry, watchDir string, parser Parser, parserOpts ParserOptions, trailRecorder eventsRecorder) error {
-
 	updateWatchedResource := func(path string) error {
 		log.Info("Changes detected. Applying ", path)
 		resources, err := parser.Parse(path, parserOpts)

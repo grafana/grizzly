@@ -23,7 +23,6 @@ func NewWatcher(watcherFunc func(path string) error) (*Watcher, error) {
 		watcherFunc: watcherFunc,
 	}
 	return &watcher, nil
-
 }
 
 func (w *Watcher) Watch(path string) error {
