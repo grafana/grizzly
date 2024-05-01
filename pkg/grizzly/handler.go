@@ -112,16 +112,16 @@ type ListenHandler interface {
 	Listen(UID, filename string) error
 }
 
-type ProxyEndpoint struct {
+type HTTPEndpoint struct {
 	Method  string
 	URL     string
-	Handler func(http.ResponseWriter, *http.Request)
+	Handler http.HandlerFunc
 }
 
 // ProxyHandler describes a handler that can be used to edit resources live via a proxied UI
 type ProxyHandler interface {
 	// RegisterHandlers registers HTTP handlers for proxy events
-	GetProxyEndpoints(p Server) []ProxyEndpoint
+	GetProxyEndpoints(p Server) []HTTPEndpoint
 
 	// ProxyURL returns a URL path for a resource on the proxy
 	ProxyURL(Resource) (string, error)

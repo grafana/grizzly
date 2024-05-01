@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -256,8 +255,8 @@ func (h *DashboardHandler) Detect(data map[string]any) bool {
 	return true
 }
 
-func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.ProxyEndpoint {
-	return []grizzly.ProxyEndpoint{
+func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.HTTPEndpoint {
+	return []grizzly.HTTPEndpoint{
 		{
 			Method:  "GET",
 			URL:     "/d/{uid}/{slug}",
@@ -284,7 +283,7 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.ProxyEn
 func (h *DashboardHandler) resourceFromQueryParameterMiddleware(p grizzly.Server, parameterName string, next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if fromFilePath := r.URL.Query().Get(parameterName); fromFilePath != "" {
-			if err := p.ParseResources(fromFilePath); err != nil {
+			if _, err := p.ParseResources(fromFilePath); err != nil {
 				grizzly.SendError(w, "could not parse resource", fmt.Errorf("could not parse resource"), http.StatusBadRequest)
 				return
 			}
@@ -307,7 +306,13 @@ func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server) http.Handl
 			grizzly.SendError(w, http.StatusText(500), err, 500)
 			return
 		}
-		req.Header.Set("Authorization", "Bearer "+config.Token)
+
+		if config.User != "" {
+			req.SetBasicAuth(config.User, config.Token)
+		} else if config.Token != "" {
+			req.Header.Set("Authorization", "Bearer "+config.Token)
+		}
+
 		req.Header.Set("User-Agent", p.UserAgent)
 
 		client := &http.Client{}
@@ -396,28 +401,11 @@ func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server) http.Handl
 		resource.SetMetadata("name", uid)
 		resource.SetSpecString("uid", uid)
 
-		out, _, _, err := grizzly.Format(p.Registry, p.ResourcePath, &resource, p.OutputFormat, p.OnlySpec)
+		err = p.UpdateResource(uid, resource)
 		if err != nil {
-			grizzly.SendError(w, "Error formatting content", err, 500)
+			grizzly.SendError(w, err.Error(), err, 500)
 			return
 		}
-
-		existing, found := p.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
-		if !found {
-			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 500)
-			return
-		}
-		if !existing.Source.Rewritable {
-			grizzly.SendError(w, "The source for this dashboard is not rewritable", fmt.Errorf("the source for this dashboard is not rewritable"), 400)
-			return
-		}
-
-		err = os.WriteFile(existing.Source.Path, out, 0644)
-		if err != nil {
-			grizzly.SendError(w, fmt.Sprintf("Error writing file: %s", err), err, 500)
-			return
-		}
-
 		jout := map[string]interface{}{
 			"id":      1,
 			"slug":    "slug",

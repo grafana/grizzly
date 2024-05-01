@@ -32,6 +32,7 @@ type Opts struct {
 	OpenBrowser bool
 	ProxyPort   int
 	CanSave     bool
+	Watch       bool
 }
 
 func configPathCmd() *cli.Command {
