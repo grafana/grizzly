@@ -9,15 +9,16 @@ type GrafanaConfig struct {
 }
 
 type MimirConfig struct {
-	Address  string 		 `yaml:"address" mapstructure:"address"`
-	TenantID string 	     `yaml:"tenant-id" mapstructure:"tenant-id"`
-	APIKey   string          `yaml:"api-key" mapstructure:"api-key"`
-	Auth 	 MimirAuthConfig `yaml:"auth" mapstructure:"auth"`
+	Address  string         `yaml:"address" mapstructure:"address"`
+	TenantID string         `yaml:"tenant-id" mapstructure:"tenant-id"`
+	APIKey   string         `yaml:"api-key" mapstructure:"api-key"`
+	TLS      MimirTLSConfig `yaml:"tls" mapstructure:"auth"`
 }
 
-type MimirAuthConfig struct {
-	ClientCertPath string `yaml:"client-cert-path" mapstructure:"client-cert-path"`
-	ClientKeyPath  string `yaml:"client-key-path" mapstructure:"client-key-path"`
+type MimirTLSConfig struct {
+	ClientCertPath string `yaml:"client-cert-path,omitempty" mapstructure:"client-cert-path"`
+	ClientKeyPath  string `yaml:"client-key-path,omitempty" mapstructure:"client-key-path"`
+	CAPath 		   string `yaml:"ca-path" mapstruceture:"ca-path"`
 }
 
 type SyntheticMonitoringConfig struct {
