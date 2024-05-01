@@ -400,6 +400,8 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		resourcesPath := ""
 		if len(args) > 0 {
 			resourcesPath = args[0]
+		} else {
+			log.Warn("No resources path provided, the server will not proxy any resources unless they are pushed to it.")
 		}
 
 		targets := currentContext.GetTargets(opts.Targets)
