@@ -45,6 +45,10 @@ func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions
 		return nil, err
 	}
 
+	if prov == nil {
+		return nil, fmt.Errorf("no proxy provider found")
+	}
+
 	proxy, err := (*prov).SetupProxy()
 	if err != nil {
 		return nil, err
