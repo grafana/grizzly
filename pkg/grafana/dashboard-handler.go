@@ -373,7 +373,7 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server) http.Handle
 	}
 }
 
-func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server) http.HandlerFunc {
+func (h *DashboardHandler) DashboardJSONPostHandler(s grizzly.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		resp := struct {
 			Dashboard map[string]any `json:"dashboard"`
@@ -384,24 +384,21 @@ func (h *DashboardHandler) DashboardJSONPostHandler(p grizzly.Server) http.Handl
 			grizzly.SendError(w, "Error parsing JSON", err, 400)
 			return
 		}
-		resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), "dummy", resp.Dashboard)
-		if err != nil {
-			grizzly.SendError(w, "Error creating resource", err, 400)
-			return
-		}
-		uid, err := h.GetSpecUID(resource)
-		if err != nil {
-			grizzly.SendError(w, "Error getting dashboard UID", err, 400)
-			return
-		}
-		if uid == "" {
+		uid, ok := resp.Dashboard["uid"].(string)
+		if !ok {
 			grizzly.SendError(w, "Dashboard has no UID", fmt.Errorf("dashboard has no UID"), 400)
 			return
 		}
-		resource.SetMetadata("name", uid)
-		resource.SetSpecString("uid", uid)
+		resource, ok := s.Resources.Find(grizzly.NewResourceRef(h.Kind(), uid))
+		if !ok {
+			err := fmt.Errorf("unknown dashboard: %s", uid)
+			grizzly.SendError(w, err.Error(), err, 400)
+			return
+		}
 
-		err = p.UpdateResource(uid, resource)
+		resource.SetSpec(resp.Dashboard)
+
+		err = s.UpdateResource(uid, resource)
 		if err != nil {
 			grizzly.SendError(w, err.Error(), err, 500)
 			return
