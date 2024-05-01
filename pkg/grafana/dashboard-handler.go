@@ -306,7 +306,13 @@ func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server) http.Handl
 			grizzly.SendError(w, http.StatusText(500), err, 500)
 			return
 		}
-		req.Header.Set("Authorization", "Bearer "+config.Token)
+
+		if config.User != "" {
+			req.SetBasicAuth(config.User, config.Token)
+		} else if config.Token != "" {
+			req.Header.Set("Authorization", "Bearer "+config.Token)
+		}
+
 		req.Header.Set("User-Agent", p.UserAgent)
 
 		client := &http.Client{}

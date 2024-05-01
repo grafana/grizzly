@@ -3,10 +3,10 @@ package livereload
 import (
 	_ "embed"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
 )
 
 type hub struct {
@@ -19,14 +19,6 @@ var wsHub = hub{
 	register:    make(chan *connection),
 	unregister:  make(chan *connection),
 	connections: make(map[*connection]bool),
-}
-
-func Register(c *connection) {
-	wsHub.register <- c
-}
-
-func Unregister(c *connection) {
-	wsHub.unregister <- c
 }
 
 func Initialize() {
@@ -47,6 +39,7 @@ func LiveReloadHandlerFunc(upgrader websocket.Upgrader) func(http.ResponseWriter
 	return func(w http.ResponseWriter, r *http.Request) {
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
+			log.Errorf("Error upgrading websocket: %s", err)
 			return
 		}
 		c := &connection{send: make(chan []byte, 256), ws: ws}
@@ -62,10 +55,14 @@ func Reload(kind, name string, spec map[string]any) error {
 	if kind != "Dashboard" {
 		return fmt.Errorf("only dashboards supported for live reload at present")
 	}
+	if len(wsHub.connections) == 0 {
+		log.Warn("No connections to notify")
+	}
+
 	for c := range wsHub.connections {
 		err := c.NotifyDashboard(name, spec)
 		if err != nil {
-			log.Printf("Error notifying %s: %s", c.clientID, err)
+			log.Errorf("Error notifying %s: %s", c.clientID, err)
 		}
 	}
 	return nil
