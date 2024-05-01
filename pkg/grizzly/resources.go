@@ -164,6 +164,10 @@ func (r *Resource) Spec() map[string]interface{} {
 	return r.Body["spec"].(map[string]interface{})
 }
 
+func (r *Resource) SetSpec(spec map[string]any) {
+	r.Body["spec"] = spec
+}
+
 func (r *Resource) SpecAsJSON() (string, error) {
 	j, err := json.MarshalIndent(r.Spec(), "", "  ")
 	if err != nil {
