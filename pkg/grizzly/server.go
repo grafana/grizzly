@@ -150,6 +150,8 @@ func (p *Server) Start() error {
 		r.Post(pattern, p.blockHandler(response))
 	}
 	r.Get("/", p.RootHandler)
+	r.Get("/remote/", p.RemoteHandler)
+	r.Get("/view/", p.ViewRemoteHandler)
 	r.Get("/api/live/ws", livereload.LiveReloadHandlerFunc(upgrader))
 
 	if _, err := p.ParseResources(p.ResourcePath); err != nil {
@@ -239,6 +241,7 @@ func (p *Server) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	p.proxy.ServeHTTP(w, r)
 }
 
+// RootHandler lists all local proxyable resources
 func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 	var parseErrors []error
 
@@ -256,6 +259,78 @@ func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 		"ServerPort":  p.port,
 	}
 	if err := templates.ExecuteTemplate(w, "proxy/index.html.tmpl", templateVars); err != nil {
+		SendError(w, "Error while executing template", err, 500)
+		return
+	}
+}
+
+// RemoteHandler lists all remote resources known to Grizzly
+func (p *Server) RemoteHandler(w http.ResponseWriter, r *http.Request) {
+
+	listedResources := []listedResource{}
+	for name, handler := range p.Registry.Handlers {
+		//if !p.Registry.HandlerMatchesTarget(handler, p.Targets) {
+		//	continue
+		//}
+		log.Debugf("Listing remote values for handler %s", name)
+		IDs, err := handler.ListRemote()
+		if err != nil {
+			SendError(w, fmt.Sprintf("Error listing remote resources of kind %s", handler.Kind()), err, 500)
+			return
+		}
+		for _, id := range IDs {
+			listedResources = append(listedResources, listedResource{
+				Handler: handler.APIVersion(),
+				Kind:    handler.Kind(),
+				Name:    id,
+			})
+		}
+	}
+
+	templateVars := map[string]any{
+		"Resources":  listedResources,
+		"ServerPort": p.port,
+	}
+	if err := templates.ExecuteTemplate(w, "proxy/remote.html.tmpl", templateVars); err != nil {
+		SendError(w, "Error while executing template", err, 500)
+		return
+	}
+}
+
+func (p *Server) ViewRemoteHandler(w http.ResponseWriter, r *http.Request) {
+
+	format := r.URL.Query().Get("format")
+	kind := r.URL.Query().Get("kind")
+	uid := r.URL.Query().Get("uid")
+
+	handler, err := p.Registry.GetHandler(kind)
+	if err != nil {
+		SendError(w, fmt.Sprintf("No handler for kind %s", kind), err, 400)
+		return
+	}
+
+	resource, err := handler.GetByUID(uid)
+	if err != nil {
+		SendError(w, fmt.Sprintf("Error retrieving %s / %s", kind, uid), err, 400)
+		return
+	}
+
+	resource = handler.Unprepare(*resource)
+
+	content, _, _, err := Format(p.Registry, "", resource, format, false)
+	if err != nil {
+		SendError(w, fmt.Sprintf("Error formatting %s / %s", kind, uid), err, 400)
+		return
+	}
+
+	templateVars := map[string]any{
+		"Format":     format,
+		"UID":        uid,
+		"Kind":       kind,
+		"Content":    string(content),
+		"ServerPort": p.port,
+	}
+	if err := templates.ExecuteTemplate(w, "proxy/view.html.tmpl", templateVars); err != nil {
 		SendError(w, "Error while executing template", err, 500)
 		return
 	}
