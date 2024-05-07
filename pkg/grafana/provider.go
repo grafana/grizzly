@@ -3,12 +3,14 @@ package grafana
 import (
 	"crypto/tls"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http/httputil"
 	"net/url"
 	"path/filepath"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
+	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -111,7 +113,10 @@ func (p *Provider) SetupProxy() (*httputil.ReverseProxy, error) {
 	}
 	_, err = client.Dashboards.GetHomeDashboard()
 	if err != nil {
-		return nil, fmt.Errorf("error checking authentication: %v", err)
+		if errors.Is(err, &dashboards.GetHomeDashboardUnauthorized{}) {
+			return nil, fmt.Errorf("error checking authentication: %v", err)
+		}
+		return nil, fmt.Errorf("error setting the proxy: %v", err)
 	}
 
 	u, err := url.Parse(p.config.URL)
