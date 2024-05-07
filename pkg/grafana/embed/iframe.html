@@ -1,0 +1,69 @@
+<html>
+    <head>
+        <style>
+            body {
+                font-family: "Inter", "Helvetica", "Arial", sans-serif;
+                background-color: #ccc;
+            }
+            .float-left {
+                float: left;
+            }
+
+            .float-right {
+                float: right;
+            }
+            .icon {
+                width: 70px;
+                position: relative;
+                top: -20px;
+            }
+            .header h1 {
+                margin: 0px;
+                position: relative;
+                left: -10px;
+                font-size: 180%;
+            }
+            .context {
+                vertical-align: middle;
+            }
+            .context img {
+                position: relative;
+                top: 5px;
+            }
+            iframe {
+                position: absolute;
+                top: 50px;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                border: 0px;
+                margin: 0px;
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="float-left">
+            <img class="icon" src="/grizzly/assets/grizzly-logo.svg">
+        </div>
+        <div class="float-left header">
+            <h1>Grizzly Server</h1>
+        </div>
+        <div class="float-right context">
+            current context:
+            <select>
+            {{ $current := .Current }}
+            {{ range .Contexts }}
+            {{ if eq . $current }}
+                <option value="{{.}}" selected>{{.}}</option>
+            {{ else }}
+                <option value="{{.}}">{{.}}</option>
+            {{ end }}
+            {{ end }}
+            </select>
+            <span><a target="_blank" href="https://grafana.github.io/grizzly/server/"><img src="/grizzly/assets/info.png"></a></span>
+        </div>
+        <iframe src="/d/{{.UID}}/slug"></iframe>
+    </body>
+</html>

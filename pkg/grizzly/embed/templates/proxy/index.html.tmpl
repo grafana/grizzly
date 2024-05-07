@@ -32,7 +32,7 @@
         {{ range .Resources }}
             {{ if eq .Kind "Dashboard" }}
                 <li>
-                    <a href="http://localhost:{{ $.ServerPort }}/d/{{ .Name }}/slug">{{ .Spec.title }}</a>
+                    <a href="/grizzly/{{.Kind}}/{{.Name}}">{{ .Spec.title }}</a>
                 </li>
             {{ end }}
         {{ end }}

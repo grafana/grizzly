@@ -1,17 +1,20 @@
 package grafana
 
 import (
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"text/template"
 
 	"github.com/go-chi/chi"
 	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
 	"github.com/grafana/grafana-openapi-client-go/client/search"
 	"github.com/grafana/grafana-openapi-client-go/models"
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 )
@@ -259,6 +262,11 @@ func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.HTTPEnd
 	return []grizzly.HTTPEndpoint{
 		{
 			Method:  "GET",
+			URL:     "/grizzly/Dashboard/{uid}",
+			Handler: h.IframeHandler,
+		},
+		{
+			Method:  "GET",
 			URL:     "/d/{uid}/{slug}",
 			Handler: h.resourceFromQueryParameterMiddleware(p, "grizzly_from_file", h.RootDashboardPageHandler(p)),
 		},
@@ -291,6 +299,36 @@ func (h *DashboardHandler) resourceFromQueryParameterMiddleware(p grizzly.Server
 
 		next.ServeHTTP(w, r)
 	}
+}
+
+//go:embed embed/iframe.html
+var iframeContent string
+
+type iframeData struct {
+	UID      string
+	Contexts []string
+	Current  string
+}
+
+// RootHandler lists all local proxyable resources
+func (h *DashboardHandler) IframeHandler(w http.ResponseWriter, r *http.Request) {
+	uid := chi.URLParam(r, "uid")
+	tmpl, err := template.New("iframe.html").Parse(iframeContent)
+	if err != nil {
+		grizzly.SendError(w, "Error loading iframe template", err, 500)
+		return
+	}
+	contexts, current, err := config.GetContexts()
+	if err != nil {
+		grizzly.SendError(w, "Error getting contexts", err, 500)
+		return
+	}
+	data := iframeData{
+		UID:      uid,
+		Contexts: contexts,
+		Current:  current,
+	}
+	tmpl.Execute(w, data)
 }
 
 func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server) http.HandlerFunc {

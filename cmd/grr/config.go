@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/config"
@@ -106,7 +107,19 @@ func getContextsCmd() *cli.Command {
 	var opts LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		return config.GetContexts()
+		contexts, currentContext, err := config.GetContexts()
+		if err != nil {
+			return err
+		}
+		sort.Strings(contexts)
+		for _, k := range contexts {
+			if k == currentContext {
+				fmt.Printf("* %s\n", k)
+			} else {
+				fmt.Printf("  %s\n", k)
+			}
+		}
+		return nil
 	}
 	return initialiseLogging(cmd, &opts)
 }
