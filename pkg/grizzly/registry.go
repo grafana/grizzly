@@ -18,6 +18,7 @@ type Provider interface {
 }
 
 type ProxyProvider interface {
+	// SetupProxy establishes the proxy connection
 	SetupProxy() (*httputil.ReverseProxy, error)
 }
 
