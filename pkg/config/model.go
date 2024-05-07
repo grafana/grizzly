@@ -18,7 +18,7 @@ type MimirConfig struct {
 type MimirTLSConfig struct {
 	ClientCertPath string `yaml:"client-cert-path,omitempty" mapstructure:"client-cert-path"`
 	ClientKeyPath  string `yaml:"client-key-path,omitempty" mapstructure:"client-key-path"`
-	CAPath 		   string `yaml:"ca-path" mapstructure:"ca-path"`
+	CAPath         string `yaml:"ca-path" mapstructure:"ca-path"`
 }
 
 type SyntheticMonitoringConfig struct {
