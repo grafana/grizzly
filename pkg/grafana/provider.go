@@ -105,6 +105,15 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 }
 
 func (p *Provider) SetupProxy() (*httputil.ReverseProxy, error) {
+	client, err := p.Client()
+	if err != nil {
+		return nil, err
+	}
+	_, err = client.Dashboards.GetHomeDashboard()
+	if err != nil {
+		return nil, fmt.Errorf("error checking authentication: %v", err)
+	}
+
 	u, err := url.Parse(p.config.URL)
 	if err != nil {
 		return nil, err
