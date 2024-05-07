@@ -1,5 +1,5 @@
 apiVersion: grizzly.grafana.com/v1alpha1
-kind: RuleGroup1
+kind: PrometheusRuleGroup
 metadata:
   name: test-rules-1
   namespace: test-rules-1
