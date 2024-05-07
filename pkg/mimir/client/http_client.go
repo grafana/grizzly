@@ -2,6 +2,8 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -9,8 +11,6 @@ import (
 	"os"
 	"strconv"
 	"time"
-	"crypto/tls"
-	"crypto/x509"
 
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/mimir/models"
@@ -131,7 +131,7 @@ func (c *Client) createHTTPClient() (*http.Client, error) {
 
 	tlsConfig := &tls.Config{}
 	httpClient := http.Client{
-		Timeout: timeout, 
+		Timeout:   timeout,
 		Transport: &http.Transport{TLSClientConfig: tlsConfig},
 	}
 
@@ -144,13 +144,13 @@ func (c *Client) createHTTPClient() (*http.Client, error) {
 		caCertPEM, err := os.ReadFile(c.config.TLS.CAPath)
 		if err != nil {
 			return nil, err
-		} 
-		
+		}
+
 		ok := certPool.AppendCertsFromPEM(caCertPEM)
 		if !ok {
-			return nil, err
+			return nil, fmt.Errorf("could not append ca-bundle at path %s to existing certificates", c.config.TLS.CAPath)
 		}
-		
+
 		tlsConfig.RootCAs = certPool
 	}
 
@@ -161,7 +161,7 @@ func (c *Client) createHTTPClient() (*http.Client, error) {
 		}
 		tlsConfig.Certificates = []tls.Certificate{clientTLSCert}
 	}
-	
+
 	httpClient.Transport = &http.Transport{
 		TLSClientConfig: tlsConfig,
 	}
