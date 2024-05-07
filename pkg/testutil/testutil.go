@@ -9,6 +9,11 @@ func TestContext() *config.Context {
 		Grafana: config.GrafanaConfig{
 			URL: "http://localhost:3001",
 		},
+		Mimir: config.MimirConfig{
+			Address:  "http://localhost:9009",
+			TenantID: "demo",
+			APIKey:   "abc",
+		},
 	}
 	return &ctx
 }
