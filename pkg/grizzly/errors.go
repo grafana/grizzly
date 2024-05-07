@@ -25,3 +25,17 @@ type APIErr struct {
 func (e APIErr) Error() string {
 	return fmt.Sprintf("Failed to parse Grafana response: %s.\n\nResponse:\n%s", e.Err, string(e.Body))
 }
+
+type UnrecognisedFormatError struct {
+	File string
+}
+
+func (e UnrecognisedFormatError) Error() string {
+	return fmt.Sprintf("unrecognized format for %s", e.File)
+}
+
+func NewUnrecognisedFormatError(file string) UnrecognisedFormatError {
+	return UnrecognisedFormatError{
+		File: file,
+	}
+}

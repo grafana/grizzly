@@ -1,17 +1,17 @@
 package grizzly
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/httputil"
 	"os"
-	"os/exec"
-	"runtime"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
+	"github.com/grafana/grizzly/pkg/grizzly/livereload"
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 )
@@ -31,6 +31,7 @@ type Server struct {
 	ResourcePath string
 	OnlySpec     bool
 	OutputFormat string
+	Watch        bool
 }
 
 var upgrader = websocket.Upgrader{
@@ -39,10 +40,14 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions, resourcePath string, port int, openBrowser bool, onlySpec bool, outputFormat string) (*Server, error) {
+func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions, resourcePath string, port int, openBrowser, watch, onlySpec bool, outputFormat string) (*Server, error) {
 	prov, err := registry.GetProxyProvider()
 	if err != nil {
 		return nil, err
+	}
+
+	if prov == nil {
+		return nil, fmt.Errorf("no proxy provider found")
 	}
 
 	proxy, err := (*prov).SetupProxy()
@@ -62,6 +67,7 @@ func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions
 		OnlySpec:     onlySpec,
 		OutputFormat: outputFormat,
 		proxy:        proxy,
+		Watch:        watch,
 	}, nil
 }
 
@@ -144,63 +150,43 @@ func (p *Server) Start() error {
 		r.Post(pattern, p.blockHandler(response))
 	}
 	r.Get("/", p.RootHandler)
+	r.Get("/api/live/ws", livereload.LiveReloadHandlerFunc(upgrader))
 
-	r.Get("/api/live/ws", p.wsHandler)
-
-	if err := p.ParseResources(p.ResourcePath); err != nil {
-		return err
+	if _, err := p.ParseResources(p.ResourcePath); err != nil {
+		fmt.Print(err)
 	}
 
 	if p.openBrowser {
-		path := "/"
-
-		stat, err := os.Stat(p.ResourcePath)
+		browser, err := NewBrowserInterface(p.Registry, p.ResourcePath, p.port)
 		if err != nil {
 			return err
 		}
-
-		if !stat.IsDir() && p.Resources.Len() == 0 {
-			return fmt.Errorf("no resources found to proxy")
+		err = browser.Open(p.Resources)
+		if err != nil {
+			return err
 		}
-
-		if !stat.IsDir() && p.Resources.Len() == 1 {
-			resource := p.Resources.First()
-			handler, err := p.Registry.GetHandler(resource.Kind())
-			if err != nil {
-				return err
-			}
-			proxyHandler, ok := handler.(ProxyHandler)
-			if !ok {
-				uid, err := handler.GetUID(resource)
-				if err != nil {
-					return err
-				}
-				return fmt.Errorf("kind %s (for resource %s) does not support proxying", resource.Kind(), uid)
-			}
-			proxyURL, err := proxyHandler.ProxyURL(resource)
-			if err != nil {
-				return err
-			}
-			path = proxyURL
+	}
+	if p.Watch {
+		livereload.Initialize()
+		watcher, err := NewWatcher(p.updateWatchedResource)
+		if err != nil {
+			return err
 		}
-
-		p.openInBrowser(p.URL(path))
+		err = watcher.Watch(p.ResourcePath)
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("Listening on %s\n", p.URL("/"))
 	return http.ListenAndServe(fmt.Sprintf(":%d", p.port), r)
 }
 
-func (p *Server) ParseResources(resourcesPath string) error {
+func (p *Server) ParseResources(resourcesPath string) (Resources, error) {
 	resources, err := p.parser.Parse(resourcesPath, p.parserOpts)
 	p.parserErr = err
-	if err != nil {
-		return err
-	}
-
 	p.Resources.Merge(resources)
-
-	return nil
+	return resources, err
 }
 
 func (p *Server) URL(path string) string {
@@ -211,24 +197,33 @@ func (p *Server) URL(path string) string {
 	return fmt.Sprintf("http://localhost:%d%s", p.port, path)
 }
 
-func (p *Server) openInBrowser(url string) {
-	var err error
-
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		err = exec.Command("open", url).Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
+func (p *Server) updateWatchedResource(name string) error {
+	resources, err := p.ParseResources(name)
+	if errors.As(err, &UnrecognisedFormatError{}) {
+		log.Printf("Skipping %s", name)
+		return nil
 	}
 	if err != nil {
-		log.Fatal(err)
+		log.Error("Error: ", err)
+		return err
 	}
+	for _, resource := range resources.AsList() {
+		handler, err := p.Registry.GetHandler(resource.Kind())
+		if err != nil {
+			log.Printf("Error: %v", err)
+			continue
+		}
+		_, ok := handler.(ProxyHandler)
+		if ok {
+			log.Info("Changes detected. Applying ", name)
+			err = livereload.Reload(resource.Kind(), resource.Name(), resource.Spec())
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
-
 func (p *Server) blockHandler(response string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -241,15 +236,6 @@ func (p *Server) blockHandler(response string) http.HandlerFunc {
 
 // ProxyRequestHandler handles the http request using proxy
 func (p *Server) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
-	p.proxy.ServeHTTP(w, r)
-}
-
-func (p *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
-	_, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-	}
-
 	p.proxy.ServeHTTP(w, r)
 }
 
@@ -273,4 +259,20 @@ func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 		SendError(w, "Error while executing template", err, 500)
 		return
 	}
+}
+
+func (p *Server) UpdateResource(name string, resource Resource) error {
+	out, _, _, err := Format(p.Registry, p.ResourcePath, &resource, p.OutputFormat, p.OnlySpec)
+	if err != nil {
+		return fmt.Errorf("error formatting content: %s", err)
+	}
+
+	existing, found := p.Resources.Find(NewResourceRef("Dashboard", name))
+	if !found {
+		return fmt.Errorf("dashboard with UID %s not found", name)
+	}
+	if !existing.Source.Rewritable {
+		return fmt.Errorf("the source for this dashboard is not rewritable")
+	}
+	return os.WriteFile(existing.Source.Path, out, 0644)
 }

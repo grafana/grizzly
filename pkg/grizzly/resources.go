@@ -164,6 +164,10 @@ func (r *Resource) Spec() map[string]interface{} {
 	return r.Body["spec"].(map[string]interface{})
 }
 
+func (r *Resource) SetSpec(spec map[string]any) {
+	r.Body["spec"] = spec
+}
+
 func (r *Resource) SpecAsJSON() (string, error) {
 	j, err := json.MarshalIndent(r.Spec(), "", "  ")
 	if err != nil {
@@ -215,6 +219,16 @@ func (r Resources) First() Resource {
 
 func (r Resources) Find(ref ResourceRef) (Resource, bool) {
 	return r.collection.Get(ref)
+}
+
+func (r Resources) FindByFilename(path string) (Resource, bool) {
+	for _, resource := range r.AsList() {
+		if resource.Source.Path == path {
+			return resource, true
+		}
+	}
+
+	return Resource{}, false
 }
 
 func (r Resources) Filter(predicate func(Resource) bool) Resources {

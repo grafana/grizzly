@@ -32,6 +32,7 @@ type Opts struct {
 	OpenBrowser bool
 	ProxyPort   int
 	CanSave     bool
+	Watch       bool
 }
 
 func configPathCmd() *cli.Command {
@@ -83,7 +84,7 @@ func currentContextCmd() *cli.Command {
 
 func useContextCmd() *cli.Command {
 	cmd := &cli.Command{
-		Use:   "use-context",
+		Use:   "use-context <context-name>",
 		Short: "Select a context",
 		Args:  cli.ArgsExact(1),
 	}
@@ -100,7 +101,7 @@ func getContextsCmd() *cli.Command {
 	cmd := &cli.Command{
 		Use:   "get-contexts",
 		Short: "list configured contexts",
-		Args:  cli.ArgsRange(0, 1),
+		Args:  cli.ArgsNone(),
 	}
 	var opts LoggingOpts
 
@@ -137,7 +138,7 @@ func getConfigCmd() *cli.Command {
 
 func setCmd() *cli.Command {
 	cmd := &cli.Command{
-		Use:   "set [provider.key value]",
+		Use:   "set <key> <value>",
 		Short: "Set a configuration value for the current context",
 		Args:  cli.ArgsExact(2),
 	}
@@ -151,7 +152,7 @@ func setCmd() *cli.Command {
 
 func unsetCmd() *cli.Command {
 	cmd := &cli.Command{
-		Use:   "unset [provider.key]",
+		Use:   "unset <key>",
 		Short: "Unset a configuration value for the current context",
 		Args:  cli.ArgsExact(1),
 		Run: func(cmd *cli.Command, args []string) error {
@@ -164,7 +165,7 @@ func unsetCmd() *cli.Command {
 
 func createContextCmd() *cli.Command {
 	cmd := &cli.Command{
-		Use:   "create-context",
+		Use:   "create-context <context-name>",
 		Short: "Create a configuration context",
 		Args:  cli.ArgsExact(1),
 	}
