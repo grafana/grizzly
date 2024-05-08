@@ -12,8 +12,7 @@ import (
 )
 
 func TestLibraryElements(t *testing.T) {
-	provider, err := grafana.NewProvider(&testutil.TestContext().Grafana)
-	require.NoError(t, err)
+	provider := grafana.NewProvider(&testutil.TestContext().Grafana)
 	handler := grafana.NewLibraryElementHandler(provider)
 
 	t.Run("create libraryElement - success", func(t *testing.T) {

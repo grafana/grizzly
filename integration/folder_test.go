@@ -13,8 +13,7 @@ import (
 )
 
 func TestFolders(t *testing.T) {
-	provider, err := grafana.NewProvider(&testutil.TestContext().Grafana)
-	require.NoError(t, err)
+	provider := grafana.NewProvider(&testutil.TestContext().Grafana)
 	handler := grafana.NewFolderHandler(provider)
 
 	dir := "testdata/folders"
