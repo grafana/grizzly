@@ -16,19 +16,22 @@ type Provider struct {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(config *config.MimirConfig) (*Provider, error) {
+func NewProvider(config *config.MimirConfig) *Provider {
 	clientTool := client.NewHTTPClient(config)
-	if config.Address == "" {
-		return nil, fmt.Errorf("mimir address is not set")
-	}
-	if config.TenantID == "" {
-		return nil, fmt.Errorf("mimir tenant id is not set")
-	}
-
 	return &Provider{
 		config:     config,
 		clientTool: clientTool,
-	}, nil
+	}
+}
+
+func (p *Provider) Validate() error {
+	if p.config.Address == "" {
+		return fmt.Errorf("mimir address is not set")
+	}
+	if p.config.TenantID == "" {
+		return fmt.Errorf("mimir tenant id is not set")
+	}
+	return nil
 }
 
 func (p *Provider) Name() string {
