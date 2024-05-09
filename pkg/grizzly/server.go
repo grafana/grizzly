@@ -243,10 +243,10 @@ func (p *Server) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // RootHandler lists all local proxyable resources
-func (s *Server) IframeHandler(w http.ResponseWriter, r *http.Request) {
+func (p *Server) IframeHandler(w http.ResponseWriter, r *http.Request) {
 	kind := chi.URLParam(r, "kind")
 	name := chi.URLParam(r, "name")
-	handler, err := s.Registry.GetHandler(kind)
+	handler, err := p.Registry.GetHandler(kind)
 	if err != nil {
 		SendError(w, fmt.Sprintf("Error getting handler for %s/%s", kind, name), err, 500)
 		return
@@ -259,7 +259,7 @@ func (s *Server) IframeHandler(w http.ResponseWriter, r *http.Request) {
 	url := proxyHandler.ProxyURL(name)
 	templateVars := map[string]string{
 		"IframeURL":      url,
-		"CurrentContext": s.CurrentContext,
+		"CurrentContext": p.CurrentContext,
 	}
 
 	if err := templates.ExecuteTemplate(w, "proxy/iframe.html.tmpl", templateVars); err != nil {
