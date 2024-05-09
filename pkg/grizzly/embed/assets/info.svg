@@ -24,10 +24,10 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="8.5094276"
-     inkscape:cx="28.791596"
-     inkscape:cy="36.723974"
-     inkscape:window-width="1504"
-     inkscape:window-height="1289"
+     inkscape:cx="28.909113"
+     inkscape:cy="36.782733"
+     inkscape:window-width="1452"
+     inkscape:window-height="1212"
      inkscape:window-x="26"
      inkscape:window-y="23"
      inkscape:window-maximized="0"
@@ -39,12 +39,12 @@
      inkscape:groupmode="layer"
      id="layer1">
     <path
-       style="font-style:italic;font-weight:bold;font-size:10.5833px;line-height:1.25;font-family:'Times New Roman';-inkscape-font-specification:'Times New Roman, ';stroke-width:0.264583"
+       style="font-style:italic;font-weight:bold;font-size:10.5833px;line-height:1.25;font-family:'Times New Roman';-inkscape-font-specification:'Times New Roman, ';stroke-width:0.264583;fill:#ffffff"
        d="m 7.9291421,3.5471834 q 0.3203927,0 0.5374327,0.222208 0.222208,0.222208 0.222208,0.537433 0,0.315225 -0.222208,0.537437 -0.222208,0.2222 -0.5374327,0.2222 -0.3100577,0 -0.5322657,-0.2222 -0.222208,-0.222212 -0.222208,-0.537437 0,-0.315225 0.217041,-0.537433 0.222207,-0.222208 0.5374327,-0.222208 z m 0.3203927,2.377108 -1.0593634,3.67418 q -0.08785,0.31523 -0.08785,0.4134096 0,0.0569 0.04651,0.108521 0.04651,0.0465 0.09819,0.0465 0.08785,0 0.175699,-0.0775 0.2325427,-0.1912006 0.5581037,-0.6924606 l 0.175699,0.10335 Q 7.3762124,10.859372 6.497716,10.859372 q -0.335896,0 -0.5374327,-0.18603 -0.19637,-0.1912 -0.19637,-0.48059 0,-0.191201 0.08785,-0.4857606 l 0.7182997,-2.47012 q 0.1033517,-0.35657 0.1033517,-0.53744 0,-0.11368 -0.09818,-0.20153 -0.09818,-0.0879 -0.268716,-0.0879 -0.07751,0 -0.186035,0.005 l 0.06718,-0.2067 1.7518254,-0.28422 z"
        id="text1"
        aria-label="i" />
     <path
-       style="fill:none;stroke:#000000;stroke-width:1.346;stroke-linecap:square;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;stroke:#ffffff;stroke-width:1.346;stroke-linecap:square;stroke-dasharray:none;stroke-opacity:1"
        id="path1"
        sodipodi:type="arc"
        sodipodi:cx="7.2837276"

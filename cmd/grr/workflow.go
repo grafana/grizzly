@@ -391,7 +391,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		return grizzly.Serve(registry, parser, parserOpts, resourcesPath, opts.ProxyPort, opts.OpenBrowser, opts.Watch, onlySpec, format)
+		return grizzly.Serve(registry, parser, parserOpts, resourcesPath, opts.ProxyPort, opts.OpenBrowser, opts.Watch, onlySpec, format, currentContext.Name)
 	}
 	cmd.Flags().BoolVarP(&opts.Watch, "watch", "w", false, "Watch filesystem for changes")
 	cmd.Flags().BoolVarP(&opts.OpenBrowser, "open-browser", "b", false, "Open Grizzly in default browser")

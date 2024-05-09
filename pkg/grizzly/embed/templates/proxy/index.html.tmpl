@@ -6,17 +6,11 @@
     <link rel="stylesheet" href="/grizzly/assets/style.css"/>
 </head>
 <body dir="ltr">
-<header>
-    <nav>
-        <a href="/" class="logo">
-            <img src="/grizzly/assets/logo.svg" alt="logo"/>
-        </a>
+{{ template "proxy/header.html.tmpl" . }}
 
-        <h1>Grizzly</h1>
-    </nav>
-</header>
 
 <main>
+    <div>
     {{ if ne (len .ParseErrors) 0 }}
         <h1>Errors</h1>
 
@@ -37,6 +31,7 @@
             {{ end }}
         {{ end }}
     </ul>
+    </div>
 </main>
 </body>
 </html>

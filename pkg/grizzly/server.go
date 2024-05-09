@@ -25,13 +25,14 @@ type Server struct {
 	parserOpts ParserOptions
 	parserErr  error
 
-	Registry     Registry
-	Resources    Resources
-	UserAgent    string
-	ResourcePath string
-	OnlySpec     bool
-	OutputFormat string
-	Watch        bool
+	Registry       Registry
+	CurrentContext string
+	Resources      Resources
+	UserAgent      string
+	ResourcePath   string
+	OnlySpec       bool
+	OutputFormat   string
+	Watch          bool
 }
 
 var upgrader = websocket.Upgrader{
@@ -40,7 +41,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions, resourcePath string, port int, openBrowser, watch, onlySpec bool, outputFormat string) (*Server, error) {
+func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions, resourcePath string, port int, openBrowser, watch, onlySpec bool, outputFormat string, currentContext string) (*Server, error) {
 	prov, err := registry.GetProxyProvider()
 	if err != nil {
 		return nil, err
@@ -56,18 +57,19 @@ func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions
 	}
 
 	return &Server{
-		Registry:     registry,
-		Resources:    NewResources(),
-		parser:       parser,
-		parserOpts:   parserOpts,
-		UserAgent:    "grizzly",
-		ResourcePath: resourcePath,
-		port:         port,
-		openBrowser:  openBrowser,
-		OnlySpec:     onlySpec,
-		OutputFormat: outputFormat,
-		proxy:        proxy,
-		Watch:        watch,
+		Registry:       registry,
+		Resources:      NewResources(),
+		parser:         parser,
+		parserOpts:     parserOpts,
+		UserAgent:      "grizzly",
+		ResourcePath:   resourcePath,
+		port:           port,
+		openBrowser:    openBrowser,
+		OnlySpec:       onlySpec,
+		OutputFormat:   outputFormat,
+		proxy:          proxy,
+		Watch:          watch,
+		CurrentContext: currentContext,
 	}, nil
 }
 
@@ -150,6 +152,7 @@ func (p *Server) Start() error {
 		r.Post(pattern, p.blockHandler(response))
 	}
 	r.Get("/", p.RootHandler)
+	r.Get("/grizzly/{kind}/{name}", p.IframeHandler)
 	r.Get("/api/live/ws", livereload.LiveReloadHandlerFunc(upgrader))
 
 	if _, err := p.ParseResources(p.ResourcePath); err != nil {
@@ -239,6 +242,32 @@ func (p *Server) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	p.proxy.ServeHTTP(w, r)
 }
 
+// RootHandler lists all local proxyable resources
+func (s *Server) IframeHandler(w http.ResponseWriter, r *http.Request) {
+	kind := chi.URLParam(r, "kind")
+	name := chi.URLParam(r, "name")
+	handler, err := s.Registry.GetHandler(kind)
+	if err != nil {
+		SendError(w, fmt.Sprintf("Error getting handler for %s/%s", kind, name), err, 500)
+		return
+	}
+	proxyHandler, ok := handler.(ProxyHandler)
+	if !ok {
+		SendError(w, fmt.Sprintf("%s is not supported by the Grizzly server", kind), fmt.Errorf("%s is not supported by the Grizzly server", kind), 500)
+		return
+	}
+	url := proxyHandler.ProxyURL(name)
+	templateVars := map[string]string{
+		"IframeURL":      url,
+		"CurrentContext": s.CurrentContext,
+	}
+
+	if err := templates.ExecuteTemplate(w, "proxy/iframe.html.tmpl", templateVars); err != nil {
+		SendError(w, "Error while executing template", err, 500)
+		return
+	}
+}
+
 func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 	var parseErrors []error
 
@@ -251,9 +280,10 @@ func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	templateVars := map[string]any{
-		"Resources":   p.Resources.AsList(),
-		"ParseErrors": parseErrors,
-		"ServerPort":  p.port,
+		"Resources":      p.Resources.AsList(),
+		"ParseErrors":    parseErrors,
+		"ServerPort":     p.port,
+		"CurrentContext": p.CurrentContext,
 	}
 	if err := templates.ExecuteTemplate(w, "proxy/index.html.tmpl", templateVars); err != nil {
 		SendError(w, "Error while executing template", err, 500)
