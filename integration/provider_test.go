@@ -39,5 +39,4 @@ func TestEmptyProviders(t *testing.T) {
 			},
 		})
 	})
-
 }
