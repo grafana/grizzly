@@ -32,7 +32,7 @@ type Server struct {
 	ResourcePath   string
 	OnlySpec       bool
 	OutputFormat   string
-	Watch          bool
+	watch          bool
 }
 
 var upgrader = websocket.Upgrader{
@@ -41,7 +41,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions, resourcePath string, port int, openBrowser, watch, onlySpec bool, outputFormat string, currentContext string) (*Server, error) {
+func NewGrizzlyServer(registry Registry, resourcePath string, port int) (*Server, error) {
 	prov, err := registry.GetProxyProvider()
 	if err != nil {
 		return nil, err
@@ -57,20 +57,35 @@ func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions
 	}
 
 	return &Server{
-		Registry:       registry,
-		Resources:      NewResources(),
-		parser:         parser,
-		parserOpts:     parserOpts,
-		UserAgent:      "grizzly",
-		ResourcePath:   resourcePath,
-		port:           port,
-		openBrowser:    openBrowser,
-		OnlySpec:       onlySpec,
-		OutputFormat:   outputFormat,
-		proxy:          proxy,
-		Watch:          watch,
-		CurrentContext: currentContext,
+		Registry:     registry,
+		Resources:    NewResources(),
+		UserAgent:    "grizzly",
+		ResourcePath: resourcePath,
+		port:         port,
+		proxy:        proxy,
 	}, nil
+}
+
+func (p *Server) SetParser(parser Parser, parserOpts ParserOptions) {
+	p.parser = parser
+	p.parserOpts = parserOpts
+}
+
+func (p *Server) SetContext(currentContext string) {
+	p.CurrentContext = currentContext
+}
+
+func (p *Server) OpenBrowser() {
+	p.openBrowser = true
+}
+
+func (p *Server) Watch() {
+	p.watch = true
+}
+
+func (p *Server) SetFormatting(onlySpec bool, outputFormat string) {
+	p.OnlySpec = onlySpec
+	p.OutputFormat = outputFormat
 }
 
 var mustProxyGET = []string{
@@ -169,7 +184,7 @@ func (p *Server) Start() error {
 			return err
 		}
 	}
-	if p.Watch {
+	if p.watch {
 		livereload.Initialize()
 		watcher, err := NewWatcher(p.updateWatchedResource)
 		if err != nil {
