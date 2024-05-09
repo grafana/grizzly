@@ -4,8 +4,8 @@ on:
     branches:
       - main
     paths:
-      - 'docs/docs/**'
-      - 'docs/mkdocs.yml'
+      - 'docs/**'
+      - 'mkdocs.yml'
       - 'catalog-info.yaml'
       - '.github/workflows/publish-techdocs.yaml'
 concurrency:
@@ -19,4 +19,4 @@ jobs:
       namespace: default
       kind: component
       name: Grizzly
-      default-working-directory: ./docs
+      default-working-directory: ./

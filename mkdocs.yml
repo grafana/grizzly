@@ -1,10 +1,10 @@
 # To run locally
-# npx techdocs-cli serve -v -c ./docs/mkdocs.yml
+# npx techdocs-cli serve -v -c ./mkdocs.yml
 # 
 site_name: 'Grizzly Internal Documentation'
 repo_url: https://github.com/grafana/grizzly
 edit_uri: edit/main/docs
-docs_dir: .
+docs_dir: ./docs
 
 theme:
   name: material
