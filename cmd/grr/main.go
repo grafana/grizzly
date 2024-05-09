@@ -81,17 +81,14 @@ func main() {
 }
 
 func createRegistry(context *config.Context) grizzly.Registry {
-	providerInitFuncs := []func() grizzly.Provider{
-		func() grizzly.Provider { return grafana.NewProvider(&context.Grafana) },
-		func() grizzly.Provider { return mimir.NewProvider(&context.Mimir) },
-		func() grizzly.Provider { return syntheticmonitoring.NewProvider(&context.SyntheticMonitoring) },
+	providers := []grizzly.Provider{
+		grafana.NewProvider(&context.Grafana),
+		mimir.NewProvider(&context.Mimir),
+		syntheticmonitoring.NewProvider(&context.SyntheticMonitoring),
 	}
 
-	var providers []grizzly.Provider
-
 	var providerList []string
-	for _, initFunc := range providerInitFuncs {
-		provider := initFunc()
+	for _, provider := range providers {
 		err := provider.Validate()
 		if err != nil {
 			providerList = append(providerList, fmt.Sprintf("%s - inactive (%s)", provider.Name(), err.Error()))
