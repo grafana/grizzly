@@ -106,7 +106,23 @@ func getContextsCmd() *cli.Command {
 	var opts LoggingOpts
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		return config.GetContexts()
+		contexts, err := config.GetContexts()
+		if err != nil {
+			return err
+		}
+		currentContext, err := config.CurrentContext()
+		if err != nil {
+			return err
+		}
+
+		for _, context := range contexts {
+			if context == currentContext.Name {
+				fmt.Printf("* %s\n", context)
+			} else {
+				fmt.Printf("  %s\n", context)
+			}
+		}
+		return nil
 	}
 	return initialiseLogging(cmd, &opts)
 }
