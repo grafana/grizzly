@@ -27,13 +27,17 @@ type ClientProvider interface {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(config *config.GrafanaConfig) (*Provider, error) {
-	if config.URL == "" {
-		return nil, fmt.Errorf("grafana URL is not set")
-	}
+func NewProvider(config *config.GrafanaConfig) *Provider {
 	return &Provider{
 		config: config,
-	}, nil
+	}
+}
+
+func (p *Provider) Validate() error {
+	if p.config.URL == "" {
+		return fmt.Errorf("grafana URL is not set")
+	}
+	return nil
 }
 
 func (p *Provider) Name() string {

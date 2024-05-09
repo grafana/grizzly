@@ -15,6 +15,7 @@ type Provider interface {
 	Version() string
 	APIVersion() string
 	GetHandlers() []Handler
+	Validate() error
 }
 
 type ProxyProvider interface {

@@ -17,8 +17,7 @@ import (
 )
 
 func TestRules(t *testing.T) {
-	provider, err := mimir.NewProvider(&testutil.TestContext().Mimir)
-	require.NoError(t, err)
+	provider := mimir.NewProvider(&testutil.TestContext().Mimir)
 	handler := provider.GetHandlers()[0]
 
 	t.Run("create rule group", func(t *testing.T) {
