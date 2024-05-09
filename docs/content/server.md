@@ -21,6 +21,6 @@ HTTP server:
 grr serve <mydir>
 ```
 
-By default, this starts an HTTP server on (http://localhost:8080)[http://localhost:8080].
+By default, this starts an HTTP server on [http://localhost:8080](http://localhost:8080).
 Visiting this URL will show a list of the resources found in <mydir>. For
 now, this is limited to Grafana Dashboards only.
