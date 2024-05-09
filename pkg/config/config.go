@@ -124,7 +124,6 @@ func GetContexts() error {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	sort.Strings(keys)
 	for _, k := range keys {
 		if k == currentContext {
 			fmt.Printf("* %s\n", k)
