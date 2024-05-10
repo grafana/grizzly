@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset=utf-8>
+    <title>Grizzly</title>
+    <link rel="stylesheet" href="/grizzly/assets/style.css"/>
+</head>
+<body dir="ltr">
+<header>
+    <nav>
+        <a href="/" class="logo">
+            <img src="/grizzly/assets/logo.svg" alt="logo"/>
+        </a>
+
+        <h1>Grizzly</h1>
+    </nav>
+</header>
+
+<main>
+    <h1>Available remote resources</h1>
+    <p><a href="/">&gt;&gt; See local resources</a></p>
+
+    <p><input type="checkbox">select all</p>
+    <ul>
+        {{ range .Resources }}
+                <li>
+                    <input type="checkbox"> {{.Kind}} / {{.Name}}
+                    <a href="/view/?kind={{.Kind}}&uid={{.Name}}&format=json">json</a>
+                    |
+                    <a href="/view/?kind={{.Kind}}&uid={{.Name}}&format=yaml">yaml</a>
+                    |
+                    <a href="">view in Grafana</a>
+                </li>
+        {{ end }}
+    </ul>
+    <div class="downloads">
+    Download all resources as <a href="">json</a> | <a hef="">yaml</a>
+    </div>
+</main>
+</body>
+</html>

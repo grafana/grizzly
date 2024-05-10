@@ -28,6 +28,7 @@
     {{ end }}
     <h1>Available dashboards</h1>
 
+    <p><a href="/remote/">&gt;&gt; See remote resources</a></p>
     <ul>
         {{ range .Resources }}
             {{ if eq .Kind "Dashboard" }}

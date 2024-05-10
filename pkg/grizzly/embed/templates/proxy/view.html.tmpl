@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset=utf-8>
+    <title>Grizzly</title>
+    <link rel="stylesheet" href="/grizzly/assets/style.css"/>
+</head>
+<body dir="ltr">
+<header>
+    <nav>
+        <a href="/" class="logo">
+            <img src="/grizzly/assets/logo.svg" alt="logo"/>
+        </a>
+
+        <h1>Grizzly</h1>
+    </nav>
+</header>
+
+<main>
+    <h1>Resource {{.Kind}} // {{.UID }}</h1>
+
+    <p>
+        {{if eq .Format "json"}}json{{else}}<a href="?format=json&uid={{.UID}}&kind={{.Kind}}">json</a>{{end}}
+        |
+        {{if eq .Format "yaml"}}yaml{{else}}<a href="?format=yaml&uid={{.UID}}&kind={{.Kind}}">yaml</a>{{end}}
+    </p>
+    <textarea class="codebox" readonly>
+{{.Content}}
+    </textarea>
+</main>
+</body>
+</html>
