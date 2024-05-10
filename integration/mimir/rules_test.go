@@ -35,7 +35,7 @@ func TestRules(t *testing.T) {
 	})
 
 	// Mimir takes some seconds in sync the rules. If we get the list of them immediately, it could return an empty list.
-	time.Sleep(1 * time.Second)
+	time.Sleep(1500 * time.Millisecond)
 
 	t.Run("get remote rule list", func(t *testing.T) {
 		ids, err := handler.ListRemote()
