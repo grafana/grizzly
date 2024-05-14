@@ -1,6 +1,7 @@
 package grafana
 
 import (
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -416,7 +417,6 @@ func (h *DashboardHandler) DashboardJSONPostHandler(s grizzly.Server) http.Handl
 	}
 }
 
-func (h *DashboardHandler) ProxyURL(resource grizzly.Resource) (string, error) {
-	uid, err := h.GetUID(resource)
-	return fmt.Sprintf("/d/%s/slug", uid), err
+func (h *DashboardHandler) ProxyURL(uid string) string {
+	return fmt.Sprintf("/d/%s/slug", uid)
 }

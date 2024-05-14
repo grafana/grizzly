@@ -124,5 +124,5 @@ type ProxyHandler interface {
 	GetProxyEndpoints(p Server) []HTTPEndpoint
 
 	// ProxyURL returns a URL path for a resource on the proxy
-	ProxyURL(Resource) (string, error)
+	ProxyURL(uid string) string
 }

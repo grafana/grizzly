@@ -46,11 +46,7 @@ func (i BrowserInterface) Open(resources Resources) error {
 				}
 				return fmt.Errorf("kind %s (for resource %s) does not support proxying", resource.Kind(), uid)
 			}
-			proxyURL, err := proxyHandler.ProxyURL(resource)
-			if err != nil {
-				return err
-			}
-			path = proxyURL
+			path = proxyHandler.ProxyURL(resource.Name())
 		}
 	}
 
