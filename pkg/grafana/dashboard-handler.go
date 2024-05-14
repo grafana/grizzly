@@ -256,35 +256,35 @@ func (h *DashboardHandler) Detect(data map[string]any) bool {
 	return true
 }
 
-func (h *DashboardHandler) GetProxyEndpoints(p grizzly.Server) []grizzly.HTTPEndpoint {
+func (h *DashboardHandler) GetProxyEndpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{
 			Method:  "GET",
 			URL:     "/d/{uid}/{slug}",
-			Handler: h.resourceFromQueryParameterMiddleware(p, "grizzly_from_file", h.RootDashboardPageHandler(p)),
+			Handler: h.resourceFromQueryParameterMiddleware(s, "grizzly_from_file", h.RootDashboardPageHandler(s)),
 		},
 		{
 			Method:  "GET",
 			URL:     "/api/dashboards/uid/{uid}",
-			Handler: h.DashboardJSONGetHandler(p),
+			Handler: h.DashboardJSONGetHandler(s),
 		},
 		{
 			Method:  "POST",
 			URL:     "/api/dashboards/db",
-			Handler: h.DashboardJSONPostHandler(p),
+			Handler: h.DashboardJSONPostHandler(s),
 		},
 		{
 			Method:  "POST",
 			URL:     "/api/dashboards/db/",
-			Handler: h.DashboardJSONPostHandler(p),
+			Handler: h.DashboardJSONPostHandler(s),
 		},
 	}
 }
 
-func (h *DashboardHandler) resourceFromQueryParameterMiddleware(p grizzly.Server, parameterName string, next http.Handler) http.HandlerFunc {
+func (h *DashboardHandler) resourceFromQueryParameterMiddleware(s grizzly.Server, parameterName string, next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if fromFilePath := r.URL.Query().Get(parameterName); fromFilePath != "" {
-			if _, err := p.ParseResources(fromFilePath); err != nil {
+			if _, err := s.ParseResources(fromFilePath); err != nil {
 				grizzly.SendError(w, "could not parse resource", fmt.Errorf("could not parse resource"), http.StatusBadRequest)
 				return
 			}
@@ -294,7 +294,7 @@ func (h *DashboardHandler) resourceFromQueryParameterMiddleware(p grizzly.Server
 	}
 }
 
-func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server) http.HandlerFunc {
+func (h *DashboardHandler) RootDashboardPageHandler(s grizzly.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html")
 		config := h.Provider.(ClientProvider).Config()
@@ -314,7 +314,7 @@ func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server) http.Handl
 			req.Header.Set("Authorization", "Bearer "+config.Token)
 		}
 
-		req.Header.Set("User-Agent", p.UserAgent)
+		req.Header.Set("User-Agent", s.UserAgent)
 
 		client := &http.Client{}
 		resp, err := client.Do(req)
@@ -341,7 +341,7 @@ func (h *DashboardHandler) RootDashboardPageHandler(p grizzly.Server) http.Handl
 	}
 }
 
-func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server) http.HandlerFunc {
+func (h *DashboardHandler) DashboardJSONGetHandler(s grizzly.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		uid := chi.URLParam(r, "uid")
 		if uid == "" {
@@ -349,7 +349,7 @@ func (h *DashboardHandler) DashboardJSONGetHandler(p grizzly.Server) http.Handle
 			return
 		}
 
-		resource, found := p.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
+		resource, found := s.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
 		if !found {
 			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 404)
 			return
