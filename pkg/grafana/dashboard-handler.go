@@ -386,7 +386,7 @@ func (h *DashboardHandler) DashboardJSONPostHandler(s grizzly.Server) http.Handl
 			return
 		}
 		uid, ok := resp.Dashboard["uid"].(string)
-		if !ok {
+		if !ok || uid == "" {
 			grizzly.SendError(w, "Dashboard has no UID", fmt.Errorf("dashboard has no UID"), 400)
 			return
 		}
