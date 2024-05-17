@@ -7,6 +7,6 @@ import (
 type Mimir interface {
 	ListRules() (map[string][]models.PrometheusRuleGroup, error)
 	CreateRules(resource models.PrometheusRuleGrouping) error
-	ListAlertmanagerConfig() (models.PrometheusAlertmanagerConfig, error)
+	GetAlertmanagerConfig() (*models.PrometheusAlertmanagerConfig, error)
 	CreateAlertmangerConfig(resource models.PrometheusAlertmanagerConfig) error
 }

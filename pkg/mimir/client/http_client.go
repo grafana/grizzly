@@ -17,6 +17,12 @@ import (
 
 var loadRulesEndpoint = "%s/prometheus/config/v1/rules/%s"
 var listRulesEndpoint = "%s/prometheus/api/v1/rules"
+var alertmanagerAPIPath = "%s/api/v1/alerts"
+
+type GetAlertmanagerConfigResponse struct {
+	TemplateFiles      map[string]string `yaml:"template_files"`
+	AlertmanagerConfig string            `yaml:"alertmanager_config"`
+}
 
 type ListGroupResponse struct {
 	Status string `yaml:"status"`
@@ -37,6 +43,26 @@ type Client struct {
 
 func NewHTTPClient(config *config.MimirConfig) Mimir {
 	return &Client{config: config}
+}
+
+func (c *Client) CreateAlertmangerConfig(resource models.PrometheusAlertmanagerConfig) error {
+	return nil
+}
+
+func (c *Client) GetAlertmanagerConfig() (*models.PrometheusAlertmanagerConfig, error) {
+	url := fmt.Sprintf(alertmanagerAPIPath, c.config.Address)
+	res, err := c.doRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	config := models.PrometheusAlertmanagerConfig{}
+	err = yaml.Unmarshal(res, &config)
+	if err != nil {
+		return nil, errors.New("unable to unmarshal response")
+	}
+
+	return &config, nil
 }
 
 func (c *Client) ListRules() (map[string][]models.PrometheusRuleGroup, error) {

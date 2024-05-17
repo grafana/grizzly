@@ -13,6 +13,7 @@ type PrometheusRuleGrouping struct {
 }
 
 type PrometheusAlertmanagerConfig struct {
-	Namespace string      `yaml:"namespace"`
-	Config    interface{} `yaml:"config"`
+	Namespace          string      `yaml:"namespace"`
+	TemplateFiles      interface{} `yaml:"template_files"`
+	AlertmanagerConfig string      `yaml:"alertmanager_config"`
 }
