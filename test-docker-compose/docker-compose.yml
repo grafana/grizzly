@@ -69,7 +69,7 @@ services:
 
   mimir:
     image: grafana/mimir:2.12.0
-    command: [ "-config.file=/etc/mimir.yaml" ]
+    command: [ "-config.file=/etc/mimir.yaml", "-target=all,alertmanager" ]
     hostname: mimir
     volumes:
       - ./provisioning/mimir/mimir.yaml:/etc/mimir.yaml

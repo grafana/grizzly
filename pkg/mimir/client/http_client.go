@@ -140,11 +140,13 @@ func (c *Client) doRequest(method string, url string, body []byte) ([]byte, erro
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("request to load rules failed: %s", err)
+		return nil, fmt.Errorf("request failed: %s", err)
 	}
 
-	if res.StatusCode >= 300 {
-		return nil, fmt.Errorf("error loading rules: %d", res.StatusCode)
+	if res.StatusCode >= 300 && res.StatusCode != http.StatusNotFound {
+		return nil, fmt.Errorf("error: %d", res.StatusCode)
+	} else if res.StatusCode == http.StatusNotFound {
+		return []byte(nil), nil
 	}
 
 	b, err := io.ReadAll(res.Body)

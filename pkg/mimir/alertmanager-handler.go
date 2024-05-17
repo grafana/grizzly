@@ -53,17 +53,22 @@ func (h *AlertmanagerHandler) GetSpecUID(resource grizzly.Resource) (string, err
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
 func (h *AlertmanagerHandler) GetByUID(uid string) (*grizzly.Resource, error) {
-	return nil, fmt.Errorf("GetByUID not implemented for PrometheusAlertmanagerConfig")
+	return h.getRemoteAlertmanagerConfig()
 }
 
 // GetRemote retrieves an alertmanager config as a Resource
 func (h *AlertmanagerHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
-	return h.getRemoteAlertmanagerConfig(resource.Name())
+	return h.getRemoteAlertmanagerConfig()
 }
 
 // ListRemote retrieves as list of UIDs of all remote resources
 func (h *AlertmanagerHandler) ListRemote() ([]string, error) {
-	return nil, fmt.Errorf("ListRemote not implemented for PrometheusAlertmanagerConfig")
+	_, err := h.getRemoteAlertmanagerConfig()
+	if err != nil {
+		return nil, err
+	}
+	resources := []string{"alertmanger-config"}
+	return resources, nil
 }
 
 // Add pushes an alertmanager config to Mimir via the API
@@ -77,11 +82,7 @@ func (h *AlertmanagerHandler) Update(existing, resource grizzly.Resource) error 
 }
 
 // getRemoteAlertmanagerConfig retrieves an alertmanager config object from Mimir
-func (h *AlertmanagerHandler) getRemoteAlertmanagerConfig(uid string) (*grizzly.Resource, error) {
-	// parts := strings.SplitN(uid, ".", 2)
-	// namespace := parts[0]
-	// name := parts[1]
-
+func (h *AlertmanagerHandler) getRemoteAlertmanagerConfig() (*grizzly.Resource, error) {
 	cfg, err := h.clientTool.GetAlertmanagerConfig()
 	if err != nil {
 		return nil, err
@@ -93,7 +94,7 @@ func (h *AlertmanagerHandler) getRemoteAlertmanagerConfig(uid string) (*grizzly.
 		return nil, err
 	}
 
-	err = yaml.Unmarshal(cfgYaml, spec)
+	err = yaml.Unmarshal(cfgYaml, &spec)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +110,25 @@ func (h *AlertmanagerHandler) getRemoteAlertmanagerConfig(uid string) (*grizzly.
 func (h *AlertmanagerHandler) writeAlertmanagerConfig(resource grizzly.Resource) error {
 	newConfig := models.PrometheusAlertmanagerConfig{
 		TemplateFiles:      map[string]string{},
-		AlertmanagerConfig: resource.Spec()["alertmanager_config"].(string),
+		AlertmanagerConfig: "", //resource.Spec()["alertmanager_config"].(string),
 	}
+	alertmanagerConfigIn, found := resource.Spec()["alertmanager_config"]
+	if found {
+		alertmanagerConfig, err := yaml.Marshal(alertmanagerConfigIn)
+		if err != nil {
+			return err
+		}
+		newConfig.AlertmanagerConfig = string(alertmanagerConfig)
+	}
+
+	templateFilesIn, found := resource.Spec()["template_files"]
+	if found {
+		templateFiles := make(map[string]string)
+		for key, in := range templateFilesIn.(map[string]interface{}) {
+			templateFiles[key] = in.(string)
+		}
+		newConfig.TemplateFiles = templateFiles
+	}
+
 	return h.clientTool.CreateAlertmangerConfig(newConfig)
 }
