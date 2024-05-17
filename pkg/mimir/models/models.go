@@ -13,6 +13,6 @@ type PrometheusRuleGrouping struct {
 }
 
 type PrometheusAlertmanagerConfig struct {
-	TemplateFiles      interface{} `yaml:"template_files"`
-	AlertmanagerConfig string      `yaml:"alertmanager_config"`
+	TemplateFiles      map[string]string `yaml:"template_files"`
+	AlertmanagerConfig string            `yaml:"alertmanager_config"`
 }

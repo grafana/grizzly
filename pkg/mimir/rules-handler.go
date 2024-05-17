@@ -59,7 +59,7 @@ func (h *RuleHandler) GetByUID(uid string) (*grizzly.Resource, error) {
 	return h.getRemoteRuleGroup(uid)
 }
 
-// GetRemote retrieves a datasource as a Resource
+// GetRemote retrieves a rule group as a Resource
 func (h *RuleHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
 	uid := fmt.Sprintf("%s.%s", resource.GetMetadata("namespace"), resource.Name())
 	return h.getRemoteRuleGroup(uid)
@@ -70,17 +70,17 @@ func (h *RuleHandler) ListRemote() ([]string, error) {
 	return h.getRemoteRuleGroupList()
 }
 
-// Add pushes a datasource to Grafana via the API
+// Add pushes a rule group to Mimir via the API
 func (h *RuleHandler) Add(resource grizzly.Resource) error {
 	return h.writeRuleGroup(resource)
 }
 
-// Update pushes a datasource to Grafana via the API
+// Update pushes a rule group to Mimir via the API
 func (h *RuleHandler) Update(existing, resource grizzly.Resource) error {
 	return h.writeRuleGroup(resource)
 }
 
-// getRemoteRuleGroup retrieves a datasource object from Grafana
+// getRemoteRuleGroup retrieves a rule group object from Mimir
 func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) {
 	parts := strings.SplitN(uid, ".", 2)
 	namespace := parts[0]
@@ -111,7 +111,7 @@ func (h *RuleHandler) getRemoteRuleGroup(uid string) (*grizzly.Resource, error) 
 	return nil, grizzly.ErrNotFound
 }
 
-// getRemoteRuleGroupList retrieves a datasource object from Grafana
+// getRemoteRuleGroupList retrieves a rule group object from Mimir
 func (h *RuleHandler) getRemoteRuleGroupList() ([]string, error) {
 	groupings, err := h.clientTool.ListRules()
 	if err != nil {
