@@ -1,8 +1,7 @@
 apiVersion: grizzly.grafana.com/v1alpha1
 kind: PrometheusAlertmanagerConfig
 metadata:
-  name: test-rules-1
-  namespace: test-rules-1
+  name: test-alertmanager
 spec:
   template_files:
     demo: "{{ define \"demo.text\" }}hi{{ end }}"
