@@ -129,6 +129,5 @@ func (h *AlertmanagerHandler) writeAlertmanagerConfig(resource grizzly.Resource)
 		}
 		newConfig.TemplateFiles = templateFiles
 	}
-
 	return h.clientTool.CreateAlertmangerConfig(newConfig)
 }

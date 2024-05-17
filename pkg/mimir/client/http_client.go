@@ -49,7 +49,8 @@ func NewHTTPClient(config *config.MimirConfig) Mimir {
 
 func (c *Client) CreateAlertmangerConfig(resource models.PrometheusAlertmanagerConfig) error {
 	url := fmt.Sprintf(alertmanagerAPIPath, c.config.Address)
-	cfg, err := yaml.Marshal(resource)
+	cfg, err := yaml.Marshal(&resource)
+	fmt.Println(string(cfg))
 	if err != nil {
 		return err
 	}

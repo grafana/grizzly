@@ -3,38 +3,15 @@ kind: PrometheusAlertmanagerConfig
 metadata:
   name: no-template-files
 spec:
-  alertmanager_config:
+  alertmanager_config: 
     global:
-      http_config:
-        enable_http2: true
-        follow_redirects: true
-        proxy_url: null
-      telegram_api_url: https://example.com
-      receivers:
-      - name: default-reciever
-      - name: demoReciever
-        slack_configs:
-          - api_url: https://slack.example.com
-            channel: '#demo'
-            text: demo
-            title: demo
-      route:
-        - reciever: default-reciever
-          continue: false
-          matchers: []
-          mute_time_intervals: []
-          routes:
-            - continue: false
-              group_by:
-                - alertname
-                - grafana_folder
-              group_interval: 1m
-              group_wait: 1m
-              matchers:
-                - slack=true
-              reciever: demoReciever
-              repeat_interval: 15m
-      templates:
-        - demo
-
-
+      smtp_smarthost: 'localhost:25'
+      smtp_from: 'youraddress@example.org'
+    templates:
+      - 'default_template'
+    route:
+      receiver: example-email
+    receivers:
+      - name: example-email
+        email_configs:
+        - to: 'youraddress@example.org'
