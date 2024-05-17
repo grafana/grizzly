@@ -1,0 +1,17 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: Grizzly
+  title: Grizzly
+  description: |
+    Command line utility for Grafana
+  links:
+    - title: Slack Channel
+      url: https://raintank-corp.slack.com/archives/C018SLDD5MW
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: grafana/grizzly
+spec:
+  type: service
+  owner: group:default/platform-cat
+  lifecycle: production

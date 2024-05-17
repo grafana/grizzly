@@ -25,13 +25,14 @@ type Server struct {
 	parserOpts ParserOptions
 	parserErr  error
 
-	Registry     Registry
-	Resources    Resources
-	UserAgent    string
-	ResourcePath string
-	OnlySpec     bool
-	OutputFormat string
-	Watch        bool
+	Registry       Registry
+	CurrentContext string
+	Resources      Resources
+	UserAgent      string
+	ResourcePath   string
+	OnlySpec       bool
+	OutputFormat   string
+	watch          bool
 }
 
 var upgrader = websocket.Upgrader{
@@ -40,7 +41,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions, resourcePath string, port int, openBrowser, watch, onlySpec bool, outputFormat string) (*Server, error) {
+func NewGrizzlyServer(registry Registry, resourcePath string, port int) (*Server, error) {
 	prov, err := registry.GetProxyProvider()
 	if err != nil {
 		return nil, err
@@ -58,17 +59,33 @@ func NewGrizzlyServer(registry Registry, parser Parser, parserOpts ParserOptions
 	return &Server{
 		Registry:     registry,
 		Resources:    NewResources(),
-		parser:       parser,
-		parserOpts:   parserOpts,
 		UserAgent:    "grizzly",
 		ResourcePath: resourcePath,
 		port:         port,
-		openBrowser:  openBrowser,
-		OnlySpec:     onlySpec,
-		OutputFormat: outputFormat,
 		proxy:        proxy,
-		Watch:        watch,
 	}, nil
+}
+
+func (s *Server) SetParser(parser Parser, parserOpts ParserOptions) {
+	s.parser = parser
+	s.parserOpts = parserOpts
+}
+
+func (s *Server) SetContext(currentContext string) {
+	s.CurrentContext = currentContext
+}
+
+func (s *Server) OpenBrowser() {
+	s.openBrowser = true
+}
+
+func (s *Server) Watch() {
+	s.watch = true
+}
+
+func (s *Server) SetFormatting(onlySpec bool, outputFormat string) {
+	s.OnlySpec = onlySpec
+	s.OutputFormat = outputFormat
 }
 
 var mustProxyGET = []string{
@@ -111,7 +128,7 @@ var blockJSONpost = map[string]string{
 	"/api/ma/events":        "null",
 }
 
-func (p *Server) Start() error {
+func (s *Server) Start() error {
 	assetsFS, err := fs.Sub(embedFS, "embed/assets")
 	if err != nil {
 		return fmt.Errorf("could not create a sub-tree from the embedded assets FS: %w", err)
@@ -122,10 +139,10 @@ func (p *Server) Start() error {
 	r.Use(middleware.Logger)
 	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
 
-	for _, handler := range p.Registry.Handlers {
+	for _, handler := range s.Registry.Handlers {
 		proxyHandler, ok := handler.(ProxyHandler)
 		if ok {
-			for _, endpoint := range proxyHandler.GetProxyEndpoints(*p) {
+			for _, endpoint := range proxyHandler.GetProxyEndpoints(*s) {
 				switch endpoint.Method {
 				case "GET":
 					r.Get(endpoint.URL, endpoint.Handler)
@@ -138,67 +155,68 @@ func (p *Server) Start() error {
 		}
 	}
 	for _, pattern := range mustProxyGET {
-		r.Get(pattern, p.ProxyRequestHandler)
+		r.Get(pattern, s.ProxyRequestHandler)
 	}
 	for _, pattern := range mustProxyPOST {
-		r.Post(pattern, p.ProxyRequestHandler)
+		r.Post(pattern, s.ProxyRequestHandler)
 	}
 	for pattern, response := range blockJSONget {
-		r.Get(pattern, p.blockHandler(response))
+		r.Get(pattern, s.blockHandler(response))
 	}
 	for pattern, response := range blockJSONpost {
-		r.Post(pattern, p.blockHandler(response))
+		r.Post(pattern, s.blockHandler(response))
 	}
-	r.Get("/", p.RootHandler)
+	r.Get("/", s.RootHandler)
+	r.Get("/grizzly/{kind}/{name}", s.IframeHandler)
 	r.Get("/api/live/ws", livereload.LiveReloadHandlerFunc(upgrader))
 
-	if _, err := p.ParseResources(p.ResourcePath); err != nil {
+	if _, err := s.ParseResources(s.ResourcePath); err != nil {
 		fmt.Print(err)
 	}
 
-	if p.openBrowser {
-		browser, err := NewBrowserInterface(p.Registry, p.ResourcePath, p.port)
+	if s.openBrowser {
+		browser, err := NewBrowserInterface(s.Registry, s.ResourcePath, s.port)
 		if err != nil {
 			return err
 		}
-		err = browser.Open(p.Resources)
+		err = browser.Open(s.Resources)
 		if err != nil {
 			return err
 		}
 	}
-	if p.Watch {
+	if s.watch {
 		livereload.Initialize()
-		watcher, err := NewWatcher(p.updateWatchedResource)
+		watcher, err := NewWatcher(s.updateWatchedResource)
 		if err != nil {
 			return err
 		}
-		err = watcher.Watch(p.ResourcePath)
+		err = watcher.Watch(s.ResourcePath)
 		if err != nil {
 			return err
 		}
 	}
 
-	fmt.Printf("Listening on %s\n", p.URL("/"))
-	return http.ListenAndServe(fmt.Sprintf(":%d", p.port), r)
+	fmt.Printf("Listening on %s\n", s.URL("/"))
+	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), r)
 }
 
-func (p *Server) ParseResources(resourcesPath string) (Resources, error) {
-	resources, err := p.parser.Parse(resourcesPath, p.parserOpts)
-	p.parserErr = err
-	p.Resources.Merge(resources)
+func (s *Server) ParseResources(resourcesPath string) (Resources, error) {
+	resources, err := s.parser.Parse(resourcesPath, s.parserOpts)
+	s.parserErr = err
+	s.Resources.Merge(resources)
 	return resources, err
 }
 
-func (p *Server) URL(path string) string {
+func (s *Server) URL(path string) string {
 	if len(path) == 0 || path[0] != '/' {
 		path = "/" + path
 	}
 
-	return fmt.Sprintf("http://localhost:%d%s", p.port, path)
+	return fmt.Sprintf("http://localhost:%d%s", s.port, path)
 }
 
-func (p *Server) updateWatchedResource(name string) error {
-	resources, err := p.ParseResources(name)
+func (s *Server) updateWatchedResource(name string) error {
+	resources, err := s.ParseResources(name)
 	if errors.As(err, &UnrecognisedFormatError{}) {
 		log.Printf("Skipping %s", name)
 		return nil
@@ -208,7 +226,7 @@ func (p *Server) updateWatchedResource(name string) error {
 		return err
 	}
 	for _, resource := range resources.AsList() {
-		handler, err := p.Registry.GetHandler(resource.Kind())
+		handler, err := s.Registry.GetHandler(resource.Kind())
 		if err != nil {
 			log.Printf("Error: %v", err)
 			continue
@@ -224,7 +242,7 @@ func (p *Server) updateWatchedResource(name string) error {
 	}
 	return nil
 }
-func (p *Server) blockHandler(response string) http.HandlerFunc {
+func (s *Server) blockHandler(response string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -235,25 +253,52 @@ func (p *Server) blockHandler(response string) http.HandlerFunc {
 }
 
 // ProxyRequestHandler handles the http request using proxy
-func (p *Server) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
-	p.proxy.ServeHTTP(w, r)
+func (s *Server) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
+	s.proxy.ServeHTTP(w, r)
 }
 
-func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
+// RootHandler lists all local proxyable resources
+func (s *Server) IframeHandler(w http.ResponseWriter, r *http.Request) {
+	kind := chi.URLParam(r, "kind")
+	name := chi.URLParam(r, "name")
+	handler, err := s.Registry.GetHandler(kind)
+	if err != nil {
+		SendError(w, fmt.Sprintf("Error getting handler for %s/%s", kind, name), err, 500)
+		return
+	}
+	proxyHandler, ok := handler.(ProxyHandler)
+	if !ok {
+		SendError(w, fmt.Sprintf("%s is not supported by the Grizzly server", kind), fmt.Errorf("%s is not supported by the Grizzly server", kind), 500)
+		return
+	}
+	url := proxyHandler.ProxyURL(name)
+	templateVars := map[string]string{
+		"IframeURL":      url,
+		"CurrentContext": s.CurrentContext,
+	}
+
+	if err := templates.ExecuteTemplate(w, "proxy/iframe.html.tmpl", templateVars); err != nil {
+		SendError(w, "Error while executing template", err, 500)
+		return
+	}
+}
+
+func (s *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 	var parseErrors []error
 
-	if p.parserErr != nil {
-		if merr, ok := p.parserErr.(*multierror.Error); ok {
+	if s.parserErr != nil {
+		if merr, ok := s.parserErr.(*multierror.Error); ok {
 			parseErrors = merr.Errors
 		} else {
-			parseErrors = []error{p.parserErr}
+			parseErrors = []error{s.parserErr}
 		}
 	}
 
 	templateVars := map[string]any{
-		"Resources":   p.Resources.AsList(),
-		"ParseErrors": parseErrors,
-		"ServerPort":  p.port,
+		"Resources":      s.Resources.AsList(),
+		"ParseErrors":    parseErrors,
+		"ServerPort":     s.port,
+		"CurrentContext": s.CurrentContext,
 	}
 	if err := templates.ExecuteTemplate(w, "proxy/index.html.tmpl", templateVars); err != nil {
 		SendError(w, "Error while executing template", err, 500)
@@ -261,13 +306,13 @@ func (p *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-func (p *Server) UpdateResource(name string, resource Resource) error {
-	out, _, _, err := Format(p.Registry, p.ResourcePath, &resource, p.OutputFormat, p.OnlySpec)
+func (s *Server) UpdateResource(name string, resource Resource) error {
+	out, _, _, err := Format(s.Registry, s.ResourcePath, &resource, s.OutputFormat, s.OnlySpec)
 	if err != nil {
 		return fmt.Errorf("error formatting content: %s", err)
 	}
 
-	existing, found := p.Resources.Find(NewResourceRef("Dashboard", name))
+	existing, found := s.Resources.Find(NewResourceRef("Dashboard", name))
 	if !found {
 		return fmt.Errorf("dashboard with UID %s not found", name)
 	}

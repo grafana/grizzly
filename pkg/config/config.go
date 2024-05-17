@@ -113,25 +113,17 @@ func NewConfig() {
 	viper.Set("contexts.default.name", "default")
 }
 
-func GetContexts() error {
+func GetContexts() ([]string, error) {
 	contexts := map[string]interface{}{}
-	currentContext := viper.GetString(CurrentContextSetting)
 	if err := viper.UnmarshalKey("contexts", &contexts); err != nil {
-		return err
+		return nil, err
 	}
 	keys := make([]string, 0, len(contexts))
 	for k := range contexts {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	for _, k := range keys {
-		if k == currentContext {
-			fmt.Printf("* %s\n", k)
-		} else {
-			fmt.Printf("  %s\n", k)
-		}
-	}
-	return nil
+	return keys, nil
 }
 
 func UseContext(context string) error {

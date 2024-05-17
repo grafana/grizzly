@@ -3,12 +3,14 @@ package grafana
 import (
 	"crypto/tls"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http/httputil"
 	"net/url"
 	"path/filepath"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
+	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -25,13 +27,17 @@ type ClientProvider interface {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(config *config.GrafanaConfig) (*Provider, error) {
-	if config.URL == "" {
-		return nil, fmt.Errorf("grafana URL is not set")
-	}
+func NewProvider(config *config.GrafanaConfig) *Provider {
 	return &Provider{
 		config: config,
-	}, nil
+	}
+}
+
+func (p *Provider) Validate() error {
+	if p.config.URL == "" {
+		return fmt.Errorf("grafana URL is not set")
+	}
+	return nil
 }
 
 func (p *Provider) Name() string {
@@ -105,6 +111,18 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 }
 
 func (p *Provider) SetupProxy() (*httputil.ReverseProxy, error) {
+	client, err := p.Client()
+	if err != nil {
+		return nil, err
+	}
+	_, err = client.Dashboards.GetHomeDashboard()
+	if err != nil {
+		if errors.Is(err, &dashboards.GetHomeDashboardUnauthorized{}) {
+			return nil, fmt.Errorf("error checking authentication: %v", err)
+		}
+		return nil, fmt.Errorf("error setting the proxy: %v", err)
+	}
+
 	u, err := url.Parse(p.config.URL)
 	if err != nil {
 		return nil, err

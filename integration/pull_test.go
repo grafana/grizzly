@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -18,7 +19,7 @@ func TestPull(t *testing.T) {
 			RunOnContexts: allContexts,
 			Commands: []Command{
 				{
-					Command:                "pull " + pullDir,
+					Command:                fmt.Sprintf("pull %s -t Dashboard -t Dashboardfolder -t Datasource", pullDir),
 					ExpectedCode:           0,
 					ExpectedOutputContains: `Dashboard.ReciqtgGk pulled`,
 				},

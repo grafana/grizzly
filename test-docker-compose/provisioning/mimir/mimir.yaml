@@ -1,0 +1,8 @@
+ruler_storage:
+  backend: filesystem
+  local:
+    directory: /tmp/mimir/rules
+
+ruler:
+  enable_api: true
+  poll_interval: 1s

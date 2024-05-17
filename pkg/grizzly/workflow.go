@@ -516,17 +516,6 @@ func Watch(registry Registry, watchDir string, parser Parser, parserOpts ParserO
 	return nil
 }
 
-// Serve starts an HTTP server that can be used to navigate Grizzly resources,
-// as well as allowing visualisation of resources handed to Grizzly.
-// If pure files, they can be saved too.
-func Serve(registry Registry, parser Parser, parserOpts ParserOptions, resourcePath string, port int, openBrowser, watch, onlySpec bool, outputFormat string) error {
-	server, err := NewGrizzlyServer(registry, parser, parserOpts, resourcePath, port, openBrowser, watch, onlySpec, outputFormat)
-	if err != nil {
-		return err
-	}
-	return server.Start()
-}
-
 // Export renders Jsonnet resources then saves them to a directory
 func Export(registry Registry, exportDir string, resources Resources, onlySpec bool, outputFormat string) error {
 	if _, err := os.Stat(exportDir); os.IsNotExist(err) {

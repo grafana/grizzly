@@ -15,9 +15,11 @@ type Provider interface {
 	Version() string
 	APIVersion() string
 	GetHandlers() []Handler
+	Validate() error
 }
 
 type ProxyProvider interface {
+	// SetupProxy establishes the proxy connection
 	SetupProxy() (*httputil.ReverseProxy, error)
 }
 

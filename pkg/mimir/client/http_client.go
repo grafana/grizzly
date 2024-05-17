@@ -2,6 +2,8 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -120,7 +122,7 @@ func (c *Client) doRequest(method string, url string, body []byte) ([]byte, erro
 		req.Header.Set("X-Scope-OrgID", c.config.TenantID)
 	}
 
-	client, err := createHTTPClient()
+	client, err := c.createHTTPClient()
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +144,7 @@ func (c *Client) doRequest(method string, url string, body []byte) ([]byte, erro
 	return b, nil
 }
 
-func createHTTPClient() (*http.Client, error) {
+func (c *Client) createHTTPClient() (*http.Client, error) {
 	timeout := 10 * time.Second
 	// TODO: Move this configuration to the global configuration
 	if timeoutStr := os.Getenv("GRIZZLY_HTTP_TIMEOUT"); timeoutStr != "" {
@@ -152,5 +154,42 @@ func createHTTPClient() (*http.Client, error) {
 		}
 		timeout = time.Duration(timeoutSeconds) * time.Second
 	}
-	return &http.Client{Timeout: timeout}, nil
+
+	tlsConfig := &tls.Config{}
+	httpClient := http.Client{
+		Timeout:   timeout,
+		Transport: &http.Transport{TLSClientConfig: tlsConfig},
+	}
+
+	if c.config.TLS.CAPath != "" {
+		certPool, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, err
+		}
+
+		caCertPEM, err := os.ReadFile(c.config.TLS.CAPath)
+		if err != nil {
+			return nil, err
+		}
+
+		ok := certPool.AppendCertsFromPEM(caCertPEM)
+		if !ok {
+			return nil, fmt.Errorf("could not append ca-bundle at path %s to existing certificates", c.config.TLS.CAPath)
+		}
+
+		tlsConfig.RootCAs = certPool
+	}
+
+	if c.config.TLS.ClientCertPath != "" || c.config.TLS.ClientKeyPath != "" {
+		clientTLSCert, err := tls.LoadX509KeyPair(c.config.TLS.ClientCertPath, c.config.TLS.ClientKeyPath)
+		if err != nil {
+			return nil, err
+		}
+		tlsConfig.Certificates = []tls.Certificate{clientTLSCert}
+	}
+
+	httpClient.Transport = &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+	return &httpClient, nil
 }

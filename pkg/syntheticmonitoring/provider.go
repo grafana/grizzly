@@ -21,26 +21,29 @@ type ClientProvider interface {
 }
 
 // NewProvider instantiates a new Provider.
-func NewProvider(config *config.SyntheticMonitoringConfig) (*Provider, error) {
-	if config.URL == "" {
-		config.URL = "https://synthetic-monitoring-api.grafana.net"
-	}
-	if config.StackID == 0 {
-		return nil, fmt.Errorf("stack id is not set")
-	}
-	if config.MetricsID == 0 {
-		return nil, fmt.Errorf("metrics id is not set")
-	}
-	if config.LogsID == 0 {
-		return nil, fmt.Errorf("logs id is not set")
-	}
-	if config.Token == "" {
-		return nil, fmt.Errorf("token is not set")
-	}
-
+func NewProvider(config *config.SyntheticMonitoringConfig) *Provider {
 	return &Provider{
 		config: config,
-	}, nil
+	}
+}
+
+func (p *Provider) Validate() error {
+	if p.config.URL == "" {
+		p.config.URL = "https://synthetic-monitoring-api.grafana.net"
+	}
+	if p.config.StackID == 0 {
+		return fmt.Errorf("stack id is not set")
+	}
+	if p.config.MetricsID == 0 {
+		return fmt.Errorf("metrics id is not set")
+	}
+	if p.config.LogsID == 0 {
+		return fmt.Errorf("logs id is not set")
+	}
+	if p.config.Token == "" {
+		return fmt.Errorf("token is not set")
+	}
+	return nil
 }
 
 func (p *Provider) Name() string {
