@@ -17,15 +17,16 @@ import (
 )
 
 func TestRules(t *testing.T) {
+	dirName := "testdata/rules"
 	provider := mimir.NewProvider(&testutil.TestContext().Mimir)
 	handler := provider.GetHandlers()[0]
 
 	t.Run("create rule group", func(t *testing.T) {
-		dirs, err := os.ReadDir("testdata")
+		dirs, err := os.ReadDir(dirName)
 		require.NoError(t, err)
 
 		for _, dir := range dirs {
-			file, err := os.ReadFile(filepath.Join("testdata", dir.Name()))
+			file, err := os.ReadFile(filepath.Join(dirName, dir.Name()))
 			require.NoError(t, err)
 
 			var resource grizzly.Resource
