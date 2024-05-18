@@ -1,7 +1,7 @@
 apiVersion: grizzly.grafana.com/v1alpha1
 kind: PrometheusAlertmanagerConfig
 metadata:
-  name: test-alertmanager
+  name: global
 spec:
   template_files:
     default_template: |

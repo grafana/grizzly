@@ -21,11 +21,6 @@ var loadRulesEndpoint = "%s/prometheus/config/v1/rules/%s"
 var listRulesEndpoint = "%s/prometheus/api/v1/rules"
 var alertmanagerAPIPath = "%s/api/v1/alerts"
 
-type GetAlertmanagerConfigResponse struct {
-	TemplateFiles      map[string]string `yaml:"template_files"`
-	AlertmanagerConfig string            `yaml:"alertmanager_config"`
-}
-
 type ListGroupResponse struct {
 	Status string `yaml:"status"`
 	Data   struct {
@@ -50,7 +45,6 @@ func NewHTTPClient(config *config.MimirConfig) Mimir {
 func (c *Client) CreateAlertmangerConfig(resource models.PrometheusAlertmanagerConfig) error {
 	url := fmt.Sprintf(alertmanagerAPIPath, c.config.Address)
 	cfg, err := yaml.Marshal(&resource)
-	fmt.Println(string(cfg))
 	if err != nil {
 		return err
 	}
