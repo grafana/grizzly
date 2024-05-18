@@ -10,6 +10,11 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
+const (
+	GlobalAlertmangerConfigName = "global"
+	AlertmanagerConfigFile      = "prometheusAlertmanagerConfig.yaml"
+)
+
 // AlertmanagerHandler is a Grizzly Handler for Alertmanager Configuration
 type AlertmanagerHandler struct {
 	grizzly.BaseHandler
@@ -24,27 +29,17 @@ func NewAlertmanagerHandler(provider *Provider, clientTool client.Mimir) *Alertm
 	}
 }
 
-const (
-	prometheusAlertmanagerConfigPattern = "prometheus/alertmanager-%s.%s"
-)
-
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *AlertmanagerHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
-	return fmt.Sprintf(prometheusAlertmanagerConfigPattern, resource.Name(), filetype)
+	return AlertmanagerConfigFile
 }
 
 // Validate returns the uid of resource
 func (h *AlertmanagerHandler) Validate(resource grizzly.Resource) error {
-	uid, exist := resource.GetSpecString("uid")
-	if exist && uid != resource.Name() {
-		return fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
+	if resource.Name() != GlobalAlertmangerConfigName {
+		return fmt.Errorf("name of prometheus alertmanager config must be '%s', got '%s'", GlobalAlertmangerConfigName, resource.Name())
 	}
 	return nil
-}
-
-// GetUID returns the UID for a resource
-func (h *AlertmanagerHandler) GetUID(resource grizzly.Resource) (string, error) {
-	return resource.Name(), nil
 }
 
 func (h *AlertmanagerHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
@@ -63,12 +58,7 @@ func (h *AlertmanagerHandler) GetRemote(resource grizzly.Resource) (*grizzly.Res
 
 // ListRemote retrieves as list of UIDs of all remote resources
 func (h *AlertmanagerHandler) ListRemote() ([]string, error) {
-	_, err := h.getRemoteAlertmanagerConfig()
-	if err != nil {
-		return nil, err
-	}
-	resources := []string{"alertmanger-config"}
-	return resources, nil
+	return []string{GlobalAlertmangerConfigName}, nil
 }
 
 // Add pushes an alertmanager config to Mimir via the API
@@ -99,7 +89,7 @@ func (h *AlertmanagerHandler) getRemoteAlertmanagerConfig() (*grizzly.Resource, 
 		return nil, err
 	}
 
-	resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), "alertmanager-config", spec)
+	resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), GlobalAlertmangerConfigName, spec)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +100,7 @@ func (h *AlertmanagerHandler) getRemoteAlertmanagerConfig() (*grizzly.Resource, 
 func (h *AlertmanagerHandler) writeAlertmanagerConfig(resource grizzly.Resource) error {
 	newConfig := models.PrometheusAlertmanagerConfig{
 		TemplateFiles:      map[string]string{},
-		AlertmanagerConfig: "", //resource.Spec()["alertmanager_config"].(string),
+		AlertmanagerConfig: "",
 	}
 	alertmanagerConfigIn, found := resource.Spec()["alertmanager_config"]
 	if found {
