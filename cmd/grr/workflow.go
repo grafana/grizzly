@@ -307,6 +307,7 @@ func watchCmd(registry grizzly.Registry) *cli.Command {
 		}
 		return grizzly.Watch(registry, watchDir, parser, parserOpts, trailRecorder)
 	}
+	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
 

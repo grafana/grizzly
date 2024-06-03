@@ -194,7 +194,7 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string, sourc
 
 		if handler.UsesFolders() && folderUID == "" {
 			// TODO: the error shouldn't assume a CLI environment
-			return Resources{}, fmt.Errorf("folder (-f) required with --onlyspec")
+			return Resources{}, fmt.Errorf("folder (-f) required with --only-spec")
 		}
 
 		m := data.(map[string]any)
