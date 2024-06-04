@@ -43,7 +43,9 @@ func (h *DatasourceHandler) Unprepare(resource grizzly.Resource) *grizzly.Resour
 
 // Prepare gets a resource ready for dispatch to the remote endpoint
 func (h *DatasourceHandler) Prepare(existing *grizzly.Resource, resource grizzly.Resource) *grizzly.Resource {
-	resource.SetSpecValue("id", existing.GetSpecValue("id"))
+	if existing != nil && existing.GetSpecValue("id") != nil {
+		resource.SetSpecValue("id", existing.GetSpecValue("id"))
+	}
 	resource.DeleteSpecKey("version")
 	if !resource.HasSpecString("uid") {
 		resource.SetSpecValue("uid", resource.Name())
