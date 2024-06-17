@@ -8,16 +8,17 @@
 <body dir="ltr">
 {{ template "proxy/header.html.tmpl" . }}
 
-
 <main>
     <div>
     {{ if ne (len .ParseErrors) 0 }}
         <h1>Errors</h1>
 
         {{ range .ParseErrors }}
+          {{ if not (IsWarning .) }}
             <li>
                 <code>{{ . }}</code>
             </li>
+          {{ end }}
         {{ end }}
     {{ end }}
     <h1>Available dashboards</h1>

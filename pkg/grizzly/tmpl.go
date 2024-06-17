@@ -44,7 +44,11 @@ func findAndParseTemplates(vfs fs.FS, rootTmpl *template.Template, rootDir strin
 		}
 
 		templateName := strings.TrimPrefix(strings.TrimPrefix(path, rootDir), "/")
-		t := rootTmpl.New(templateName)
+		t := rootTmpl.New(templateName).Funcs(
+			template.FuncMap{
+				"IsWarning": IsWarning,
+			},
+		)
 		_, err = t.Parse(string(contents))
 
 		return err
