@@ -39,3 +39,20 @@ func NewUnrecognisedFormatError(file string) UnrecognisedFormatError {
 		File: file,
 	}
 }
+
+type Warning struct {
+	Err error
+}
+
+func NewWarning(err error) Warning {
+	return Warning{err}
+}
+
+func (w Warning) Error() string {
+	return w.Err.Error()
+}
+
+func IsWarning(err any) bool {
+	_, ok := err.(Warning)
+	return ok
+}
