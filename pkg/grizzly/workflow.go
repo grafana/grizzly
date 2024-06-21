@@ -488,16 +488,16 @@ func Snapshot(registry Registry, resources Resources, expiresSeconds int) error 
 
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
 // when changes are noticed.
-func Watch(registry Registry, watchDir string, parser Parser, parserOpts ParserOptions, trailRecorder eventsRecorder) error {
+func Watch(registry Registry, watchDir string, resourcePath string, parser Parser, parserOpts ParserOptions, trailRecorder eventsRecorder) error {
 	updateWatchedResource := func(path string) error {
-		log.Info("Changes detected. Applying ", path)
-		resources, err := parser.Parse(path, parserOpts)
+		log.Infof("Changes detected in %q. Applying %q", path, resourcePath)
+		resources, err := parser.Parse(resourcePath, parserOpts)
 		if err != nil {
-			log.Error("Error: ", err)
+			log.Error("Error parsing resource file: ", err)
 		}
 		err = Apply(registry, resources, false, trailRecorder) // TODO?
 		if err != nil {
-			log.Error("Error: ", err)
+			log.Error("Error applying resources: ", err)
 		}
 		return nil
 	}
