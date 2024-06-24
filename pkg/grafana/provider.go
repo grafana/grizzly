@@ -134,7 +134,7 @@ func (p *Provider) SetupProxy() (*httputil.ReverseProxy, error) {
 			if p.config.User != "" {
 				header := fmt.Sprintf("%s:%s", p.config.User, p.config.Token)
 				encoded := base64.StdEncoding.EncodeToString([]byte(header))
-				r.Out.Header.Set("Authorization", "Bearer "+encoded)
+				r.Out.Header.Set("Authorization", "Basic "+encoded)
 			} else {
 				r.Out.Header.Set("Authorization", "Bearer "+p.config.Token)
 			}
