@@ -296,7 +296,7 @@ func watchCmd(registry grizzly.Registry) *cli.Command {
 		}
 		targets := currentContext.GetTargets(opts.Targets)
 
-		watchDir := args[0]
+		watchDir, resourcePath := args[0], args[1]
 
 		trailRecorder := grizzly.NewWriterRecorder(os.Stdout, grizzly.EventToPlainText)
 
@@ -305,7 +305,7 @@ func watchCmd(registry grizzly.Registry) *cli.Command {
 			DefaultResourceKind: resourceKind,
 			DefaultFolderUID:    folderUID,
 		}
-		return grizzly.Watch(registry, watchDir, parser, parserOpts, trailRecorder)
+		return grizzly.Watch(registry, watchDir, resourcePath, parser, parserOpts, trailRecorder)
 	}
 	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
