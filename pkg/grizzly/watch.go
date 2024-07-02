@@ -33,7 +33,10 @@ func (w *Watcher) Watch(path string) error {
 	}
 
 	if !stat.IsDir() {
-		w.watcher.Add(path)
+		err := w.watcher.Add(path)
+		if err != nil {
+			return err
+		}
 	} else {
 		err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
