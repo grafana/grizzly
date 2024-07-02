@@ -2,6 +2,7 @@ package grizzly
 
 import (
 	"io/fs"
+	"os"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
@@ -26,19 +27,27 @@ func NewWatcher(watcherFunc func(path string) error) (*Watcher, error) {
 }
 
 func (w *Watcher) Watch(path string) error {
-	err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return w.watcher.Add(path)
-		}
-		return nil
-	})
+	stat, err := os.Stat(path)
 	if err != nil {
 		return err
 	}
 
+	if !stat.IsDir() {
+		w.watcher.Add(path)
+	} else {
+		err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				return w.watcher.Add(path)
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
 	go func() {
 		log.Info("Watching for changes")
 		for {
