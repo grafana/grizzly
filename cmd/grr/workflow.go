@@ -382,8 +382,8 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		watchPath := resourcesPath
 		if len(args) > 1 {
 			watchPath = args[1]
-
 		}
+
 		targets := currentContext.GetTargets(opts.Targets)
 		parser := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(true))
 		parserOpts := grizzly.ParserOptions{
