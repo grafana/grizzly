@@ -30,6 +30,7 @@ type Server struct {
 	Resources      Resources
 	UserAgent      string
 	ResourcePath   string
+	WatchPaths     []string
 	OnlySpec       bool
 	OutputFormat   string
 	watch          bool
@@ -79,8 +80,9 @@ func (s *Server) OpenBrowser() {
 	s.openBrowser = true
 }
 
-func (s *Server) Watch() {
+func (s *Server) Watch(watchPaths []string) {
 	s.watch = true
+	s.WatchPaths = watchPaths
 }
 
 func (s *Server) SetFormatting(onlySpec bool, outputFormat string) {
@@ -190,7 +192,13 @@ func (s *Server) Start() error {
 		if err != nil {
 			return err
 		}
-		err = watcher.Watch(s.ResourcePath)
+		for _, path := range s.WatchPaths {
+			err = watcher.Add(path)
+			if err != nil {
+				return err
+			}
+		}
+		err = watcher.Watch()
 		if err != nil {
 			return err
 		}

@@ -26,7 +26,7 @@ func NewWatcher(watcherFunc func(path string) error) (*Watcher, error) {
 	return &watcher, nil
 }
 
-func (w *Watcher) Watch(path string) error {
+func (w *Watcher) Add(path string) error {
 	stat, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -51,6 +51,9 @@ func (w *Watcher) Watch(path string) error {
 			return err
 		}
 	}
+	return nil
+}
+func (w *Watcher) Watch() error {
 	go func() {
 		log.Info("Watching for changes")
 		for {

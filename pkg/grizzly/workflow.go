@@ -505,7 +505,11 @@ func Watch(registry Registry, watchDir string, resourcePath string, parser Parse
 	if err != nil {
 		return err
 	}
-	err = watcher.Watch(watchDir)
+	err = watcher.Add(watchDir)
+	if err != nil {
+		return err
+	}
+	err = watcher.Watch()
 	if err != nil {
 		return err
 	}
