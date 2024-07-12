@@ -30,7 +30,7 @@ You can run Grizzly against one or more local files and it will start up an
 HTTP server:
 
 ```
-grr serve <mydir>
+grr serve examples/yaml/
 ```
 
 By default, visit http://localhost:8080 to view the Grizzly server.
@@ -38,10 +38,10 @@ By default, visit http://localhost:8080 to view the Grizzly server.
 ### Reviewing changes to JSON or YAML files in Grafana
 If you are editing the resources on disk, and just want to use Grafana for review, then use the inbuilt
 "watch" functionality. With the below, if any files are changed on disk within the directory identified,
-(here, `mydir`), the dashboard will be reloaded within Grafana:
+(here, `examples/yaml`), the dashboard will be reloaded within Grafana:
 
 ```
-grr serve -w <mydir>
+grr serve -w examples/yaml
 ```
 
 This could be useful if, for example, you use another language (other than jsonnet) to render your
@@ -52,7 +52,13 @@ If you are working with Jsonnet, and your jsonnet codebase covers more than one 
 the entrypoint for your Jsonnet and the directory to watch independently:
 
 ```
-grr serve -w <my-jsonnet-script> <watch-dir>
+grr serve -w examples/grr.jsonnet examples
+```
+
+If your sources are in multiple directories, you can watch multiple sources, e.g:
+
+```
+grr serve -w examples/grr.jsonnet examples/*.*sonnet examples/vendor
 ```
 
 ### Reviewing changes to code in other languages in Grafana

@@ -360,7 +360,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "serve <resources>",
 		Short: "Run Grizzly server",
-		Args:  cli.ArgsRange(0, 2),
+		Args:  cli.ArgsAny(),
 	}
 	var opts Opts
 
@@ -379,9 +379,9 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		if len(args) > 0 {
 			resourcesPath = args[0]
 		}
-		watchPath := resourcesPath
+		watchPaths := []string{resourcesPath}
 		if len(args) > 1 {
-			watchPath = args[1]
+			watchPaths = args[1:]
 		}
 
 		targets := currentContext.GetTargets(opts.Targets)
@@ -404,7 +404,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		server.SetContext(currentContext.Name)
 		server.SetFormatting(onlySpec, format)
 		if opts.Watch {
-			server.Watch(watchPath)
+			server.Watch(watchPaths)
 		}
 		if opts.OpenBrowser {
 			server.OpenBrowser()
