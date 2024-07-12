@@ -360,7 +360,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "serve <resources>",
 		Short: "Run Grizzly server",
-		Args:  cli.ArgsRange(0, 1),
+		Args:  cli.ArgsRange(0, 2),
 	}
 	var opts Opts
 
@@ -379,7 +379,11 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		if len(args) > 0 {
 			resourcesPath = args[0]
 		}
+		watchPath := resourcesPath
+		if len(args) > 1 {
+			watchPath = args[1]
 
+		}
 		targets := currentContext.GetTargets(opts.Targets)
 		parser := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(true))
 		parserOpts := grizzly.ParserOptions{
@@ -400,7 +404,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		server.SetContext(currentContext.Name)
 		server.SetFormatting(onlySpec, format)
 		if opts.Watch {
-			server.Watch()
+			server.Watch(watchPath)
 		}
 		if opts.OpenBrowser {
 			server.OpenBrowser()
