@@ -22,11 +22,13 @@ type MimirTLSConfig struct {
 }
 
 type SyntheticMonitoringConfig struct {
-	Token     string `yaml:"token" mapstructure:"token"`
-	StackID   int64  `yaml:"stack-id" mapstructure:"stack-id"`
-	LogsID    int64  `yaml:"logs-id" mapstructure:"logs-id"`
-	MetricsID int64  `yaml:"metrics-id" mapstructure:"metrics-id"`
-	URL       string `yaml:"url" mapstructure:"url"`
+	URL string `yaml:"url" mapstructure:"url"`
+	// SM can be configured with a metrics publisher token (and various stack information) or an access token gotten from the UI
+	Token       string `yaml:"token" mapstructure:"token"`
+	StackID     int64  `yaml:"stack-id" mapstructure:"stack-id"`
+	LogsID      int64  `yaml:"logs-id" mapstructure:"logs-id"`
+	MetricsID   int64  `yaml:"metrics-id" mapstructure:"metrics-id"`
+	AccessToken string `yaml:"access-token" mapsructure:"access-token"`
 }
 
 type Context struct {

@@ -31,18 +31,17 @@ func (p *Provider) Validate() error {
 	if p.config.URL == "" {
 		p.config.URL = "https://synthetic-monitoring-api.grafana.net"
 	}
-	if p.config.StackID == 0 {
-		return fmt.Errorf("stack id is not set")
+
+	smInstallationConfigured := p.config.StackID != 0 && p.config.MetricsID != 0 && p.config.LogsID != 0 && p.config.Token != ""
+
+	if p.config.AccessToken != "" && smInstallationConfigured {
+		return fmt.Errorf("both access token and stack configuration (stack id, metrics id, logs id, token) are set. Only one can be used")
 	}
-	if p.config.MetricsID == 0 {
-		return fmt.Errorf("metrics id is not set")
+
+	if p.config.AccessToken == "" && !smInstallationConfigured {
+		return fmt.Errorf("neither access token nor stack configuration (stack id, metrics id, logs id, token) are set. One must be set")
 	}
-	if p.config.LogsID == 0 {
-		return fmt.Errorf("logs id is not set")
-	}
-	if p.config.Token == "" {
-		return fmt.Errorf("token is not set")
-	}
+
 	return nil
 }
 
@@ -77,6 +76,11 @@ func (p *Provider) Client() (*smapi.Client, error) {
 	client, err := NewHTTPClient()
 	if err != nil {
 		return nil, err
+	}
+
+	if p.config.AccessToken != "" {
+		smClient := smapi.NewClient(p.config.URL, p.config.AccessToken, client)
+		return smClient, nil
 	}
 
 	smClient := smapi.NewClient(p.config.URL, "", client)
