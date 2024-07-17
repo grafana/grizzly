@@ -52,14 +52,11 @@ grr config set mimir.api-key abcdef12345 # Authentication token (if you are usin
 To interact with Grafana Synthetic Monitoring, you must configure the below settings:
 
 ```sh
-grr config set synthetic-monitoring.token abcdef123456 # API key (must have MetricsPublisher permissions)
-grr config set synthetic-monitoring.stack-id 123 # Grafana stack ID
-grr config set synthetic-monitoring.metrics-id 123 # Metrics instance ID
-grr config set synthetic-monitoring.logs-id 123 # Logs instance ID
-grr config set synthetic-monitoring.url https://synthetic-monitoring-api.grafana.net # Synthetic Monitoring instance URL
+grr config set synthetic-monitoring.access-token abcdef123456
+grr config set synthetic-monitoring.url https://synthetic-monitoring-api.grafana.net
 ```
-Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. `grafana.com/orgs/myorg/stacks/123456` would be `123456`. Your metrics and logs ID's are the `User` when you view your Prometheus or Loki instance details in Grafana Cloud.
-You can find your instance URL under your Synthetic Monitoring configuration.
+
+You can find the URL and access token in the Synthetic Monitoring plugin's config page in Grafana.
 
 ## Configuring Targets
 Grizzly supports a number of resource types (`grr providers` will list those supported). Often, however, we do not
