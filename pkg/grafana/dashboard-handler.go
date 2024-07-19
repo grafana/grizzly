@@ -88,10 +88,6 @@ func (h *DashboardHandler) GetByUID(uid string) (*grizzly.Resource, error) {
 
 // GetRemote retrieves a dashboard as a resource
 func (h *DashboardHandler) GetRemote(resource grizzly.Resource) (*grizzly.Resource, error) {
-	uid, _ := resource.GetSpecString("uid")
-	if uid != resource.Name() {
-		return nil, fmt.Errorf("uid '%s' and name '%s', don't match", uid, resource.Name())
-	}
 	return h.getRemoteDashboard(resource.Name())
 }
 
