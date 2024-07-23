@@ -283,6 +283,12 @@ func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat st
 			}
 
 			eventsRecorder.Record(Event{Type: ResourcePulled, ResourceRef: resource.Ref().String()})
+
+			// eventsRecorder.Record(Event{
+			// 	Type:
+			// 	ResourceRef:
+			// 	Details:
+			// })
 		}
 	}
 
