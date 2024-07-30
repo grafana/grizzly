@@ -10,10 +10,12 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/mimir/models"
+	"github.com/hashicorp/go-multierror"
 	"gopkg.in/yaml.v3"
 )
 
@@ -73,7 +75,7 @@ func (c *Client) CreateRules(resource models.PrometheusRuleGrouping) error {
 		}
 
 		if _, err = c.doRequest(http.MethodPost, url, out); err != nil {
-			return fmt.Errorf("error found creating rule group: %s", group.Name)
+			return multierror.Append(fmt.Errorf("error found creating rule group: %s", group.Name), err)
 		}
 	}
 
@@ -106,13 +108,13 @@ func (c *Client) doRequest(method string, url string, body []byte) ([]byte, erro
 		return nil, fmt.Errorf("request to load rules failed: %s", err)
 	}
 
-	if res.StatusCode >= 300 {
-		return nil, fmt.Errorf("error loading rules: %d", res.StatusCode)
-	}
-
 	b, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read response body: %s", err)
+	}
+
+	if res.StatusCode >= 300 {
+		return nil, fmt.Errorf("error loading rules: %d, error: %s", res.StatusCode, strings.TrimSpace(string(b)))
 	}
 
 	return b, nil

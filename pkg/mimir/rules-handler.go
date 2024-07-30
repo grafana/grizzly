@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/mimir/client"
 	"github.com/grafana/grizzly/pkg/mimir/models"
-
-	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
 // RuleHandler is a Grizzly Handler for Prometheus Rules
@@ -136,6 +135,20 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 	rules := resource.Spec()["rules"].([]interface{})
 	for _, ruleIf := range rules {
 		rule := ruleIf.(map[string]interface{})
+		// In case that the field "type" is recording, we need to change the field "name" to "recording"
+		// In case that the field "type" is alerting, we need to change the field "name" to "alert"
+		if rule["type"] == "recording" {
+			rule["record"] = rule["name"]
+			delete(rule, "name")
+		} else if rule["type"] == "alerting" {
+			rule["alert"] = rule["name"]
+			delete(rule, "name")
+		}
+		// The field query, should be changed to expr
+		if rule["query"] != nil {
+			rule["expr"] = rule["query"]
+			delete(rule, "query")
+		}
 		newGroup.Rules = append(newGroup.Rules, rule)
 	}
 	grouping := models.PrometheusRuleGrouping{
