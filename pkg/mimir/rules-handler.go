@@ -135,7 +135,7 @@ func (h *RuleHandler) writeRuleGroup(resource grizzly.Resource) error {
 	rules := resource.Spec()["rules"].([]interface{})
 	for _, ruleIf := range rules {
 		rule := ruleIf.(map[string]interface{})
-		// In case that the field "type" is recording, we need to change the field "name" to "recording"
+		// In case that the field "type" is recording, we need to change the field "name" to "record"
 		// In case that the field "type" is alerting, we need to change the field "name" to "alert"
 		if rule["type"] == "recording" {
 			rule["record"] = rule["name"]
