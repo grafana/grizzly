@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/fsnotify.v1"
@@ -53,6 +54,9 @@ func (w *Watcher) Add(path string) error {
 				return err
 			}
 			if d.IsDir() {
+				if !strings.HasSuffix(path, "/") {
+					path = path + "/"
+				}
 				w.watches = append(w.watches, watch{path: path, parent: path, isDir: true})
 				return w.watcher.Add(path)
 			}
@@ -100,7 +104,7 @@ func (w *Watcher) Wait() error {
 }
 
 func (w *Watcher) isFiltered(path string) bool {
-	parent := filepath.Dir(path)
+	parent := filepath.Dir(path) + "/"
 	for _, watch := range w.watches {
 		if parent == watch.parent {
 			if watch.isDir || watch.path == path {
