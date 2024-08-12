@@ -9,9 +9,16 @@ import (
 	"gopkg.in/fsnotify.v1"
 )
 
+type watch struct {
+	path   string
+	parent string
+	isDir  bool
+}
+
 type Watcher struct {
 	watcher     *fsnotify.Watcher
 	watcherFunc func(string) error
+	watches     []watch
 }
 
 func NewWatcher(watcherFunc func(path string) error) (*Watcher, error) {
@@ -33,7 +40,10 @@ func (w *Watcher) Add(path string) error {
 	}
 
 	if !stat.IsDir() {
-		err := w.watcher.Add(path)
+		// `vim` renames and replaces, doesn't create a WRITE event. So we need to watch the whole dir and filter for our file
+		parent := filepath.Dir(path)
+		w.watches = append(w.watches, watch{path: path, parent: parent, isDir: false})
+		err := w.watcher.Add(parent)
 		if err != nil {
 			return err
 		}
@@ -43,6 +53,7 @@ func (w *Watcher) Add(path string) error {
 				return err
 			}
 			if d.IsDir() {
+				w.watches = append(w.watches, watch{path: path, parent: path, isDir: true})
 				return w.watcher.Add(path)
 			}
 			return nil
@@ -62,11 +73,13 @@ func (w *Watcher) Watch() error {
 				if !ok {
 					return
 				}
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Info("Changes detected. Parsing")
-					err := w.watcherFunc(event.Name)
-					if err != nil {
-						log.Error("error: ", err)
+				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
+					if !w.isFiltered(event.Name) {
+						log.Info("Changes detected. Parsing")
+						err := w.watcherFunc(event.Name)
+						if err != nil {
+							log.Error("error: ", err)
+						}
 					}
 				}
 			case err, ok := <-w.watcher.Errors:
@@ -84,4 +97,16 @@ func (w *Watcher) Wait() error {
 	done := make(chan bool)
 	<-done
 	return nil
+}
+
+func (w *Watcher) isFiltered(path string) bool {
+	parent := filepath.Dir(path)
+	for _, watch := range w.watches {
+		if parent == watch.parent {
+			if watch.isDir || watch.path == path {
+				return false
+			}
+		}
+	}
+	return true
 }
