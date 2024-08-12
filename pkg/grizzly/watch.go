@@ -55,7 +55,7 @@ func (w *Watcher) Add(path string) error {
 			}
 			if d.IsDir() {
 				if !strings.HasSuffix(path, "/") {
-					path = path + "/"
+					path += "/"
 				}
 				w.watches = append(w.watches, watch{path: path, parent: path, isDir: true})
 				return w.watcher.Add(path)
