@@ -89,6 +89,7 @@ main div {
     position: relative;
     left: -10px;
     font-size: 180%;
+    color: white;
 }
 .context {
     vertical-align: middle;
