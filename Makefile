@@ -56,3 +56,10 @@ serve-docs:
 	git submodule init
 	git submodule update
 	hugo server -D -s docs
+
+favicon:
+	inkscape -w 16 -h 16 -o 16.png grizzly-logo-icon.svg
+	inkscape -w 32 -h 32 -o 32.png grizzly-logo-icon.svg
+	inkscape -w 64 -h 64 -o 64.png grizzly-logo-icon.svg 
+	convert 16.png 32.png 64.png grizzly.ico
+

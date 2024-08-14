@@ -140,6 +140,7 @@ func (s *Server) Start() error {
 
 	r.Use(middleware.Logger)
 	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
+	r.HandleFunc("/favicon.ico", s.faviconHandlerFunc())
 
 	for _, handler := range s.Registry.Handlers {
 		proxyHandler, ok := handler.(ProxyHandler)
@@ -311,6 +312,16 @@ func (s *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 	if err := templates.ExecuteTemplate(w, "proxy/index.html.tmpl", templateVars); err != nil {
 		SendError(w, "Error while executing template", err, 500)
 		return
+	}
+}
+
+func (s *Server) faviconHandlerFunc() http.HandlerFunc {
+	content, _ := embedFS.ReadFile("embed/assets/grizzly.ico")
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/x-icon")
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
 	}
 }
 
