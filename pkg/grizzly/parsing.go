@@ -33,6 +33,7 @@ type FormatParser interface {
 }
 
 type Parser interface {
+	Accept(file string) bool
 	Parse(resourcePath string, options ParserOptions) (Resources, error)
 }
 
@@ -80,6 +81,10 @@ func NewFilteredParser(registry Registry, decorated Parser, targets []string) *F
 	}
 }
 
+func (parser *FilteredParser) Accept(file string) bool {
+	return parser.decorated.Accept(file)
+}
+
 func (parser *FilteredParser) Parse(resourcePath string, options ParserOptions) (Resources, error) {
 	resources, err := parser.decorated.Parse(resourcePath, options)
 	if err != nil {
@@ -103,6 +108,15 @@ func NewChainParser(formatParsers []FormatParser, continueOnError bool) *ChainPa
 		formatParsers:   formatParsers,
 		continueOnError: continueOnError,
 	}
+}
+
+func (parser *ChainParser) Accept(file string) bool {
+	for _, p := range parser.formatParsers {
+		if p.Accept(file) {
+			return true
+		}
+	}
+	return false
 }
 
 func (parser *ChainParser) Parse(resourcePath string, options ParserOptions) (Resources, error) {
