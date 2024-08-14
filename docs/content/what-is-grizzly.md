@@ -19,10 +19,17 @@ descriptions. (Programmatic description is explained in the section on
 We will first explore how to use Grizzly with Grafana.
 
 ## Authentication
-You will need to set at least the `GRAFANA_URL` environment variable. This should
-be to the root of your Grafana instance. If your Grafana instance requires authentication,
-then you are recommended to acquire an API key (`Configuration` / `API keys`). Set the
-`GRAFANA_TOKEN` to this value. For more this, see [authentication](../authentication/).
+To work with Grafana, you will need to give Grafana credentials for your instance. The
+recommended way to do this would be to create a "context", and set the Grafana URL and a
+service account token. Here we create an "instance" context:
+
+```
+grr config create-context instance
+grr config set grafana.url http://localhost:3000
+grr config set grafana.token <my-service-account-token>
+```
+
+For further explanations and other options, see [authentication](../authentication/).
 
 ## Managing a Simple Dashboard
 
