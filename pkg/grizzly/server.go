@@ -321,7 +321,10 @@ func (s *Server) faviconHandlerFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/x-icon")
 		w.WriteHeader(http.StatusOK)
-		w.Write(content)
+		_, err := w.Write(content)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 }
 
