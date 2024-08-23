@@ -64,19 +64,13 @@ grr serve -w examples/grr.jsonnet examples/*.*sonnet examples/vendor
 ### Reviewing changes to code in other languages in Grafana
 The [Grafana Foundation SDK](https://github.com/grafana/grafana-foundation-sdk) provides libraries in a
 range of languages that can be used to render Grafana dashboards. Watching changes to these with Grizzly
-is a two stage process, currently requiring an additional tool to watch for changes to source code and
-render your dashboard(s) to files. One such tool is [entr](https://github.com/eradman/entr), which can be
-used like so (with the Foundation SDK's TypeScript support):
+is also possible.
 
 ```
 git clone https://github.com/grafana/grafana-foundation-sdk
 cd grafana-foundation-sdk/examples/typescript/red-method
 npm install
-find . | entr -s 'npm run -s dev > ts.json'
-```
-Then, in another window:
-```
-grr serve -w ts.json
+grr serve -w -S 'npm run -s dev' .
 ```
 Finally, open the Grizzly server at [http://localhost:8080](http://localhost:8080) and select the Red
 Method dashboard.
