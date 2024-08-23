@@ -183,6 +183,24 @@ func TestParseKindDetection(t *testing.T) {
 				ExpectedResources: 2,
 			},
 			{
+				Name:              "json dashboards input, as array",
+				InputFile:         "testdata/parsing/dashboards-as-array.json",
+				ExpectedKind:      "Dashboard",
+				ExpectedResources: 2,
+			},
+			{
+				Name:              "yaml dashboards input, as array",
+				InputFile:         "testdata/parsing/dashboards-as-array.yaml",
+				ExpectedKind:      "Dashboard",
+				ExpectedResources: 2,
+			},
+			{
+				Name:              "jsonnet dashboards input, as array",
+				InputFile:         "testdata/parsing/dashboards-as-array.jsonnet",
+				ExpectedKind:      "Dashboard",
+				ExpectedResources: 50,
+			},
+			{
 				Name:         "json datasource input, with envelope",
 				InputFile:    "testdata/parsing/datasource-with-envelope.json",
 				ExpectedKind: "Datasource",
@@ -209,6 +227,9 @@ func TestParseKindDetection(t *testing.T) {
 					require.Error(t, err)
 					require.Equal(t, test.ExpectedError, err.Error())
 					return
+				}
+				for _, resource := range resources.AsList() {
+					require.Equal(t, test.ExpectedKind, resource.Kind())
 				}
 				require.NoError(t, err)
 				if test.ExpectedResources == 0 { // i.e. the default, which actually means 1
