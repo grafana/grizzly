@@ -188,7 +188,6 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string, sourc
 				return Resources{}, err
 			}
 			for _, resource := range parsedResources.AsList() {
-				j, _ := resource.JSON()
 				resources.Add(resource)
 			}
 		}
