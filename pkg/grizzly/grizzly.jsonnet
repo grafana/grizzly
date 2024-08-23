@@ -111,4 +111,6 @@ local convert(main, apiVersion) = {
     then fromMap(main.syntheticMonitoring)
     else {},
 };
-convert(main, 'grizzly.grafana.com/v1alpha1') + main
+if std.isArray(main)
+  then main
+  else (convert(main, 'grizzly.grafana.com/v1alpha1') + main)
