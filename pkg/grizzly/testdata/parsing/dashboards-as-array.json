@@ -1,0 +1,22 @@
+[
+   {
+      "panels": [ ],
+      "schemaVersion": 17,
+      "tags": [
+         "templated"
+      ],
+      "timezone": "browser",
+      "title": "Dashboard 1",
+      "uid": "dashboard-1"
+   },
+   {
+      "panels": [ ],
+      "schemaVersion": 17,
+      "tags": [
+         "templated"
+      ],
+      "timezone": "browser",
+      "title": "Dashboard 2",
+      "uid": "dashboard-2"
+   }
+]
