@@ -195,6 +195,12 @@ func TestParseKindDetection(t *testing.T) {
 				ExpectedResources: 2,
 			},
 			{
+				Name:              "jsonnet dashboards input, as array",
+				InputFile:         "testdata/parsing/dashboards-as-array.jsonnet",
+				ExpectedKind:      "Dashboard",
+				ExpectedResources: 50,
+			},
+			{
 				Name:         "json datasource input, with envelope",
 				InputFile:    "testdata/parsing/datasource-with-envelope.json",
 				ExpectedKind: "Datasource",
