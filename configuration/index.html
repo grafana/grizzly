@@ -17,13 +17,9 @@ grr config set grafana.token abcd12345 # Service account token (or basic auth pa
 </code></pre><h2 id=grafana-cloud-prometheus>Grafana Cloud Prometheus</h2><p>To interact with Grafana Cloud Prometheus (aka Mimir), use these settings:</p><pre><code class=language-sh>grr config set mimir.address https://mimir.example.com # URL for Mimir instance or Grafana Cloud Prometheus instance
 grr config set mimir.tenant-id myTenant # Tenant ID for your Grafana Cloud Prometheus account
 grr config set mimir.api-key abcdef12345 # Authentication token (if you are using Grafana Cloud)
-</code></pre><p><strong>Notes</strong></p><ul><li>Be sure to set <code>api-key</code> when you need to interact with Grafana Cloud.</li></ul><h2 id=grafana-synthetic-monitoring>Grafana Synthetic Monitoring</h2><p>To interact with Grafana Synthetic Monitoring, you must configure the below settings:</p><pre><code class=language-sh>grr config set synthetic-monitoring.token abcdef123456 # API key (must have MetricsPublisher permissions)
-grr config set synthetic-monitoring.stack-id 123 # Grafana stack ID
-grr config set synthetic-monitoring.metrics-id 123 # Metrics instance ID
-grr config set synthetic-monitoring.logs-id 123 # Logs instance ID
-grr config set synthetic-monitoring.url https://synthetic-monitoring-api.grafana.net # Synthetic Monitoring instance URL
-</code></pre><p>Your stack ID is the number at the end of the url when you view your Grafana instance details, ie. <code>grafana.com/orgs/myorg/stacks/123456</code> would be <code>123456</code>. Your metrics and logs ID&rsquo;s are the <code>User</code> when you view your Prometheus or Loki instance details in Grafana Cloud.
-You can find your instance URL under your Synthetic Monitoring configuration.</p><h2 id=configuring-targets>Configuring Targets</h2><p>Grizzly supports a number of resource types (<code>grr providers</code> will list those supported). Often, however, we do not
+</code></pre><p><strong>Notes</strong></p><ul><li>Be sure to set <code>api-key</code> when you need to interact with Grafana Cloud.</li></ul><h2 id=grafana-synthetic-monitoring>Grafana Synthetic Monitoring</h2><p>To interact with Grafana Synthetic Monitoring, you must configure the below settings:</p><pre><code class=language-sh>grr config set synthetic-monitoring.access-token abcdef123456
+grr config set synthetic-monitoring.url https://synthetic-monitoring-api.grafana.net
+</code></pre><p>You can find the URL and access token in the Synthetic Monitoring plugin&rsquo;s config page in Grafana.</p><h2 id=configuring-targets>Configuring Targets</h2><p>Grizzly supports a number of resource types (<code>grr providers</code> will list those supported). Often, however, we do not
 wish to use all of these types. It is possible to set a list of &ldquo;target&rdquo; resource types that Grizzly should interact
 with:</p><pre><code>grr config set targets Dashboards,DashboardFolders
 </code></pre><p>These can be overriden on the command line with the <code>-t</code> or <code>--target</code> flag.</p><h2 id=configuring-output-formats>Configuring Output Formats</h2><p>Grizzly, when retrieving resources from Grafana, can present them in a range of formats. Currently, it supports
