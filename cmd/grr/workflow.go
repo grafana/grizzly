@@ -456,6 +456,7 @@ func exportCmd(registry grizzly.Registry) *cli.Command {
 
 		return grizzly.Export(registry, dashboardDir, resources, onlySpec, format)
 	}
+	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
 
