@@ -33,6 +33,7 @@ type Opts struct {
 	ProxyPort   int
 	CanSave     bool
 	Watch       bool
+	WatchScript string
 }
 
 func configPathCmd() *cli.Command {
