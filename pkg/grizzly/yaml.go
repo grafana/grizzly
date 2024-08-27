@@ -37,7 +37,7 @@ func (parser *YAMLParser) Parse(file string, options ParserOptions) (Resources, 
 	decoder := yaml.NewDecoder(reader)
 	resources := NewResources()
 	for i := 0; ; i++ {
-		var m map[string]any
+		var m any
 		err = decoder.Decode(&m)
 		if err == io.EOF {
 			break

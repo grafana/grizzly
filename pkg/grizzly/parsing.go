@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -33,6 +34,7 @@ type FormatParser interface {
 }
 
 type Parser interface {
+	Accept(file string) bool
 	Parse(resourcePath string, options ParserOptions) (Resources, error)
 }
 
@@ -80,6 +82,10 @@ func NewFilteredParser(registry Registry, decorated Parser, targets []string) *F
 	}
 }
 
+func (parser *FilteredParser) Accept(file string) bool {
+	return parser.decorated.Accept(file)
+}
+
 func (parser *FilteredParser) Parse(resourcePath string, options ParserOptions) (Resources, error) {
 	resources, err := parser.decorated.Parse(resourcePath, options)
 	if err != nil {
@@ -103,6 +109,15 @@ func NewChainParser(formatParsers []FormatParser, continueOnError bool) *ChainPa
 		formatParsers:   formatParsers,
 		continueOnError: continueOnError,
 	}
+}
+
+func (parser *ChainParser) Accept(file string) bool {
+	for _, p := range parser.formatParsers {
+		if p.Accept(file) {
+			return true
+		}
+	}
+	return false
 }
 
 func (parser *ChainParser) Parse(resourcePath string, options ParserOptions) (Resources, error) {
@@ -165,6 +180,19 @@ func (parser *ChainParser) parseFile(file string, options ParserOptions) (Resour
 }
 
 func parseAny(registry Registry, data any, resourceKind, folderUID string, source Source) (Resources, error) {
+	if slice, ok := isSlice(data); ok {
+		resources := NewResources()
+		for _, elem := range slice {
+			parsedResources, err := parseAny(registry, elem, resourceKind, folderUID, source)
+			if err != nil {
+				return Resources{}, err
+			}
+			for _, resource := range parsedResources.AsList() {
+				resources.Add(resource)
+			}
+		}
+		return resources, nil
+	}
 	hasEnvelope := DetectEnvelope(data)
 	if hasEnvelope {
 		m := data.(map[string]any)
@@ -245,6 +273,15 @@ func DetectEnvelope(data any) bool {
 		}
 	}
 	return true
+}
+
+func isSlice(data any) ([]any, bool) {
+	switch reflect.TypeOf(data).Kind() {
+	case reflect.Slice:
+		return data.([]any), true
+	default:
+		return nil, false
+	}
 }
 
 // ValidateEnvelope confirms that this resource is a complete enveloped resource

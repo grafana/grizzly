@@ -69,6 +69,7 @@ render your dashboard(s) to files. One such tool is [entr](https://github.com/er
 used like so (with the Foundation SDK's TypeScript support):
 
 ```
+git clone https://github.com/grafana/grafana-foundation-sdk
 cd grafana-foundation-sdk/examples/typescript/red-method
 npm install
 find . | entr -s 'npm run -s dev > ts.json'
@@ -77,3 +78,8 @@ Then, in another window:
 ```
 grr serve -w ts.json
 ```
+Finally, open the Grizzly server at [http://localhost:8080](http://localhost:8080) and select the Red
+Method dashboard.
+
+Now, any changes to any of the Typescript files for the example Red Method dashboard will be instantly
+shown in your dashboard.

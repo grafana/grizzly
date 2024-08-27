@@ -28,7 +28,7 @@ func (parser *JSONParser) Parse(file string, options ParserOptions) (Resources, 
 	}
 	defer f.Close()
 
-	m := map[string]any{}
+	var m any
 	err = json.NewDecoder(f).Decode(&m)
 	if err != nil {
 		return Resources{}, err

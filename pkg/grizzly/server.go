@@ -102,13 +102,14 @@ var mustProxyPOST = []string{
 	"/api/ds/query",
 }
 var blockJSONget = map[string]string{
-	"/api/ma/events":    "[]",
-	"/api/live/publish": "[]",
-	"/api/live/list":    "[]",
-	"/api/user/orgs":    "[]",
-	"/api/annotations":  "[]",
-	"/api/search":       "[]",
-	"/api/usage/*":      "[]",
+	"/api/ma/events":       "[]",
+	"/api/live/publish":    "[]",
+	"/api/live/list":       "[]",
+	"/api/user/orgs":       "[]",
+	"/api/annotations":     "[]",
+	"/api/search":          "[]",
+	"/api/usage/*":         "[]",
+	"/api/frontend/assets": "{}",
 
 	"/api/access-control/user/actions": `{"dashboards:write": true}`,
 	"/api/prometheus/grafana/api/v1/rules": `{
@@ -140,6 +141,7 @@ func (s *Server) Start() error {
 
 	r.Use(middleware.Logger)
 	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
+	r.HandleFunc("/favicon.ico", s.faviconHandlerFunc())
 
 	for _, handler := range s.Registry.Handlers {
 		proxyHandler, ok := handler.(ProxyHandler)
@@ -208,8 +210,8 @@ func (s *Server) Start() error {
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), r)
 }
 
-func (s *Server) ParseResources(resourcesPath string) (Resources, error) {
-	resources, err := s.parser.Parse(resourcesPath, s.parserOpts)
+func (s *Server) ParseResources(resourcePath string) (Resources, error) {
+	resources, err := s.parser.Parse(resourcePath, s.parserOpts)
 	s.parserErr = err
 	s.Resources.Merge(resources)
 	return resources, err
@@ -224,9 +226,13 @@ func (s *Server) URL(path string) string {
 }
 
 func (s *Server) updateWatchedResource(name string) error {
-	resources, err := s.ParseResources(name)
+	if !s.parser.Accept(name) {
+		return nil
+	}
+	resources, err := s.ParseResources(s.ResourcePath)
 	if errors.As(err, &UnrecognisedFormatError{}) {
-		log.Printf("Skipping %s", name)
+		uerr := err.(UnrecognisedFormatError)
+		log.Printf("Skipping %s", uerr.File)
 		return nil
 	}
 	if err != nil {
@@ -241,7 +247,7 @@ func (s *Server) updateWatchedResource(name string) error {
 		}
 		_, ok := handler.(ProxyHandler)
 		if ok {
-			log.Info("Changes detected. Applying ", name)
+			log.Infof("Changes detected. Reloading %s", resource.Name())
 			err = livereload.Reload(resource.Kind(), resource.Name(), resource.Spec())
 			if err != nil {
 				return err
@@ -250,6 +256,7 @@ func (s *Server) updateWatchedResource(name string) error {
 	}
 	return nil
 }
+
 func (s *Server) blockHandler(response string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -311,6 +318,19 @@ func (s *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 	if err := templates.ExecuteTemplate(w, "proxy/index.html.tmpl", templateVars); err != nil {
 		SendError(w, "Error while executing template", err, 500)
 		return
+	}
+}
+
+func (s *Server) faviconHandlerFunc() http.HandlerFunc {
+	content, _ := embedFS.ReadFile("embed/assets/grizzly.ico")
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/x-icon")
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write(content)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 }
 

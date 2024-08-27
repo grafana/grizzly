@@ -1,4 +1,5 @@
 {
+  uid: 'prod-overview',
   title: 'Production Overview',
   tags: ['templated'],
   timezone: 'browser',
