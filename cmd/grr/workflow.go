@@ -379,13 +379,12 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		watchPaths := []string{resourcesPath}
 		if opts.WatchScript != "" {
 			watchPaths = args
-		} else {
-			if len(args) > 0 {
-				resourcesPath = args[0]
-			}
-			if len(args) > 1 {
-				watchPaths = args[1:]
-			}
+		} else if len(args) == 1 {
+			resourcesPath = args[0]
+			watchPaths = []string{resourcesPath}
+		} else if len(args) > 1 {
+			resourcesPath = args[0]
+			watchPaths = args[1:]
 		}
 
 		targets := currentContext.GetTargets(opts.Targets)
