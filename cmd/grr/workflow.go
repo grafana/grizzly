@@ -375,15 +375,13 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		resourcesPath := ""
-		watchPaths := []string{resourcesPath}
+		resourcesPath := args[0]
+		watchPaths := args
+
 		if opts.WatchScript != "" {
-			watchPaths = args
-		} else if len(args) == 1 {
-			resourcesPath = args[0]
-			watchPaths = []string{resourcesPath}
-		} else if len(args) > 1 {
-			resourcesPath = args[0]
+			resourcesPath = ""
+		}
+		if len(args) > 1 {
 			watchPaths = args[1:]
 		}
 
