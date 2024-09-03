@@ -9,7 +9,7 @@ lint:
 		--rm \
 		--volume "$(shell pwd):/src" \
 		--workdir "/src" \
-		golangci/golangci-lint:v1.57 golangci-lint run ./... -v
+		golangci/golangci-lint:v1.60.3 golangci-lint run ./... -v
 
 run-test-image-locally: test-clean
 	$(DOCKER_COMPOSE) up --force-recreate --detach --remove-orphans --wait
