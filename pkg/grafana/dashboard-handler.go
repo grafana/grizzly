@@ -332,11 +332,11 @@ func (h *DashboardHandler) RootDashboardPageHandler(s grizzly.Server) http.Handl
 
 		if resp.StatusCode == 302 {
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintf(w, msg+"<p>Authentication error</p>")
+			fmt.Fprintf(w, "%s<p>Authentication error</p>", msg)
 		} else {
 			body, _ := io.ReadAll(resp.Body)
 			w.WriteHeader(resp.StatusCode)
-			fmt.Fprintf(w, msg+string(body))
+			fmt.Fprintf(w, "%s%s", msg, string(body))
 		}
 	}
 }
