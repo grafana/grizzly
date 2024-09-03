@@ -18,6 +18,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+          cache-dependency-path: go.sum
       - run: make cross
       - id: docker_tag
         run: echo "DOCKER_TAG=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
