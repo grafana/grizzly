@@ -21,3 +21,14 @@ cd grizzly
 make dev
 sudo mv grr /usr/local/bin/grr
 ```
+
+Installing Grizzly on macOS via Homebrew
+
+Before you begin
+Install [Homebrew](https://brew.sh) on your computer.
+
+Once Homebrew is installed, you can install Grizzly using the following command:
+
+```
+brew install grizzly
+```
