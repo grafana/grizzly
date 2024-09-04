@@ -375,11 +375,12 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		resourcesPath := ""
-		if len(args) > 0 {
-			resourcesPath = args[0]
+		resourcesPath := args[0]
+		watchPaths := args
+
+		if opts.WatchScript != "" {
+			resourcesPath = ""
 		}
-		watchPaths := []string{resourcesPath}
 		if len(args) > 1 {
 			watchPaths = args[1:]
 		}
@@ -405,6 +406,9 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		server.SetFormatting(onlySpec, format)
 		if opts.Watch {
 			server.Watch(watchPaths)
+			if opts.WatchScript != "" {
+				server.WatchScript(opts.WatchScript)
+			}
 		}
 		if opts.OpenBrowser {
 			server.OpenBrowser()
@@ -414,6 +418,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 	cmd.Flags().BoolVarP(&opts.Watch, "watch", "w", false, "Watch filesystem for changes")
 	cmd.Flags().BoolVarP(&opts.OpenBrowser, "open-browser", "b", false, "Open Grizzly in default browser")
 	cmd.Flags().IntVarP(&opts.ProxyPort, "port", "p", 8080, "Port on which the server will listen")
+	cmd.Flags().StringVarP(&opts.WatchScript, "script", "S", "", "Script to execute on filesystem change")
 	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
@@ -456,6 +461,7 @@ func exportCmd(registry grizzly.Registry) *cli.Command {
 
 		return grizzly.Export(registry, dashboardDir, resources, onlySpec, format)
 	}
+	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
 

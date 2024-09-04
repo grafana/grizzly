@@ -1,4 +1,4 @@
-FROM golang:1.22.5
+FROM golang:1.23.0
 ARG JSONNET_VERSION=v0.19.1
 ARG JB_VERSION=v0.5.1
 RUN CGO_ENABLED=0 go install github.com/google/go-jsonnet/cmd/jsonnet@${JSONNET_VERSION} && \

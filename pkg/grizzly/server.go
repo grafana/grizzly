@@ -1,12 +1,14 @@
 package grizzly
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"os/exec"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -31,6 +33,7 @@ type Server struct {
 	UserAgent      string
 	ResourcePath   string
 	WatchPaths     []string
+	watchScript    string
 	OnlySpec       bool
 	OutputFormat   string
 	watch          bool
@@ -83,6 +86,10 @@ func (s *Server) OpenBrowser() {
 func (s *Server) Watch(watchPaths []string) {
 	s.watch = true
 	s.WatchPaths = watchPaths
+}
+
+func (s *Server) WatchScript(script string) {
+	s.watchScript = script
 }
 
 func (s *Server) SetFormatting(onlySpec bool, outputFormat string) {
@@ -174,10 +181,19 @@ func (s *Server) Start() error {
 	r.Get("/grizzly/{kind}/{name}", s.IframeHandler)
 	r.Get("/api/live/ws", livereload.LiveReloadHandlerFunc(upgrader))
 
-	if _, err := s.ParseResources(s.ResourcePath); err != nil {
+	if s.watchScript != "" {
+		var b []byte
+		b, err = s.executeWatchScript()
+		if err != nil {
+			return err
+		}
+		_, err = s.ParseBytes(b)
+	} else {
+		_, err = s.ParseResources(s.ResourcePath)
+	}
+	if err != nil {
 		fmt.Print(err)
 	}
-
 	if s.openBrowser {
 		browser, err := NewBrowserInterface(s.Registry, s.ResourcePath, s.port)
 		if err != nil {
@@ -217,6 +233,26 @@ func (s *Server) ParseResources(resourcePath string) (Resources, error) {
 	return resources, err
 }
 
+func (s *Server) ParseBytes(b []byte) (Resources, error) {
+	f, err := os.CreateTemp(".", fmt.Sprintf("*.%s", s.OutputFormat))
+	if err != nil {
+		return Resources{}, err
+	}
+	defer os.Remove(f.Name())
+	_, err = f.Write(b)
+	if err != nil {
+		return Resources{}, err
+	}
+	err = f.Close()
+	if err != nil {
+		return Resources{}, err
+	}
+	resources, err := s.parser.Parse(f.Name(), s.parserOpts)
+	s.parserErr = err
+	s.Resources.Merge(resources)
+	return resources, err
+}
+
 func (s *Server) URL(path string) string {
 	if len(path) == 0 || path[0] != '/' {
 		path = "/" + path
@@ -226,10 +262,19 @@ func (s *Server) URL(path string) string {
 }
 
 func (s *Server) updateWatchedResource(name string) error {
-	if !s.parser.Accept(name) {
-		return nil
+	var resources Resources
+	var err error
+
+	if s.watchScript != "" {
+		var b []byte
+		b, err = s.executeWatchScript()
+		if err != nil {
+			return err
+		}
+		resources, err = s.ParseBytes(b)
+	} else {
+		resources, err = s.ParseResources(s.ResourcePath)
 	}
-	resources, err := s.ParseResources(s.ResourcePath)
 	if errors.As(err, &UnrecognisedFormatError{}) {
 		uerr := err.(UnrecognisedFormatError)
 		log.Printf("Skipping %s", uerr.File)
@@ -239,6 +284,7 @@ func (s *Server) updateWatchedResource(name string) error {
 		log.Error("Error: ", err)
 		return err
 	}
+
 	for _, resource := range resources.AsList() {
 		handler, err := s.Registry.GetHandler(resource.Kind())
 		if err != nil {
@@ -255,6 +301,22 @@ func (s *Server) updateWatchedResource(name string) error {
 		}
 	}
 	return nil
+}
+
+func (s *Server) executeWatchScript() ([]byte, error) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd := exec.Command("sh", "-c", s.watchScript)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+	if stderr.Len() > 0 {
+		log.Errorf("%s", stderr.String())
+	}
+	return stdout.Bytes(), nil
 }
 
 func (s *Server) blockHandler(response string) http.HandlerFunc {

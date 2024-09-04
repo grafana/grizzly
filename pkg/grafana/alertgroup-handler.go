@@ -261,10 +261,6 @@ func (h *AlertRuleGroupHandler) putAlertRuleGroup(existing, resource grizzly.Res
 		}
 	}
 
-	// clear rules as grafana will error if the spec contains more rules than are
-	// currently present
-	group.Rules = nil
-
 	client, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return err
