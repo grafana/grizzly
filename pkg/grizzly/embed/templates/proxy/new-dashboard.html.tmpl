@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset=utf-8>
+    <title>Grizzly</title>
+    <link rel="stylesheet" href="/grizzly/assets/style.css"/>
+</head>
+<body dir="ltr">
+{{ template "proxy/header.html.tmpl" . }}
+
+<main>
+    <div>
+      <form method="POST" action="#">
+        <input name="title" placeholder="Dashboard title"><br/>
+        <input name="uid" placeholder="Dashboard UID"><br/>
+        <input name="path" placeholder="Local file path"><br/>
+        <input type="submit" value="Create dashboard"/>
+      </form>
+    </div>
+</main>
+</body>
+</html>

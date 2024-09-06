@@ -109,3 +109,23 @@ iframe {
     width: 100%;
     height: 100%;
 }
+
+.button {
+  position: relative;
+  display: inline-block;
+  border: 1px solid #1866d4;
+  background-color: #1866d4;
+  color: #fefefe;
+  text-decoration: none !important;
+  box-sizing: border-box;
+  border-radius: 3px;
+  font-size: 14px;
+  line-height: 24px;
+  margin: 10px;
+  padding: 5px 15px !important;
+}
+
+.button:hover {
+    border: 1px solid white;
+    color: #fefefe;
+}

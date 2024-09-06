@@ -23,6 +23,7 @@
     {{ end }}
     <h1>Available dashboards</h1>
 
+    <span><a class="button" href="/grizzly/new/dashboard">New dashboard</a></span>
     <ul>
         {{ range .Resources }}
             {{ if eq .Kind "Dashboard" }}
