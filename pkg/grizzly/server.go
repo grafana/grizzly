@@ -410,11 +410,22 @@ func (s *Server) NewResourcePostHandler(w http.ResponseWriter, r *http.Request) 
 		SendError(w, "Error rendering new resource", err, 400)
 		return
 	}
+	isaFile, err := isFile(s.ResourcePath)
+	if err != nil {
+		SendError(w, "Error rendering new resource", err, 400)
+		return
+	}
+	var filename string
+	if isaFile {
+		filename = filepath.Join(s.ResourcePath, path)
+	} else {
+		filename = filepath.Join(filepath.Base(s.ResourcePath), path)
+	}
+
 	resource.Source.Rewritable = true
-	resource.Source.Path = path
+	resource.Source.Path = filename
 	resource.Source.Format = s.OutputFormat
 
-	filename := filepath.Join(s.ResourcePath, path)
 	content, _, _, err := Format(s.Registry, filename, &resource, s.OutputFormat, s.OnlySpec)
 	if err != nil {
 		SendError(w, "Error rendering new resource", err, 400)
