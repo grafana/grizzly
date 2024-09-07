@@ -416,7 +416,9 @@ func (s *Server) NewResourcePostHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	var filename string
-	if isaFile {
+	if filepath.IsAbs(path) {
+		filename = path
+	} else if isaFile {
 		filename = filepath.Join(s.ResourcePath, path)
 	} else {
 		filename = filepath.Join(filepath.Base(s.ResourcePath), path)
