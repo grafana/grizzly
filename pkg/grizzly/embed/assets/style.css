@@ -129,3 +129,12 @@ iframe {
     border: 1px solid white;
     color: #fefefe;
 }
+
+.input-text {
+    font-size: 14px;
+    padding: 5px;
+    margin: 5px;
+    border-radius: 2px;
+    border: 1px solid lightgray;
+    width: 250px;
+}

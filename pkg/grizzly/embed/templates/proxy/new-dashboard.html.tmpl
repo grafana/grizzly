@@ -10,11 +10,12 @@
 
 <main>
     <div>
+      <h1>Create a new dashboard</h1>
       <form method="POST" action="#">
-        <input name="title" placeholder="Dashboard title"><br/>
-        <input name="uid" placeholder="Dashboard UID"><br/>
-        <input name="path" placeholder="Local file path"><br/>
-        <input type="submit" value="Create dashboard"/>
+        <input class="input-text" name="title" placeholder="Dashboard title"><br/>
+        <input class="input-text" name="uid" placeholder="Dashboard UID"> can be a human readable alphanumeric (plus dash) string. <br/>
+        <input class="input-text" name="path" placeholder="Local file path"> relative to your Grizzly resource path.<br/>
+        <input class="button" type="submit" value="Create and edit dashboard"/>
       </form>
     </div>
 </main>
