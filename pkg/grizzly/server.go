@@ -412,7 +412,11 @@ func (s *Server) NewResourceGetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func (s *Server) NewResourcePostHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		SendError(w, "Error rendering new resource", err, 400)
+		return
+	}
 	uid := r.Form.Get("uid")
 	spec := map[string]any{
 		"title":         r.Form.Get("title"),
@@ -430,12 +434,8 @@ func (s *Server) NewResourcePostHandler(w http.ResponseWriter, r *http.Request) 
 		SendError(w, "Error rendering new resource", err, 400)
 		return
 	}
-	var filename string
-	if filepath.IsAbs(path) {
-		filename = path
-	} else if isaFile {
-		filename = filepath.Join(s.ResourcePath, path)
-	} else {
+	filename := filepath.Join(s.ResourcePath, path)
+	if !isaFile {
 		filename = filepath.Join(filepath.Base(s.ResourcePath), path)
 	}
 
