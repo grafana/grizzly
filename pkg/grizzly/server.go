@@ -387,9 +387,24 @@ func (s *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) NewResourceGetHandler(w http.ResponseWriter, r *http.Request) {
+	isaFile, err := isFile(s.ResourcePath)
+	if err != nil {
+		SendError(w, "Error finding resource path", err, 400)
+		return
+	}
+	path, err := filepath.Abs(s.ResourcePath)
+	if err != nil {
+		SendError(w, "Error finding resource path", err, 400)
+		return
+	}
+	if isaFile {
+		path = filepath.Base(path)
+	}
+
 	templateVars := map[string]any{
 		"ServerPort":     s.port,
 		"CurrentContext": s.CurrentContext,
+		"Path":           path,
 	}
 	if err := templates.ExecuteTemplate(w, "proxy/new-dashboard.html.tmpl", templateVars); err != nil {
 		SendError(w, "Error while executing template", err, 500)

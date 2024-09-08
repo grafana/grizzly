@@ -138,3 +138,8 @@ iframe {
     border: 1px solid lightgray;
     width: 250px;
 }
+
+.code {
+    font-family:'Courier New', Courier, monospace;
+    font-size: 90%;
+}
