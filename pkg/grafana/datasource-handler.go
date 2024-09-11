@@ -38,6 +38,7 @@ func (h *DatasourceHandler) ResourceFilePath(resource grizzly.Resource, filetype
 func (h *DatasourceHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
 	resource.DeleteSpecKey("version")
 	resource.DeleteSpecKey("id")
+	resource.DeleteSpecKey("secureJsonData")
 	return &resource
 }
 

@@ -332,12 +332,13 @@ func Diff(registry Registry, resources Resources, onlySpec bool, outputFormat st
 			return err
 		}
 
+		resource = *handler.Unprepare(resource)
+
 		local, _, _, err := Format(registry, "", &resource, outputFormat, onlySpec)
 		if err != nil {
 			return err
 		}
 
-		resource = *handler.Unprepare(resource)
 		uid := resource.Name()
 
 		log.Debugf("Getting the remote value for `%s`", resource.Ref())
