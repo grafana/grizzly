@@ -101,7 +101,6 @@ var mustProxyGET = []string{
 	"/public/*",
 	"/api/datasources/proxy/*",
 	"/api/datasources/*",
-	"/api/library-elements/*",
 	"/api/plugins/*",
 	"/avatar/*",
 }

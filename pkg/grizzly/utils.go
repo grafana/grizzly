@@ -2,9 +2,8 @@ package grizzly
 
 import (
 	"fmt"
-	"net/http"
-
 	"log"
+	"net/http"
 )
 
 // Pluraliser returns a string describing the count of items, with a plural 's'

@@ -1,6 +1,7 @@
 package grafana
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -25,4 +26,13 @@ func writeOrLog(w http.ResponseWriter, content []byte) {
 	if _, err := w.Write(content); err != nil {
 		log.Errorf("error writing response: %v", err)
 	}
+}
+
+func writeJSONOrLog(w http.ResponseWriter, content any) {
+	responseJSON, err := json.Marshal(content)
+	if err != nil {
+		log.Errorf("error marshalling response to JSON: %v", err)
+	}
+
+	writeOrLog(w, responseJSON)
 }
