@@ -4,11 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
+	"github.com/go-chi/chi"
 	library "github.com/grafana/grafana-openapi-client-go/client/library_elements"
 	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/grizzly/pkg/grizzly"
+	log "github.com/sirupsen/logrus"
 )
+
+const LibraryElementKind = "LibraryElement"
 
 // LibraryElementHandler is a Grizzly Handler for Grafana dashboard folders
 type LibraryElementHandler struct {
@@ -20,7 +25,7 @@ var _ grizzly.Handler = &LibraryElementHandler{}
 // NewLibraryElementHandler returns configuration defining a new Grafana Library Element Handler
 func NewLibraryElementHandler(provider grizzly.Provider) *LibraryElementHandler {
 	return &LibraryElementHandler{
-		BaseHandler: grizzly.NewBaseHandler(provider, "LibraryElement", false),
+		BaseHandler: grizzly.NewBaseHandler(provider, LibraryElementKind, false),
 	}
 }
 
@@ -113,6 +118,45 @@ func (h *LibraryElementHandler) Add(resource grizzly.Resource) error {
 // Update pushes an element to Grafana via the API
 func (h *LibraryElementHandler) Update(existing, resource grizzly.Resource) error {
 	return h.updateElement(existing, resource)
+}
+
+func (h *LibraryElementHandler) GetProxyEndpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
+	return []grizzly.HTTPEndpoint{
+		{
+			Method:  "GET",
+			URL:     "/api/library-elements/{uid}",
+			Handler: h.LibraryElementJSONGetHandler(s),
+		},
+	}
+}
+
+func (h *LibraryElementHandler) ProxyURL(uid string) string {
+	return fmt.Sprintf("/api/library-elements/%s", uid)
+}
+
+func (h *LibraryElementHandler) LibraryElementJSONGetHandler(s grizzly.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		uid := chi.URLParam(r, "uid")
+		if uid == "" {
+			grizzly.SendError(w, "No UID specified", fmt.Errorf("no UID specified within the URL"), 400)
+			return
+		}
+
+		resource, found := s.Resources.Find(grizzly.NewResourceRef(LibraryElementKind, uid))
+		if !found {
+			log.Debug("Library element not found in memory, proxying request...", "uid", uid)
+			s.ProxyRequestHandler(w, r)
+			return
+		}
+
+		if resource.GetSpecValue("version") == nil {
+			resource.SetSpecValue("version", 1)
+		}
+
+		writeJSONOrLog(w, map[string]any{
+			"result": resource.Spec(),
+		})
+	}
 }
 
 func (h *LibraryElementHandler) listElements() ([]string, error) {

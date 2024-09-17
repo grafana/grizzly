@@ -357,20 +357,17 @@ func (h *DashboardHandler) DashboardJSONGetHandler(s grizzly.Server) http.Handle
 		if resource.GetSpecValue("version") == nil {
 			resource.SetSpecValue("version", 1)
 		}
-		meta := map[string]interface{}{
-			"type":      "db",
-			"isStarred": false,
-			"folderID":  0,
-			"folderUID": "",
-			"url":       fmt.Sprintf("/d/%s/slug", uid),
-		}
-		wrapper := map[string]interface{}{
-			"dashboard": resource.Spec(),
-			"meta":      meta,
-		}
 
-		out, _ := json.Marshal(wrapper)
-		writeOrLog(w, out)
+		writeJSONOrLog(w, map[string]any{
+			"dashboard": resource.Spec(),
+			"meta": map[string]any{
+				"type":      "db",
+				"isStarred": false,
+				"folderID":  0,
+				"folderUID": "",
+				"url":       h.ProxyURL(uid),
+			},
+		})
 	}
 }
 
