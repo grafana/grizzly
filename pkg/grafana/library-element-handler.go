@@ -35,15 +35,22 @@ const (
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *LibraryElementHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
+	var kindCode int
 	kind := "element"
-	t := resource.GetSpecValue("kind").(float64)
 
-	switch t {
+	if t, ok := resource.GetSpecValue("kind").(int); ok {
+		kindCode = t
+	} else if t, ok := resource.GetSpecValue("kind").(float64); ok {
+		kindCode = int(t)
+	}
+
+	switch kindCode {
 	case 1:
 		kind = "panel"
 	case 2:
 		kind = "variable"
 	}
+
 	return fmt.Sprintf(libraryElementPattern, kind, resource.Name(), filetype)
 }
 
