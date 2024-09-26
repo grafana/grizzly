@@ -41,7 +41,7 @@ go run cmd/grr/*.go
 
 There are both unit tests and integration tests in this repo.
 
-Unit integration can be run using `make test`. Integration tests are run with
+Unit tests can be run using `make test`. Integration tests are run with
 `make integration`. This command spins up a Grafana instance with certain config 
 and provisioned resources, so the integration tests can run against it.
 
