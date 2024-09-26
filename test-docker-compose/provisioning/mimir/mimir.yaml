@@ -6,3 +6,8 @@ ruler_storage:
 ruler:
   enable_api: true
   poll_interval: 1s
+
+alertmanager_storage:
+  backend: filesystem
+  local:
+    path: /tmp/mimir/alerts

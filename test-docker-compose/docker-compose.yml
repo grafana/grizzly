@@ -1,7 +1,7 @@
 version: '3.4'
 services:
   grafana:
-    image: &image grafana/grafana:10.2.0
+    image: &grafanaImage grafana/grafana:10.2.0
     restart: on-failure
     ports:
       - "3001:3001"
@@ -22,7 +22,7 @@ services:
   # It's important to use nginx to serve the subpath, otherwise, it doesn't really test the real-world scenario
   # Grafana will redirect all subpaths to the root URL if that's the correct path, while an nginx will fail if the subpath is not correct
   grafana_subpath:
-    image: *image
+    image: *grafanaImage
     restart: on-failure
     ports:
       - "3002:3002"
@@ -53,7 +53,7 @@ services:
       - ./provisioning/mimir/htpasswd:/etc/nginx/.htpasswd:ro
 
   grafana_basic_auth:
-    image: *image
+    image: *grafanaImage
     ports:
       - "3004:3004"
     environment:
@@ -69,7 +69,7 @@ services:
 
   mimir:
     image: grafana/mimir:2.12.0
-    command: [ "-config.file=/etc/mimir.yaml" ]
+    command: [ "-config.file=/etc/mimir.yaml", "-target=all,alertmanager" ]
     hostname: mimir
     volumes:
       - ./provisioning/mimir/mimir.yaml:/etc/mimir.yaml
