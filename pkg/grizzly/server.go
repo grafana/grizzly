@@ -181,6 +181,11 @@ func (s *Server) Start() error {
 	r.Get("/grizzly/{kind}/{name}", s.IframeHandler)
 	r.Get("/api/live/ws", livereload.LiveReloadHandlerFunc(upgrader))
 
+	_, err = s.ParseResources(s.ResourcePath)
+	if err != nil {
+		fmt.Print(err)
+	}
+
 	if s.watchScript != "" {
 		var b []byte
 		b, err = s.executeWatchScript()
@@ -188,11 +193,9 @@ func (s *Server) Start() error {
 			return err
 		}
 		_, err = s.ParseBytes(b)
-	} else {
-		_, err = s.ParseResources(s.ResourcePath)
-	}
-	if err != nil {
-		fmt.Print(err)
+		if err != nil {
+			fmt.Print(err)
+		}
 	}
 	if s.openBrowser {
 		browser, err := NewBrowserInterface(s.Registry, s.ResourcePath, s.port)
@@ -265,7 +268,10 @@ func (s *Server) updateWatchedResource(name string) error {
 	var resources Resources
 	var err error
 
-	if s.watchScript != "" {
+	_, found := s.Resources.FindByFilename(name)
+	if found {
+		resources, _ = s.ParseResources(name)
+	} else if s.watchScript != "" {
 		var b []byte
 		b, err = s.executeWatchScript()
 		if err != nil {
@@ -273,8 +279,10 @@ func (s *Server) updateWatchedResource(name string) error {
 		}
 		resources, err = s.ParseBytes(b)
 	} else {
-		resources, err = s.ParseResources(s.ResourcePath)
+		// new resource?
+		resources, _ = s.ParseResources(name)
 	}
+
 	if errors.As(err, &UnrecognisedFormatError{}) {
 		uerr := err.(UnrecognisedFormatError)
 		log.Printf("Skipping %s", uerr.File)
@@ -310,11 +318,11 @@ func (s *Server) executeWatchScript() ([]byte, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
-	if err != nil {
-		return nil, err
-	}
 	if stderr.Len() > 0 {
 		log.Errorf("%s", stderr.String())
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed running watch script: %w", err)
 	}
 	return stdout.Bytes(), nil
 }

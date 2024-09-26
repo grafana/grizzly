@@ -378,9 +378,6 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		resourcesPath := args[0]
 		watchPaths := args
 
-		if opts.WatchScript != "" {
-			resourcesPath = ""
-		}
 		if len(args) > 1 {
 			watchPaths = args[1:]
 		}
@@ -404,7 +401,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		server.SetParser(parser, parserOpts)
 		server.SetContext(currentContext.Name)
 		server.SetFormatting(onlySpec, format)
-		if opts.Watch {
+		if opts.Watch || opts.WatchScript != "" {
 			server.Watch(watchPaths)
 			if opts.WatchScript != "" {
 				server.WatchScript(opts.WatchScript)
