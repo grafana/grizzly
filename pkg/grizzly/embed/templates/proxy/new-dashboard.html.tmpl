@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset=utf-8>
+    <title>Grizzly</title>
+    <link rel="stylesheet" href="/grizzly/assets/style.css"/>
+</head>
+<body dir="ltr">
+{{ template "proxy/header.html.tmpl" . }}
+
+<main>
+    <div>
+      <h1>Create a new dashboard</h1>
+      <form method="POST" action="#">
+        <input class="input-text" name="title" placeholder="Dashboard title"> a title for your new dashboard<br/>
+        <input class="input-text" name="uid" placeholder="Dashboard UID"> can be a human readable alphanumeric (plus dash) string. <br/>
+        <input class="input-text" name="path" placeholder="Local file path"> relative to <span class="code">{{ .Path }}</code>.<br/>
+        <input class="button" type="submit" value="Create and edit dashboard"/>
+      </form>
+    </div>
+</main>
+</body>
+</html>

@@ -9,6 +9,7 @@ import (
 	"net/http/httputil"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -179,6 +180,8 @@ func (s *Server) Start() error {
 	}
 	r.Get("/", s.RootHandler)
 	r.Get("/grizzly/{kind}/{name}", s.IframeHandler)
+	r.Get("/grizzly/new/{kind}", s.NewResourceGetHandler)
+	r.Post("/grizzly/new/{kind}", s.NewResourcePostHandler)
 	r.Get("/api/live/ws", livereload.LiveReloadHandlerFunc(upgrader))
 
 	if s.watchScript != "" {
@@ -381,6 +384,78 @@ func (s *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 		SendError(w, "Error while executing template", err, 500)
 		return
 	}
+}
+
+func (s *Server) NewResourceGetHandler(w http.ResponseWriter, r *http.Request) {
+	isaFile, err := isFile(s.ResourcePath)
+	if err != nil {
+		SendError(w, "Error finding resource path", err, 400)
+		return
+	}
+	path, err := filepath.Abs(s.ResourcePath)
+	if err != nil {
+		SendError(w, "Error finding resource path", err, 400)
+		return
+	}
+	if isaFile {
+		path = filepath.Base(path)
+	}
+
+	templateVars := map[string]any{
+		"ServerPort":     s.port,
+		"CurrentContext": s.CurrentContext,
+		"Path":           path,
+	}
+	if err := templates.ExecuteTemplate(w, "proxy/new-dashboard.html.tmpl", templateVars); err != nil {
+		SendError(w, "Error while executing template", err, 500)
+		return
+	}
+}
+func (s *Server) NewResourcePostHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		SendError(w, "Error rendering new resource", err, 400)
+		return
+	}
+	uid := r.Form.Get("uid")
+	spec := map[string]any{
+		"title":         r.Form.Get("title"),
+		"uid":           uid,
+		"schemaVersion": 39,
+	}
+	path := r.Form.Get("path")
+	resource, err := NewResource("", "Dashboard", uid, spec)
+	if err != nil {
+		SendError(w, "Error rendering new resource", err, 400)
+		return
+	}
+	isaFile, err := isFile(s.ResourcePath)
+	if err != nil {
+		SendError(w, "Error rendering new resource", err, 400)
+		return
+	}
+	filename := filepath.Join(s.ResourcePath, path)
+	if !isaFile {
+		filename = filepath.Join(filepath.Base(s.ResourcePath), path)
+	}
+
+	resource.Source.Rewritable = true
+	resource.Source.Path = filename
+	resource.Source.Format = s.OutputFormat
+
+	content, _, _, err := Format(s.Registry, filename, &resource, s.OutputFormat, s.OnlySpec)
+	if err != nil {
+		SendError(w, "Error rendering new resource", err, 400)
+		return
+	}
+
+	err = WriteFile(filename, content)
+	if err != nil {
+		SendError(w, "Error rendering new resource", err, 400)
+		return
+	}
+	s.Resources.Add(resource)
+	http.Redirect(w, r, fmt.Sprintf("/grizzly/Dashboard/%s", uid), http.StatusSeeOther)
 }
 
 func (s *Server) faviconHandlerFunc() http.HandlerFunc {
