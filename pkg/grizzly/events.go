@@ -89,6 +89,10 @@ func (summary Summary) AsString(resourceLabel string) string {
 	return strings.Join(parts, ", ")
 }
 
+type UsageRecorder struct {
+	writerRecorder WriterRecorder
+}
+
 type WriterRecorder struct {
 	out            io.Writer
 	eventFormatter EventFormatter
@@ -113,4 +117,8 @@ func (recorder *WriterRecorder) Record(event Event) {
 
 func (recorder *WriterRecorder) Summary() Summary {
 	return *recorder.summary
+}
+
+func (recorder *UsageRecorder) Record(event Event) {
+	recorder.writerRecorder.Record(event)
 }
