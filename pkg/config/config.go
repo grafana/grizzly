@@ -207,7 +207,6 @@ func Get(path, outputFormat string) (string, error) {
 
 			val, ok = values[part]
 			if !ok {
-
 				val = nil
 				break
 			}
