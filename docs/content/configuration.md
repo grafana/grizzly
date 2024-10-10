@@ -64,7 +64,7 @@ wish to use all of these types. It is possible to set a list of "target" resourc
 with:
 
 ```
-grr config set targets Dashboards,DashboardFolders
+grr config set targets Dashboard,DashboardFolder
 ```
 
 These can be overriden on the command line with the `-t` or `--target` flag.
