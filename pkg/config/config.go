@@ -183,11 +183,37 @@ var acceptableKeys = map[string]string{
 
 func Get(path, outputFormat string) (string, error) {
 	ctx := viper.GetString(CurrentContextSetting)
-	fullPath := fmt.Sprintf("contexts.%s", ctx)
-	if path != "" {
-		fullPath = fmt.Sprintf("%s.%s", fullPath, path)
+
+	vCtx := viper.Sub(fmt.Sprintf("contexts.%s", ctx))
+	if vCtx == nil {
+		vCtx = viper.New()
 	}
-	val := viper.Get(fullPath)
+	override(vCtx)
+
+	var val any
+	val = vCtx.AllSettings()
+
+	if path != "" {
+		for _, part := range strings.Split(path, ".") {
+			if val == nil {
+				break
+			}
+
+			values, ok := val.(map[string]interface{})
+			if !ok {
+				val = nil
+				break
+			}
+
+			val, ok = values[part]
+			if !ok {
+
+				val = nil
+				break
+			}
+		}
+	}
+
 	if val == nil {
 		return "", fmt.Errorf("key not found: %s", path)
 	}
