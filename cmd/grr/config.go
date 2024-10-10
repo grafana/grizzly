@@ -209,6 +209,14 @@ func checkCmd(registry grizzly.Registry) *cli.Command {
 		yellow := color.New(color.FgYellow).SprintfFunc()
 		green := color.New(color.FgGreen).SprintfFunc()
 
+		gCtx, err := config.CurrentContext()
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Configuration file: %s\n", green(viper.ConfigFileUsed()))
+		fmt.Printf("Current context: %s\n\n", green(gCtx.Name))
+
 		for i, provider := range registry.Providers {
 			fmt.Println(yellow(provider.Name()))
 			fmt.Println(yellow(strings.Repeat("=", len(provider.Name()))))
