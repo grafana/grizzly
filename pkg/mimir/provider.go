@@ -34,6 +34,26 @@ func (p *Provider) Validate() error {
 	return nil
 }
 
+func (p *Provider) Status() grizzly.ProviderStatus {
+	status := grizzly.ProviderStatus{}
+
+	if err := p.Validate(); err != nil {
+		status.ActiveReason = err.Error()
+		return status
+	}
+
+	status.Active = true
+
+	if _, err := p.clientTool.ListRules(); err != nil {
+		status.OnlineReason = err.Error()
+		return status
+	}
+
+	status.Online = true
+
+	return status
+}
+
 func (p *Provider) Name() string {
 	return "Mimir"
 }

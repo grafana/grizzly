@@ -8,6 +8,15 @@ import (
 	"github.com/gobwas/glob"
 )
 
+type ProviderStatus struct {
+	// Active indicates that the provider is properly configured.
+	Active       bool
+	ActiveReason string
+	// Online indicates that the configuration could be used successfully to perform requests.
+	Online       bool
+	OnlineReason string
+}
+
 // Provider describes a single Endpoint Provider
 type Provider interface {
 	Name() string
@@ -16,6 +25,10 @@ type Provider interface {
 	APIVersion() string
 	GetHandlers() []Handler
 	Validate() error
+
+	// Status performs checks to determine if the provider is active (ie: properly configured)
+	// and "online" (able to perform requests).
+	Status() ProviderStatus
 }
 
 type ProxyProvider interface {
