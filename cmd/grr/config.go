@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/fatih/color"
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/config"
+	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/spf13/viper"
 )
 
@@ -190,6 +193,49 @@ func createContextCmd() *cli.Command {
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		return config.CreateContext(args[0])
+	}
+	return initialiseLogging(cmd, &opts)
+}
+
+func checkCmd(registry grizzly.Registry) *cli.Command {
+	cmd := &cli.Command{
+		Use:   "check",
+		Short: "Create a configuration context",
+	}
+	var opts LoggingOpts
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		red := color.New(color.FgRed).SprintfFunc()
+		yellow := color.New(color.FgYellow).SprintfFunc()
+		green := color.New(color.FgGreen).SprintfFunc()
+
+		for i, provider := range registry.Providers {
+			fmt.Println(yellow(provider.Name()))
+			fmt.Println(yellow(strings.Repeat("=", len(provider.Name()))))
+
+			status := provider.Status()
+
+			activeMsg := green("true")
+			if !status.Active {
+				activeMsg = fmt.Sprintf("%s - %s", red("false"), status.ActiveReason)
+			}
+			fmt.Printf("Active: %s\n", activeMsg)
+
+			onlineMsg := green("true")
+			if !status.Active || !status.Online {
+				onlineMsg = red("false")
+			}
+			if status.Active && !status.Online {
+				onlineMsg = fmt.Sprintf("%s - %s", red("false"), status.OnlineReason)
+			}
+			fmt.Printf("Online: %s\n", onlineMsg)
+
+			if i != len(registry.Providers)-1 {
+				fmt.Printf("\n")
+			}
+		}
+
+		return nil
 	}
 	return initialiseLogging(cmd, &opts)
 }
