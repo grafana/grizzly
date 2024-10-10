@@ -40,9 +40,10 @@ func override(v *viper.Viper) {
 		"synthetic-monitoring.metrics-id":   "GRAFANA_SM_METRICS_ID",
 		"synthetic-monitoring.url":          "GRAFANA_SM_URL",
 
-		"mimir.address":   "MIMIR_ADDRESS",
-		"mimir.tenant-id": "MIMIR_TENANT_ID",
-		"mimir.api-key":   "MIMIR_API_KEY",
+		"mimir.address":    "MIMIR_ADDRESS",
+		"mimir.tenant-id":  "MIMIR_TENANT_ID",
+		"mimir.api-key":    "MIMIR_API_KEY",
+		"mimir.auth-token": "MIMIR_AUTH_TOKEN",
 	}
 
 	// To keep retro compatibility
@@ -170,6 +171,7 @@ var acceptableKeys = map[string]string{
 	"mimir.address":                     "string",
 	"mimir.tenant-id":                   "string",
 	"mimir.api-key":                     "string",
+	"mimir.auth-token":                  "string",
 	"synthetic-monitoring.access-token": "string",
 	"synthetic-monitoring.token":        "string",
 	"synthetic-monitoring.stack-id":     "int",
