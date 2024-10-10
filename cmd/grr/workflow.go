@@ -489,7 +489,7 @@ func providersCmd(registry grizzly.Registry) *cli.Command {
 	return initialiseLogging(cmd, &opts)
 }
 
-func configCmd() *cli.Command {
+func configCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "config <sub-command>",
 		Short: "Show, select or configure configuration",
@@ -504,6 +504,7 @@ func configCmd() *cli.Command {
 	cmd.AddCommand(setCmd())
 	cmd.AddCommand(unsetCmd())
 	cmd.AddCommand(createContextCmd())
+	cmd.AddCommand(checkCmd(registry))
 	return cmd
 }
 
