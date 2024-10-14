@@ -35,6 +35,8 @@ func NewWatcher(watcherFunc func(path string) error) (*Watcher, error) {
 }
 
 func (w *Watcher) Add(path string) error {
+	log.WithField("path", path).Info("[watcher] Adding path to watch list")
+
 	stat, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -70,7 +72,7 @@ func (w *Watcher) Add(path string) error {
 }
 func (w *Watcher) Watch() error {
 	go func() {
-		log.Info("Watching for changes")
+		log.Info("[watcher] Watching for changes")
 		for {
 			select {
 			case event, ok := <-w.watcher.Events:
@@ -79,10 +81,10 @@ func (w *Watcher) Watch() error {
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
 					if !w.isFiltered(event.Name) {
-						log.Info("Changes detected. Parsing")
+						log.Info("[watcher] Changes detected. Parsing")
 						err := w.watcherFunc(event.Name)
 						if err != nil {
-							log.Error("error: ", err)
+							log.Warn("[watcher] error: ", err)
 						}
 					}
 				}
@@ -90,7 +92,7 @@ func (w *Watcher) Watch() error {
 				if !ok {
 					return
 				}
-				log.Error("error: ", err)
+				log.Warn("[watcher] error: ", err)
 			}
 		}
 	}()
