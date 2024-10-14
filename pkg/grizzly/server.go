@@ -199,7 +199,7 @@ func (s *Server) Start() error {
 		_, err = s.ParseResources(s.ResourcePath)
 	}
 	if err != nil {
-		fmt.Print(err)
+		log.Warn(err.Error())
 	}
 	if s.openBrowser {
 		browser, err := NewBrowserInterface(s.Registry, s.ResourcePath, s.port)
@@ -317,11 +317,11 @@ func (s *Server) executeWatchScript() ([]byte, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
-	if err != nil {
-		return nil, err
-	}
 	if stderr.Len() > 0 {
-		log.Errorf("%s", stderr.String())
+		log.Errorf("[watch script] %s", stderr.String())
+	}
+	if err != nil {
+		return nil, fmt.Errorf("watch script failed: %w", err)
 	}
 	return stdout.Bytes(), nil
 }
