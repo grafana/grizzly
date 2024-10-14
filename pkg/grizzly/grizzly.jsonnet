@@ -38,7 +38,7 @@ local convert(main, apiVersion) = {
           'Dashboard',
           uid(k, dashboards[k]),
           spec=dashboards[k] + {
-            uid::'',
+            uid: uid(k, dashboards[k]),
           },
           metadata={ folder: folder }
         )

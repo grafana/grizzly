@@ -23,7 +23,7 @@ func NewJsonnetParser(registry Registry, jsonnetPaths []string) *JsonnetParser {
 	return &JsonnetParser{
 		registry:     registry,
 		jsonnetPaths: jsonnetPaths,
-		logger:       log.WithField("parser", "json"),
+		logger:       log.WithField("parser", "jsonnet"),
 	}
 }
 
