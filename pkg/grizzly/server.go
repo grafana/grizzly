@@ -9,10 +9,12 @@ import (
 	"net/http/httputil"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
+	"github.com/grafana/grizzly/internal/logger"
 	"github.com/grafana/grizzly/pkg/grizzly/livereload"
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
@@ -146,7 +148,12 @@ func (s *Server) Start() error {
 
 	r := chi.NewRouter()
 
-	r.Use(middleware.Logger)
+	color := true
+	if runtime.GOOS == "windows" {
+		color = false
+	}
+
+	r.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{Logger: logger.DecorateAtLevel(log.StandardLogger(), log.DebugLevel), NoColor: !color}))
 	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
 	r.HandleFunc("/favicon.ico", s.faviconHandlerFunc())
 
