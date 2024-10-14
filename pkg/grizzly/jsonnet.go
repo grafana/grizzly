@@ -10,17 +10,20 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
+	log "github.com/sirupsen/logrus"
 )
 
 type JsonnetParser struct {
 	registry     Registry
 	jsonnetPaths []string
+	logger       *log.Entry
 }
 
 func NewJsonnetParser(registry Registry, jsonnetPaths []string) *JsonnetParser {
 	return &JsonnetParser{
 		registry:     registry,
 		jsonnetPaths: jsonnetPaths,
+		logger:       log.WithField("parser", "json"),
 	}
 }
 
@@ -32,6 +35,8 @@ func (parser *JsonnetParser) Accept(file string) bool {
 
 // Parse evaluates a jsonnet file and parses it into an object tree
 func (parser *JsonnetParser) Parse(file string, options ParserOptions) (Resources, error) {
+	parser.logger.WithField("file", file).Debug("Parsing file")
+
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return Resources{}, fmt.Errorf("file does not exist: %s", file)
 	}
