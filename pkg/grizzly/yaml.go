@@ -6,16 +6,19 @@ import (
 	"os"
 	"path/filepath"
 
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
 type YAMLParser struct {
 	registry Registry
+	logger   *log.Entry
 }
 
 func NewYAMLParser(registry Registry) *YAMLParser {
 	return &YAMLParser{
 		registry: registry,
+		logger:   log.WithField("parser", "yaml"),
 	}
 }
 
@@ -27,6 +30,8 @@ func (parser *YAMLParser) Accept(file string) bool {
 
 // Parse evaluates a YAML file and parses it into resources
 func (parser *YAMLParser) Parse(file string, options ParserOptions) (Resources, error) {
+	parser.logger.WithField("file", file).Debug("Parsing file")
+
 	f, err := os.Open(file)
 	if err != nil {
 		return Resources{}, err

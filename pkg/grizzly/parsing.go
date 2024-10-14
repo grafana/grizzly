@@ -72,6 +72,7 @@ type FilteredParser struct {
 	registry  Registry
 	decorated Parser
 	targets   []string
+	logger    *log.Entry
 }
 
 func NewFilteredParser(registry Registry, decorated Parser, targets []string) *FilteredParser {
@@ -79,6 +80,7 @@ func NewFilteredParser(registry Registry, decorated Parser, targets []string) *F
 		registry:  registry,
 		decorated: decorated,
 		targets:   targets,
+		logger:    log.WithField("parser", "filtered"),
 	}
 }
 
@@ -87,13 +89,20 @@ func (parser *FilteredParser) Accept(file string) bool {
 }
 
 func (parser *FilteredParser) Parse(resourcePath string, options ParserOptions) (Resources, error) {
+	parser.logger.WithField("resourcePath", resourcePath).Debug("Parsing resource")
+
 	resources, err := parser.decorated.Parse(resourcePath, options)
 	if err != nil {
 		return resources, err
 	}
 
 	resources = resources.Filter(func(resource Resource) bool {
-		return parser.registry.ResourceMatchesTarget(resource.Kind(), resource.Name(), parser.targets)
+		result := parser.registry.ResourceMatchesTarget(resource.Kind(), resource.Name(), parser.targets)
+		if !result {
+			parser.logger.WithField("resource", resource.Ref().String()).Debug("Omitting resource")
+		}
+
+		return result
 	})
 
 	return parser.registry.Sort(resources), nil
