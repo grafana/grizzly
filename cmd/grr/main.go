@@ -37,6 +37,11 @@ func main() {
 		Version: Version,
 	}
 
+	log.SetFormatter(&log.TextFormatter{
+		DisableTimestamp:       true,
+		DisableLevelTruncation: true,
+	})
+
 	config.Initialise()
 	err := config.Read()
 	if err != nil {
