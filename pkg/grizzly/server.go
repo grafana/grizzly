@@ -272,6 +272,8 @@ func (s *Server) updateWatchedResource(name string) error {
 	var resources Resources
 	var err error
 
+	log.Debugf("[watcher] Updating watched resource")
+
 	if s.watchScript != "" {
 		var b []byte
 		b, err = s.executeWatchScript()
@@ -284,25 +286,26 @@ func (s *Server) updateWatchedResource(name string) error {
 	}
 	if errors.As(err, &UnrecognisedFormatError{}) {
 		uerr := err.(UnrecognisedFormatError)
-		log.Printf("Skipping %s", uerr.File)
+		log.Infof("[watcher] Skipping %s", uerr.File)
 		return nil
 	}
 	if err != nil {
-		log.Error("Error: ", err)
+		log.Errorf("[watcher] Error: %s", err)
 		return err
 	}
 
 	for _, resource := range resources.AsList() {
 		handler, err := s.Registry.GetHandler(resource.Kind())
 		if err != nil {
-			log.Printf("Error: %v", err)
+			log.Warnf("[watcher] Error: %s", err)
 			continue
 		}
 		_, ok := handler.(ProxyHandler)
 		if ok {
-			log.Infof("Changes detected. Reloading %s", resource.Name())
+			log.Infof("[watcher] Changes detected. Reloading %s", resource.Name())
 			err = livereload.Reload(resource.Kind(), resource.Name(), resource.Spec())
 			if err != nil {
+				log.Errorf("[watcher] Error reloading %s: %s", resource.Name(), err)
 				return err
 			}
 		}
@@ -313,6 +316,8 @@ func (s *Server) updateWatchedResource(name string) error {
 func (s *Server) executeWatchScript() ([]byte, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	log.Debugf("[watch script] executing %s", s.watchScript)
+
 	cmd := exec.Command("sh", "-c", s.watchScript)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
