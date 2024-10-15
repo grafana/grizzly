@@ -13,7 +13,7 @@ type MimirConfig struct {
 	TenantID  string         `yaml:"tenant-id" mapstructure:"tenant-id"`
 	APIKey    string         `yaml:"api-key" mapstructure:"api-key"`
 	TLS       MimirTLSConfig `yaml:"tls" mapstructure:"tls"`
-	AuthToken string         `yaml:"auth-token" mapstructure:"auth-token""`
+	AuthToken string         `yaml:"auth-token" mapstructure:"auth-token"`
 }
 
 type MimirTLSConfig struct {
