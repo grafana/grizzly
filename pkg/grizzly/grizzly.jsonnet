@@ -38,7 +38,7 @@ local convert(main, apiVersion) = {
           'Dashboard',
           uid(k, dashboards[k]),
           spec=dashboards[k] + {
-            uid::'',
+            uid: uid(k, dashboards[k]),
           },
           metadata={ folder: folder }
         )
@@ -52,9 +52,9 @@ local convert(main, apiVersion) = {
       local fromMap(datasources) = [
         makeResource(
           'Datasource',
-          k,
+          if std.objectHasAll(datasources[k], "uid") then datasources[k].uid else k,
           spec=datasources[k] + {
-            name:: ''
+            uid:: if std.objectHasAll(datasources[k], "uid") then datasources[k].uid else k
           },
         )
         for k in std.objectFields(datasources)
