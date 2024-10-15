@@ -9,10 +9,12 @@ import (
 	"net/http/httputil"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
+	"github.com/grafana/grizzly/internal/logger"
 	"github.com/grafana/grizzly/pkg/grizzly/livereload"
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
@@ -146,7 +148,12 @@ func (s *Server) Start() error {
 
 	r := chi.NewRouter()
 
-	r.Use(middleware.Logger)
+	color := true
+	if runtime.GOOS == "windows" {
+		color = false
+	}
+
+	r.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{Logger: logger.DecorateAtLevel(log.StandardLogger(), log.DebugLevel), NoColor: !color}))
 	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
 	r.HandleFunc("/favicon.ico", s.faviconHandlerFunc())
 
@@ -192,7 +199,7 @@ func (s *Server) Start() error {
 		_, err = s.ParseResources(s.ResourcePath)
 	}
 	if err != nil {
-		fmt.Print(err)
+		log.Warn(err.Error())
 	}
 	if s.openBrowser {
 		browser, err := NewBrowserInterface(s.Registry, s.ResourcePath, s.port)
@@ -265,6 +272,8 @@ func (s *Server) updateWatchedResource(name string) error {
 	var resources Resources
 	var err error
 
+	log.Debugf("[watcher] Updating watched resource")
+
 	if s.watchScript != "" {
 		var b []byte
 		b, err = s.executeWatchScript()
@@ -277,25 +286,26 @@ func (s *Server) updateWatchedResource(name string) error {
 	}
 	if errors.As(err, &UnrecognisedFormatError{}) {
 		uerr := err.(UnrecognisedFormatError)
-		log.Printf("Skipping %s", uerr.File)
+		log.Infof("[watcher] Skipping %s", uerr.File)
 		return nil
 	}
 	if err != nil {
-		log.Error("Error: ", err)
+		log.Errorf("[watcher] Error: %s", err)
 		return err
 	}
 
 	for _, resource := range resources.AsList() {
 		handler, err := s.Registry.GetHandler(resource.Kind())
 		if err != nil {
-			log.Printf("Error: %v", err)
+			log.Warnf("[watcher] Error: %s", err)
 			continue
 		}
 		_, ok := handler.(ProxyHandler)
 		if ok {
-			log.Infof("Changes detected. Reloading %s", resource.Name())
+			log.Infof("[watcher] Changes detected. Reloading %s", resource.Name())
 			err = livereload.Reload(resource.Kind(), resource.Name(), resource.Spec())
 			if err != nil {
+				log.Errorf("[watcher] Error reloading %s: %s", resource.Name(), err)
 				return err
 			}
 		}
@@ -306,15 +316,17 @@ func (s *Server) updateWatchedResource(name string) error {
 func (s *Server) executeWatchScript() ([]byte, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	log.Debugf("[watch script] executing %s", s.watchScript)
+
 	cmd := exec.Command("sh", "-c", s.watchScript)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
-	if err != nil {
-		return nil, err
-	}
 	if stderr.Len() > 0 {
-		log.Errorf("%s", stderr.String())
+		log.Errorf("[watch script] %s", stderr.String())
+	}
+	if err != nil {
+		return nil, fmt.Errorf("watch script failed: %w", err)
 	}
 	return stdout.Bytes(), nil
 }

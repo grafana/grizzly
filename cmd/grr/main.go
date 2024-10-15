@@ -2,15 +2,12 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
-	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/grizzly/pkg/mimir"
 	"github.com/grafana/grizzly/pkg/syntheticmonitoring"
 	log "github.com/sirupsen/logrus"
@@ -40,6 +37,11 @@ func main() {
 		Version: Version,
 	}
 
+	log.SetFormatter(&log.TextFormatter{
+		DisableTimestamp:       true,
+		DisableLevelTruncation: true,
+	})
+
 	config.Initialise()
 	err := config.Read()
 	if err != nil {
@@ -64,7 +66,7 @@ func main() {
 		exportCmd(registry),
 		snapshotCmd(registry),
 		providersCmd(registry),
-		configCmd(),
+		configCmd(registry),
 		serveCmd(registry),
 		selfUpdateCmd(),
 	)
@@ -87,15 +89,5 @@ func createRegistry(context *config.Context) grizzly.Registry {
 		syntheticmonitoring.NewProvider(&context.SyntheticMonitoring),
 	}
 
-	var providerList []string
-	for _, provider := range providers {
-		err := provider.Validate()
-		if err != nil {
-			providerList = append(providerList, fmt.Sprintf("%s - inactive (%s)", provider.Name(), err.Error()))
-		} else {
-			providerList = append(providerList, provider.Name()+" - active")
-		}
-	}
-	notifier.InfoStderr(nil, "Providers: "+strings.Join(providerList, ", "))
 	return grizzly.NewRegistry(providers)
 }

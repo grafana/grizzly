@@ -375,8 +375,12 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		resourcesPath := args[0]
+		resourcesPath := ""
 		watchPaths := args
+
+		if len(args) > 0 {
+			resourcesPath = args[0]
+		}
 
 		if opts.WatchScript != "" {
 			resourcesPath = ""
@@ -489,7 +493,7 @@ func providersCmd(registry grizzly.Registry) *cli.Command {
 	return initialiseLogging(cmd, &opts)
 }
 
-func configCmd() *cli.Command {
+func configCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "config <sub-command>",
 		Short: "Show, select or configure configuration",
@@ -504,6 +508,7 @@ func configCmd() *cli.Command {
 	cmd.AddCommand(setCmd())
 	cmd.AddCommand(unsetCmd())
 	cmd.AddCommand(createContextCmd())
+	cmd.AddCommand(checkCmd(registry))
 	return cmd
 }
 
