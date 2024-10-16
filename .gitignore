@@ -7,4 +7,8 @@
 *.swp
 .idea
 
+
+/docs/.hugo_build.lock
+/docs/public/
+
 /resources
