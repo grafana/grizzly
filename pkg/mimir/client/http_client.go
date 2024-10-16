@@ -90,9 +90,12 @@ func (c *Client) doRequest(method string, url string, body []byte) ([]byte, erro
 	}
 
 	req.Header.Set("Content-Type", "application/yaml")
-	if c.config.APIKey != "" {
+	switch {
+	case c.config.APIKey != "":
 		req.SetBasicAuth(c.config.TenantID, c.config.APIKey)
-	} else {
+	case c.config.AuthToken != "":
+		req.Header.Set("Authorization", "Bearer "+c.config.AuthToken)
+	default:
 		req.Header.Set("X-Scope-OrgID", c.config.TenantID)
 	}
 
