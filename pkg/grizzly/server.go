@@ -119,6 +119,7 @@ var blockJSONget = map[string]string{
 	"/api/search":          "[]",
 	"/api/usage/*":         "[]",
 	"/api/frontend/assets": "{}",
+	"/api/org/preferences": "{}",
 
 	"/api/access-control/user/actions": `{"dashboards:write": true}`,
 	"/api/prometheus/grafana/api/v1/rules": `{
@@ -130,6 +131,12 @@ var blockJSONget = map[string]string{
       "id": "cojWep7Vz",
       "data_source_uid": "grafanacloud-prom",
       "remote_write_path": "/api/prom/push"
+    }`,
+
+	"/apis/banners.grafana.app/v0alpha1/namespaces/{stack}/announcement-banners": `{
+      "kind": "AnnouncementBannerList",
+      "apiVersion": "banners.grafana.app/v0alpha1",
+      "metadata": {"resourceVersion": "29"}
     }`,
 }
 
