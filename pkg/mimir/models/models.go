@@ -11,3 +11,8 @@ type PrometheusRuleGrouping struct {
 	Namespace string                `yaml:"namespace"`
 	Groups    []PrometheusRuleGroup `yaml:"groups"`
 }
+
+type PrometheusAlertmanagerConfig struct {
+	TemplateFiles      map[string]string `yaml:"template_files"`
+	AlertmanagerConfig string            `yaml:"alertmanager_config"`
+}

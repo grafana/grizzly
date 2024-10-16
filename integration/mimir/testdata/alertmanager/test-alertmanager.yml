@@ -1,0 +1,21 @@
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: PrometheusAlertmanagerConfig
+metadata:
+  name: global
+spec:
+  template_files:
+    default_template: |
+      {{ define "__alertmanager" }}AlertManager{{ end }}
+      {{ define "__alertmanagerURL" }}{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver | urlquery }}{{ end }}
+  alertmanager_config: 
+    global:
+      smtp_smarthost: 'localhost:25'
+      smtp_from: 'youraddress@example.org'
+    templates:
+      - 'default_template'
+    route:
+      receiver: example-email
+    receivers:
+      - name: example-email
+        email_configs:
+        - to: 'youraddress@example.org'

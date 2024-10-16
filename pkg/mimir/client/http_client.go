@@ -19,6 +19,7 @@ import (
 
 var loadRulesEndpoint = "%s/prometheus/config/v1/rules/%s"
 var listRulesEndpoint = "%s/prometheus/api/v1/rules"
+var alertmanagerAPIPath = "%s/api/v1/alerts"
 
 type ListGroupResponse struct {
 	Status string `yaml:"status"`
@@ -39,6 +40,37 @@ type Client struct {
 
 func NewHTTPClient(config *config.MimirConfig) Mimir {
 	return &Client{config: config}
+}
+
+func (c *Client) CreateAlertmangerConfig(resource models.PrometheusAlertmanagerConfig) error {
+	url := fmt.Sprintf(alertmanagerAPIPath, c.config.Address)
+	cfg, err := yaml.Marshal(&resource)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.doRequest(http.MethodPost, url, cfg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) GetAlertmanagerConfig() (*models.PrometheusAlertmanagerConfig, error) {
+	url := fmt.Sprintf(alertmanagerAPIPath, c.config.Address)
+	res, err := c.doRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	config := models.PrometheusAlertmanagerConfig{}
+	err = yaml.Unmarshal(res, &config)
+	if err != nil {
+		return nil, errors.New("unable to unmarshal response")
+	}
+
+	return &config, nil
 }
 
 func (c *Client) ListRules() (map[string][]models.PrometheusRuleGroup, error) {
@@ -106,11 +138,13 @@ func (c *Client) doRequest(method string, url string, body []byte) ([]byte, erro
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("request to load rules failed: %s", err)
+		return nil, fmt.Errorf("request failed: %s", err)
 	}
 
-	if res.StatusCode >= 300 {
-		return nil, fmt.Errorf("error loading rules: %d", res.StatusCode)
+	if res.StatusCode >= 300 && res.StatusCode != http.StatusNotFound {
+		return nil, fmt.Errorf("error: %d", res.StatusCode)
+	} else if res.StatusCode == http.StatusNotFound {
+		return []byte(nil), nil
 	}
 
 	b, err := io.ReadAll(res.Body)

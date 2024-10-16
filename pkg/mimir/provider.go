@@ -77,5 +77,6 @@ func (p *Provider) APIVersion() string {
 func (p *Provider) GetHandlers() []grizzly.Handler {
 	return []grizzly.Handler{
 		NewRuleHandler(p, p.clientTool),
+		NewAlertmanagerHandler(p, p.clientTool),
 	}
 }
