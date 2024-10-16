@@ -27,21 +27,20 @@ spec:
 A folder simply has a name and a title.
 
 ## Nested Folders
-Grizzly supports creation of nested folders, which can be useful when you don't want to have ALL your dashboards in a single one.
-To achieve that, you need to improve your DashboardFolder definition to add the uuid of the parent folder:
+Grizzly supports the creation of nested folders.
+To create one, specify the *uid* of the parent folder to a `DashboardFolder` definition:
 
-```
+```yaml
 apiVersion: grizzly.grafana.com/v1alpha1
 kind: DashboardFolder
 metadata:
-  name: defaultnestedfolder
+  name: nestedFolderSample
 spec:
-  parentUid: default
-  title: nestedfolder
-  uid: nesteddefaultfolder
+  parentUid: sample
+  title: Nested folder
 ```
 
-This will create a new folder called `nestedfolder`with a uid: `nesteddefaultfolder`under the folder: `default`in your grafana instance.
+This will create a new folder "Nested folder" under the `sample` folder.
 
 ### Placing Dashboards in Folders
 Dashboards can be placed into folders using the `folder` metadata field. Here, a
