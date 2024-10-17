@@ -12,7 +12,15 @@ metadata:
   name: sample
 spec:
   title: Special Sample Folder
-</code></pre><p>A folder simply has a name and a title.</p><h3 id=placing-dashboards-in-folders>Placing Dashboards in Folders</h3><p>Dashboards can be placed into folders using the <code>folder</code> metadata field. Here, a
+</code></pre><p>A folder simply has a name and a title.</p><h2 id=nested-folders>Nested Folders</h2><p>Grizzly supports the creation of nested folders.
+To create one, specify the <em>uid</em> of the parent folder to a <code>DashboardFolder</code> definition:</p><pre><code class=language-yaml>apiVersion: grizzly.grafana.com/v1alpha1
+kind: DashboardFolder
+metadata:
+  name: nestedFolderSample
+spec:
+  parentUid: sample
+  title: Nested folder
+</code></pre><p>This will create a new folder &ldquo;Nested folder&rdquo; under the <code>sample</code> folder.</p><h3 id=placing-dashboards-in-folders>Placing Dashboards in Folders</h3><p>Dashboards can be placed into folders using the <code>folder</code> metadata field. Here, a
 dashboard is placed into the folder defined above:</p><pre><code>apiVersion: grizzly.grafana.com/v1alpha1
 kind: Dashboard
 metadata:
