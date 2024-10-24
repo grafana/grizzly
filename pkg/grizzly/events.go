@@ -1,11 +1,20 @@
 package grizzly
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
+	"runtime"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
+	"github.com/grafana/grizzly/pkg/config"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
 
 type EventSeverity uint8
@@ -113,4 +122,77 @@ func (recorder *WriterRecorder) Record(event Event) {
 
 func (recorder *WriterRecorder) Summary() Summary {
 	return *recorder.summary
+}
+
+var _ EventsRecorder = (*WriterRecorder)(nil)
+
+type UsageRecorder struct {
+	wr       *WriterRecorder
+	endpoint string
+}
+
+// Record implements EventsRecorder.
+func (u *UsageRecorder) Record(event Event) {
+	u.wr.Record(event)
+}
+
+// Summary implements EventsRecorder.
+func (u *UsageRecorder) Summary() Summary {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	group, ctx := errgroup.WithContext(ctx)
+	for op, n := range u.wr.summary.EventCounts {
+		group.Go(func() error {
+			return u.reportUsage(ctx, op.ID, n)
+		})
+	}
+	err := group.Wait()
+	if err != nil {
+		log.Debugf("failed to send usage stats: %v", err)
+	}
+
+	return u.wr.Summary()
+}
+
+func (u *UsageRecorder) reportUsage(ctx context.Context, op string, n int) error {
+	var buff bytes.Buffer
+	configHash, err := config.Hash()
+	if err != nil {
+		configHash = "failed-to-hash-config"
+	}
+	err = json.NewEncoder(&buff).Encode(map[string]interface{}{
+		"uuid":      configHash,
+		"arch":      runtime.GOARCH,
+		"os":        runtime.GOOS,
+		"resources": n,
+		"operation": op,
+		"createdAt": time.Now(),
+		"version":   config.Version,
+	})
+	if err != nil {
+		return fmt.Errorf("encoding usage report")
+	}
+	req, err := http.NewRequest(http.MethodPost, u.endpoint, &buff)
+	if err != nil {
+		return fmt.Errorf("building request: %w", err)
+	}
+	req.Header.Add("content-type", "application/json")
+	req = req.WithContext(ctx)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending post request: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected OK, got %s", resp.Status)
+	}
+	return nil
+}
+
+var _ EventsRecorder = (*UsageRecorder)(nil)
+
+func NewUsageRecorder(wr *WriterRecorder) *UsageRecorder {
+	return &UsageRecorder{
+		wr:       wr,
+		endpoint: "https://stats.grafana.org/grizzly-usage-report",
+	}
 }

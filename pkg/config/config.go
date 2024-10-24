@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -185,6 +186,16 @@ var acceptableKeys = map[string]string{
 	"targets":                           "[]string",
 	"output-format":                     "string",
 	"only-spec":                         "bool",
+}
+
+func Hash() (string, error) {
+	cfg := viper.AllSettings()
+	out := sha256.New()
+	err := json.NewEncoder(out).Encode(cfg)
+	if err != nil {
+		return "", fmt.Errorf("writing to hash")
+	}
+	return fmt.Sprintf("%X", out.Sum(nil)), nil
 }
 
 func Get(path, outputFormat string) (string, error) {

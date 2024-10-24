@@ -177,7 +177,7 @@ func listWide(listedResources []listedResource) ([]byte, error) {
 // Pull pulls remote resources and stores them in the local file system.
 // The given resourcePath must be a directory, where all resources will be stored.
 // If opts.JSONSpec is true, which is only applicable for dashboards, saves the spec as a JSON file.
-func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat string, targets []string, continueOnError bool, eventsRecorder eventsRecorder) error {
+func Pull(registry Registry, resourcePath string, onlySpec bool, outputFormat string, targets []string, continueOnError bool, eventsRecorder EventsRecorder) error {
 	resourcePathIsFile, err := isFile(resourcePath)
 	if err != nil {
 		return err
@@ -377,12 +377,13 @@ func Diff(registry Registry, resources Resources, onlySpec bool, outputFormat st
 	return nil
 }
 
-type eventsRecorder interface {
+type EventsRecorder interface {
 	Record(event Event)
+	Summary() Summary
 }
 
 // Apply pushes resources to endpoints
-func Apply(registry Registry, resources Resources, continueOnError bool, eventsRecorder eventsRecorder) error {
+func Apply(registry Registry, resources Resources, continueOnError bool, eventsRecorder EventsRecorder) error {
 	var finalErr error
 
 	for _, resource := range resources.AsList() {
@@ -405,7 +406,7 @@ func Apply(registry Registry, resources Resources, continueOnError bool, eventsR
 	return finalErr
 }
 
-func applyResource(registry Registry, resource Resource, trailRecorder eventsRecorder) error {
+func applyResource(registry Registry, resource Resource, trailRecorder EventsRecorder) error {
 	resourceRef := resource.Ref().String()
 
 	handler, err := registry.GetHandler(resource.Kind())
@@ -489,7 +490,7 @@ func Snapshot(registry Registry, resources Resources, expiresSeconds int) error 
 
 // Watch watches a directory for changes then pushes Jsonnet resource to endpoints
 // when changes are noticed.
-func Watch(registry Registry, watchDir string, resourcePath string, parser Parser, parserOpts ParserOptions, trailRecorder eventsRecorder) error {
+func Watch(registry Registry, watchDir string, resourcePath string, parser Parser, parserOpts ParserOptions, trailRecorder EventsRecorder) error {
 	updateWatchedResource := func(path string) error {
 		log.Infof("Changes detected in %q. Applying %q", path, resourcePath)
 		resources, err := parser.Parse(resourcePath, parserOpts)

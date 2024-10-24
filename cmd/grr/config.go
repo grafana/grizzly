@@ -23,6 +23,7 @@ type Opts struct {
 	JsonnetPaths []string
 	Targets      []string
 	OutputFormat string
+	DisableStats bool
 	IsDir        bool // used internally to denote that the resource path argument pointed at a directory
 
 	// Used for supporting resources without envelopes
@@ -193,6 +194,24 @@ func createContextCmd() *cli.Command {
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		return config.CreateContext(args[0])
+	}
+	return initialiseLogging(cmd, &opts)
+}
+
+func hashCmd() *cli.Command {
+	cmd := &cli.Command{
+		Use:   "hash",
+		Short: "Generate a hash over all configuration values",
+	}
+	var opts LoggingOpts
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		hash, err := config.Hash()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Config Hash: %s\n", hash)
+		return nil
 	}
 	return initialiseLogging(cmd, &opts)
 }
