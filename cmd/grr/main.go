@@ -13,10 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Version is the current version of the grr command.
-// To be overwritten at build time
-var Version = "dev"
-
 type silentError struct {
 	Err error
 }
@@ -34,7 +30,7 @@ func main() {
 	rootCmd := &cli.Command{
 		Use:     "grr",
 		Short:   "Grizzly",
-		Version: Version,
+		Version: config.Version,
 	}
 
 	log.SetFormatter(&log.TextFormatter{

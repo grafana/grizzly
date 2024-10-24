@@ -19,6 +19,10 @@ const (
 	CurrentContextSetting = "current-context"
 )
 
+// Version is the current version of the grr command.
+// To be overwritten at build time
+var Version = "dev"
+
 func Initialise() {
 	viper.SetConfigName("settings")
 	viper.SetConfigType("yaml")
