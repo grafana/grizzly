@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-clix/cli"
 	"github.com/grafana/grizzly/internal/grizzly"
+	"github.com/grafana/grizzly/pkg/config"
 )
 
 func selfUpdateCmd() *cli.Command {
@@ -21,12 +22,12 @@ func selfUpdateCmd() *cli.Command {
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		updater := grizzly.NewSelfUpdater(http.DefaultClient)
 
-		newVersion, err := updater.UpdateSelf(context.Background(), Version)
+		newVersion, err := updater.UpdateSelf(context.Background(), config.Version)
 		if errors.Is(err, grizzly.ErrNextVersionIsMajorBump) {
-			return fmt.Errorf("self-update aborted as the next version (%[1]s) is a major bump from the current one (%[2]s). Please update manually: https://github.com/grafana/grizzly/releases/tag/%[1]s", newVersion, Version)
+			return fmt.Errorf("self-update aborted as the next version (%[1]s) is a major bump from the current one (%[2]s). Please update manually: https://github.com/grafana/grizzly/releases/tag/%[1]s", newVersion, config.Version)
 		}
 		if errors.Is(err, grizzly.ErrCurrentVersionIsLatest) {
-			fmt.Printf("Current version is the latest: %s\n", Version)
+			fmt.Printf("Current version is the latest: %s\n", config.Version)
 			return nil
 		}
 		if err != nil {

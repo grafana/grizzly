@@ -29,9 +29,9 @@ integration: run-test-image-locally dev
 
 # Compilation
 dev:
-	go build -ldflags "-X main.Version=dev-${VERSION}" ./cmd/grr
+	go build -ldflags "-X github.com/grafana/grizzly/pkg/config.Version=dev-${VERSION}" ./cmd/grr
 
-LDFLAGS := '-s -w -extldflags "-static" -X main.Version=${VERSION}'
+LDFLAGS := '-s -w -extldflags "-static" -X github.com/grafana/grizzly/pkg/config.Version=${VERSION}'
 static:
 	CGO_ENABLED=0 GOOS=linux go build -ldflags=${LDFLAGS} ./cmd/grr
 
