@@ -98,9 +98,8 @@ func pullCmd(registry grizzly.Registry) *cli.Command {
 
 	cmd.Flags().BoolVarP(&continueOnError, "continue-on-error", "e", false, "don't stop pulling on error")
 
-	eventsRecorder := grizzly.NewWriterRecorder(os.Stdout, getEventFormatter())
-
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		eventsRecorder := getEventsRecorder(opts)
 		format, onlySpec, err := getOutputFormat(opts)
 		if err != nil {
 			return err
@@ -219,9 +218,8 @@ func applyCmd(registry grizzly.Registry) *cli.Command {
 
 	cmd.Flags().BoolVarP(&continueOnError, "continue-on-error", "e", false, "don't stop apply on first error")
 
-	eventsRecorder := grizzly.NewWriterRecorder(os.Stdout, getEventFormatter())
-
 	cmd.Run = func(cmd *cli.Command, args []string) error {
+		eventsRecorder := getEventsRecorder(opts)
 		resourceKind, folderUID, err := getOnlySpec(opts)
 		if err != nil {
 			return err
@@ -509,6 +507,7 @@ func configCmd(registry grizzly.Registry) *cli.Command {
 	cmd.AddCommand(unsetCmd())
 	cmd.AddCommand(createContextCmd())
 	cmd.AddCommand(checkCmd(registry))
+	cmd.AddCommand(hashCmd())
 	return cmd
 }
 
@@ -522,6 +521,8 @@ func initialiseCmd(cmd *cli.Command, opts *Opts) *cli.Command {
 	cmd.Flags().StringSliceVarP(&opts.Targets, "target", "t", nil, "resources to target")
 	cmd.Flags().StringSliceVarP(&opts.JsonnetPaths, "jpath", "J", getDefaultJsonnetFolders(), "Specify an additional library search dir (right-most wins)")
 	cmd.Flags().StringVarP(&opts.OutputFormat, "output", "o", "", "Output format")
+
+	cmd.Flags().BoolVar(&opts.DisableStats, "disable-reporting", false, "disable sending of anonymous usage stats to Grafana Labs")
 
 	return initialiseLogging(cmd, &opts.LoggingOpts)
 }
@@ -558,6 +559,15 @@ func initialiseLogging(cmd *cli.Command, loggingOpts *LoggingOpts) *cli.Command 
 func getDefaultJsonnetFolders() []string {
 	return []string{"vendor", "lib", "."}
 }
+
+func getEventsRecorder(opts Opts) grizzly.EventsRecorder {
+	wr := grizzly.NewWriterRecorder(os.Stdout, getEventFormatter())
+	if opts.DisableStats {
+		return wr
+	}
+	return grizzly.NewUsageRecorder(wr)
+}
+
 func getOutputFormat(opts Opts) (string, bool, error) {
 	var onlySpec bool
 	context, err := config.CurrentContext()
