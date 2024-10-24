@@ -49,9 +49,12 @@ menu:
     - name: Hidden Elements
       url: /hidden-elements/
       weight: 11
+    - name: Usage statistics
+      url: /usage-statistics/
+      weight: 12
     - name: GitHub
       url: https://github.com/grafana/grizzly/
-      weight: 12
+      weight: 13
 
 markup:
   defaultMarkdownHandler: goldmark
