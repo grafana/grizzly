@@ -28,12 +28,18 @@ func (ref ResourceRef) String() string {
 	return fmt.Sprintf("%s.%s", ref.Kind, ref.Name)
 }
 
-// Source represents the on disk (etc) location of a resource
+// Source holds metadata regarding the origin of a resource on disk.
 type Source struct {
-	Format     string
-	Location   string
-	Path       string
+	// Format represents the original format. Ex: json, yaml, ...
+	Format   string
+	Location string
+	// Path represents the path on disk to the file describing the resource.
+	Path string
+	// Rewritable indicates whether the resource can be written or not.
+	// Ex: resources parsed from a watch script are not rewritable.
 	Rewritable bool
+	// WithEnvelope indicates whether the resource had an envelope or not.
+	WithEnvelope bool
 }
 
 // Resource represents a single Resource destined for a single endpoint

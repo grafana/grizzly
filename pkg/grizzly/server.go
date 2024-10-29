@@ -416,7 +416,7 @@ func (s *Server) faviconHandlerFunc() http.HandlerFunc {
 }
 
 func (s *Server) UpdateResource(name string, resource Resource) error {
-	out, _, _, err := Format(s.Registry, s.ResourcePath, &resource, s.OutputFormat, s.OnlySpec)
+	out, _, _, err := Format(s.Registry, s.ResourcePath, &resource, resource.Source.Format, !resource.Source.WithEnvelope)
 	if err != nil {
 		return fmt.Errorf("error formatting content: %s", err)
 	}
