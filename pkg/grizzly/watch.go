@@ -80,7 +80,7 @@ func (w *Watcher) Watch() error {
 					return
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
-					if !w.isFiltered(event.Name) {
+					if w.isWatched(event.Name) {
 						log.Info("[watcher] Changes detected. Parsing")
 						err := w.watcherFunc(event.Name)
 						if err != nil {
@@ -105,14 +105,18 @@ func (w *Watcher) Wait() error {
 	return nil
 }
 
-func (w *Watcher) isFiltered(path string) bool {
+func (w *Watcher) isWatched(path string) bool {
 	parent := filepath.Dir(path) + "/"
-	for _, watch := range w.watches {
-		if parent == watch.parent {
-			if watch.isDir || watch.path == path {
-				return false
-			}
+	cleanPath := filepath.Clean(path)
+	for _, watchTarget := range w.watches {
+		if parent != watchTarget.parent {
+			continue
+		}
+
+		if watchTarget.isDir || filepath.Clean(watchTarget.path) == cleanPath {
+			return true
 		}
 	}
-	return true
+
+	return false
 }
