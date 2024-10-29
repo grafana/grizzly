@@ -213,6 +213,8 @@ func parseAny(registry Registry, data any, resourceKind, folderUID string, sourc
 		if err != nil {
 			return Resources{}, err
 		}
+
+		source.WithEnvelope = true
 		resource.SetSource(source)
 
 		return NewResources(*resource), nil
