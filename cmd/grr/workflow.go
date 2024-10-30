@@ -507,7 +507,6 @@ func configCmd(registry grizzly.Registry) *cli.Command {
 	cmd.AddCommand(unsetCmd())
 	cmd.AddCommand(createContextCmd())
 	cmd.AddCommand(checkCmd(registry))
-	cmd.AddCommand(hashCmd())
 	return cmd
 }
 
