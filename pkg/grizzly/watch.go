@@ -35,8 +35,6 @@ func NewWatcher(watcherFunc func(path string) error) (*Watcher, error) {
 }
 
 func (w *Watcher) Add(path string) error {
-	log.WithField("path", path).Info("[watcher] Adding path to watch list")
-
 	stat, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -45,6 +43,7 @@ func (w *Watcher) Add(path string) error {
 	if !stat.IsDir() {
 		// `vim` renames and replaces, doesn't create a WRITE event. So we need to watch the whole dir and filter for our file
 		parent := filepath.Dir(path) + "/"
+		log.WithField("path", parent).Debug("[watcher] Adding path to watch list")
 		w.watches = append(w.watches, watch{path: path, parent: parent, isDir: false})
 		err := w.watcher.Add(parent)
 		if err != nil {
@@ -59,6 +58,7 @@ func (w *Watcher) Add(path string) error {
 				if !strings.HasSuffix(path, "/") {
 					path += "/"
 				}
+				log.WithField("path", path).Debug("[watcher] Adding path to watch list")
 				w.watches = append(w.watches, watch{path: path, parent: path, isDir: true})
 				return w.watcher.Add(path)
 			}
@@ -81,7 +81,7 @@ func (w *Watcher) Watch() error {
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
 					if w.isWatched(event.Name) {
-						log.Info("[watcher] Changes detected. Parsing")
+						log.Debugf("[watcher] Changes detected: %s %s ", event.Op.String(), event.Name)
 						err := w.watcherFunc(event.Name)
 						if err != nil {
 							log.Warn("[watcher] error: ", err)

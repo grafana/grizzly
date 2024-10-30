@@ -14,8 +14,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
+	"github.com/grafana/grizzly/internal/livereload"
 	"github.com/grafana/grizzly/internal/logger"
-	"github.com/grafana/grizzly/pkg/grizzly/livereload"
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 )
@@ -41,7 +41,7 @@ type Server struct {
 	watch          bool
 }
 
-var upgrader = websocket.Upgrader{
+var upgrader = &websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin:     func(r *http.Request) bool { return true },
@@ -193,7 +193,7 @@ func (s *Server) Start() error {
 	}
 	r.Get("/", s.RootHandler)
 	r.Get("/grizzly/{kind}/{name}", s.IframeHandler)
-	r.Get("/api/live/ws", livereload.LiveReloadHandlerFunc(upgrader))
+	r.Get("/livereload", livereload.Handler(upgrader))
 
 	if s.watchScript != "" {
 		var b []byte
@@ -289,7 +289,7 @@ func (s *Server) updateWatchedResource(name string) error {
 		}
 		resources, err = s.ParseBytes(b)
 	} else {
-		resources, err = s.ParseResources(s.ResourcePath)
+		resources, err = s.ParseResources(name)
 	}
 	if errors.As(err, &UnrecognisedFormatError{}) {
 		uerr := err.(UnrecognisedFormatError)
@@ -309,12 +309,8 @@ func (s *Server) updateWatchedResource(name string) error {
 		}
 		_, ok := handler.(ProxyHandler)
 		if ok {
-			log.Infof("[watcher] Changes detected. Reloading %s", resource.Name())
-			err = livereload.Reload(resource.Kind(), resource.Name(), resource.Spec())
-			if err != nil {
-				log.Errorf("[watcher] Error reloading %s: %s", resource.Name(), err)
-				return err
-			}
+			log.Infof("[watcher] Changes detected. Reloading %s", resource.Ref())
+			livereload.ReloadDashboard(resource.Name())
 		}
 	}
 	return nil
@@ -368,7 +364,8 @@ func (s *Server) IframeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	url := proxyHandler.ProxyURL(name)
-	templateVars := map[string]string{
+	templateVars := map[string]any{
+		"Port":           s.port,
 		"IframeURL":      url,
 		"CurrentContext": s.CurrentContext,
 	}
