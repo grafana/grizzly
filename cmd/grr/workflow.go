@@ -562,7 +562,7 @@ func getDefaultJsonnetFolders() []string {
 
 func getEventsRecorder(opts Opts) grizzly.EventsRecorder {
 	wr := grizzly.NewWriterRecorder(os.Stdout, getEventFormatter())
-	if opts.DisableStats {
+	if opts.DisableStats || config.UsageStatsDisabled() {
 		return wr
 	}
 	return grizzly.NewUsageRecorder(wr)

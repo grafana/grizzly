@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	CurrentContextSetting = "current-context"
+	CurrentContextSetting   = "current-context"
+	DisableReportingSetting = "disable-reporting"
 )
 
 // Version is the current version of the grr command.
@@ -145,6 +146,10 @@ func UseContext(context string) error {
 		}
 	}
 	return fmt.Errorf("context %s not found", context)
+}
+
+func UsageStatsDisabled() bool {
+	return viper.GetBool(DisableReportingSetting)
 }
 
 func CurrentContext() (*Context, error) {
