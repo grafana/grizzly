@@ -5,10 +5,44 @@
     <title>Grizzly</title>
     <link rel="stylesheet" href="/grizzly/assets/style.css"/>
 </head>
+<body>
+{{ template "proxy/header.html.tmpl" . }}
+<iframe src="{{ .IframeURL }}"></iframe>
 
-<html>
-    <body>
-        {{ template "proxy/header.html.tmpl" . }}
-        <iframe src="{{ .IframeURL }}"></iframe>
-    </body>
+<script>
+window.LiveReloadOptions = {
+    host: 'localhost',
+    port: {{ .Port }},
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/livereload-js@4.0.2/dist/livereload.min.js"></script>
+<script>
+class CustomReloadPlugin {
+    constructor (window, host) {
+        this.window = window;
+        this.host = host;
+    }
+
+    reload (path, options) {
+        console.info('reload() path: ', path);
+        console.info('window.location.pathname', window.location.pathname);
+
+        if (path === window.location.pathname) {
+            this.window.document.location.reload();
+        }
+
+        return true;
+    }
+
+    analyze () {
+        return {};
+    }
+}
+
+CustomReloadPlugin.identifier = 'custom-reload';
+CustomReloadPlugin.version = '1.0';
+
+LiveReload.addPlugin(CustomReloadPlugin);
+</script>
+</body>
 </html>
