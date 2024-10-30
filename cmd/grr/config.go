@@ -198,24 +198,6 @@ func createContextCmd() *cli.Command {
 	return initialiseLogging(cmd, &opts)
 }
 
-func hashCmd() *cli.Command {
-	cmd := &cli.Command{
-		Use:   "hash",
-		Short: "Generate a hash over all configuration values",
-	}
-	var opts LoggingOpts
-
-	cmd.Run = func(cmd *cli.Command, args []string) error {
-		hash, err := config.Hash()
-		if err != nil {
-			return err
-		}
-		fmt.Printf("Config Hash: %s\n", hash)
-		return nil
-	}
-	return initialiseLogging(cmd, &opts)
-}
-
 func checkCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
 		Use:   "check",
