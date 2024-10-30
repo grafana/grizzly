@@ -10,6 +10,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Original file: https://github.com/gohugoio/hugo/blob/89bd025ebfd2c559039826641702941fc35a7fdb/livereload/livereload.go
 
 package livereload
 
@@ -21,12 +23,15 @@ import (
 )
 
 // Initialize starts the Websocket Hub handling live reloads.
+// Original: https://github.com/gohugoio/hugo/blob/89bd025ebfd2c559039826641702941fc35a7fdb/livereload/livereload.go#L107
 func Initialize() {
 	go wsHub.run()
 }
 
 // Handler is a HandlerFunc handling the livereload
 // Websocket interaction.
+// Original: https://github.com/gohugoio/hugo/blob/89bd025ebfd2c559039826641702941fc35a7fdb/livereload/livereload.go#L93-L105
+// Our version is modified to accept a websocket upgrader coming from the server.
 func Handler(upgrader *websocket.Upgrader) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ws, err := upgrader.Upgrade(w, r, nil)
