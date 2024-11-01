@@ -4,4 +4,4 @@
 # Later codeowner matches take precedence over earlier ones.
 
 # Default owner
-* @grafana/platform-cat
+* @grafana/platform-monitoring
