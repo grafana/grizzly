@@ -8,6 +8,7 @@ require (
 	github.com/go-chi/chi v1.5.5
 	github.com/go-clix/cli v0.2.0
 	github.com/go-openapi/runtime v0.28.0
+	github.com/go-rod/rod v0.116.2
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.20.0
 	github.com/gorilla/websocket v1.5.1
@@ -23,7 +24,9 @@ require (
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.9.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
+	github.com/ysmood/gson v0.7.3
 	golang.org/x/mod v0.14.0
+	golang.org/x/sync v0.6.0
 	golang.org/x/term v0.18.0
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/yaml.v3 v3.0.1
@@ -73,6 +76,10 @@ require (
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/ysmood/fetchup v0.2.3 // indirect
+	github.com/ysmood/goob v0.4.0 // indirect
+	github.com/ysmood/got v0.40.0 // indirect
+	github.com/ysmood/leakless v0.9.0 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
 	go.opentelemetry.io/otel v1.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
@@ -82,8 +89,7 @@ require (
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
 	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
 	google.golang.org/grpc v1.62.1 // indirect
