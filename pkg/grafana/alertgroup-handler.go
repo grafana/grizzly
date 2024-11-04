@@ -150,6 +150,7 @@ func (h *AlertRuleGroupHandler) createAlertRule(rule *models.ProvisionedAlertRul
 	_, err = client.Provisioning.PostAlertRule(params, nil)
 	return err
 }
+
 func (h *AlertRuleGroupHandler) createAlertRuleGroup(resource grizzly.Resource) error {
 	// TODO: Turn spec into a real models.AlertRuleGroup object
 	data, err := json.Marshal(resource.Spec())
@@ -282,6 +283,7 @@ func (h *AlertRuleGroupHandler) getUID(group models.AlertRuleGroup) string {
 func (h *AlertRuleGroupHandler) joinUID(folder, title string) string {
 	return fmt.Sprintf("%s.%s", folder, title)
 }
+
 func (h *AlertRuleGroupHandler) splitUID(uid string) (string, string) {
 	spl := strings.SplitN(uid, ".", 2)
 	return spl[0], spl[1]

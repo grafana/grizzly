@@ -25,20 +25,13 @@ var interactive = terminal.IsTerminal(int(os.Stdout.Fd()))
 func Get(registry Registry, uid string, onlySpec bool, outputFormat string) error {
 	log.Info("Getting ", uid)
 
-	count := strings.Count(uid, ".")
-	var handlerName, resourceID string
-	switch count {
-	case 1:
-		parts := strings.SplitN(uid, ".", 2)
-		handlerName = parts[0]
-		resourceID = parts[1]
-	case 2:
-		parts := strings.SplitN(uid, ".", 3)
-		handlerName = parts[0] + "." + parts[1]
-		resourceID = parts[2]
-	default:
+	if strings.Count(uid, ".") == 0 {
 		return fmt.Errorf("UID must be <provider>.<uid>: %s", uid)
 	}
+
+	parts := strings.SplitN(uid, ".", 2)
+	handlerName := parts[0]
+	resourceID := parts[1]
 
 	handler, err := registry.GetHandler(handlerName)
 	if err != nil {

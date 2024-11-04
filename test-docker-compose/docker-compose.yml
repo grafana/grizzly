@@ -1,4 +1,3 @@
-version: '3.4'
 services:
   grafana:
     image: &image grafana/grafana:10.2.0

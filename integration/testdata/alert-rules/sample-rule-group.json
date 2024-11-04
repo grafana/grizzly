@@ -1,0 +1,128 @@
+{
+  "apiVersion": "grizzly.grafana.com/v1alpha1",
+  "kind": "AlertRuleGroup",
+  "metadata": {
+    "name": "adxrm7wi8un0gf.test_eval_group"
+  },
+  "spec": {
+    "folderUid": "adxrm7wi8un0gf",
+    "interval": 60,
+    "rules": [
+      {
+        "condition": "C",
+        "data": [
+          {
+            "datasourceUid": "grafanacloud-prom",
+            "model": {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "grafanacloud-prom"
+              },
+              "editorMode": "code",
+              "expr": "count(blocky_build_info)",
+              "hide": false,
+              "instant": true,
+              "intervalMs": 1000,
+              "legendFormat": "__auto",
+              "maxDataPoints": 43200,
+              "range": false,
+              "refId": "A"
+            },
+            "refId": "A",
+            "relativeTimeRange": {
+              "from": 600
+            }
+          },
+          {
+            "datasourceUid": "__expr__",
+            "model": {
+              "conditions": [
+                {
+                  "evaluator": {
+                    "params": [],
+                    "type": "gt"
+                  },
+                  "operator": {
+                    "type": "and"
+                  },
+                  "query": {
+                    "params": [
+                      "B"
+                    ]
+                  },
+                  "reducer": {
+                    "params": [],
+                    "type": "last"
+                  },
+                  "type": "query"
+                }
+              ],
+              "datasource": {
+                "type": "__expr__",
+                "uid": "__expr__"
+              },
+              "expression": "A",
+              "intervalMs": 1000,
+              "maxDataPoints": 43200,
+              "reducer": "last",
+              "refId": "B",
+              "type": "reduce"
+            },
+            "refId": "B",
+            "relativeTimeRange": {}
+          },
+          {
+            "datasourceUid": "__expr__",
+            "model": {
+              "conditions": [
+                {
+                  "evaluator": {
+                    "params": [
+                      1
+                    ],
+                    "type": "lt"
+                  },
+                  "operator": {
+                    "type": "and"
+                  },
+                  "query": {
+                    "params": [
+                      "C"
+                    ]
+                  },
+                  "reducer": {
+                    "params": [],
+                    "type": "last"
+                  },
+                  "type": "query"
+                }
+              ],
+              "datasource": {
+                "type": "__expr__",
+                "uid": "__expr__"
+              },
+              "expression": "B",
+              "intervalMs": 1000,
+              "maxDataPoints": 43200,
+              "refId": "C",
+              "type": "threshold"
+            },
+            "refId": "C",
+            "relativeTimeRange": {}
+          }
+        ],
+        "execErrState": "Error",
+        "folderUID": "adxrm7wi8un0gf",
+        "for": "1m0s",
+        "id": 18,
+        "noDataState": "NoData",
+        "orgID": 1,
+        "ruleGroup": "test_eval_group",
+        "title": "test alert rule",
+        "uid": "ae2ylum6et0xsc",
+        "updated": "2024-11-04T20:12:46.000Z"
+      }
+    ],
+    "title": "test_eval_group"
+  }
+}
