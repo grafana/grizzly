@@ -14,7 +14,7 @@ func TestSyntheticMonitoring(t *testing.T) {
 	t.Run("Check getUID is functioning correctly", func(t *testing.T) {
 		resource := grizzly.Resource{
 			Body: map[string]any{
-				"metadata": map[string]interface{}{
+				"metadata": map[string]any{
 					"name": "test",
 					"type": "http",
 				},
@@ -25,6 +25,70 @@ func TestSyntheticMonitoring(t *testing.T) {
 		uid, err := handler.GetUID(resource)
 		require.NoError(t, err)
 		require.Equal(t, "http.test", uid)
+	})
+}
+
+func TestSyntheticMonitoringPrepare(t *testing.T) {
+	handler := NewSyntheticMonitoringHandler(nil)
+
+	t.Run("job is copied from name if not set", func(t *testing.T) {
+		resource := grizzly.Resource{
+			Body: map[string]any{
+				"metadata": map[string]any{
+					"name": "test",
+					"type": "http",
+				},
+				"spec": map[string]any{},
+			},
+		}
+		handler.Prepare(nil, resource)
+
+		require.Equal(t, "test", resource.GetSpecValue("job"))
+	})
+
+	t.Run("job is left untouched if set", func(t *testing.T) {
+		resource := grizzly.Resource{
+			Body: map[string]any{
+				"metadata": map[string]any{
+					"name": "test",
+					"type": "http",
+				},
+				"spec": map[string]any{
+					"job": "foo",
+				},
+			},
+		}
+		handler.Prepare(nil, resource)
+
+		require.Equal(t, "foo", resource.GetSpecValue("job"))
+	})
+
+	t.Run("tenantId and id are set from existing resource if available", func(t *testing.T) {
+		existing := grizzly.Resource{
+			Body: map[string]any{
+				"metadata": map[string]any{
+					"name": "test",
+					"type": "http",
+				},
+				"spec": map[string]any{
+					"id":       "id",
+					"tenantId": "tenantId",
+				},
+			},
+		}
+		resource := grizzly.Resource{
+			Body: map[string]any{
+				"metadata": map[string]any{
+					"name": "test",
+					"type": "http",
+				},
+				"spec": map[string]any{},
+			},
+		}
+		handler.Prepare(&existing, resource)
+
+		require.Equal(t, "id", resource.GetSpecValue("id"))
+		require.Equal(t, "tenantId", resource.GetSpecValue("tenantId"))
 	})
 }
 
