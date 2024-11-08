@@ -91,6 +91,7 @@ func (h *SyntheticMonitoringHandler) GetUID(resource grizzly.Resource) (string, 
 	}
 	return fmt.Sprintf("%s.%s", resource.GetMetadata("type"), resource.Name()), nil
 }
+
 func (h *SyntheticMonitoringHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
 	return "", fmt.Errorf("GetSpecUID not implemented for Synthetic Monitoring")
 }

@@ -73,10 +73,19 @@ func List(registry Registry, resources Resources, format string) error {
 		if err != nil {
 			return err
 		}
+
+		uid := resource.Name()
+		// Some resources need a custom logic to build their UID (ex: SyntheticMonitoringCheck)
+		// TODO: we shouldn't need a special case to get a resource's UID.
+		handlerUID, err := handler.GetUID(resource)
+		if err == nil {
+			uid = handlerUID
+		}
+
 		listedResources = append(listedResources, listedResource{
 			Handler:  handler.APIVersion(),
 			Kind:     handler.Kind(),
-			Name:     resource.Name(),
+			Name:     uid,
 			Path:     resource.Source.Path,
 			Location: resource.Source.Location,
 			Format:   resource.Source.Format,
