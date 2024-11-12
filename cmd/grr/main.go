@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/go-clix/cli"
+	"github.com/grafana/grizzly/internal/logger"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -48,6 +49,8 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	log.AddHook(logger.NewSecretsRedactor(context.Secrets()))
 
 	registry := createRegistry(context)
 	// workflow commands

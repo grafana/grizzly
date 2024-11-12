@@ -9,10 +9,9 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 
+	"github.com/grafana/grizzly/internal/httputils"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/mimir/models"
 	"github.com/hashicorp/go-multierror"
@@ -124,21 +123,13 @@ func (c *Client) doRequest(method string, url string, body []byte) ([]byte, erro
 }
 
 func (c *Client) createHTTPClient() (*http.Client, error) {
-	timeout := 10 * time.Second
-	// TODO: Move this configuration to the global configuration
-	if timeoutStr := os.Getenv("GRIZZLY_HTTP_TIMEOUT"); timeoutStr != "" {
-		timeoutSeconds, err := strconv.Atoi(timeoutStr)
-		if err != nil {
-			return nil, err
-		}
-		timeout = time.Duration(timeoutSeconds) * time.Second
+	tlsConfig := &tls.Config{}
+	httpClient, err := httputils.NewHTTPClient()
+	if err != nil {
+		return nil, err
 	}
 
-	tlsConfig := &tls.Config{}
-	httpClient := http.Client{
-		Timeout:   timeout,
-		Transport: &http.Transport{TLSClientConfig: tlsConfig},
-	}
+	httpClient.Transport = &http.Transport{TLSClientConfig: tlsConfig}
 
 	if c.config.TLS.CAPath != "" {
 		certPool, err := x509.SystemCertPool()
@@ -164,11 +155,13 @@ func (c *Client) createHTTPClient() (*http.Client, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		tlsConfig.Certificates = []tls.Certificate{clientTLSCert}
 	}
 
 	httpClient.Transport = &http.Transport{
 		TLSClientConfig: tlsConfig,
 	}
-	return &httpClient, nil
+
+	return httpClient, nil
 }

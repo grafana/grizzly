@@ -43,3 +43,23 @@ type Context struct {
 	ResourceKind        string                    `yaml:"resource-kind" mapstructure:"resource-kind"`
 	FolderUID           string                    `yaml:"folder-uid" mapstructure:"folder-uid"`
 }
+
+// Secrets returns all the secrets contained in the current context.
+// This is mainly useful to be able to redact those from logs.
+func (c Context) Secrets() []string {
+	candidates := []string{
+		c.Grafana.Token,
+		c.Mimir.APIKey,
+		c.SyntheticMonitoring.Token,
+		c.SyntheticMonitoring.AccessToken,
+	}
+
+	secrets := make([]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		if candidate != "" {
+			secrets = append(secrets, candidate)
+		}
+	}
+
+	return secrets
+}
