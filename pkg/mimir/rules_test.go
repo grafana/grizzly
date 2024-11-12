@@ -102,6 +102,19 @@ func TestRules(t *testing.T) {
 	})
 }
 
+func TestRuleHandler_ResourceFilePath(t *testing.T) {
+	handler := NewRuleHandler(&Provider{}, &FakeClient{})
+
+	t.Run("slashes are escaped from filenames", func(t *testing.T) {
+		req := require.New(t)
+
+		resource, err := grizzly.NewResource(handler.APIVersion(), handler.Kind(), "some/rule", map[string]interface{}{})
+		req.NoError(err)
+
+		req.Equal("prometheus/rules-some-rule.yaml", handler.ResourceFilePath(resource, "yaml"))
+	})
+}
+
 type FakeClient struct {
 	hasFile       bool
 	expectedError error

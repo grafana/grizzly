@@ -147,3 +147,16 @@ func TestSyntheticMonitoringCheckUID(t *testing.T) {
 		})
 	}
 }
+
+func TestSyntheticMonitoringHandler_ResourceFilePath(t *testing.T) {
+	handler := NewSyntheticMonitoringHandler(&Provider{})
+
+	t.Run("slashes are escaped from filenames", func(t *testing.T) {
+		req := require.New(t)
+
+		resource, err := grizzly.NewResource(handler.APIVersion(), handler.Kind(), "some/check", map[string]interface{}{})
+		req.NoError(err)
+
+		req.Equal("synthetic-monitoring/check-some-check.yaml", handler.ResourceFilePath(resource, "yaml"))
+	})
+}
