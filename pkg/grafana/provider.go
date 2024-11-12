@@ -11,6 +11,7 @@ import (
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
+	"github.com/grafana/grizzly/internal/httputils"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
@@ -94,6 +95,12 @@ func (p *Provider) Client() (*gclient.GrafanaHTTPAPI, error) {
 		WithHost(parsedURL.Host).
 		WithSchemes([]string{parsedURL.Scheme}).
 		WithBasePath(filepath.Join(parsedURL.Path, "api"))
+
+	httpClient, err := httputils.NewHTTPClient()
+	if err != nil {
+		return nil, err
+	}
+	transportConfig.Client = httpClient
 
 	if parsedURL.Scheme == "https" && p.config.InsecureSkipVerify {
 		transportConfig.TLSConfig = &tls.Config{

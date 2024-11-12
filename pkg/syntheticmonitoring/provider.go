@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/grafana/grizzly/internal/httputils"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	smapi "github.com/grafana/synthetic-monitoring-api-go-client"
@@ -101,7 +102,7 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 
 // NewClient creates a new client for synthetic monitoring go client
 func (p *Provider) Client() (*smapi.Client, error) {
-	client, err := NewHTTPClient()
+	client, err := httputils.NewHTTPClient()
 	if err != nil {
 		return nil, err
 	}
