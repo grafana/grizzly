@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -48,7 +50,8 @@ const (
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *SyntheticMonitoringHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
-	return fmt.Sprintf(syntheticMonitoringPattern, resource.Name(), filetype)
+	filename := strings.ReplaceAll(resource.Name(), string(os.PathSeparator), "-")
+	return fmt.Sprintf(syntheticMonitoringPattern, filename, filetype)
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison

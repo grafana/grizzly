@@ -2,6 +2,7 @@ package mimir
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -29,7 +30,8 @@ const (
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *RuleHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
-	return fmt.Sprintf(prometheusRuleGroupPattern, resource.Name(), filetype)
+	filename := strings.ReplaceAll(resource.Name(), string(os.PathSeparator), "-")
+	return fmt.Sprintf(prometheusRuleGroupPattern, filename, filetype)
 }
 
 // Validate returns the uid of resource

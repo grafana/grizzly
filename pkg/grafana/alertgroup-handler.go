@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/grafana/grafana-openapi-client-go/client/provisioning"
@@ -29,7 +30,8 @@ const (
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *AlertRuleGroupHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
-	return fmt.Sprintf(alertRuleGroupPattern, resource.Name(), filetype)
+	filename := strings.ReplaceAll(resource.Name(), string(os.PathSeparator), "-")
+	return fmt.Sprintf(alertRuleGroupPattern, filename, filetype)
 }
 
 // Validate checks that the uid format is valid

@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/go-openapi/runtime"
 	"github.com/grafana/grafana-openapi-client-go/client/datasources"
@@ -31,7 +33,8 @@ const (
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *DatasourceHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
-	return fmt.Sprintf(datasourcePattern, resource.Name(), filetype)
+	filename := strings.ReplaceAll(resource.Name(), string(os.PathSeparator), "-")
+	return fmt.Sprintf(datasourcePattern, filename, filetype)
 }
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
