@@ -259,22 +259,22 @@ func (h *DashboardHandler) Detect(data map[string]any) bool {
 func (h *DashboardHandler) GetProxyEndpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{
-			Method:  "GET",
+			Method:  http.MethodGet,
 			URL:     "/d/{uid}/{slug}",
-			Handler: h.resourceFromQueryParameterMiddleware(s, "grizzly_from_file", h.RootDashboardPageHandler(s)),
+			Handler: h.resourceFromQueryParameterMiddleware(s, "grizzly_from_file", authenticateAndProxyHandler(s, h.Provider)),
 		},
 		{
-			Method:  "GET",
+			Method:  http.MethodGet,
 			URL:     "/api/dashboards/uid/{uid}",
 			Handler: h.DashboardJSONGetHandler(s),
 		},
 		{
-			Method:  "POST",
+			Method:  http.MethodPost,
 			URL:     "/api/dashboards/db",
 			Handler: h.DashboardJSONPostHandler(s),
 		},
 		{
-			Method:  "POST",
+			Method:  http.MethodPost,
 			URL:     "/api/dashboards/db/",
 			Handler: h.DashboardJSONPostHandler(s),
 		},
@@ -294,64 +294,17 @@ func (h *DashboardHandler) resourceFromQueryParameterMiddleware(s grizzly.Server
 	}
 }
 
-func (h *DashboardHandler) RootDashboardPageHandler(s grizzly.Server) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "text/html")
-		config := h.Provider.(ClientProvider).Config()
-		if config.URL == "" {
-			grizzly.SendError(w, "Error: No Grafana URL configured", fmt.Errorf("no Grafana URL configured"), 400)
-			return
-		}
-		req, err := http.NewRequest("GET", config.URL+r.URL.Path, nil)
-		if err != nil {
-			grizzly.SendError(w, http.StatusText(500), err, 500)
-			return
-		}
-
-		if config.User != "" {
-			req.SetBasicAuth(config.User, config.Token)
-		} else if config.Token != "" {
-			req.Header.Set("Authorization", "Bearer "+config.Token)
-		}
-
-		req.Header.Set("User-Agent", s.UserAgent)
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
-
-		if err == nil {
-			body, _ := io.ReadAll(resp.Body)
-			writeOrLog(w, body)
-			return
-		}
-
-		msg := ""
-		if config.Token == "" {
-			msg += "<p><b>Warning:</b> No service account token specified.</p>"
-		}
-
-		if resp.StatusCode == 302 {
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintf(w, "%s<p>Authentication error</p>", msg)
-		} else {
-			body, _ := io.ReadAll(resp.Body)
-			w.WriteHeader(resp.StatusCode)
-			fmt.Fprintf(w, "%s%s", msg, string(body))
-		}
-	}
-}
-
 func (h *DashboardHandler) DashboardJSONGetHandler(s grizzly.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		uid := chi.URLParam(r, "uid")
 		if uid == "" {
-			grizzly.SendError(w, "No UID specified", fmt.Errorf("no UID specified within the URL"), 400)
+			grizzly.SendError(w, "No UID specified", fmt.Errorf("no UID specified within the URL"), http.StatusBadRequest)
 			return
 		}
 
 		resource, found := s.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
 		if !found {
-			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), 404)
+			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), http.StatusNotFound)
 			return
 		}
 		if resource.GetSpecValue("version") == nil {
@@ -379,18 +332,18 @@ func (h *DashboardHandler) DashboardJSONPostHandler(s grizzly.Server) http.Handl
 		content, _ := io.ReadAll(r.Body)
 		err := json.Unmarshal(content, &resp)
 		if err != nil {
-			grizzly.SendError(w, "Error parsing JSON", err, 400)
+			grizzly.SendError(w, "Error parsing JSON", err, http.StatusBadRequest)
 			return
 		}
 		uid, ok := resp.Dashboard["uid"].(string)
 		if !ok || uid == "" {
-			grizzly.SendError(w, "Dashboard has no UID", fmt.Errorf("dashboard has no UID"), 400)
+			grizzly.SendError(w, "Dashboard has no UID", fmt.Errorf("dashboard has no UID"), http.StatusBadRequest)
 			return
 		}
 		resource, ok := s.Resources.Find(grizzly.NewResourceRef(h.Kind(), uid))
 		if !ok {
 			err := fmt.Errorf("unknown dashboard: %s", uid)
-			grizzly.SendError(w, err.Error(), err, 400)
+			grizzly.SendError(w, err.Error(), err, http.StatusBadRequest)
 			return
 		}
 
@@ -398,7 +351,7 @@ func (h *DashboardHandler) DashboardJSONPostHandler(s grizzly.Server) http.Handl
 
 		err = s.UpdateResource(uid, resource)
 		if err != nil {
-			grizzly.SendError(w, err.Error(), err, 500)
+			grizzly.SendError(w, err.Error(), err, http.StatusInternalServerError)
 			return
 		}
 		jout := map[string]interface{}{

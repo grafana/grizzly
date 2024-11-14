@@ -103,7 +103,12 @@ var mustProxyGET = []string{
 	"/public/*",
 	"/api/datasources/proxy/*",
 	"/api/datasources/*",
+	"/api/plugins",
 	"/api/plugins/*",
+	"/api/plugin-proxy/*",
+	"/api/instance/plugins",
+	"/api/instance/provisioned-plugins",
+	"/api/usage/datasource/*",
 	"/avatar/*",
 }
 var mustProxyPOST = []string{
@@ -253,14 +258,17 @@ func (s *Server) ParseBytes(b []byte) (Resources, error) {
 		return Resources{}, err
 	}
 	defer os.Remove(f.Name())
+
 	_, err = f.Write(b)
 	if err != nil {
 		return Resources{}, err
 	}
+
 	err = f.Close()
 	if err != nil {
 		return Resources{}, err
 	}
+
 	resources, err := s.parser.Parse(f.Name(), s.parserOpts)
 	s.parserErr = err
 	s.Resources.Merge(resources)
@@ -358,11 +366,13 @@ func (s *Server) IframeHandler(w http.ResponseWriter, r *http.Request) {
 		SendError(w, fmt.Sprintf("Error getting handler for %s/%s", kind, name), err, 500)
 		return
 	}
+
 	proxyHandler, ok := handler.(ProxyHandler)
 	if !ok {
 		SendError(w, fmt.Sprintf("%s is not supported by the Grizzly server", kind), fmt.Errorf("%s is not supported by the Grizzly server", kind), 500)
 		return
 	}
+
 	url := proxyHandler.ProxyURL(name)
 	templateVars := map[string]any{
 		"Port":           s.port,
@@ -388,7 +398,7 @@ func (s *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	templateVars := map[string]any{
-		"Resources":      s.Resources.AsList(),
+		"Resources":      s.Resources,
 		"ParseErrors":    parseErrors,
 		"ServerPort":     s.port,
 		"CurrentContext": s.CurrentContext,
@@ -422,8 +432,10 @@ func (s *Server) UpdateResource(name string, resource Resource) error {
 	if !found {
 		return fmt.Errorf("dashboard with UID %s not found", name)
 	}
+
 	if !existing.Source.Rewritable {
 		return fmt.Errorf("the source for this dashboard is not rewritable")
 	}
+
 	return os.WriteFile(existing.Source.Path, out, 0644)
 }

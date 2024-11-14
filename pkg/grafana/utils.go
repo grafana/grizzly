@@ -2,10 +2,14 @@ package grafana
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"regexp"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/models"
+	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
 var (
@@ -44,4 +48,53 @@ func structToMap(s interface{}) (map[string]interface{}, error) {
 	}
 
 	return result, nil
+}
+
+func authenticateAndProxyHandler(s grizzly.Server, provider grizzly.Provider) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text/html")
+
+		config := provider.(ClientProvider).Config()
+		if config.URL == "" {
+			grizzly.SendError(w, "Error: No Grafana URL configured", fmt.Errorf("no Grafana URL configured"), 400)
+			return
+		}
+
+		req, err := http.NewRequest(http.MethodGet, config.URL+r.URL.Path, nil)
+		if err != nil {
+			grizzly.SendError(w, http.StatusText(http.StatusInternalServerError), err, http.StatusInternalServerError)
+			return
+		}
+
+		if config.User != "" {
+			req.SetBasicAuth(config.User, config.Token)
+		} else if config.Token != "" {
+			req.Header.Set("Authorization", "Bearer "+config.Token)
+		}
+
+		req.Header.Set("User-Agent", s.UserAgent)
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+
+		if err == nil {
+			body, _ := io.ReadAll(resp.Body)
+			writeOrLog(w, body)
+			return
+		}
+
+		msg := ""
+		if config.Token == "" {
+			msg += "<p><b>Warning:</b> No service account token specified.</p>"
+		}
+
+		if resp.StatusCode == http.StatusFound {
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprintf(w, "%s<p>Authentication error</p>", msg)
+		} else {
+			body, _ := io.ReadAll(resp.Body)
+			w.WriteHeader(resp.StatusCode)
+			fmt.Fprintf(w, "%s%s", msg, string(body))
+		}
+	}
 }

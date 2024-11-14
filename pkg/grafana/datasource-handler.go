@@ -9,11 +9,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-chi/chi"
 	"github.com/go-openapi/runtime"
 	"github.com/grafana/grafana-openapi-client-go/client/datasources"
 	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
+
+const DatasourceKind = "Datasource"
 
 // DatasourceHandler is a Grizzly Handler for Grafana datasources
 type DatasourceHandler struct {
@@ -23,7 +26,7 @@ type DatasourceHandler struct {
 // NewDatasourceHandler returns a new Grizzly Handler for Grafana datasources
 func NewDatasourceHandler(provider grizzly.Provider) *DatasourceHandler {
 	return &DatasourceHandler{
-		BaseHandler: grizzly.NewBaseHandler(provider, "Datasource", false),
+		BaseHandler: grizzly.NewBaseHandler(provider, DatasourceKind, false),
 	}
 }
 
@@ -74,6 +77,67 @@ func (h *DatasourceHandler) GetSpecUID(resource grizzly.Resource) (string, error
 		return "", fmt.Errorf("UID not specified")
 	} else {
 		return uid, nil
+	}
+}
+
+func (h *DatasourceHandler) ProxyURL(uid string) string {
+	return fmt.Sprintf("/connections/datasources/edit/%s", uid)
+}
+
+func (h *DatasourceHandler) GetProxyEndpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
+	return []grizzly.HTTPEndpoint{
+		{
+			Method:  http.MethodGet,
+			URL:     "/connections/datasources/edit/{uid}",
+			Handler: authenticateAndProxyHandler(s, h.Provider),
+		},
+		{
+			Method:  http.MethodGet,
+			URL:     "/api/datasources/uid/{uid}",
+			Handler: h.DatasourceJSONGetHandler(s),
+		},
+	}
+}
+
+func (h *DatasourceHandler) DatasourceJSONGetHandler(s grizzly.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		uid := chi.URLParam(r, "uid")
+		if uid == "" {
+			grizzly.SendError(w, "No UID specified", fmt.Errorf("no UID specified within the URL"), http.StatusBadRequest)
+			return
+		}
+
+		resource, found := s.Resources.Find(grizzly.NewResourceRef(DatasourceKind, uid))
+		if !found {
+			grizzly.SendError(w, fmt.Sprintf("Datasource with UID %s not found", uid), fmt.Errorf("datasource with UID %s not found", uid), http.StatusNotFound)
+			return
+		}
+
+		// These values are required for the page to load properly.
+		if resource.GetSpecValue("version") == nil {
+			resource.SetSpecValue("version", 1)
+		}
+		if resource.GetSpecValue("id") == nil {
+			resource.SetSpecValue("id", 1)
+		}
+
+		// we don't support saving datasources via the proxy yet
+		resource.SetSpecValue("readOnly", true)
+
+		// to remove some "missing permissions warning" and enable some features
+		resource.SetSpecValue("accessControl", map[string]any{
+			"datasources.caching:read":      true,
+			"datasources.caching:write":     false,
+			"datasources.id:read":           true,
+			"datasources.permissions:read":  true,
+			"datasources.permissions:write": true,
+			"datasources:delete":            false,
+			"datasources:query":             true,
+			"datasources:read":              true,
+			"datasources:write":             true,
+		})
+
+		writeJSONOrLog(w, resource.Spec())
 	}
 }
 
@@ -151,11 +215,12 @@ func (h *DatasourceHandler) getRemoteDatasourceList() ([]string, error) {
 		return nil, err
 	}
 
-	datasourcesOk, err := client.Datasources.GetDataSources()
+	response, err := client.Datasources.GetDataSources()
 	if err != nil {
 		return nil, err
 	}
-	datasources := datasourcesOk.GetPayload()
+
+	datasources := response.GetPayload()
 
 	uids := make([]string, len(datasources))
 	for i, datasource := range datasources {
@@ -176,10 +241,12 @@ func (h *DatasourceHandler) postDatasource(resource grizzly.Resource) error {
 	if err != nil {
 		return err
 	}
+
 	client, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return err
 	}
+
 	_, err = client.Datasources.AddDataSource(&datasource, nil)
 	return err
 }
@@ -202,6 +269,7 @@ func (h *DatasourceHandler) putDatasource(resource grizzly.Resource) error {
 	if err != nil {
 		return err
 	}
+
 	client, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return err

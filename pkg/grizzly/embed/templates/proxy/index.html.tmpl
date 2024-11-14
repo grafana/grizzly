@@ -10,7 +10,7 @@
 
 <main>
     <div>
-    {{ if ne (len .ParseErrors) 0 }}
+        {{ if ne (len .ParseErrors) 0 }}
         <h1>Errors</h1>
 
         {{ range .ParseErrors }}
@@ -20,18 +20,31 @@
             </li>
           {{ end }}
         {{ end }}
-    {{ end }}
-    <h1>Available dashboards</h1>
-
-    <ul>
-        {{ range .Resources }}
-            {{ if eq .Kind "Dashboard" }}
-                <li>
-                    <a href="/grizzly/{{.Kind}}/{{.Name}}">{{ .Spec.title }}</a>
-                </li>
-            {{ end }}
         {{ end }}
-    </ul>
+
+        <h1>Dashboards</h1>
+
+        <ul>
+            {{ range (.Resources.OfKind "Dashboard").AsList }}
+                <li>
+                    <a href="/grizzly/{{ .Kind }}/{{ .Name }}">{{ .Spec.title }}</a>
+                </li>
+            {{ else }}
+                <li>No dashboards.</li>
+            {{ end }}
+        </ul>
+
+        <h1>Datasources</h1>
+
+        <ul>
+            {{ range (.Resources.OfKind "Datasource").AsList }}
+                <li>
+                    <a href="/grizzly/{{ .Kind }}/{{ .Name }}">{{ .Spec.name }}</a>
+                </li>
+            {{ else }}
+                <li>No datasources.</li>
+            {{ end }}
+        </ul>
     </div>
 </main>
 </body>

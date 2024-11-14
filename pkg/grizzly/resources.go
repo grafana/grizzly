@@ -240,6 +240,12 @@ func (r Resources) Filter(predicate func(Resource) bool) Resources {
 	return NewResources(filtered...)
 }
 
+func (r Resources) OfKind(kind string) Resources {
+	return r.Filter(func(resource Resource) bool {
+		return resource.Kind() == kind
+	})
+}
+
 func (r Resources) ForEach(callback func(Resource) error) error {
 	for pair := r.collection.Oldest(); pair != nil; pair = pair.Next() {
 		if err := callback(pair.Value); err != nil {
