@@ -13,5 +13,5 @@ metadata:
     github.com/project-slug: grafana/grizzly
 spec:
   type: service
-  owner: group:default/platform-cat
+  owner: group:default/platform-monitoring
   lifecycle: production
