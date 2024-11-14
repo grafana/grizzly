@@ -34,5 +34,6 @@ func writeJSONOrLog(w http.ResponseWriter, content any) {
 		log.Errorf("error marshalling response to JSON: %v", err)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	writeOrLog(w, responseJSON)
 }
