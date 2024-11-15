@@ -38,15 +38,19 @@ func (i BrowserInterface) Open(resources Resources) error {
 			if err != nil {
 				return err
 			}
-			proxyHandler, ok := handler.(ProxyHandler)
+
+			proxyConfigProvider, ok := handler.(ProxyConfiguratorProvider)
 			if !ok {
 				uid, err := handler.GetUID(resource)
 				if err != nil {
 					return err
 				}
+
 				return fmt.Errorf("kind %s (for resource %s) does not support proxying", resource.Kind(), uid)
 			}
-			path = proxyHandler.ProxyURL(resource.Name())
+
+			proxyConfig := proxyConfigProvider.ProxyConfigurator()
+			path = proxyConfig.ProxyURL(resource.Name())
 		}
 	}
 
@@ -55,19 +59,14 @@ func (i BrowserInterface) Open(resources Resources) error {
 	}
 
 	url := fmt.Sprintf("http://localhost:%d%s", i.port, path)
-	var err error
 	switch runtime.GOOS {
 	case "linux":
-		err = exec.Command("xdg-open", url).Start()
+		return exec.Command("xdg-open", url).Start()
 	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+		return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
 	case "darwin":
-		err = exec.Command("open", url).Start()
+		return exec.Command("open", url).Start()
 	default:
-		err = fmt.Errorf("unsupported platform")
+		return fmt.Errorf("unsupported platform")
 	}
-	if err != nil {
-		return err
-	}
-	return nil
 }

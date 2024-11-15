@@ -112,15 +112,22 @@ type ListenHandler interface {
 	Listen(UID, filename string) error
 }
 
+// ProxyConfiguratorProvider indicates that the handler implementing it
+// provides configuration on how to proxy the resources it manages.
+type ProxyConfiguratorProvider interface {
+	ProxyConfigurator() ProxyConfigurator
+}
+
 type HTTPEndpoint struct {
 	Method  string
 	URL     string
 	Handler http.HandlerFunc
 }
 
-// ProxyHandler describes a handler that can be used to edit resources live via a proxied UI
-type ProxyHandler interface {
-	// RegisterHandlers registers HTTP handlers for proxy events
+// ProxyConfigurator describes a proxy endpoints that can be used to view/edit
+// resources live via a proxied UI.
+type ProxyConfigurator interface {
+	// GetProxyEndpoints registers HTTP handlers for proxy events
 	GetProxyEndpoints(p Server) []HTTPEndpoint
 
 	// ProxyURL returns a URL path for a resource on the proxy

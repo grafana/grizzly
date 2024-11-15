@@ -57,13 +57,13 @@ func authenticateAndProxyHandler(s grizzly.Server, provider grizzly.Provider) ht
 
 		config := provider.(ClientProvider).Config()
 		if config.URL == "" {
-			grizzly.SendError(w, "Error: No Grafana URL configured", fmt.Errorf("no Grafana URL configured"), http.StatusBadRequest)
+			httputils.Error(w, "Error: No Grafana URL configured", fmt.Errorf("no Grafana URL configured"), http.StatusBadRequest)
 			return
 		}
 
 		req, err := http.NewRequest(http.MethodGet, config.URL+r.URL.Path, nil)
 		if err != nil {
-			grizzly.SendError(w, http.StatusText(http.StatusInternalServerError), err, http.StatusInternalServerError)
+			httputils.Error(w, http.StatusText(http.StatusInternalServerError), err, http.StatusInternalServerError)
 			return
 		}
 
@@ -77,7 +77,7 @@ func authenticateAndProxyHandler(s grizzly.Server, provider grizzly.Provider) ht
 
 		client, err := httputils.NewHTTPClient()
 		if err != nil {
-			grizzly.SendError(w, http.StatusText(http.StatusInternalServerError), err, http.StatusInternalServerError)
+			httputils.Error(w, http.StatusText(http.StatusInternalServerError), err, http.StatusInternalServerError)
 			return
 		}
 
@@ -85,7 +85,7 @@ func authenticateAndProxyHandler(s grizzly.Server, provider grizzly.Provider) ht
 
 		if err == nil {
 			body, _ := io.ReadAll(resp.Body)
-			writeOrLog(w, body)
+			httputils.Write(w, body)
 			return
 		}
 
@@ -96,11 +96,11 @@ func authenticateAndProxyHandler(s grizzly.Server, provider grizzly.Provider) ht
 
 		if resp.StatusCode == http.StatusFound {
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintf(w, "%s<p>Authentication error</p>", msg)
+			httputils.Write(w, []byte(fmt.Sprintf("%s<p>Authentication error</p>", msg)))
 		} else {
 			body, _ := io.ReadAll(resp.Body)
 			w.WriteHeader(resp.StatusCode)
-			fmt.Fprintf(w, "%s%s", msg, string(body))
+			httputils.Write(w, []byte(fmt.Sprintf("%s%s", msg, string(body))))
 		}
 	}
 }

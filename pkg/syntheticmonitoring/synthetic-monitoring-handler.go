@@ -27,10 +27,14 @@ import (
  *    them to IDs, having requested an ID<->string mapping from the API.
  */
 
+const SyntheticMonitoringCheckKind = "SyntheticMonitoringCheck"
+
 type Probes struct {
 	ByID   map[int64]synthetic_monitoring.Probe
 	ByName map[string]synthetic_monitoring.Probe
 }
+
+var _ grizzly.Handler = &SyntheticMonitoringHandler{}
 
 // SyntheticMonitoringHandler is a Grizzly Handler for Grafana Synthetic Monitoring
 type SyntheticMonitoringHandler struct {
@@ -40,7 +44,7 @@ type SyntheticMonitoringHandler struct {
 // NewSyntheticMonitoringHandler returns a Grizzly Handler for Grafana Synthetic Monitoring
 func NewSyntheticMonitoringHandler(provider grizzly.Provider) *SyntheticMonitoringHandler {
 	return &SyntheticMonitoringHandler{
-		BaseHandler: grizzly.NewBaseHandler(provider, "SyntheticMonitoringCheck", false),
+		BaseHandler: grizzly.NewBaseHandler(provider, SyntheticMonitoringCheckKind, false),
 	}
 }
 
