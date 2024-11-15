@@ -20,7 +20,7 @@ func (c *folderProxyConfigurator) ProxyURL(uid string) string {
 	return fmt.Sprintf("/dashboards/f/%s/", uid)
 }
 
-func (c *folderProxyConfigurator) GetProxyEndpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
+func (c *folderProxyConfigurator) Endpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{
 			Method:  http.MethodGet,
@@ -33,6 +33,10 @@ func (c *folderProxyConfigurator) GetProxyEndpoints(s grizzly.Server) []grizzly.
 			Handler: c.folderJSONGetHandler(s),
 		},
 	}
+}
+
+func (c *folderProxyConfigurator) StaticEndpoints() grizzly.StaticProxyConfig {
+	return grizzly.StaticProxyConfig{}
 }
 
 func (c *folderProxyConfigurator) folderJSONGetHandler(s grizzly.Server) http.HandlerFunc {

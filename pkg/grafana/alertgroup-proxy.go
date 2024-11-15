@@ -21,7 +21,7 @@ func (c *alertRuleProxyConfigurator) ProxyURL(uid string) string {
 	return fmt.Sprintf("/alerting/grafana/%s/view", uid)
 }
 
-func (c *alertRuleProxyConfigurator) GetProxyEndpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
+func (c *alertRuleProxyConfigurator) Endpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{
 			Method:  http.MethodGet,
@@ -37,6 +37,17 @@ func (c *alertRuleProxyConfigurator) GetProxyEndpoints(s grizzly.Server) []grizz
 			Method:  http.MethodGet,
 			URL:     "/api/ruler/grafana/api/v1/rules/{folder_uid}/{rule_group_uid}",
 			Handler: c.alertRuleGroupJSONGetHandler(s),
+		},
+	}
+}
+
+func (c *alertRuleProxyConfigurator) StaticEndpoints() grizzly.StaticProxyConfig {
+	return grizzly.StaticProxyConfig{
+		ProxyGet: []string{
+			"/api/v1/ngalert",
+		},
+		ProxyPost: []string{
+			"/api/v1/eval",
 		},
 	}
 }

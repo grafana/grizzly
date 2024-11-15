@@ -100,59 +100,61 @@ func (s *Server) SetFormatting(onlySpec bool, outputFormat string) {
 	s.OutputFormat = outputFormat
 }
 
-var mustProxyGET = []string{
-	"/public/*",
-	"/api/datasources/proxy/*",
-	"/api/datasources/*",
-	"/api/plugins",
-	"/api/plugins/*",
-	"/api/plugin-proxy/*",
-	"/api/instance/plugins",
-	"/api/instance/provisioned-plugins",
-	"/api/usage/datasource/*",
-	"/api/v1/ngalert",
-	"/avatar/*",
-}
-var mustProxyPOST = []string{
-	"/api/datasources/proxy/*",
-	"/api/ds/query",
-	"/api/v1/eval",
-}
-var blockJSONget = map[string]string{
-	"/api/ma/events":       "[]",
-	"/api/live/publish":    "[]",
-	"/api/live/list":       "[]",
-	"/api/user/orgs":       "[]",
-	"/api/annotations":     "[]",
-	"/api/search":          "[]",
-	"/api/usage/*":         "[]",
-	"/api/frontend/assets": "{}",
-	"/api/org/preferences": "{}",
+func (s *Server) staticProxyConfig() StaticProxyConfig {
+	return StaticProxyConfig{
+		ProxyGet: []string{
+			"/public/*",
+			"/avatar/*",
+		},
+		MockGet: map[string]string{
+			"/api/ma/events":       "[]",
+			"/api/live/publish":    "[]",
+			"/api/live/list":       "[]",
+			"/api/user/orgs":       "[]",
+			"/api/search":          "[]",
+			"/api/usage/*":         "[]",
+			"/api/frontend/assets": "{}",
+			"/api/org/preferences": "{}",
 
-	"/api/access-control/user/actions": `{"dashboards:write": true}`,
-	"/api/prometheus/grafana/api/v1/rules": `{
+			"/api/prometheus/grafana/api/v1/rules": `{
       "status": "success",
       "data": { "groups": [] }
     }`,
-	"/api/folders": "[]",
-	"/api/recording-rules/writer": `{
+			"/api/folders": "[]",
+			"/api/recording-rules/writer": `{
       "id": "cojWep7Vz",
       "data_source_uid": "grafanacloud-prom",
       "remote_write_path": "/api/prom/push"
     }`,
 
-	"/apis/banners.grafana.app/v0alpha1/namespaces/{stack}/announcement-banners": `{
+			"/apis/banners.grafana.app/v0alpha1/namespaces/{stack}/announcement-banners": `{
       "kind": "AnnouncementBannerList",
       "apiVersion": "banners.grafana.app/v0alpha1",
       "metadata": {"resourceVersion": "29"}
     }`,
+		},
+		MockPost: map[string]string{
+			"/api/frontend-metrics": "[]",
+			"/api/search-v2":        "[]",
+			"/api/live/publish":     "{}",
+			"/api/ma/events":        "null",
+		},
+	}
 }
 
-var blockJSONpost = map[string]string{
-	"/api/frontend-metrics": "[]",
-	"/api/search-v2":        "[]",
-	"/api/live/publish":     "{}",
-	"/api/ma/events":        "null",
+func (s *Server) applyStaticProxyConfig(r chi.Router, config StaticProxyConfig) {
+	for _, pattern := range config.ProxyGet {
+		r.Get(pattern, s.ProxyRequestHandler)
+	}
+	for _, pattern := range config.ProxyPost {
+		r.Post(pattern, s.ProxyRequestHandler)
+	}
+	for pattern, response := range config.MockGet {
+		r.Get(pattern, s.mockHandler(response))
+	}
+	for pattern, response := range config.MockPost {
+		r.Post(pattern, s.mockHandler(response))
+	}
 }
 
 func (s *Server) Start() error {
@@ -171,6 +173,8 @@ func (s *Server) Start() error {
 	r.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{Logger: logger.DecorateAtLevel(log.StandardLogger(), log.DebugLevel), NoColor: !color}))
 	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
 
+	s.applyStaticProxyConfig(r, s.staticProxyConfig())
+
 	for _, handler := range s.Registry.Handlers {
 		proxyConfigProvider, ok := handler.(ProxyConfiguratorProvider)
 		if !ok {
@@ -180,7 +184,7 @@ func (s *Server) Start() error {
 		log.WithField("handler", handler.Kind()).Debug("registering proxy configuration")
 
 		proxyConfig := proxyConfigProvider.ProxyConfigurator()
-		for _, endpoint := range proxyConfig.GetProxyEndpoints(*s) {
+		for _, endpoint := range proxyConfig.Endpoints(*s) {
 			switch endpoint.Method {
 			case http.MethodGet:
 				r.Get(endpoint.URL, endpoint.Handler)
@@ -190,19 +194,10 @@ func (s *Server) Start() error {
 				return fmt.Errorf("unknown endpoint method %s for handler %s", endpoint.Method, handler.Kind())
 			}
 		}
+
+		s.applyStaticProxyConfig(r, proxyConfig.StaticEndpoints())
 	}
-	for _, pattern := range mustProxyGET {
-		r.Get(pattern, s.ProxyRequestHandler)
-	}
-	for _, pattern := range mustProxyPOST {
-		r.Post(pattern, s.ProxyRequestHandler)
-	}
-	for pattern, response := range blockJSONget {
-		r.Get(pattern, s.blockHandler(response))
-	}
-	for pattern, response := range blockJSONpost {
-		r.Post(pattern, s.blockHandler(response))
-	}
+
 	r.Get("/", s.rootHandler)
 	r.Get("/grizzly/{kind}/{name}", s.iframeHandler)
 	r.Get("/livereload", livereload.Handler(upgrader))
@@ -248,7 +243,7 @@ func (s *Server) Start() error {
 		}
 	}
 
-	fmt.Printf("Listening on %s\n", s.url("/"))
+	log.Infof("Listening on %s\n", s.url("/"))
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), r)
 }
 
@@ -349,7 +344,7 @@ func (s *Server) executeWatchScript() ([]byte, error) {
 	return stdout.Bytes(), nil
 }
 
-func (s *Server) blockHandler(response string) http.HandlerFunc {
+func (s *Server) mockHandler(response string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -409,25 +404,25 @@ func (s *Server) rootHandler(w http.ResponseWriter, _ *http.Request) {
 		"CurrentContext": s.CurrentContext,
 	}
 	if err := templates.ExecuteTemplate(w, "proxy/index.html.tmpl", templateVars); err != nil {
-		httputils.Error(w, "Error while executing template", err, 500)
+		httputils.Error(w, "Error while executing template", err, http.StatusInternalServerError)
 		return
 	}
 }
 
-func (s *Server) UpdateResource(name string, resource Resource) error {
+func (s *Server) UpdateResource(resource Resource) error {
 	out, _, _, err := Format(s.Registry, s.ResourcePath, &resource, resource.Source.Format, !resource.Source.WithEnvelope)
 	if err != nil {
 		return fmt.Errorf("error formatting content: %s", err)
 	}
 
-	existing, found := s.Resources.Find(NewResourceRef("Dashboard", name))
+	existing, found := s.Resources.Find(resource.Ref())
 	if !found {
-		return fmt.Errorf("dashboard with UID %s not found", name)
+		return fmt.Errorf("%s not found", resource.Ref())
 	}
 
 	if !existing.Source.Rewritable {
-		return fmt.Errorf("the source for this dashboard is not rewritable")
+		return fmt.Errorf("the source for this %s is not rewritable", resource.Kind())
 	}
 
-	return os.WriteFile(existing.Source.Path, out, 0644)
+	return WriteFile(existing.Source.Path, out)
 }

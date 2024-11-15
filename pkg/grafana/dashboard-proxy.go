@@ -23,7 +23,7 @@ func (c *dashboardProxyConfigurator) ProxyURL(uid string) string {
 	return fmt.Sprintf("/d/%s/slug", uid)
 }
 
-func (c *dashboardProxyConfigurator) GetProxyEndpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
+func (c *dashboardProxyConfigurator) Endpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{
 			Method:  http.MethodGet,
@@ -44,6 +44,24 @@ func (c *dashboardProxyConfigurator) GetProxyEndpoints(s grizzly.Server) []grizz
 			Method:  http.MethodPost,
 			URL:     "/api/dashboards/db/",
 			Handler: c.dashboardJSONPostHandler(s),
+		},
+	}
+}
+
+func (c *dashboardProxyConfigurator) StaticEndpoints() grizzly.StaticProxyConfig {
+	return grizzly.StaticProxyConfig{
+		ProxyGet: []string{
+			"/api/datasources/proxy/*",
+			"/api/datasources/*",
+			"/api/plugins/*",
+		},
+		ProxyPost: []string{
+			"/api/datasources/proxy/*",
+			"/api/ds/query",
+		},
+		MockGet: map[string]string{
+			"/api/annotations":                 "[]",
+			"/api/access-control/user/actions": `{"dashboards:write": true}`,
 		},
 	}
 }
@@ -115,7 +133,7 @@ func (c *dashboardProxyConfigurator) dashboardJSONPostHandler(s grizzly.Server) 
 
 		resource.SetSpec(resp.Dashboard)
 
-		if err := s.UpdateResource(uid, resource); err != nil {
+		if err := s.UpdateResource(resource); err != nil {
 			httputils.Error(w, err.Error(), err, http.StatusInternalServerError)
 			return
 		}

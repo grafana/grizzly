@@ -64,13 +64,13 @@ type Handler interface {
 	// Prepare gets a resource ready for dispatch to the remote endpoint
 	Prepare(existing *Resource, resource Resource) *Resource
 
-	// Retrieves a UID for a resource
+	// GetUID retrieves a UID for a resource
 	GetUID(resource Resource) (string, error)
 
 	// GetSpecUID retrieves a UID from the spec of a raw resource
 	GetSpecUID(resource Resource) (string, error)
 
-	// Get retrieves JSON for a resource from an endpoint, by UID
+	// GetByUID retrieves JSON for a resource from an endpoint, by UID
 	GetByUID(UID string) (*Resource, error)
 
 	// GetRemote retrieves a remote equivalent of a remote resource
@@ -94,7 +94,7 @@ type Handler interface {
 	// UsesFolders identifies whether this resource lives within a folder
 	UsesFolders() bool
 
-	// Detects whether a spec-only resource is of this kind
+	// Detect whether a spec-only resource is of this kind
 	Detect(map[string]any) bool
 }
 
@@ -124,12 +124,39 @@ type HTTPEndpoint struct {
 	Handler http.HandlerFunc
 }
 
+// StaticProxyConfig holds some static configuration to apply to the proxy.
+// This allows resource handlers to declare routes to proxy or mock that are
+// specific to them.
+type StaticProxyConfig struct {
+	// ProxyGet holds a list of routes to proxy when using the GET HTTP
+	// method.
+	// Example: /public/*
+	ProxyGet []string
+
+	// ProxyPost holds a list of routes to proxy when using the POST HTTP
+	// method.
+	// Example: /api/v1/eval
+	ProxyPost []string
+
+	// MockGet holds a map associating URLs to a mock response that they should
+	// return for GET requests.
+	// Note: the response is expected to be JSON.
+	MockGet map[string]string
+
+	// MockPost holds a map associating URLs to a mock response that they should
+	// return for POST requests.
+	// Note: the response is expected to be JSON.
+	MockPost map[string]string
+}
+
 // ProxyConfigurator describes a proxy endpoints that can be used to view/edit
 // resources live via a proxied UI.
 type ProxyConfigurator interface {
-	// GetProxyEndpoints registers HTTP handlers for proxy events
-	GetProxyEndpoints(p Server) []HTTPEndpoint
+	// Endpoints registers HTTP handlers for proxy events
+	Endpoints(p Server) []HTTPEndpoint
 
 	// ProxyURL returns a URL path for a resource on the proxy
 	ProxyURL(uid string) string
+
+	StaticEndpoints() StaticProxyConfig
 }
