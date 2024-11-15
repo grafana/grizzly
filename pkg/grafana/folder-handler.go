@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
+	"github.com/go-chi/chi"
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/client/folders"
 	"github.com/grafana/grafana-openapi-client-go/client/search"
@@ -14,6 +16,7 @@ import (
 )
 
 const DefaultFolder = "General"
+const DashboardFolderKind = "DashboardFolder"
 
 // FolderHandler is a Grizzly Handler for Grafana dashboard folders
 type FolderHandler struct {
@@ -23,7 +26,7 @@ type FolderHandler struct {
 // NewFolderHandler returns configuration defining a new Grafana Folder Handler
 func NewFolderHandler(provider grizzly.Provider) *FolderHandler {
 	return &FolderHandler{
-		BaseHandler: grizzly.NewBaseHandler(provider, "DashboardFolder", false),
+		BaseHandler: grizzly.NewBaseHandler(provider, DashboardFolderKind, false),
 	}
 }
 
@@ -145,6 +148,83 @@ func (h *FolderHandler) Add(resource grizzly.Resource) error {
 // Update pushes a folder to Grafana via the API
 func (h *FolderHandler) Update(existing, resource grizzly.Resource) error {
 	return h.putFolder(resource)
+}
+
+func (h *FolderHandler) ProxyURL(uid string) string {
+	return fmt.Sprintf("/dashboards/f/%s/", uid)
+}
+
+func (h *FolderHandler) GetProxyEndpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
+	return []grizzly.HTTPEndpoint{
+		{
+			Method:  http.MethodGet,
+			URL:     "/alerting/{rule_uid}/edit",
+			Handler: authenticateAndProxyHandler(s, h.Provider),
+		},
+		{
+			Method:  http.MethodGet,
+			URL:     "/api/folders/{folder_uid}",
+			Handler: h.FolderJSONGetHandler(s),
+		},
+	}
+}
+
+func (h *FolderHandler) FolderJSONGetHandler(s grizzly.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		folderUID := chi.URLParam(r, "folder_uid")
+		withAccessControl := r.URL.Query().Get("accesscontrol")
+
+		folder, found := s.Resources.Find(grizzly.NewResourceRef(DashboardFolderKind, folderUID))
+		if !found {
+			grizzly.SendError(w, fmt.Sprintf("Folder with UID %s not found", folderUID), fmt.Errorf("folder with UID %s not found", folderUID), http.StatusNotFound)
+			return
+		}
+
+		// These values are required for the page to load properly.
+		if folder.GetSpecValue("version") == nil {
+			folder.SetSpecValue("version", 1)
+		}
+		if folder.GetSpecValue("id") == nil {
+			folder.SetSpecValue("id", 1)
+		}
+
+		response := folder.Spec()
+
+		if withAccessControl == "true" {
+			// TODO: can we omit stuff from this list?
+			response["accessControl"] = map[string]any{
+				"alert.rules:create":           false,
+				"alert.rules:delete":           false,
+				"alert.rules:read":             true,
+				"alert.rules:write":            false,
+				"alert.silences:create":        false,
+				"alert.silences:read":          true,
+				"alert.silences:write":         false,
+				"annotations:create":           false,
+				"annotations:delete":           false,
+				"annotations:read":             true,
+				"annotations:write":            false,
+				"dashboards.permissions:read":  true,
+				"dashboards.permissions:write": false,
+				"dashboards:create":            true,
+				"dashboards:delete":            false,
+				"dashboards:read":              true,
+				"dashboards:write":             true,
+				"folders.permissions:read":     true,
+				"folders.permissions:write":    false,
+				"folders:create":               false,
+				"folders:delete":               false,
+				"folders:read":                 true,
+				"folders:write":                false,
+				"library.panels:create":        false,
+				"library.panels:delete":        false,
+				"library.panels:read":          true,
+				"library.panels:write":         false,
+			}
+		}
+
+		writeJSONOrLog(w, response)
+	}
 }
 
 // getRemoteFolder retrieves a folder object from Grafana
