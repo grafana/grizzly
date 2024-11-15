@@ -20,7 +20,7 @@ func (c *datasourceProxyConfigurator) ProxyURL(uid string) string {
 	return fmt.Sprintf("/connections/datasources/edit/%s", uid)
 }
 
-func (c *datasourceProxyConfigurator) GetProxyEndpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
+func (c *datasourceProxyConfigurator) Endpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{
 			Method:  http.MethodGet,
@@ -31,6 +31,18 @@ func (c *datasourceProxyConfigurator) GetProxyEndpoints(s grizzly.Server) []griz
 			Method:  http.MethodGet,
 			URL:     "/api/datasources/uid/{uid}",
 			Handler: c.datasourceJSONGetHandler(s),
+		},
+	}
+}
+
+func (c *datasourceProxyConfigurator) StaticEndpoints() grizzly.StaticProxyConfig {
+	return grizzly.StaticProxyConfig{
+		ProxyGet: []string{
+			"/api/instance/plugins",
+			"/api/instance/provisioned-plugins",
+			"/api/plugins",
+			"/api/plugin-proxy/*",
+			"/api/usage/datasource/*",
 		},
 	}
 }
