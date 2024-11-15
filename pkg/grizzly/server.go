@@ -248,7 +248,7 @@ func (s *Server) Start() error {
 		}
 	}
 
-	fmt.Printf("Listening on %s\n", s.URL("/"))
+	fmt.Printf("Listening on %s\n", s.url("/"))
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), r)
 }
 
@@ -282,7 +282,7 @@ func (s *Server) ParseBytes(b []byte) (Resources, error) {
 	return resources, err
 }
 
-func (s *Server) URL(path string) string {
+func (s *Server) url(path string) string {
 	if len(path) == 0 || path[0] != '/' {
 		path = "/" + path
 	}
@@ -353,9 +353,7 @@ func (s *Server) blockHandler(response string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte(response)); err != nil {
-			log.Errorf("error writing response: %v", err)
-		}
+		httputils.Write(w, []byte(response))
 	}
 }
 
