@@ -11,7 +11,10 @@ import (
 
 const (
 	GlobalAlertNotificationPolicyName = "global"
+	AlertNotificationPolicyKind       = "AlertNotificationPolicy"
 )
+
+var _ grizzly.Handler = &AlertNotificationPolicyHandler{}
 
 // AlertNotificationPolicyHandler is a Grizzly Handler for Grafana alertNotificationPolicies
 type AlertNotificationPolicyHandler struct {
@@ -21,7 +24,7 @@ type AlertNotificationPolicyHandler struct {
 // NewAlertNotificationPolicyHandler returns a new Grizzly Handler for Grafana alertNotificationPolicies
 func NewAlertNotificationPolicyHandler(provider grizzly.Provider) *AlertNotificationPolicyHandler {
 	return &AlertNotificationPolicyHandler{
-		BaseHandler: grizzly.NewBaseHandler(provider, "AlertNotificationPolicy", false),
+		BaseHandler: grizzly.NewBaseHandler(provider, AlertNotificationPolicyKind, false),
 	}
 }
 

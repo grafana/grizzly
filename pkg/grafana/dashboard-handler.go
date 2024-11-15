@@ -2,14 +2,10 @@ package grafana
 
 import (
 	_ "embed"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 
-	"github.com/go-chi/chi"
 	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
 	"github.com/grafana/grafana-openapi-client-go/client/search"
 	"github.com/grafana/grafana-openapi-client-go/models"
@@ -21,6 +17,11 @@ import (
 const generalFolderID = 0
 const generalFolderUID = "general"
 
+const DashboardKind = "Dashboard"
+
+var _ grizzly.Handler = &DashboardHandler{}
+var _ grizzly.ProxyConfiguratorProvider = &DashboardHandler{}
+
 // DashboardHandler is a Grizzly Handler for Grafana dashboards
 type DashboardHandler struct {
 	grizzly.BaseHandler
@@ -29,13 +30,20 @@ type DashboardHandler struct {
 // NewDashboardHandler returns configuration defining a new Grafana Dashboard Handler
 func NewDashboardHandler(provider grizzly.Provider) *DashboardHandler {
 	return &DashboardHandler{
-		BaseHandler: grizzly.NewBaseHandler(provider, "Dashboard", true),
+		BaseHandler: grizzly.NewBaseHandler(provider, DashboardKind, true),
 	}
 }
 
 const (
 	dashboardPattern = "dashboards/%s/dashboard-%s.%s"
 )
+
+// ProxyConfigurator provides a configurator object describing how to proxy dashboards.
+func (h *DashboardHandler) ProxyConfigurator() grizzly.ProxyConfigurator {
+	return &dashboardProxyConfigurator{
+		provider: h.Provider,
+	}
+}
 
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *DashboardHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
@@ -254,119 +262,4 @@ func (h *DashboardHandler) Detect(data map[string]any) bool {
 		}
 	}
 	return true
-}
-
-func (h *DashboardHandler) GetProxyEndpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
-	return []grizzly.HTTPEndpoint{
-		{
-			Method:  http.MethodGet,
-			URL:     "/d/{uid}/{slug}",
-			Handler: h.resourceFromQueryParameterMiddleware(s, "grizzly_from_file", authenticateAndProxyHandler(s, h.Provider)),
-		},
-		{
-			Method:  http.MethodGet,
-			URL:     "/api/dashboards/uid/{uid}",
-			Handler: h.DashboardJSONGetHandler(s),
-		},
-		{
-			Method:  http.MethodPost,
-			URL:     "/api/dashboards/db",
-			Handler: h.DashboardJSONPostHandler(s),
-		},
-		{
-			Method:  http.MethodPost,
-			URL:     "/api/dashboards/db/",
-			Handler: h.DashboardJSONPostHandler(s),
-		},
-	}
-}
-
-func (h *DashboardHandler) resourceFromQueryParameterMiddleware(s grizzly.Server, parameterName string, next http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if fromFilePath := r.URL.Query().Get(parameterName); fromFilePath != "" {
-			if _, err := s.ParseResources(fromFilePath); err != nil {
-				grizzly.SendError(w, "could not parse resource", fmt.Errorf("could not parse resource"), http.StatusBadRequest)
-				return
-			}
-		}
-
-		next.ServeHTTP(w, r)
-	}
-}
-
-func (h *DashboardHandler) DashboardJSONGetHandler(s grizzly.Server) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		uid := chi.URLParam(r, "uid")
-		if uid == "" {
-			grizzly.SendError(w, "No UID specified", fmt.Errorf("no UID specified within the URL"), http.StatusBadRequest)
-			return
-		}
-
-		resource, found := s.Resources.Find(grizzly.NewResourceRef("Dashboard", uid))
-		if !found {
-			grizzly.SendError(w, fmt.Sprintf("Dashboard with UID %s not found", uid), fmt.Errorf("dashboard with UID %s not found", uid), http.StatusNotFound)
-			return
-		}
-		if resource.GetSpecValue("version") == nil {
-			resource.SetSpecValue("version", 1)
-		}
-
-		writeJSONOrLog(w, map[string]any{
-			"dashboard": resource.Spec(),
-			"meta": map[string]any{
-				"type":      "db",
-				"isStarred": false,
-				"folderID":  0,
-				"folderUID": "",
-				"url":       h.ProxyURL(uid),
-			},
-		})
-	}
-}
-
-func (h *DashboardHandler) DashboardJSONPostHandler(s grizzly.Server) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		resp := struct {
-			Dashboard map[string]any `json:"dashboard"`
-		}{}
-		content, _ := io.ReadAll(r.Body)
-		err := json.Unmarshal(content, &resp)
-		if err != nil {
-			grizzly.SendError(w, "Error parsing JSON", err, http.StatusBadRequest)
-			return
-		}
-		uid, ok := resp.Dashboard["uid"].(string)
-		if !ok || uid == "" {
-			grizzly.SendError(w, "Dashboard has no UID", fmt.Errorf("dashboard has no UID"), http.StatusBadRequest)
-			return
-		}
-		resource, ok := s.Resources.Find(grizzly.NewResourceRef(h.Kind(), uid))
-		if !ok {
-			err := fmt.Errorf("unknown dashboard: %s", uid)
-			grizzly.SendError(w, err.Error(), err, http.StatusBadRequest)
-			return
-		}
-
-		resource.SetSpec(resp.Dashboard)
-
-		err = s.UpdateResource(uid, resource)
-		if err != nil {
-			grizzly.SendError(w, err.Error(), err, http.StatusInternalServerError)
-			return
-		}
-		jout := map[string]interface{}{
-			"id":      1,
-			"slug":    "slug",
-			"status":  "success",
-			"uid":     uid,
-			"url":     fmt.Sprintf("/d/%s/slug", uid),
-			"version": 1,
-		}
-		body, _ := json.Marshal(jout)
-		writeOrLog(w, body)
-	}
-}
-
-func (h *DashboardHandler) ProxyURL(uid string) string {
-	return fmt.Sprintf("/d/%s/slug", uid)
 }

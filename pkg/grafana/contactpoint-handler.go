@@ -9,6 +9,10 @@ import (
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
+const AlertContactPointKind = "AlertContactPoint"
+
+var _ grizzly.Handler = &AlertContactPointHandler{}
+
 // AlertContactPointHandler is a Grizzly Handler for Grafana contactPoints
 type AlertContactPointHandler struct {
 	grizzly.BaseHandler
@@ -17,7 +21,7 @@ type AlertContactPointHandler struct {
 // NewAlertContactPointHandler returns a new Grizzly Handler for Grafana contactPoints
 func NewAlertContactPointHandler(provider grizzly.Provider) *AlertContactPointHandler {
 	return &AlertContactPointHandler{
-		BaseHandler: grizzly.NewBaseHandler(provider, "AlertContactPoint", false),
+		BaseHandler: grizzly.NewBaseHandler(provider, AlertContactPointKind, false),
 	}
 }
 

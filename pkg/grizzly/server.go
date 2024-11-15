@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
+	"github.com/grafana/grizzly/internal/httputils"
 	"github.com/grafana/grizzly/internal/livereload"
 	"github.com/grafana/grizzly/internal/logger"
 	"github.com/hashicorp/go-multierror"
@@ -169,15 +170,17 @@ func (s *Server) Start() error {
 
 	r.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{Logger: logger.DecorateAtLevel(log.StandardLogger(), log.DebugLevel), NoColor: !color}))
 	r.Handle("/grizzly/assets/*", http.StripPrefix("/grizzly/assets/", http.FileServer(http.FS(assetsFS))))
-	r.HandleFunc("/favicon.ico", s.faviconHandlerFunc())
 
 	for _, handler := range s.Registry.Handlers {
-		proxyHandler, ok := handler.(ProxyHandler)
+		proxyConfigProvider, ok := handler.(ProxyConfiguratorProvider)
 		if !ok {
 			continue
 		}
 
-		for _, endpoint := range proxyHandler.GetProxyEndpoints(*s) {
+		log.WithField("handler", handler.Kind()).Debug("registering proxy configuration")
+
+		proxyConfig := proxyConfigProvider.ProxyConfigurator()
+		for _, endpoint := range proxyConfig.GetProxyEndpoints(*s) {
 			switch endpoint.Method {
 			case http.MethodGet:
 				r.Get(endpoint.URL, endpoint.Handler)
@@ -200,8 +203,8 @@ func (s *Server) Start() error {
 	for pattern, response := range blockJSONpost {
 		r.Post(pattern, s.blockHandler(response))
 	}
-	r.Get("/", s.RootHandler)
-	r.Get("/grizzly/{kind}/{name}", s.IframeHandler)
+	r.Get("/", s.rootHandler)
+	r.Get("/grizzly/{kind}/{name}", s.iframeHandler)
 	r.Get("/livereload", livereload.Handler(upgrader))
 
 	if s.watchScript != "" {
@@ -319,7 +322,7 @@ func (s *Server) updateWatchedResource(name string) error {
 			log.Warnf("[watcher] Error: %s", err)
 			continue
 		}
-		_, ok := handler.(ProxyHandler)
+		_, ok := handler.(ProxyConfigurator)
 		if ok {
 			log.Infof("[watcher] Changes detected. Reloading %s", resource.Ref())
 			livereload.ReloadDashboard(resource.Name())
@@ -361,36 +364,36 @@ func (s *Server) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	s.proxy.ServeHTTP(w, r)
 }
 
-// RootHandler lists all local proxyable resources
-func (s *Server) IframeHandler(w http.ResponseWriter, r *http.Request) {
+// rootHandler lists all local proxyable resources
+func (s *Server) iframeHandler(w http.ResponseWriter, r *http.Request) {
 	kind := chi.URLParam(r, "kind")
 	name := chi.URLParam(r, "name")
 	handler, err := s.Registry.GetHandler(kind)
 	if err != nil {
-		SendError(w, fmt.Sprintf("Error getting handler for %s/%s", kind, name), err, 500)
+		httputils.Error(w, fmt.Sprintf("Error getting handler for %s/%s", kind, name), err, http.StatusInternalServerError)
 		return
 	}
 
-	proxyHandler, ok := handler.(ProxyHandler)
+	proxyConfigProvider, ok := handler.(ProxyConfiguratorProvider)
 	if !ok {
-		SendError(w, fmt.Sprintf("%s is not supported by the Grizzly server", kind), fmt.Errorf("%s is not supported by the Grizzly server", kind), 500)
+		httputils.Error(w, fmt.Sprintf("%s is not supported by the Grizzly server", kind), fmt.Errorf("%s is not supported by the Grizzly server", kind), http.StatusInternalServerError)
 		return
 	}
 
-	url := proxyHandler.ProxyURL(name)
+	proxyConfig := proxyConfigProvider.ProxyConfigurator()
 	templateVars := map[string]any{
 		"Port":           s.port,
-		"IframeURL":      url,
+		"IframeURL":      proxyConfig.ProxyURL(name),
 		"CurrentContext": s.CurrentContext,
 	}
 
 	if err := templates.ExecuteTemplate(w, "proxy/iframe.html.tmpl", templateVars); err != nil {
-		SendError(w, "Error while executing template", err, 500)
+		httputils.Error(w, "Error while executing template", err, http.StatusInternalServerError)
 		return
 	}
 }
 
-func (s *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) rootHandler(w http.ResponseWriter, _ *http.Request) {
 	var parseErrors []error
 
 	if s.parserErr != nil {
@@ -408,21 +411,8 @@ func (s *Server) RootHandler(w http.ResponseWriter, _ *http.Request) {
 		"CurrentContext": s.CurrentContext,
 	}
 	if err := templates.ExecuteTemplate(w, "proxy/index.html.tmpl", templateVars); err != nil {
-		SendError(w, "Error while executing template", err, 500)
+		httputils.Error(w, "Error while executing template", err, 500)
 		return
-	}
-}
-
-func (s *Server) faviconHandlerFunc() http.HandlerFunc {
-	content, _ := embedFS.ReadFile("embed/assets/grizzly.ico")
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "image/x-icon")
-		w.WriteHeader(http.StatusOK)
-		_, err := w.Write(content)
-		if err != nil {
-			log.Error(err)
-		}
 	}
 }
 

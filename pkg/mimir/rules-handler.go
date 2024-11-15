@@ -10,6 +10,10 @@ import (
 	"github.com/grafana/grizzly/pkg/mimir/models"
 )
 
+const PrometheusRuleGroupKind = "PrometheusRuleGroup"
+
+var _ grizzly.Handler = &RuleHandler{}
+
 // RuleHandler is a Grizzly Handler for Prometheus Rules
 type RuleHandler struct {
 	grizzly.BaseHandler
@@ -19,7 +23,7 @@ type RuleHandler struct {
 // NewRuleHandler returns a new Grizzly Handler for Prometheus Rules
 func NewRuleHandler(provider *Provider, clientTool client.Mimir) *RuleHandler {
 	return &RuleHandler{
-		BaseHandler: grizzly.NewBaseHandler(provider, "PrometheusRuleGroup", false),
+		BaseHandler: grizzly.NewBaseHandler(provider, PrometheusRuleGroupKind, false),
 		clientTool:  clientTool,
 	}
 }
