@@ -45,6 +45,21 @@
                 <li>No datasources.</li>
             {{ end }}
         </ul>
+
+        <h1>Alert rule groups</h1>
+
+        <ul>
+            {{ range (.Resources.OfKind "AlertRuleGroup").AsList }}
+                <li>
+                    {{ .Spec.title }}
+                    <ul>
+                    {{ range .Spec.rules }}
+                        <li><a href="/grizzly/AlertRuleGroup/{{ .uid }}">{{ .title }}</a></li>
+                    {{ end }}
+                    </ul>
+                </li>
+            {{ end }}
+        </ul>
     </div>
 </main>
 </body>

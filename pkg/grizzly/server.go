@@ -109,11 +109,13 @@ var mustProxyGET = []string{
 	"/api/instance/plugins",
 	"/api/instance/provisioned-plugins",
 	"/api/usage/datasource/*",
+	"/api/v1/ngalert",
 	"/avatar/*",
 }
 var mustProxyPOST = []string{
 	"/api/datasources/proxy/*",
 	"/api/ds/query",
+	"/api/v1/eval",
 }
 var blockJSONget = map[string]string{
 	"/api/ma/events":       "[]",
@@ -171,16 +173,18 @@ func (s *Server) Start() error {
 
 	for _, handler := range s.Registry.Handlers {
 		proxyHandler, ok := handler.(ProxyHandler)
-		if ok {
-			for _, endpoint := range proxyHandler.GetProxyEndpoints(*s) {
-				switch endpoint.Method {
-				case "GET":
-					r.Get(endpoint.URL, endpoint.Handler)
-				case "POST":
-					r.Post(endpoint.URL, endpoint.Handler)
-				default:
-					return fmt.Errorf("unknown endpoint method %s for handler %s", endpoint.Method, handler.Kind())
-				}
+		if !ok {
+			continue
+		}
+
+		for _, endpoint := range proxyHandler.GetProxyEndpoints(*s) {
+			switch endpoint.Method {
+			case http.MethodGet:
+				r.Get(endpoint.URL, endpoint.Handler)
+			case http.MethodPost:
+				r.Post(endpoint.URL, endpoint.Handler)
+			default:
+				return fmt.Errorf("unknown endpoint method %s for handler %s", endpoint.Method, handler.Kind())
 			}
 		}
 	}

@@ -9,6 +9,7 @@ import (
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/models"
+	"github.com/grafana/grizzly/internal/httputils"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
@@ -74,7 +75,12 @@ func authenticateAndProxyHandler(s grizzly.Server, provider grizzly.Provider) ht
 
 		req.Header.Set("User-Agent", s.UserAgent)
 
-		client := &http.Client{}
+		client, err := httputils.NewHTTPClient()
+		if err != nil {
+			grizzly.SendError(w, http.StatusText(http.StatusInternalServerError), err, http.StatusInternalServerError)
+			return
+		}
+
 		resp, err := client.Do(req)
 
 		if err == nil {
