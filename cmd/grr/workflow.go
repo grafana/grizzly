@@ -316,7 +316,7 @@ func snapshotCmd(registry grizzly.Registry) *cli.Command {
 		Args:  cli.ArgsExact(1),
 	}
 	var opts Opts
-	expires := cmd.Flags().IntP("expires", "e", 0, "when the preview should expire. Default 0 (never)")
+	expires := cmd.Flags().IntP("expires", "e", 0, "when the snapshot should expire. Default 0 (never)")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		resourceKind, folderUID, err := getOnlySpec(opts)
