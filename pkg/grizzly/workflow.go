@@ -479,7 +479,7 @@ func Snapshot(registry Registry, resources Resources, expiresSeconds int) error 
 		}
 		snapshotHandler, ok := handler.(SnapshotHandler)
 		if !ok {
-			notifier.NotSupported(resource, "preview")
+			notifier.NotSupported(resource, "snapshot")
 			continue
 		}
 		err = snapshotHandler.Snapshot(resource, expiresSeconds)

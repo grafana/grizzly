@@ -134,7 +134,7 @@ At present, only Grafana dashboards are supported, and will print out links for 
 snapshot that was uploaded.
 
 ```sh
-$ grr preview my-lib.libsonnet
+$ grr snapshot my-lib.libsonnet
 ```
 
 Grafana snapshots by default do not expire. Expiration can be set via the
