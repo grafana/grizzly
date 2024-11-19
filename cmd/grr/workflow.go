@@ -4,14 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 	"text/tabwriter"
+	"time"
 
 	"github.com/go-clix/cli"
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/proto"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
+	"github.com/ysmood/gson"
 	terminal "golang.org/x/term"
 )
 
@@ -462,6 +467,125 @@ func exportCmd(registry grizzly.Registry) *cli.Command {
 		}
 
 		return grizzly.Export(registry, dashboardDir, resources, onlySpec, format)
+	}
+	cmd = initialiseOnlySpec(cmd, &opts)
+	return initialiseCmd(cmd, &opts)
+}
+
+func captureCmd(registry grizzly.Registry) *cli.Command {
+	cmd := &cli.Command{
+		Use:   "capture <resource-path>",
+		Short: "TBD",
+		Args:  cli.ArgsExact(1),
+	}
+	var opts Opts
+
+	cmd.Run = func(cmd *cli.Command, args []string) error {
+		resourcePath := args[0]
+		resourceKind, folderUID, err := getOnlySpec(opts)
+		if err != nil {
+			return err
+		}
+
+		currentContext, err := config.CurrentContext()
+		if err != nil {
+			return err
+		}
+
+		targets := currentContext.GetTargets(opts.Targets)
+		parser := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(true))
+		parserOpts := grizzly.ParserOptions{
+			DefaultResourceKind: resourceKind,
+			DefaultFolderUID:    folderUID,
+		}
+
+		format, onlySpec, err := getOutputFormat(opts)
+		if err != nil {
+			return err
+		}
+
+		// TODO: random port?
+		server, err := grizzly.NewGrizzlyServer(registry, resourcePath, 8181)
+		if err != nil {
+			return err
+		}
+		server.SetParser(parser, parserOpts)
+		server.SetContext(currentContext.Name)
+		server.SetFormatting(onlySpec, format)
+
+		go func() {
+			if err := server.Start(); err != nil {
+				log.Warnf("could not start server: %s", err)
+			}
+		}()
+
+		time.Sleep(2 * time.Second) // haha.
+
+		browser := rod.New().MustConnect()
+		browser.Logger(log.StandardLogger())
+		defer browser.MustClose()
+
+		pool := rod.NewPagePool(10)
+
+		createPage := func() (*rod.Page, error) {
+			// We use MustIncognito to isolate pages with each other
+			return browser.MustIncognito().Page(proto.TargetCreateTarget{})
+		}
+
+		wg := sync.WaitGroup{}
+		server.Resources.ForEach(func(resource grizzly.Resource) error {
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+
+				handler, err := registry.GetHandler(resource.Kind())
+				if err != nil {
+					log.Debugf("ignoring %s: %s", resource.Ref(), err)
+					return
+				}
+
+				proxyHandler, ok := handler.(grizzly.ProxyHandler)
+				if !ok {
+					log.Debugf("ignoring %s: not a proxy handler", resource.Ref())
+					return
+				}
+
+				log.Infof("capturing %s", resource.Ref())
+
+				relativeResourceURL := proxyHandler.ProxyURL(resource.Name())
+				proxiedURL := server.URL(relativeResourceURL) + "?kiosk" // TODO: cheating
+
+				page, err := pool.Get(createPage)
+				if err != nil {
+					log.Error(err)
+					return
+				}
+				defer pool.Put(page)
+
+				page.MustNavigate(proxiedURL)
+				page.MustSetViewport(1920, 1080, 1, false)
+				if err := page.WaitDOMStable(15*time.Second, 0.05); err != nil {
+					log.Error(err)
+				}
+				buf, err := page.Screenshot(true, &proto.PageCaptureScreenshot{
+					Format:  proto.PageCaptureScreenshotFormatPng,
+					Quality: gson.Int(100),
+				})
+
+				if err := os.WriteFile(fmt.Sprintf("%s.png", resource.Ref()), buf, 0o644); err != nil {
+					log.Error(err)
+				}
+			}()
+
+			return nil
+		})
+
+		wg.Wait()
+
+		pool.Cleanup(func(p *rod.Page) { p.MustClose() })
+
+		return nil
 	}
 	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)

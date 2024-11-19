@@ -236,7 +236,7 @@ func (s *Server) Start() error {
 		}
 	}
 
-	fmt.Printf("Listening on %s\n", s.URL("/"))
+	log.Infof("Listening on %s\n", s.URL("/"))
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), r)
 }
 
