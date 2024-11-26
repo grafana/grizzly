@@ -27,6 +27,13 @@ func NewAlertNotificationTemplateHandler(provider grizzly.Provider) *AlertNotifi
 	}
 }
 
+// ProxyConfigurator provides a configurator object describing how to proxy folders.
+func (h *AlertNotificationTemplateHandler) ProxyConfigurator() grizzly.ProxyConfigurator {
+	return &alertNotificationTemplateProxyConfigurator{
+		provider: h.Provider,
+	}
+}
+
 // ResourceFilePath returns the location on disk where a resource should be updated
 func (h *AlertNotificationTemplateHandler) ResourceFilePath(resource grizzly.Resource, filetype string) string {
 	filename := strings.ReplaceAll(resource.Name(), string(os.PathSeparator), "-")
