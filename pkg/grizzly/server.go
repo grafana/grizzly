@@ -119,6 +119,7 @@ func (s *Server) staticProxyConfig() StaticProxyConfig {
 			"/api/usage/*":         "[]",
 			"/api/frontend/assets": "{}",
 			"/api/org/preferences": "{}",
+			"/api/org/users":       "[]",
 
 			"/api/prometheus/grafana/api/v1/rules": `{
       "status": "success",
