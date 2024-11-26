@@ -56,7 +56,7 @@ func authenticateAndProxyHandler(s grizzly.Server, provider grizzly.Provider) ht
 
 		config := provider.(ClientProvider).Config()
 		if config.URL == "" {
-			grizzly.SendError(w, "Error: No Grafana URL configured", fmt.Errorf("no Grafana URL configured"), 400)
+			grizzly.SendError(w, "Error: No Grafana URL configured", fmt.Errorf("no Grafana URL configured"), http.StatusBadRequest)
 			return
 		}
 
