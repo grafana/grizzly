@@ -57,12 +57,8 @@ func (h *FolderHandler) Prepare(existing *grizzly.Resource, resource grizzly.Res
 
 // Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
 func (h *FolderHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
-	for _, key := range []string{"id", "version", "canAdmin", "canDelete", "canEdit", "canSave", "created", "createdBy", "updated", "updatedBy", "url"} {
+	for _, key := range []string{"id", "version", "canAdmin", "canDelete", "canEdit", "canSave", "created", "createdBy", "updated", "updatedBy", "url", "parents"} {
 		resource.DeleteSpecKey(key)
-	}
-	value := resource.GetSpecValue("parents")
-	if value == nil {
-		resource.DeleteSpecKey("parents")
 	}
 	return &resource
 }
