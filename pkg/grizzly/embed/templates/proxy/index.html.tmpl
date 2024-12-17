@@ -54,11 +54,23 @@
                 <li>
                     {{ .Spec.title }}
                     <ul>
-                    {{ range .Spec.rules }}
-                        <li><a href="/grizzly/AlertRuleGroup/{{ .uid }}">{{ .title }}</a></li>
-                    {{ end }}
+                        {{ range .Spec.rules }}
+                            <li><a href="/grizzly/AlertRuleGroup/{{ .uid }}">{{ .title }}</a></li>
+                        {{ end }}
                     </ul>
                 </li>
+            {{ end }}
+        </ul>
+
+        <h1>Alert notification templates</h1>
+
+        <ul>
+            {{ range (.Resources.OfKind "AlertNotificationTemplate").AsList }}
+                <li>
+                    <a href="/grizzly/{{ .Kind }}/{{ .Name }}">{{ .Spec.name }}</a>
+                </li>
+            {{ else }}
+                <li>No notification templates.</li>
             {{ end }}
         </ul>
     </div>
