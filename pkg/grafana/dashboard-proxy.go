@@ -23,6 +23,10 @@ func (c *dashboardProxyConfigurator) ProxyURL(uid string) string {
 	return fmt.Sprintf("/d/%s/slug", uid)
 }
 
+func (c *dashboardProxyConfigurator) ProxyEditURL(uid string) string {
+	return c.ProxyURL(uid)
+}
+
 func (c *dashboardProxyConfigurator) Endpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{

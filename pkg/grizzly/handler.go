@@ -158,5 +158,8 @@ type ProxyConfigurator interface {
 	// ProxyURL returns a URL path for a resource on the proxy
 	ProxyURL(uid string) string
 
+	// ProxyEditURL returns a URL path for a resource on the proxy
+	ProxyEditURL(uid string) string
+
 	StaticEndpoints() StaticProxyConfig
 }

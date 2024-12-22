@@ -200,6 +200,7 @@ func (s *Server) Start() error {
 
 	r.Get("/", s.rootHandler)
 	r.Get("/grizzly/{kind}/{name}", s.iframeHandler)
+	r.Get("/grizzly/{kind}/{name}/{action}", s.iframeHandler)
 	r.Get("/livereload", livereload.Handler(upgrader))
 
 	if s.watchScript != "" {
@@ -361,6 +362,7 @@ func (s *Server) ProxyRequestHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) iframeHandler(w http.ResponseWriter, r *http.Request) {
 	kind := chi.URLParam(r, "kind")
 	name := chi.URLParam(r, "name")
+	action := chi.URLParam(r, "action")
 	handler, err := s.Registry.GetHandler(kind)
 	if err != nil {
 		httputils.Error(w, fmt.Sprintf("Error getting handler for %s/%s", kind, name), err, http.StatusInternalServerError)
@@ -374,9 +376,13 @@ func (s *Server) iframeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	proxyConfig := proxyConfigProvider.ProxyConfigurator()
+	proxyURL := proxyConfig.ProxyURL(name)
+	if action == "edit" {
+		proxyURL = proxyConfig.ProxyEditURL(name)
+	}
 	templateVars := map[string]any{
 		"Port":           s.port,
-		"IframeURL":      proxyConfig.ProxyURL(name),
+		"IframeURL":      proxyURL,
 		"CurrentContext": s.CurrentContext,
 	}
 
