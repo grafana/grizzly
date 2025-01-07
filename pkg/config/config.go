@@ -343,7 +343,7 @@ func Write() error {
 	// creating the file.
 	configDir := configdir.LocalConfig("grizzly")
 	if _, err := os.Stat(configDir); os.IsNotExist(err) {
-		if err := os.Mkdir(configDir, 0700); err != nil {
+		if err := os.MkdirAll(configDir, 0700); err != nil {
 			return err
 		}
 	}
