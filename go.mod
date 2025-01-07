@@ -11,7 +11,7 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-jsonnet v0.20.0
 	github.com/gorilla/websocket v1.5.1
-	github.com/grafana/grafana-openapi-client-go v0.0.0-20240325012504-4958bdd139e7
+	github.com/grafana/grafana-openapi-client-go v0.0.0-20250108132429-8d7e1f158f65
 	github.com/grafana/synthetic-monitoring-agent v0.23.1
 	github.com/grafana/synthetic-monitoring-api-go-client v0.8.0
 	github.com/hashicorp/go-multierror v1.1.1
