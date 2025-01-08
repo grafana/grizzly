@@ -133,20 +133,37 @@ func (h *LibraryElementHandler) Update(existing, resource grizzly.Resource) erro
 }
 
 func (h *LibraryElementHandler) listElements() ([]string, error) {
-	params := library.NewGetLibraryElementsParams()
 	client, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return nil, err
 	}
-	elemsOK, err := client.LibraryElements.GetLibraryElements(params, nil)
-	if err != nil {
-		return nil, err
+
+	var uids []string
+
+	perPage := int64(100)
+	page := int64(0)
+	for {
+		params := library.NewGetLibraryElementsParams()
+		params.PerPage = &perPage
+		params.Page = &page
+
+		elemsOK, err := client.LibraryElements.GetLibraryElements(params, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		elems := elemsOK.GetPayload().Result.Elements
+		for _, e := range elems {
+			uids = append(uids, e.UID)
+		}
+
+		if len(elems) < int(perPage) {
+			break
+		}
+
+		page++
 	}
-	elems := elemsOK.GetPayload().Result.Elements
-	uids := make([]string, len(elems))
-	for i, e := range elems {
-		uids[i] = e.UID
-	}
+
 	return uids, nil
 }
 
