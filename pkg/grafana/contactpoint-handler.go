@@ -2,11 +2,14 @@ package grafana
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/grafana/grafana-openapi-client-go/client/provisioning"
 	"github.com/grafana/grafana-openapi-client-go/models"
+	"github.com/grafana/grizzly/internal/utils"
 	"github.com/grafana/grizzly/pkg/grizzly"
+	log "github.com/sirupsen/logrus"
 )
 
 const AlertContactPointKind = "AlertContactPoint"
@@ -87,15 +90,82 @@ func (h *AlertContactPointHandler) Update(existing, resource grizzly.Resource) e
 
 // getRemoteContactPoint retrieves a contactPoint object from Grafana
 func (h *AlertContactPointHandler) getRemoteContactPoint(uid string) (*grizzly.Resource, error) {
+	resource, err := h.getRemoteContactPointWithDecrypt(uid)
+	if err != nil {
+		var gErr *provisioning.GetContactpointsExportForbidden
+		if !errors.As(err, &gErr) {
+			return nil, err
+		}
+	}
+	if err == nil {
+		return resource, nil
+	}
+
+	log.Warn("Insufficient permissions to decrypt secrets in contact points. An admin service account is needed for that action, falling back to redacted secrets instead.")
+
+	return h.getRemoteContactPointFallbackNoDecrypt(uid)
+}
+
+func (h *AlertContactPointHandler) getRemoteContactPointWithDecrypt(uid string) (*grizzly.Resource, error) {
 	client, err := h.Provider.(ClientProvider).Client()
 	if err != nil {
 		return nil, err
 	}
+
+	params := provisioning.NewGetContactpointsExportParams()
+	params.Decrypt = utils.ToPtr(true)
+	contactPoints, err := client.Provisioning.GetContactpointsExport(params)
+	if err != nil {
+		return nil, err
+	}
+
+	var point *models.ContactPointExport
+	var receiver *models.ReceiverExport
+	for _, c := range contactPoints.GetPayload().ContactPoints {
+		for _, r := range c.Receivers {
+			if r.UID == uid {
+				point = c
+				receiver = r
+				break
+			}
+		}
+		if point != nil {
+			break
+		}
+	}
+	if point == nil || receiver == nil {
+		return nil, grizzly.ErrNotFound
+	}
+
+	// TODO: Turn spec into a real models.ContactPoint object
+	spec := map[string]any{
+		"name":                  point.Name,
+		"uid":                   receiver.UID,
+		"type":                  receiver.Type,
+		"settings":              receiver.Settings,
+		"disableResolveMessage": receiver.DisableResolveMessage,
+	}
+
+	resource, err := grizzly.NewResource(h.APIVersion(), h.Kind(), uid, spec)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resource, nil
+}
+
+func (h *AlertContactPointHandler) getRemoteContactPointFallbackNoDecrypt(uid string) (*grizzly.Resource, error) {
+	client, err := h.Provider.(ClientProvider).Client()
+	if err != nil {
+		return nil, err
+	}
+
 	params := provisioning.NewGetContactpointsParams()
 	contactPoints, err := client.Provisioning.GetContactpoints(params)
 	if err != nil {
 		return nil, err
 	}
+
 	var point *models.EmbeddedContactPoint
 	for _, c := range contactPoints.GetPayload() {
 		if c.UID == uid {
