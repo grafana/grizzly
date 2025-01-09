@@ -49,6 +49,12 @@ func (h *AlertNotificationTemplateHandler) Prepare(existing *grizzly.Resource, r
 	return &resource
 }
 
+// Unprepare removes unnecessary elements from a remote resource ready for presentation/comparison
+func (h *AlertNotificationTemplateHandler) Unprepare(resource grizzly.Resource) *grizzly.Resource {
+	resource.DeleteSpecKey("version")
+	return &resource
+}
+
 func (h *AlertNotificationTemplateHandler) Validate(resource grizzly.Resource) error {
 	name, exist := resource.GetSpecString("name")
 	if resource.Name() != name && exist {
