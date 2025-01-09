@@ -1,0 +1,2 @@
+API VERSION                     KIND                         UID
+grizzly.grafana.com/v1alpha1    AlertNotificationTemplate    standard-template

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/grafana/grafana-openapi-client-go/client/provisioning"
@@ -80,7 +81,16 @@ func (h *AlertNotificationTemplateHandler) GetByUID(uid string) (*grizzly.Resour
 	response, err := client.Provisioning.GetTemplate(uid)
 	if err != nil {
 		var gErr *provisioning.GetTemplateNotFound
-		if errors.As(err, &gErr) {
+		// FIXME: nasty hack spotted!
+		// If the template isn't found, the API can return a 404 with "null" as
+		// response body and a "text/plain" content-type.
+		// This highly confuses the client, which expects valid JSON+appropriate
+		// content type to unmarshal the response into a `provisioning.GetTemplateNotFound`
+		// object
+		// When this happens, err is a *models.PublicError with "is not supported by
+		// the TextConsumer can be resolved by supporting TextUnmarshaler interface"
+		// contained in the error message
+		if errors.As(err, &gErr) || strings.Contains(err.Error(), "not supported by the TextConsumer, can be resolved by supporting TextUnmarshaler interface") {
 			return nil, grizzly.ErrNotFound
 		}
 		return nil, err
@@ -120,6 +130,7 @@ func (h *AlertNotificationTemplateHandler) ListRemote() ([]string, error) {
 	for _, template := range templates {
 		uids = append(uids, template.Name)
 	}
+	sort.Strings(uids)
 	return uids, nil
 }
 
