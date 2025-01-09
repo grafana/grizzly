@@ -219,18 +219,57 @@ name `global`:
 apiVersion: grizzly.grafana.com/v1alpha1
 kind: AlertNotificationPolicy
 metadata:
-    name: global
+  name: global
 spec:
-    group_by:
-        - grafana_folder
-        - alertname
-    receiver: grafana-default-email
-    routes:
-        - group_by:
-            - region
-          object_matchers:
-            - - foo
-              - =
-              - bar
-          receiver: grafana-oncall
+  group_by:
+    - grafana_folder
+    - alertname
+  receiver: grafana-default-email
+  routes:
+    - group_by:
+        - region
+      object_matchers:
+        - - foo
+          - =
+          - bar
+      receiver: grafana-oncall
+```
+
+## Notification Templates
+
+To notification templates, use the following structure:
+
+```yaml
+apiVersion: grizzly.grafana.com/v1alpha1
+kind: AlertNotificationTemplate
+metadata:
+  name: standard-template
+spec:
+  name: standard-template
+  template: |-
+    {{ define "default.title.copy" }}
+      [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ if gt (.Alerts.Resolved | len) 0 }}, RESOLVED:{{ .Alerts.Resolved | len }}{{ end }}{{ end }}] {{ .GroupLabels.SortedPairs.Values | join " " }} {{ if gt (len .CommonLabels) (len .GroupLabels) }}({{ with .CommonLabels.Remove .GroupLabels.Names }}{{ .Values | join " " }}{{ end }}){{ end }}
+    {{ end }}
+
+    {{ define "default.message.copy" }}{{ if gt (len .Alerts.Firing) 0 }}**Firing**
+    {{ template "__text_alert_list.copy" .Alerts.Firing }}{{ if gt (len .Alerts.Resolved) 0 }}
+
+    {{ end }}{{ end }}{{ if gt (len .Alerts.Resolved) 0 }}**Resolved**
+    {{ template "__text_alert_list.copy" .Alerts.Resolved }}{{ end }}{{ end }}
+
+    {{ define "__text_alert_list.copy" }}{{ range . }}
+    Value: {{ template "__text_values_list.copy" . }}
+    Labels:
+    {{ range .Labels.SortedPairs }} - {{ .Name }} = {{ .Value }}
+    {{ end }}Annotations:
+    {{ range .Annotations.SortedPairs }} - {{ .Name }} = {{ .Value }}
+    {{ end }}{{ if gt (len .GeneratorURL) 0 }}Source: {{ .GeneratorURL }}
+    {{ end }}{{ if gt (len .SilenceURL) 0 }}Silence: {{ .SilenceURL }}
+    {{ end }}{{ if gt (len .DashboardURL) 0 }}Dashboard: {{ .DashboardURL }}
+    {{ end }}{{ if gt (len .PanelURL) 0 }}Panel: {{ .PanelURL }}
+    {{ end }}{{ end }}{{ end }}
+
+    {{ define "__text_values_list.copy" }}{{ if len .Values }}{{ $first := true }}{{ range $refID, $value := .Values -}}
+    {{ if $first }}{{ $first = false }}{{ else }}, {{ end }}{{ $refID }}={{ $value }}{{ end -}}
+    {{ else }}[no value]{{ end }}{{ end }}
 ```
