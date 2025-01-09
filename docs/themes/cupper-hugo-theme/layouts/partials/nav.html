@@ -1,0 +1,26 @@
+<nav id="patterns-nav" class="patterns" role="navigation">
+  <h2 class="vh">{{ T "nav_main_navigation" }}</h2>
+  <button id="menu-button" aria-expanded="false">
+    <svg viewBox="0 0 50 50" aria-hidden="true" focusable="false">
+      <use href="#menu"></use>
+    </svg>
+    {{ T "nav_button_menu" }}
+  </button>
+  {{ $current := . }}
+  <ul id="patterns-list">
+  {{ range .Site.Menus.nav }}
+    <li class="pattern">
+      {{ $active := or ($current.IsMenuCurrent "nav" .) ($current.HasMenuCurrent "nav" .) }}
+      {{ $active = or $active (eq .Name $current.Title) }}
+      {{ $active = or $active (and (eq .Name "Blog") (eq $current.Section "post")) }}
+      {{ $active = or $active (and (eq .Name "Tags") (eq $current.Section "tags")) }}
+      <a href="{{ .URL }}" {{ if $active }}aria-current="page"{{ end }}>
+        <svg class="bookmark-icon" aria-hidden="true" focusable="false" viewBox="0 0 40 50">
+          <use href="#bookmark"></use>
+        </svg>
+        <span class="text">{{ .Name }}</span>
+      </a>
+    </li>
+  {{ end }}
+  </ul>
+</nav>

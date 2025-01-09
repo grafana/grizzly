@@ -1,0 +1,13 @@
+[build]
+  publish = "exampleSite/public"
+  command = "cd exampleSite && hugo --themesDir ../.."
+
+[build.environment]
+  HUGO_VERSION = "0.83.1"
+  HUGO_THEME = "repo"
+  HUGO_BASEURL = "https://cupper-hugo-theme.netlify.app"
+
+[[headers]]
+  for = "/*"
+    [headers.values]
+      Access-Control-Allow-Origin = "*"

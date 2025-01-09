@@ -1,0 +1,6 @@
+{{ if eq .Params.toc true }}
+  <nav class="toc" aria-labelledby="toc-heading">
+    <strong id="toc-heading">{{ T "table_of_contents" }}</strong>
+    {{ .TableOfContents }}
+  </nav>
+{{ end }}

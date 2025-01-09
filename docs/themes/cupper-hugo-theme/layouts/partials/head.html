@@ -1,0 +1,67 @@
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  {{ hugo.Generator }}
+  <link rel="canonical" href="{{ .Permalink }}" />
+
+  {{ if .IsHome }}
+    {{ with .Site.Params.homeMetaContent }}
+      <meta name="description" content="{{ . | plainify }}">
+    {{ end }}
+  {{ else }}
+    {{ $summary := trim (.Summary | plainify | htmlUnescape) "\n\r"
+      | default .Title }}
+    <meta name="description" content="{{ $summary }}">
+  {{ end }}
+
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ "apple-touch-icon.png" | absURL }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ "favicon-32x32.png" | absURL }}"> 
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ "favicon-16x16.png" | absURL }}"> 
+  <link rel="manifest" href="{{ "site.webmanifest" | absURL }}"> 
+  <link rel="mask-icon" href="{{ "safari-pinned-tab.svg" | absURL }}" color="#000000"> 
+  <meta name="msapplication-TileColor" content="#ffffff">
+  <meta name="theme-color" content="#ffffff">
+
+  <style>
+    body {
+      visibility: hidden;
+      opacity: 0;
+    }
+  </style>
+
+  <style id="darkTheme">
+    .intro-and-nav,
+    .main-and-footer {
+      filter: invert(100%);
+    }
+
+    * {
+      background-color: inherit
+    }
+
+    img:not([src*=".svg"]),
+    .colors,
+    iframe,
+    .demo-container {
+      filter: invert(100%);
+    }
+  </style>
+
+  <link rel="stylesheet" href="{{ "css/prism.css" | relURL }}" media="none" onload="this.media='all';">
+
+  {{ $templateStyles := resources.Get "css/template-styles.css" }}
+  {{ $styles := $templateStyles | resources.ExecuteAsTemplate "css/styles.css" . }}
+  <link rel="stylesheet" type="text/css" href="{{ $styles.RelPermalink }}">
+
+  {{ range .Site.Params.customCss }}
+    <link rel="stylesheet" href="{{ . | relURL }}">
+  {{ end }}
+
+  {{ $title := print .Title " | " .Site.Title }}
+  {{ if .IsHome }}
+    {{ $title = .Site.Title }}
+  {{ end }}
+  <title>{{ $title }}</title>
+</head>

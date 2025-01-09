@@ -1,0 +1,149 @@
+{
+  "title": "Inclusive Design Principles",
+  "description": "<p>These Inclusive Design Principles are about putting people first. It's about designing for the needs of people with permanent, temporary, situational, or changing disabilities — all of us really.</p><p>They are intended to give anyone involved in the design and development of websites and applications - designers, user experience professionals, developers, product owners, idea makers, innovators, artists and thinkers - a broad approach to inclusive design.</p><p>For more background, read about the <a href=\"https://www.paciellogroup.com/blog/2017/06/inclusive-design-principles/\">Inclusive Design Principles</a> on the TPG blog.</p>",
+  "authors": [
+    "Léonie Watson",
+    "Henny Swan",
+    "Ian Pouncey",
+    "Heydon Pickering"
+  ],
+  "principles": [
+    {
+      "title": "Provide comparable experience",
+      "strapline": "Ensure your interface provides a comparable experience for all so people can accomplish tasks in a way that suits their needs without undermining the quality of the content.",
+      "description": "Whether out of circumstance, choice, or context people are diverse. As people use different approaches and tools to read and operate interfaces, what the interface offers each user should be comparable in value, quality, and efficiency.",
+      "examples": [
+        {
+          "title": "Content for alternatives",
+          "description": "Having a basic alternative, whether it's alt text, a transcript, audio description, or sign language, makes the content accessible but to be equivalent it needs to capture the essence of the original."
+        },
+        {
+          "title": "Ergonomic features",
+          "description": "Providing synchronized closed captions makes your video accessible. But making them customizable, color coded, and repositionable provides a more comparable experience."
+        },
+        {
+          "title": "Notifications",
+          "description": "Notifications that appear in an interface are visually obvious but require proactive discovery by screen reader users. A comparable experience for blind users, can be achieved by using a live region. The notification then requires no explicit action on the part of the user."
+        }
+      ]
+    },
+    {
+      "title": "Consider situation",
+      "strapline": "People use your interface in different situations. Make sure your interface delivers a valuable experience to people regardless of their circumstances.",
+      "description": "People are first time users, established users, users at work, users at home, users on the move, and users under pressure. All of these situations can have an impact. For those who already find interaction challenging, such as those with disabilities, this impact may make usage particularly difficult.",
+      "examples": [
+        {
+          "title": "Colour contrast",
+          "description": "When using an interface outdoors, good contrast lessens the impact of bright sunshine."
+        },
+        {
+          "title": "Context sensitive help",
+          "description": "Users may need help when they first encounter a complex form or interaction. This help may become redundant, even distracting, as a user becomes more familiar with the form or interaction. Context sensitive help provides the user with choice as to when they access help and better control over the page."
+        },
+        {
+          "title": "Captions on the go",
+          "description": "You're aware that the video content you are providing will be consumed on mobile devices, which may be in public spaces where people might prefer to consume the content without being antisocial. For smaller viewports, sound is switched off and captions activated by default."
+        }
+      ]
+    },
+    {
+      "title": "Be consistent",
+      "strapline": "Use familiar conventions and apply them consistently.",
+      "description": "Familiar interfaces borrow from well-established patterns. These should be used consistently within the interface to reinforce their meaning and purpose. This should be applied to functionality, behavior, editorial, and presentation. You should say the same things in the same way and users should be able to do the same things in the same way.",
+      "examples": [
+        {
+          "title": "Consistent design patterns",
+          "description": "Use consistent web and platform design patterns to help build familiarity and understanding."
+        },
+        {
+          "title": "Consistent editorial",
+          "description": "Use plain language consistently across platforms including editorial that is relied on by screen reader users such as text alternatives, headings, labels for buttons and so on. Keeping editorial style consistent is also important e.g. making sure the top of the article always has a clearly marked summary paragraph, making sure bullets always start with a bolded definition."
+        },
+        {
+          "title": "Consistent page architecture",
+          "description": "Use consistent page architecture across templates to help people scan and navigate key content."
+        }
+      ]
+    },
+    {
+      "title": "Give control",
+      "strapline": "Ensure people are in control. People should be able to access and interact with content in their preferred way.",
+      "description": "Do not suppress or disable the ability to change standard browser and platform settings such as orientation, font size, zoom, and contrast. In addition, avoid content changes that have not been initiated by the user unless there is a way to control it.",
+      "examples": [
+        {
+          "title": "Scrolling control",
+          "description": "'Infinite scrolling' can be problematic, especially for users navigating by keyboard because they can't get past the stream of refreshing content. Give the option to turn off this feature and replace it with a 'load more' button."
+        },
+        {
+          "title": "Make it stop",
+          "description": "Some users find that animations or parallax scrolling cause nausea, and others find them plain distracting. Where they play automatically, they should at least be easy to stop, by providing prominent playback controls."
+        },
+        {
+          "title": "Allow zoom",
+          "description": "There are many reasons why a user may want to operate the pinch-to-zoom gesture on their touch device. Make sure it is not suppressed, and that the content does not get obscured when it is put to use."
+        }
+      ]
+    },
+    {
+      "title": "Offer choice",
+      "strapline": "Consider providing different ways for people to complete tasks, especially those that are complex or non standard.",
+      "description": "There is often more than one way to complete a task. You cannot assume what someone's preferred way might be. By providing alternatives for layout and task completion, you offer people choices that suit them and their circumstances at the time.",
+      "examples": [
+        {
+          "title" : "Multiple ways to complete an action",
+          "description": "Where appropriate, provide multiple ways to complete an action. On mobile swipe to delete an item can be supported together with an edit button that allows you to select items then delete. An example of this is in iOS mail."
+        },
+        {
+          "title": "Layout",
+          "description": "Where there are long lists of content consider offering a grid or list layout option. This supports people who may want larger images on screen or smaller rows."
+        },
+        {
+          "title": "Accessible alternatives",
+          "description": "Alternative ways of presenting data, such as data tables for info graphics, should be available to all users, as an option rather than a hidden link just for screen reader users. Accessible alternatives can benefit not just a specific target group but all users as long as we offer the choice."
+        }
+      ]
+    },
+    {
+      "title": "Prioritise content",
+      "strapline": "Help users focus on core tasks, features, and information by prioritising them within the content and layout.",
+      "description": "Interfaces can be difficult to understand when core features are not clearly exposed and prioritised. A site or application may provide lots of information and functionality, but people should be able to focus on one thing at a time. Identify the core purpose of the interface, and then the content and features needed to fulfill that purpose.",
+      "examples": [
+        {
+          "title": "Keep task focused",
+          "description": "Progressively reveal features and content when needed, not all in one go."
+        },
+        {
+          "title": "Prioritising tasks",
+          "description": "An email application is principally for writing and reading email. The 'compose' button is, therefore, present on all screens, and early in the focus order. The inbox is prioritised over other lists of email, such as 'sent' and 'spam' messages. Less used features such as tagging or organizing email into folders appear later in the focus order, as they will generally only be used when the primary task of reading the email is complete."
+        },
+        {
+          "title": "Prioritising content",
+          "description": "The primary content on a news article page is the story, therefore it should come before other content, both visually and in the source order. Related content, such as similar articles, should follow it, and unrelated content after that."
+        },
+        {
+          "title": "Prioritising editorial",
+          "description": "Editorial for links, headings and buttons should use plain language and put the primary text first. This applies to both visible and hidden text. This makes the text easy to scan both visually and audibly for screen reader users. Plain language also benefits non native speakers and is easier to translate."
+        }
+      ]
+    },
+    {
+      "title": "Add value",
+      "strapline": "Consider the value of features and how they improve the experience for different users.",
+      "description": "Features should add value to the user experience by providing efficient and diverse ways to find and interact with content. Consider device features such as voice, geolocation, camera and vibration API's, and how integration with connected devices or a second screen could provide choice.",
+      "examples": [
+        {
+          "title": "Integration with connected devices or second screen",
+          "description": "Using voice interfaces to control multimedia, search for content, output from music or TV adds value for people who struggle to use other interfaces."
+        },
+        {
+          "title": "Integration with platform APIs",
+          "description": "Enhance functionality using platform features. The vibration API makes notifications more usable by deaf and hard of hearing people while the geolocation API makes it easier for people with mobility impairments to use location based services."
+        },
+        {
+          "title": "Make task completion easier",
+          "description": "Add a 'Show password' button to input fields so users can verify they have correctly inputted text, or add touch identification for password protected areas."
+        }
+      ]
+    }
+  ]
+}

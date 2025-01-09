@@ -1,0 +1,24 @@
+{{ $JSON := $.Site.Data.principles }}
+{{ $included := replace (.Get "include") ", " "," }}
+{{ $included := apply (split $included ",") "lower" "." }}
+{{ $descriptions := .Get "descriptions" }}
+<ul class="principles {{ if and ($descriptions) (ne $descriptions "false") }}with-desc{{ end }}">
+  {{ range $JSON.principles }}
+    {{ if in $included (lower .title) }}
+      <li>
+        <strong>
+          <a href="https://inclusivedesignprinciples.org#{{ .title | urlize }}">
+            <svg class="balloon-icon" viewBox="0 0 141.73228 177.16535" aria-hidden="true" focusable="false">
+              <use href="#balloon"></use>
+            </svg>
+            {{ .title }}
+          </a>:
+        </strong>
+        <em>{{ .strapline }}</em>
+        {{ if and ($descriptions) (ne $descriptions "false") }}
+          <p>{{ .description }}</p>
+        {{ end }}
+      </li>
+    {{ end }}
+  {{ end }}
+</ul>

@@ -1,0 +1,45 @@
+{{ define "main" }}
+  <main id="main">
+    <h1>
+      <svg class="bookmark-icon" aria-hidden="true" viewBox="0 0 40 50" focusable="false">
+        <use href="#bookmark"></use>
+      </svg>
+      {{ .Title }}
+    </h1>
+
+    <div class="date">
+      {{ $dateFormat := $.Site.Params.dateFormat | default "Jan 2, 2006" }}
+      {{ $publishDate := .PublishDate }}
+      <strong>{{ T "publish_date" }} </strong>{{ $publishDate.Format $dateFormat }}
+      {{ with .Lastmod }}
+        {{ if gt . $publishDate }}
+          <br>
+          <strong>{{ T "last_updated" }} </strong>{{ .Format $dateFormat }}
+        {{ end }}
+      {{ end }}
+    </div>
+
+    {{ with .Params.tags }}
+      <div class="tags">
+        <strong>{{ T "tags" }} </strong>
+        <ul aria-label="{{ T "aria_label_tags" }}">
+          {{ range . }}
+            <li>
+              <svg class="tag-icon" aria-hidden="true" viewBox="0 0 177.16535 177.16535" focusable="false">
+                <use href="#tag"></use>
+              </svg>
+              {{ $href := print ("tags/" | relLangURL) (. | urlize) "/" }}
+              <a href="{{ $href }}">{{ . }}</a>
+            </li>
+          {{ end }}
+        </ul>
+      </div>
+    {{ end }}
+
+    {{ partial "toc.html" . }}
+
+    {{ .Content }}
+  </main>
+  {{ partial "disqus.html" . }}
+  {{ partial "utterances.html" . }}
+{{ end }}

@@ -1,0 +1,10 @@
+{{ $pen := .Get 0 }}
+{{ with .Site.Params.codePenUser }}
+  <iframe height="300" scrolling="no" title="code demonstration with codePen" src="//codepen.io/{{ . | lower }}/embed/{{ $pen }}/?height=265&theme-id=dark&default-tab=result,result&embed-version=2" frameborder="no" allowtransparency="true" allowfullscreen="true" style="width: 100%;">
+    <div>
+      <a href="//codepen.io/{{ . | lower }}/pen/{{ $pen }}">See the demo on codePen</a>
+    </div>
+  </iframe>
+{{ else }}
+  <p class="site-error"><strong>Site error:</strong> The <code>codePenUser</code> param has not been set in <code>config.toml</code></p>
+{{ end }}
