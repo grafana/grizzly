@@ -196,6 +196,8 @@ func (s *Server) Start() error {
 				r.Get(s.proxySubPath+endpoint.URL, endpoint.Handler)
 			case http.MethodPost:
 				r.Post(s.proxySubPath+endpoint.URL, endpoint.Handler)
+			case http.MethodPut:
+				r.Put(s.proxySubPath+endpoint.URL, endpoint.Handler)
 			default:
 				return fmt.Errorf("unknown endpoint method %s for handler %s", endpoint.Method, handler.Kind())
 			}
