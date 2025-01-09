@@ -1,0 +1,17 @@
+name = "Cupper"
+license = "MIT"
+licenselink = "https://github.com/zwbetz-gh/cupper-hugo-theme/blob/master/LICENSE"
+description = "An accessibility-friendly Hugo theme, ported from the original Cupper project."
+homepage = "https://github.com/zwbetz-gh/cupper-hugo-theme"
+tags = ["accessible", "blog", "documentation", "dark"]
+features = ["accessible", "blog", "documentation", "dark"]
+min_version = "0.81.0"
+
+[author]
+  name = "Zachary Betz"
+  homepage = "https://zwbetz.com/"
+
+[original]
+  name = "Cupper"
+  homepage = "https://thepaciellogroup.github.io/cupper/"
+  repo = "https://github.com/ThePacielloGroup/cupper"

@@ -1,0 +1,28 @@
+{{ $tested := replace (.Get "using") ", " "," }}
+{{ $tested := replace $tested " + " "+" }}
+{{ $tested := split $tested "," }}
+<table class="tested">
+  <tr>
+    <th scope="row">
+      <svg viewBox="0 0 177.16535 177.16535" focusable="false" aria-hidden="true">
+        <use href="#tick"></use>
+      </svg>
+      Tested using
+    </th>
+    {{ range $tested }}
+      <td>
+        {{ $browser := findRE "^[a-zA-Z ]+" . }}
+        {{ $browser := index $browser 0 }}
+        {{ $version := findRE "[0-9]+$" . }}
+        {{ $slug := replace $browser " " "-" | lower }}
+        <img src="{{ (printf "images/browser-%s" $slug) | relURL }}.svg" alt="">
+        <span><strong>{{ $browser }} {{ index $version 0 }}</strong></span>
+        {{ if in . "+" }}
+          {{ $parts := split . "+" }}
+          {{ $additional := index $parts 1 }}
+          <span class="additional">with <strong>{{ $additional }}</strong></span>
+        {{ end }}
+      </td>
+    {{ end }}
+  </tr>
+</table>

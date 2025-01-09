@@ -1,0 +1,11 @@
+{{ $colorString := replace (.Get 0) " " "" | upper }}
+{{ $colors := split $colorString "," }}
+<div class="colors-container">
+  <ul class="colors">
+    {{ range $colors }}
+      <li style="background-color: {{ . }};{{ if or (eq . "#FFFFFF") (eq . "#FFF")}} border: 1px solid #111{{ end }}">
+        <span>{{ . }}</span>
+      </li>
+    {{ end }}
+  </ul>
+</div>

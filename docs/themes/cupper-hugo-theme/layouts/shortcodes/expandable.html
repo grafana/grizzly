@@ -1,0 +1,25 @@
+<div class="expandable-section">
+  {{ if .Get "level" }}
+    <h{{ .Get "level" }}>
+  {{ end }}
+    {{/* 1. Get the md5 hash of the expandable inner text */}}
+    {{/* 2. Split the hash string into an array */}}
+    {{/* 3. Shuffle the array */}}
+    {{/* 4. Convert the array back into a string */}}
+    {{ $random := delimit (shuffle (split (md5 .Inner) "" )) "" }}
+    <button aria-expanded="{{ with .Get "open" }}true{{ else }}false{{ end }}" data-expands="js-expandable-{{ $random }}">
+      <span class="expandable-label">{{ .Get "label" | default "More info" }}</span>
+      <svg aria-hidden="true" focusable="false" viewBox="0 0 70.866142 70.866141">
+        <g transform="translate(0 -981.5)">
+          <rect style="stroke-width:0;fill:currentColor" ry="5" height="60" width="9.8985" y="987.36" x="30.051" class="up-strut" />
+          <rect style="stroke-width:0;fill:currentColor" ry="5" height="10" width="60" y="1012.4" x="5"/>
+        </g>
+      </svg>
+    </button>
+  {{ if .Get "level" }}
+    </h{{ .Get "level"}}>
+  {{ end }}
+  <div id="js-expandable-{{ $random }}" {{ with .Get "open" | not }}hidden{{ end }}>
+    {{ .Inner | markdownify }}
+  </div>
+</div>

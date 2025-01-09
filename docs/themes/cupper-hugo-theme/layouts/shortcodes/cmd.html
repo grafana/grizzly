@@ -1,0 +1,7 @@
+{{ $trimmed := (trim .Inner "\n") }}
+{{ $lines := split $trimmed "\n" }}
+<pre class="cmd">
+  {{ range $lines }}
+  <code>{{ . }}</code>
+  {{ end }}
+</pre>

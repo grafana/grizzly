@@ -1,0 +1,11 @@
+{{ $quote := .Inner }}
+
+<blockquote class="blockquote">
+  <p>
+    {{ $quote | markdownify }}
+    {{ with (.Get "author") }}
+      <br>
+      <span class="author">&mdash; {{ . | markdownify }}</span>
+    {{ end }}
+  </p>
+</blockquote>

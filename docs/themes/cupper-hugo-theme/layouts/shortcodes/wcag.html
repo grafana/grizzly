@@ -1,0 +1,30 @@
+{{ $JSON := $.Site.Data.wcag }}
+{{ $included := replace (.Get "include") ", " "," }}
+{{ $included := split $included "," }}
+{{ $descriptions := .Get "descriptions" }}
+<ul class="wcag {{ if and ($descriptions) (ne $descriptions "false") }}with-desc{{ end }}">
+  {{ range $JSON }}
+    {{ if in $included .ref_id }}
+      <li>
+        <strong><a href="{{ .url }}">
+          <svg class="wcag-icon" viewBox="0 0 127.09899 67.763" aria-hidden="true" focusable="false">
+            <use href="#w3c"></use>
+          </svg>
+          {{ .ref_id }} {{ .title }}</a> (level {{ .level }}){{ if $descriptions }}:{{ end }}
+        </strong>
+        {{ if and ($descriptions) (ne $descriptions "false") }}
+          {{ .description }}
+          {{ if .special_cases }}
+            <ul>
+              {{ range .special_cases }}
+                <li><strong>{{ .title }}:</strong>
+                  {{ .description }}
+                </li>
+              {{ end }}
+            </ul>
+          {{ end }}
+        {{ end }}
+      </li>
+    {{ end }}
+  {{ end }}
+</ul>
