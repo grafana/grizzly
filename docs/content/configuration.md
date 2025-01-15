@@ -30,10 +30,39 @@ in an OS specific location.
 Grizzly interacts with Grafana via its REST API. For this, you will need to
 establish authentication credentials.
 
+The minimum requirement is to set the URL of the Grafana instance to be used:
 ```sh
 grr config set grafana.url http://localhost:3000 # URL for the root of your Grafana instance
-grr config set grafana.user admin # (Optional) Username if using basic auth
+```
+
+Optionally, set one of the following fields, depending our your authentication method:
+a [token or password](#token-or-password-optional) or a [username](#username-optional).
+
+### Token or password (optional)
+
+To authenticate using a service account token, first [create a service account in
+Grafana](https://grafana.com/docs/grafana/latest/administration/service-accounts/#to-create-a-service-account).
+Before creating the service account, ensure that you have added the role that
+best suits your use case. A role with `Viewer` permissions would be enough
+to view resources. Use `Editor` or `Admin` to be able to edit resources.
+Then,
+[add a token to the new service account](https://grafana.com/docs/grafana/latest/administration/service-accounts/#add-a-token-to-a-service-account-in-grafana).
+Copy the token and set it with Grizzly:
+
+```sh
 grr config set grafana.token abcd12345 # Service account token (or basic auth password)
+```
+
+Alternatively, set this field to a password if using [basic authentication](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/#basic-authentication).
+
+Next, consider setting a [context](#using-grizzly-contexts) to save this configuration.
+
+### Username (optional)
+
+Optionally, set a username if using [basic authentication](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/#basic-authentication).
+
+```sh
+grr config set grafana.user admin # (Optional) Username if using basic auth
 ```
 
 ## Grafana Cloud Prometheus
