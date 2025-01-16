@@ -4,12 +4,12 @@ title: "With Prometheus"
 ---
 
 ## Which Prometheus' are supported?
+
 Prometheus itself requires its configuration to be present in text files on
-local disk. As Grizzly focuses on systems that can be managed via HTTP APIs,
+local disk. Since Grizzly focuses on systems that can be managed via HTTP APIs,
 Grizzly cannot (currently) work with Prometheus itself.
 
-Various hosted Prometheus installations, such as Grafana Cloud Prometheus
-are supported, as are systems running Mimir.
+Various hosted Prometheus installations are supported, such as [Grafana Cloud Prometheus](https://grafana.com/go/grafana-cloud-prometheus-1/). Systems running [Grafana Mimir](https://grafana.com/docs/mimir/latest/) are supported as well.
 
 ## Configuring Prometheus
 Prometheus alert and recording rules are both created using the same `kind`:
