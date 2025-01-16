@@ -19,7 +19,7 @@ services:
 
   # Grafana instance served from a subpath (Grafana on port 3002, nginx on port 3003, and the subpath is /grafana)
   # It's important to use nginx to serve the subpath, otherwise, it doesn't really test the real-world scenario
-  # Grafana will redirect all subpaths to the root URL if that's the correct path, while an nginx will fail if the subpath is not correct
+  # Grafana will redirect all subpaths to the root URL if that's the correct path, while nginx will fail if the subpath is not correct
   grafana_subpath:
     image: *image
     restart: on-failure

@@ -32,11 +32,12 @@ type Provider interface {
 }
 
 type ProxyProvider interface {
-	// SetupProxy establishes the proxy connection
-	SetupProxy() (*httputil.ReverseProxy, error)
+	// SetupProxy establishes the proxy connection.
+	// If applicable, it also returns the sub-path targeted by the proxy.
+	SetupProxy() (*httputil.ReverseProxy, string, error)
 }
 
-// ProviderSet records providers
+// Registry records providers
 type Registry struct {
 	Providers    []Provider
 	Handlers     map[string]Handler
