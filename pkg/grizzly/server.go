@@ -10,7 +10,9 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
@@ -40,6 +42,7 @@ type Server struct {
 	OnlySpec       bool
 	OutputFormat   string
 	watch          bool
+	proxySubPath   string
 }
 
 var upgrader = &websocket.Upgrader{
@@ -58,7 +61,7 @@ func NewGrizzlyServer(registry Registry, resourcePath string, port int) (*Server
 		return nil, fmt.Errorf("no proxy provider found")
 	}
 
-	proxy, err := (*prov).SetupProxy()
+	proxy, subPath, err := (*prov).SetupProxy()
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +73,7 @@ func NewGrizzlyServer(registry Registry, resourcePath string, port int) (*Server
 		ResourcePath: resourcePath,
 		port:         port,
 		proxy:        proxy,
+		proxySubPath: strings.TrimSuffix(subPath, "/"),
 	}, nil
 }
 
@@ -144,16 +148,17 @@ func (s *Server) staticProxyConfig() StaticProxyConfig {
 
 func (s *Server) applyStaticProxyConfig(r chi.Router, config StaticProxyConfig) {
 	for _, pattern := range config.ProxyGet {
-		r.Get(pattern, s.ProxyRequestHandler)
+		r.Get(s.proxySubPath+pattern, s.ProxyRequestHandler)
 	}
 	for _, pattern := range config.ProxyPost {
-		r.Post(pattern, s.ProxyRequestHandler)
+		r.Post(s.proxySubPath+pattern, s.ProxyRequestHandler)
 	}
 	for pattern, response := range config.MockGet {
-		r.Get(pattern, s.mockHandler(response))
+		r.Get(s.proxySubPath+pattern, s.mockHandler(response))
+		spew.Dump(s.proxySubPath + pattern)
 	}
 	for pattern, response := range config.MockPost {
-		r.Post(pattern, s.mockHandler(response))
+		r.Post(s.proxySubPath+pattern, s.mockHandler(response))
 	}
 }
 
@@ -187,9 +192,9 @@ func (s *Server) Start() error {
 		for _, endpoint := range proxyConfig.Endpoints(*s) {
 			switch endpoint.Method {
 			case http.MethodGet:
-				r.Get(endpoint.URL, endpoint.Handler)
+				r.Get(s.proxySubPath+endpoint.URL, endpoint.Handler)
 			case http.MethodPost:
-				r.Post(endpoint.URL, endpoint.Handler)
+				r.Post(s.proxySubPath+endpoint.URL, endpoint.Handler)
 			default:
 				return fmt.Errorf("unknown endpoint method %s for handler %s", endpoint.Method, handler.Kind())
 			}
@@ -376,7 +381,7 @@ func (s *Server) iframeHandler(w http.ResponseWriter, r *http.Request) {
 	proxyConfig := proxyConfigProvider.ProxyConfigurator()
 	templateVars := map[string]any{
 		"Port":           s.port,
-		"IframeURL":      proxyConfig.ProxyURL(name),
+		"IframeURL":      s.proxySubPath + proxyConfig.ProxyURL(name),
 		"CurrentContext": s.CurrentContext,
 	}
 

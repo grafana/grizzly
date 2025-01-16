@@ -10,6 +10,7 @@ import (
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
 	"github.com/grafana/grafana-openapi-client-go/models"
 	"github.com/grafana/grizzly/internal/httputils"
+	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 )
 
@@ -55,24 +56,19 @@ func authenticateAndProxyHandler(s grizzly.Server, provider grizzly.Provider) ht
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html")
 
-		config := provider.(ClientProvider).Config()
-		if config.URL == "" {
+		cfg := provider.(ClientProvider).Config()
+		if cfg.URL == "" {
 			httputils.Error(w, "Error: No Grafana URL configured", fmt.Errorf("no Grafana URL configured"), http.StatusBadRequest)
 			return
 		}
 
-		req, err := http.NewRequest(http.MethodGet, config.URL+r.URL.Path, nil)
+		req, err := http.NewRequest(http.MethodGet, cfg.URL+r.URL.Path, nil)
 		if err != nil {
 			httputils.Error(w, http.StatusText(http.StatusInternalServerError), err, http.StatusInternalServerError)
 			return
 		}
 
-		if config.User != "" {
-			req.SetBasicAuth(config.User, config.Token)
-		} else if config.Token != "" {
-			req.Header.Set("Authorization", "Bearer "+config.Token)
-		}
-
+		authenticateRequest(cfg, req)
 		req.Header.Set("User-Agent", s.UserAgent)
 
 		client, err := httputils.NewHTTPClient()
@@ -90,7 +86,7 @@ func authenticateAndProxyHandler(s grizzly.Server, provider grizzly.Provider) ht
 		}
 
 		msg := ""
-		if config.Token == "" {
+		if cfg.Token == "" {
 			msg += "<p><b>Warning:</b> No service account token specified.</p>"
 		}
 
@@ -102,5 +98,13 @@ func authenticateAndProxyHandler(s grizzly.Server, provider grizzly.Provider) ht
 			w.WriteHeader(resp.StatusCode)
 			httputils.Write(w, []byte(fmt.Sprintf("%s%s", msg, string(body))))
 		}
+	}
+}
+
+func authenticateRequest(config *config.GrafanaConfig, request *http.Request) {
+	if config.User != "" {
+		request.SetBasicAuth(config.User, config.Token)
+	} else if config.Token != "" {
+		request.Header.Set("Authorization", "Bearer "+config.Token)
 	}
 }

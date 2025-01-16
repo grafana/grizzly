@@ -2,7 +2,6 @@ package grafana
 
 import (
 	"crypto/tls"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http/httputil"
@@ -10,7 +9,6 @@ import (
 	"path/filepath"
 
 	gclient "github.com/grafana/grafana-openapi-client-go/client"
-	"github.com/grafana/grafana-openapi-client-go/client/dashboards"
 	"github.com/grafana/grizzly/internal/httputils"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
@@ -130,7 +128,7 @@ func (p *Provider) APIVersion() string {
 	return filepath.Join(p.Group(), p.Version())
 }
 
-// GetHandlers identifies the handlers for the Grafana provider
+// GetHandlers lists the resource handlers for the Grafana provider
 func (p *Provider) GetHandlers() []grizzly.Handler {
 	return []grizzly.Handler{
 		NewDatasourceHandler(p),
@@ -143,38 +141,29 @@ func (p *Provider) GetHandlers() []grizzly.Handler {
 	}
 }
 
-func (p *Provider) SetupProxy() (*httputil.ReverseProxy, error) {
-	client, err := p.Client()
-	if err != nil {
-		return nil, err
+func (p *Provider) SetupProxy() (*httputil.ReverseProxy, string, error) {
+	status := p.Status()
+	if !status.Active {
+		return nil, "", errors.New(status.ActiveReason)
 	}
-	_, err = client.Dashboards.GetHomeDashboard()
-	if err != nil {
-		if errors.Is(err, &dashboards.GetHomeDashboardUnauthorized{}) {
-			return nil, fmt.Errorf("error checking authentication: %v", err)
-		}
-		return nil, fmt.Errorf("error setting the proxy: %v", err)
+	if !status.Online {
+		return nil, "", errors.New(status.OnlineReason)
 	}
 
 	u, err := url.Parse(p.config.URL)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	proxy := &httputil.ReverseProxy{
+
+	return &httputil.ReverseProxy{
 		Rewrite: func(r *httputil.ProxyRequest) {
+			u.Path = "" // to ensure possible sub-paths won't be added twice.
 			r.SetURL(u)
 
-			if p.config.User != "" {
-				header := fmt.Sprintf("%s:%s", p.config.User, p.config.Token)
-				encoded := base64.StdEncoding.EncodeToString([]byte(header))
-				r.Out.Header.Set("Authorization", "Basic "+encoded)
-			} else {
-				r.Out.Header.Set("Authorization", "Bearer "+p.config.Token)
-			}
+			authenticateRequest(p.config, r.Out)
 
 			r.Out.Header.Del("Origin")
 			r.Out.Header.Set("User-Agent", "Grizzly Proxy Server")
 		},
-	}
-	return proxy, nil
+	}, u.Path, nil
 }
