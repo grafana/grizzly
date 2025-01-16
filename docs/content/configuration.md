@@ -25,7 +25,7 @@ context first, then explain how to use multiple contexts thereafter.
 Settings can be configured via Grizzly itself, using `grr config set`. They are stored
 in an OS specific location.
 
-## Grafana Itself
+## Authenticate with a Grafana instance
 
 Grizzly interacts with Grafana via its REST API. For this, you will need to
 establish authentication credentials.
@@ -35,14 +35,19 @@ The minimum requirement is to set the URL of the Grafana instance to be used:
 grr config set grafana.url http://localhost:3000 # URL for the root of your Grafana instance
 ```
 
-Optionally, set one of the following fields, depending our your authentication method:
-a [token or password](#token-or-password-optional) or a [username](#username-optional).
+Optionally, set the following field(s), depending our your [authentication method with the given Grafana instance](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/):
+- A [token](#token-or-password-optional) if using a [Grafana service account](https://grafana.com/docs/grafana/latest/administration/service-accounts) (recommended)
+- A [username](#username-optional) and [password](#token-or-password-optional) if using basic authentication
+
+Next, consider setting a [context](#using-grizzly-contexts) to save this configuration.
+
+Once you have configured your authentication method, you are ready to use the [Grizzly server](./server.md) to view and/or edit resources.
 
 ### Token or password (optional)
 
-To authenticate using a service account token, first [create a service account in
-Grafana](https://grafana.com/docs/grafana/latest/administration/service-accounts/#to-create-a-service-account).
-Before creating the service account, ensure that you have added the role that
+To authenticate with a Grafana instance using a service account token, first [create a service account in the
+Grafana instance](https://grafana.com/docs/grafana/latest/administration/service-accounts/#to-create-a-service-account).
+Before clicking `Create` to create the service account, ensure that you have added the role that
 best suits your use case. A role with `Viewer` permissions would be enough
 to view resources. Use `Editor` or `Admin` to be able to edit resources.
 Then,
@@ -55,8 +60,6 @@ grr config set grafana.token abcd12345 # Service account token (or basic auth pa
 
 Alternatively, set this field to a password if using [basic authentication](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/#basic-authentication).
 
-Next, consider setting a [context](#using-grizzly-contexts) to save this configuration.
-
 ### Username (optional)
 
 Optionally, set a username if using [basic authentication](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/#basic-authentication).
@@ -65,8 +68,9 @@ Optionally, set a username if using [basic authentication](https://grafana.com/d
 grr config set grafana.user admin # (Optional) Username if using basic auth
 ```
 
-## Grafana Cloud Prometheus
-To interact with Grafana Cloud Prometheus (aka Mimir), use these settings:
+## Authenticate with hosted Prometheus
+
+To interact with [hosted Prometheus / Mimir](./prometheus.md) resources, use these settings:
 
 ```sh
 grr config set mimir.address https://mimir.example.com # URL for Mimir instance or Grafana Cloud Prometheus instance
@@ -74,10 +78,10 @@ grr config set mimir.tenant-id myTenant # Tenant ID for your Grafana Cloud Prome
 grr config set mimir.api-key abcdef12345 # Authentication token (if you are using Grafana Cloud)
 ```
 
-**Notes** 
+**Notes**
 * Be sure to set `api-key` when you need to interact with Grafana Cloud.
 
-## Grafana Synthetic Monitoring
+## Authenticate with Grafana Synthetic Monitoring
 To interact with Grafana Synthetic Monitoring, you must configure the below settings:
 
 ```sh
