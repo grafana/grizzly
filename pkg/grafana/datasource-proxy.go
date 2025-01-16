@@ -20,6 +20,10 @@ func (c *datasourceProxyConfigurator) ProxyURL(uid string) string {
 	return fmt.Sprintf("/connections/datasources/edit/%s", uid)
 }
 
+func (c *datasourceProxyConfigurator) ProxyEditURL(uid string) string {
+	return c.ProxyURL(uid)
+}
+
 func (c *datasourceProxyConfigurator) Endpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{

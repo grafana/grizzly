@@ -55,7 +55,7 @@
                     {{ .Spec.title }}
                     <ul>
                     {{ range .Spec.rules }}
-                        <li><a href="/grizzly/AlertRuleGroup/{{ .uid }}">{{ .title }}</a></li>
+                        <li><a href="/grizzly/AlertRuleGroup/{{ .uid }}">{{ .title }}</a> (<a href="/grizzly/AlertRuleGroup/{{ .uid }}/edit">Edit</a>)</li>
                     {{ end }}
                     </ul>
                 </li>

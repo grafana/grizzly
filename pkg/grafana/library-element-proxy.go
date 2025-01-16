@@ -21,6 +21,10 @@ func (c *libraryElementProxyConfigurator) ProxyURL(uid string) string {
 	return fmt.Sprintf("/api/library-elements/%s", uid)
 }
 
+func (c *libraryElementProxyConfigurator) ProxyEditURL(uid string) string {
+	return c.ProxyURL(uid)
+}
+
 func (c *libraryElementProxyConfigurator) Endpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{

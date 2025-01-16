@@ -20,6 +20,10 @@ func (c *folderProxyConfigurator) ProxyURL(uid string) string {
 	return fmt.Sprintf("/dashboards/f/%s/", uid)
 }
 
+func (c *folderProxyConfigurator) ProxyEditURL(uid string) string {
+	return c.ProxyURL(uid)
+}
+
 func (c *folderProxyConfigurator) Endpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{

@@ -21,11 +21,20 @@ func (c *alertRuleProxyConfigurator) ProxyURL(uid string) string {
 	return fmt.Sprintf("/alerting/grafana/%s/view", uid)
 }
 
+func (c *alertRuleProxyConfigurator) ProxyEditURL(uid string) string {
+	return fmt.Sprintf("/alerting/%s/edit", uid)
+}
+
 func (c *alertRuleProxyConfigurator) Endpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{
 			Method:  http.MethodGet,
 			URL:     "/alerting/grafana/{rule_uid}/view",
+			Handler: authenticateAndProxyHandler(s, c.provider),
+		},
+		{
+			Method:  http.MethodGet,
+			URL:     "/alerting/grafana/{rule_uid}/edit",
 			Handler: authenticateAndProxyHandler(s, c.provider),
 		},
 		{
@@ -64,7 +73,7 @@ func (c *alertRuleProxyConfigurator) alertRuleGroupJSONGetHandler(s grizzly.Serv
 			return
 		}
 
-		interval := time.Duration(ruleGroup.GetSpecValue("interval").(int)) * time.Second
+		interval := time.Duration(ruleGroup.GetSpecValue("interval").(float64)) * time.Second
 
 		rules := ruleGroup.GetSpecValue("rules").([]any)
 		formattedRules := make([]map[string]any, 0, len(rules))
@@ -114,8 +123,7 @@ func (c *alertRuleProxyConfigurator) alertRuleJSONGetHandler(s grizzly.Server) h
 			httputils.Error(w, fmt.Sprintf("Alert rule with UID %s not found", ruleUID), fmt.Errorf("rule group with UID %s not found", ruleUID), http.StatusNotFound)
 			return
 		}
-
-		interval := time.Duration(ruleGroup.GetSpecValue("interval").(int)) * time.Second
+		interval := time.Duration(ruleGroup.GetSpecValue("interval").(float64)) * time.Second
 
 		httputils.WriteJSON(w, toGrafanaAlert(rule, interval))
 	}
