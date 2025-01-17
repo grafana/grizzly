@@ -19,10 +19,12 @@ type alertNotificationTemplateProxyConfigurator struct {
 	provider grizzly.Provider
 }
 
+// ProxyURL returns the URL to use to view an alerting notification templates via the proxy.
 func (c *alertNotificationTemplateProxyConfigurator) ProxyURL(uid string) string {
 	return fmt.Sprintf("/alerting/notifications/templates/%s/edit", uid)
 }
 
+// Endpoints lists HTTP handlers to register on the proxy.
 func (c *alertNotificationTemplateProxyConfigurator) Endpoints(s grizzly.Server) []grizzly.HTTPEndpoint {
 	return []grizzly.HTTPEndpoint{
 		{
@@ -59,6 +61,7 @@ func (c *alertNotificationTemplateProxyConfigurator) Endpoints(s grizzly.Server)
 	}
 }
 
+// StaticEndpoints lists endpoints to be proxied transparently.
 func (c *alertNotificationTemplateProxyConfigurator) StaticEndpoints() grizzly.StaticProxyConfig {
 	return grizzly.StaticProxyConfig{
 		ProxyGet: []string{
@@ -70,6 +73,8 @@ func (c *alertNotificationTemplateProxyConfigurator) StaticEndpoints() grizzly.S
 	}
 }
 
+// alertManagerConfigGet serves a partially mocked alert manager config to the UI.
+// Only the templates are served from Grizzly resources.
 func (c *alertNotificationTemplateProxyConfigurator) alertManagerConfigGet(s grizzly.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		templates := s.Resources.OfKind(KindAlertNotificationTemplate).AsList()
@@ -110,6 +115,8 @@ func (c *alertNotificationTemplateProxyConfigurator) alertManagerConfigGet(s gri
 	}
 }
 
+// alertManagerConfigSave persists an alert manager config edited via the UI.
+// Only the templates are persisted as Grizzly resources.
 func (c *alertNotificationTemplateProxyConfigurator) alertManagerConfigSave(s grizzly.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		input := &struct {

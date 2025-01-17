@@ -114,7 +114,7 @@ func (h *AlertNotificationTemplateHandler) GetRemote(resource grizzly.Resource) 
 	return h.GetByUID(resource.Name())
 }
 
-// ListRemote retrieves as list of UIDs of all remote resources
+// ListRemote retrieves a list of sorted UIDs of all remote resources
 func (h *AlertNotificationTemplateHandler) ListRemote() ([]string, error) {
 	client, err := h.Provider.(ClientProvider).Client()
 	if err != nil {

@@ -152,11 +152,12 @@ type StaticProxyConfig struct {
 // ProxyConfigurator describes a proxy endpoints that can be used to view/edit
 // resources live via a proxied UI.
 type ProxyConfigurator interface {
-	// Endpoints registers HTTP handlers for proxy events
+	// Endpoints lists HTTP handlers to register on the proxy.
 	Endpoints(p Server) []HTTPEndpoint
 
 	// ProxyURL returns a URL path for a resource on the proxy
 	ProxyURL(uid string) string
 
+	// StaticEndpoints lists endpoints to be proxied transparently.
 	StaticEndpoints() StaticProxyConfig
 }
