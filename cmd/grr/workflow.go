@@ -427,15 +427,18 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 
 func exportCmd(registry grizzly.Registry) *cli.Command {
 	cmd := &cli.Command{
-		Use:   "export <resource-path> <dashboard-dir>",
+		Use:   "export <resource-path> <export-dir>",
 		Short: "render resources and save to a directory",
 		Args:  cli.ArgsExact(2),
 	}
 	var opts Opts
+	var continueOnError bool
+
+	cmd.Flags().BoolVarP(&continueOnError, "continue-on-error", "e", false, "don't stop exporting on error")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
 		resourcePath := args[0]
-		dashboardDir := args[1]
+		exportDir := args[1]
 		resourceKind, folderUID, err := getOnlySpec(opts)
 		if err != nil {
 			return err
@@ -448,7 +451,7 @@ func exportCmd(registry grizzly.Registry) *cli.Command {
 
 		targets := currentContext.GetTargets(opts.Targets)
 
-		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths).Parse(resourcePath, grizzly.ParserOptions{
+		resources, err := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(continueOnError)).Parse(resourcePath, grizzly.ParserOptions{
 			DefaultResourceKind: resourceKind,
 			DefaultFolderUID:    folderUID,
 		})
@@ -461,7 +464,19 @@ func exportCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		return grizzly.Export(registry, dashboardDir, resources, onlySpec, format)
+		eventsRecorder := getEventsRecorder(opts)
+
+		err = grizzly.Export(eventsRecorder, registry, exportDir, resources, onlySpec, format, continueOnError)
+
+		notifier.Info(nil, eventsRecorder.Summary().AsString("resource"))
+
+		// errors are already displayed by the `eventsRecorder`, so we return a
+		// "silent" one to ensure that the exit code will be non-zero
+		if err != nil {
+			return silentError{Err: err}
+		}
+
+		return nil
 	}
 	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
