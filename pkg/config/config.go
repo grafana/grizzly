@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/grafana/grizzly/internal/utils"
 	"github.com/kirsle/configdir"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -342,10 +343,8 @@ func Write() error {
 	// Ensure that our configuration directory exists: viper only takes care of
 	// creating the file.
 	configDir := configdir.LocalConfig("grizzly")
-	if _, err := os.Stat(configDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(configDir, 0700); err != nil {
-			return err
-		}
+	if err := utils.EnsureDirectoryExists(configDir, 0700); err != nil {
+		return err
 	}
 
 	// Viper failed because no configuration file exists in the "config path".

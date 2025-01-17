@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/grafana/grizzly/internal/utils"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
 	"github.com/grafana/grizzly/pkg/term"
 	"github.com/hashicorp/go-multierror"
@@ -525,50 +526,74 @@ func Watch(registry Registry, watchDir string, resourcePath string, parser Parse
 }
 
 // Export renders Jsonnet resources then saves them to a directory
-func Export(registry Registry, exportDir string, resources Resources, onlySpec bool, outputFormat string) error {
-	if _, err := os.Stat(exportDir); os.IsNotExist(err) {
-		err = os.Mkdir(exportDir, 0755)
-		if err != nil {
-			return err
-		}
+func Export(eventsRecorder EventsRecorder, registry Registry, exportDir string, resources Resources, onlySpec bool, outputFormat string, continueOnError bool) error {
+	if err := utils.EnsureDirectoryExists(exportDir, 0755); err != nil {
+		return err
 	}
 
+	var finalErr error
 	for _, resource := range resources.AsList() {
-		updatedResourceBytes, _, extension, err := Format(registry, "", &resource, outputFormat, onlySpec)
+		err := exportResource(eventsRecorder, registry, exportDir, resource, onlySpec, outputFormat)
 		if err != nil {
-			return err
-		}
+			finalErr = multierror.Append(finalErr, err)
 
-		dir := fmt.Sprintf("%s/%s", exportDir, resource.Kind())
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			err = os.Mkdir(dir, 0755)
-			if err != nil {
-				return err
-			}
-		}
-		path := fmt.Sprintf("%s/%s.%s", dir, resource.Name(), extension)
+			eventsRecorder.Record(Event{
+				Type:        ResourceFailure,
+				ResourceRef: resource.Ref().String(),
+				Details:     err.Error(),
+			})
 
-		existingResourceBytes, err := os.ReadFile(path)
-		isNotExist := os.IsNotExist(err)
-		if err != nil && !isNotExist {
-			return err
-		}
-		updatedResource := string(updatedResourceBytes)
-		existingResource := string(existingResourceBytes)
-		if existingResource == updatedResource {
-			notifier.NoChanges(resource)
-		} else {
-			err = os.WriteFile(path, []byte(updatedResource), 0644)
-			if err != nil {
-				return err
-			}
-			if isNotExist {
-				notifier.Added(resource)
-			} else {
-				notifier.Updated(resource)
+			if !continueOnError {
+				return finalErr
 			}
 		}
 	}
+
+	return finalErr
+}
+
+func exportResource(eventsRecorder EventsRecorder, registry Registry, exportDir string, resource Resource, onlySpec bool, outputFormat string) error {
+	updatedResourceBytes, _, extension, err := Format(registry, "", &resource, outputFormat, onlySpec)
+	if err != nil {
+		return err
+	}
+
+	dir := fmt.Sprintf("%s/%s", exportDir, resource.Kind())
+	if err := utils.EnsureDirectoryExists(dir, 0755); err != nil {
+		return err
+	}
+
+	path := fmt.Sprintf("%s/%s.%s", dir, resource.Name(), extension)
+
+	existingResourceBytes, err := os.ReadFile(path)
+	isNotExist := os.IsNotExist(err)
+	if err != nil && !isNotExist {
+		return err
+	}
+
+	if string(existingResourceBytes) == string(updatedResourceBytes) {
+		eventsRecorder.Record(Event{
+			Type:        ResourceNotChanged,
+			ResourceRef: resource.Ref().String(),
+		})
+		return nil
+	}
+
+	err = os.WriteFile(path, updatedResourceBytes, 0644)
+	if err != nil {
+		return err
+	}
+
+	eventType := ResourceUpdated
+	if isNotExist {
+		eventType = ResourceAdded
+	}
+
+	eventsRecorder.Record(Event{
+		Type:        eventType,
+		ResourceRef: resource.Ref().String(),
+	})
+
 	return nil
 }
 

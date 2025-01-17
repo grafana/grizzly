@@ -2,7 +2,6 @@ package notifier
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/fatih/color"
 )
@@ -50,15 +49,6 @@ func Info(obj fmt.Stringer, msg string) {
 		fmt.Println(green(msg))
 	} else {
 		fmt.Printf("%s %s\n", obj.String(), green(msg))
-	}
-}
-
-// Info announces a message in green (to stderr)
-func InfoStderr(obj fmt.Stringer, msg string) {
-	if obj == nil {
-		os.Stderr.WriteString(green(msg) + "\n")
-	} else {
-		os.Stderr.WriteString(fmt.Sprintf("%s %s\n", obj.String(), green(msg)))
 	}
 }
 
