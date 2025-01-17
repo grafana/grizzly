@@ -5,6 +5,15 @@ import (
 	"strings"
 )
 
+type ErrUIDNameMismatch struct {
+	UID  string
+	Name string
+}
+
+func (e ErrUIDNameMismatch) Error() string {
+	return fmt.Sprintf("uid '%s' and name '%s', don't match", e.UID, e.Name)
+}
+
 // ErrUidsMissing reports UIDs are missing for Dashboards
 type ErrUidsMissing []string
 
