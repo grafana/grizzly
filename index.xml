@@ -1,30 +1,133 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Grizzly on Grafana Grizzly Docs</title><link>https://grafana.github.io/grizzly/</link><description>Recent content in Grizzly on Grafana Grizzly Docs</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Mon, 28 Jun 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://grafana.github.io/grizzly/index.xml" rel="self" type="application/rss+xml"/><item><title>Usage statistics</title><link>https://grafana.github.io/grizzly/usage-statistics/</link><pubDate>Thu, 24 Oct 2024 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/usage-statistics/</guid><description>By default, Grizzly sends anonymous, but uniquely identifiable usage information to Grafana Labs. These statistics are sent to stats.grafana.org.
-Statistics help Grafana better understand how Grizzly is used. This helps us prioritize features and documentation.
-The usage information includes the following details:
-A hash of your config file Timestamp of when the report was created The version of Grizzly. The operating system Grizzly is running on. The system architecture Grizzly is running on.</description></item><item><title>Grizzly Server</title><link>https://grafana.github.io/grizzly/server/</link><pubDate>Thu, 14 Mar 2024 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/server/</guid><description>An HTTP Server for editing and reviewing When we manage Grafana dashboards on disk, the &amp;ldquo;Grizzly Server&amp;rdquo; makes easy to edit and review these resources within an actual Grafana instance, but without needing to publish the dashboard to Grafana. Grafana provides the UI and datasources to make dashboards look right, Grizzly provides the dashboard, directly from local disk.
-The Grizzly server is configured the same way as other Grizzly commands. See the configuration section) for more details.</description></item><item><title>Hidden Elements</title><link>https://grafana.github.io/grizzly/hidden-elements/</link><pubDate>Sun, 17 Apr 2022 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/hidden-elements/</guid><description>NOTE: This functionality is deprecated. It was necessary to support the formats within Monitoring Mixins. However, using explicit resources provides a cleaner and language agnostic way to describe resources and their metadata. If you have existing libaries that use hidden elements, it isn&amp;rsquo;t too hard to write small functions to wrap these into resources.
-When working in Jsonnet, Grizzly can detect resources within standardised JSON elements, following a convention of using hidden (::) elements for these.</description></item><item><title>Hidden Elements</title><link>https://grafana.github.io/grizzly/resources/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/resources/</guid><description>NOTE: This functionality is deprecated. It was necessary to support the formats within Monitoring Mixins. However, k8s-style resources provide a cleaner and language agnostic way to describe resources and their metadata.
-When working in Jsonnet, Grizzly can detect resources within standardised JSON elements, following a convention of using hidden (::) elements for these.
-For example, to specify a simple dashboard:
-{ grafanaDashboardFolder:: 'sample', grafanaDashboards+:: { 'my-dash.json': { uid: 'prod-overview', title: 'Production Overview', tags: ['templated'], timezone: 'browser', schemaVersion: 17, }, }, } The grafanaDashboardFolder hidden element specifies the folder that all dashboards will go into.</description></item><item><title>Installation</title><link>https://grafana.github.io/grizzly/installation/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/installation/</guid><description>Grizzly is currently available for Linux and MacOS systems Installing Grizzly on Linux Download the latest release.
-Select and download an appropriate file for your operating system. Then:
-sudo mv $DOWNLOADED_FILE /usr/local/bin/grr sudo chmod +x /usr/local/bin/grr Installing Grizzly on macOS via Homebrew Before you begin Install Homebrew on your computer.
-Once Homebrew is installed, you can install Grizzly using the following command:
-brew install grizzly Building from source If you wish to build the latest (as yet unreleased) version, assuming you have a recent Golang installed:</description></item><item><title>Setup and Configuration</title><link>https://grafana.github.io/grizzly/configuration/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/configuration/</guid><description>Grizzly can be configured in two ways: using environment variables and through Grizzly&amp;rsquo;s own &amp;lsquo;context&amp;rsquo; support (much like kubectl contexts).
-Environment variables are suitable for use against a single system, and best suited to CI and automation scenarios.
-Grizzly contexts allow easy switching between multiple configurations and are best suited to workstation use.
-Using Grizzly Contexts By default, the default context is used. We will discuss how to use the default context first, then explain how to use multiple contexts thereafter.</description></item><item><title>Synthetic Monitoring</title><link>https://grafana.github.io/grizzly/synthetic-monitoring/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/synthetic-monitoring/</guid><description>Grafana Cloud Synthetic Monitoring Checks The only resource type currently configurable by Grizzly is a &amp;ldquo;check&amp;rdquo;, which tells Synthetic Monitoring to periodically check the status of an endpoint.
-A synthetic monitoring check requires a name and a type to be specified within its metadata. The type is required as metadata, when it is also included in the spec because it is possible to reuse the same name across checks of different types.</description></item><item><title>Using Jsonnet</title><link>https://grafana.github.io/grizzly/jsonnet/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/jsonnet/</guid><description>Jsonnet is by far the most powerful use-case for Grizzly. It allows resources to be described programmatically, using all the common patterns programmers are familiar with, e.g. variables, libraries and abstractions.
-To understand the Jsonnet language, see the Jsonnet tutorial.
-Note: The original approach to using Jsonnet in Grizzly involved hidden elements. For details of this deprecated approach, see Hidden Elements.
-Here is an example of rendering Prometheus alert and recording rules with Jsonnet:</description></item><item><title>What is Grizzly?</title><link>https://grafana.github.io/grizzly/what-is-grizzly/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/what-is-grizzly/</guid><description>Grafana Grizzly is a command line tool that allows you to manage your observability resources with code.
-Now you can define your dashboards, alerting and recording rules, etc, all from within your codebase.
-You can build Grizzly into your continuous deployment pipelines, meaning whenever you deploy your application, your observability is updated too.
-Getting Started The simplest way to achieve this is using YAML resource descriptions. (Programmatic description is explained in the section on Jsonnet).</description></item><item><title>With Grafana</title><link>https://grafana.github.io/grizzly/grafana/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/grafana/</guid><description>Dashboards In What is Grizzly? we saw an example of how to manage a Grafana dashboard.
-When representing a dashboard, the JSON that is downloaded from Grafana should be placed into the spec element. If using YAML, the JSON should be converted to YAML before doing so.
-Folders Grafana dashboard folders are probably the simplest resources you can manage with Grizzly:
-apiVersion: grizzly.grafana.com/v1alpha1 kind: DashboardFolder metadata: name: sample spec: title: Special Sample Folder A folder simply has a name and a title.</description></item><item><title>With Prometheus</title><link>https://grafana.github.io/grizzly/prometheus/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/prometheus/</guid><description>Which Prometheus' are supported? Prometheus itself requires its configuration to be present in text files on local disk. As Grizzly focuses on systems that can be managed via HTTP APIs, Grizzly cannot (currently) work with Prometheus itself.
-Various hosted Prometheus installations, such as Grafana Cloud Prometheus are supported, as are systems running Mimir.
-Configuring Prometheus Prometheus alert and recording rules are both created using the same kind: PrometheusRuleGroup. Rule groups need to be placed into a namespace - namespaces simply group these rule groups together.</description></item><item><title>Workflows</title><link>https://grafana.github.io/grizzly/workflows/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/workflows/</guid><description>Grizzly supports a number of workflows.
-Static Resources All examples so far have described Grizzly interacting with resources represented as static resources in YAML. This is the simplest use-case for Grizzly, but there are more powerful workflows available.
-Pull/Push With grr pull -d and grr apply -d it is possible to migrate dashboards between Grafana instances. To pull dashboards and folders from one instance to another is as simple as:</description></item><item><title>authentication</title><link>https://grafana.github.io/grizzly/authentication/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/authentication/</guid><description>Moved to Setup and Configuration.</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Grizzly on Grafana Grizzly Docs</title><link>https://grafana.github.io/grizzly/</link><description>Recent content in Grizzly on Grafana Grizzly Docs</description><generator>Hugo</generator><language>en-us</language><lastBuildDate>Thu, 24 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://grafana.github.io/grizzly/index.xml" rel="self" type="application/rss+xml"/><item><title>Usage statistics</title><link>https://grafana.github.io/grizzly/usage-statistics/</link><pubDate>Thu, 24 Oct 2024 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/usage-statistics/</guid><description>&lt;p>By default, Grizzly sends anonymous, but uniquely identifiable usage information to Grafana Labs. These statistics are sent to stats.grafana.org.&lt;/p>
+&lt;p>Statistics help Grafana better understand how Grizzly is used. This helps us prioritize features and documentation.&lt;/p>
+&lt;p>The usage information includes the following details:&lt;/p>
+&lt;ul>
+&lt;li>A hash of your config file&lt;/li>
+&lt;li>Timestamp of when the report was created&lt;/li>
+&lt;li>The version of Grizzly.&lt;/li>
+&lt;li>The operating system Grizzly is running on.&lt;/li>
+&lt;li>The system architecture Grizzly is running on.&lt;/li>
+&lt;li>The operation performed (&lt;code>pull&lt;/code>/&lt;code>apply&lt;/code>)&lt;/li>
+&lt;li>The number of resources affected&lt;/li>
+&lt;/ul>
+&lt;p>This list may change over time.
+For auditing, the code performing this reporting can be found at the end of the &lt;a href="https://github.com/grafana/grizzly/blob/main/pkg/grizzly/events.go">events.go&lt;/a> file.&lt;/p></description></item><item><title>Grizzly Server</title><link>https://grafana.github.io/grizzly/server/</link><pubDate>Thu, 14 Mar 2024 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/server/</guid><description>&lt;h2 id="an-http-server-for-editing-and-reviewing">An HTTP Server for editing and reviewing&lt;/h2>
+&lt;p>When we manage Grafana dashboards on disk, the &amp;ldquo;Grizzly Server&amp;rdquo; makes easy to
+edit and review these resources within an actual Grafana instance, but without
+needing to publish the dashboard to Grafana. Grafana provides the UI and datasources
+to make dashboards look right, Grizzly provides the dashboard, directly from
+local disk.&lt;/p>
+&lt;p>The Grizzly server is configured the same way as other Grizzly commands. See
+the &lt;a href="../configuration">configuration section&lt;/a>) for more details.&lt;/p></description></item><item><title>Hidden Elements</title><link>https://grafana.github.io/grizzly/hidden-elements/</link><pubDate>Sun, 17 Apr 2022 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/hidden-elements/</guid><description>&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong>: This functionality is deprecated. It was necessary to support the
+formats within &lt;a href="https://github.com/monitoring-mixins/docs">Monitoring Mixins&lt;/a>.
+However, using explicit resources provides a cleaner and language
+agnostic way to describe resources and their metadata. If you have existing
+libaries that use hidden elements, it isn&amp;rsquo;t too hard to write small functions
+to wrap these into resources.&lt;/p>
+&lt;/blockquote>
+&lt;p>When working in Jsonnet, Grizzly can detect resources within standardised JSON
+elements, following a convention of using hidden (&lt;code>::&lt;/code>) elements for these.&lt;/p></description></item><item><title>Hidden Elements</title><link>https://grafana.github.io/grizzly/resources/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/resources/</guid><description>&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong>: This functionality is deprecated. It was necessary to support the
+formats within &lt;a href="https://github.com/monitoring-mixins/docs">Monitoring Mixins&lt;/a>.
+However, &lt;a href="https://grafana.github.io/grizzly/k8s-style/">k8s-style&lt;/a> resources provide a cleaner and language
+agnostic way to describe resources and their metadata.&lt;/p>
+&lt;/blockquote>
+&lt;p>When working in Jsonnet, Grizzly can detect resources within standardised JSON
+elements, following a convention of using hidden (&lt;code>::&lt;/code>) elements for these.&lt;/p>
+&lt;p>For example, to specify a simple dashboard:&lt;/p>
+&lt;pre>&lt;code>{
+ grafanaDashboardFolder:: 'sample',
+ grafanaDashboards+:: {
+ 'my-dash.json': {
+ uid: 'prod-overview',
+ title: 'Production Overview',
+ tags: ['templated'],
+ timezone: 'browser',
+ schemaVersion: 17,
+ },
+ },
+}
+&lt;/code>&lt;/pre>
+&lt;p>The &lt;code>grafanaDashboardFolder&lt;/code> hidden element specifies the folder that all dashboards
+will go into. (Using &lt;a href="https://grafana.github.io/grizzly/k8s-style/">k8s-style&lt;/a> resources, dashboards can be placed
+individually into folders).&lt;/p></description></item><item><title>Installation</title><link>https://grafana.github.io/grizzly/installation/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/installation/</guid><description>&lt;h2 id="grizzly-is-currently-available-for-linux-and-macos-systems">Grizzly is currently available for Linux and MacOS systems&lt;/h2>
+&lt;h3 id="installing-grizzly-on-linux">Installing Grizzly on Linux&lt;/h3>
+&lt;p>Download the &lt;a href="https://github.com/grafana/grizzly/releases">latest release&lt;/a>.&lt;/p>
+&lt;p>Select and download an appropriate file for your operating system. Then:&lt;/p>
+&lt;pre>&lt;code class="language-bash">sudo mv $DOWNLOADED_FILE /usr/local/bin/grr
+sudo chmod +x /usr/local/bin/grr
+&lt;/code>&lt;/pre>
+&lt;h3 id="installing-grizzly-on-macos-via-homebrew">Installing Grizzly on macOS via Homebrew&lt;/h3>
+&lt;p>Before you begin
+Install &lt;a href="https://brew.sh">Homebrew&lt;/a> on your computer.&lt;/p>
+&lt;p>Once Homebrew is installed, you can install Grizzly using the following command:&lt;/p>
+&lt;pre>&lt;code class="language-bash">brew install grizzly
+&lt;/code>&lt;/pre>
+&lt;h3 id="building-from-source">Building from source&lt;/h3>
+&lt;p>If you wish to build the latest (as yet unreleased) version, assuming you have
+a recent Golang installed:&lt;/p></description></item><item><title>Setup and Configuration</title><link>https://grafana.github.io/grizzly/configuration/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/configuration/</guid><description>&lt;p>Grizzly can be configured in two ways: using environment variables
+and through Grizzly&amp;rsquo;s own &amp;lsquo;context&amp;rsquo; support (much like &lt;code>kubectl&lt;/code> contexts).&lt;/p>
+&lt;p>Environment variables are suitable for use against a single system, and best suited
+to CI and automation scenarios.&lt;/p>
+&lt;p>Grizzly contexts allow easy switching between multiple configurations and are best
+suited to workstation use.&lt;/p>
+&lt;h1 id="using-grizzly-contexts">Using Grizzly Contexts&lt;/h1>
+&lt;p>By default, the &lt;code>default&lt;/code> context is used. We will discuss how to use the default
+context first, then explain how to use multiple contexts thereafter.&lt;/p></description></item><item><title>Synthetic Monitoring</title><link>https://grafana.github.io/grizzly/synthetic-monitoring/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/synthetic-monitoring/</guid><description>&lt;h2 id="grafana-cloud-synthetic-monitoring-checks">Grafana Cloud Synthetic Monitoring Checks&lt;/h2>
+&lt;p>The only resource type currently configurable by Grizzly is a &amp;ldquo;check&amp;rdquo;, which
+tells Synthetic Monitoring to periodically check the status of an endpoint.&lt;/p>
+&lt;p>A synthetic monitoring check requires a name and a type to be specified within
+its metadata. The type is required as metadata, when it is also included in
+the spec because it is possible to reuse the same name across checks of
+different types. The type is therefore required as metadata to make the check
+UID unique.&lt;/p></description></item><item><title>Using Jsonnet</title><link>https://grafana.github.io/grizzly/jsonnet/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/jsonnet/</guid><description>&lt;p>Jsonnet is by far the most powerful use-case for Grizzly. It allows resources
+to be described programmatically, using all the common patterns programmers
+are familiar with, e.g. variables, libraries and abstractions.&lt;/p>
+&lt;p>To understand the Jsonnet language, see the &lt;a href="https://jsonnet.org/learning/tutorial.html">Jsonnet tutorial&lt;/a>.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>Note&lt;/strong>: The original approach to using Jsonnet in Grizzly involved hidden elements.
+For details of this deprecated approach, see &lt;a href="../hidden-elements/">Hidden Elements&lt;/a>.&lt;/p>
+&lt;/blockquote>
+&lt;p>Here is an example of rendering Prometheus alert and recording rules with Jsonnet:&lt;/p></description></item><item><title>What is Grizzly?</title><link>https://grafana.github.io/grizzly/what-is-grizzly/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/what-is-grizzly/</guid><description>&lt;p>Grafana Grizzly is a command line tool that allows you to manage your
+observability resources with code.&lt;/p>
+&lt;p>Now you can define your dashboards, alerting and recording rules, etc, all
+from within your codebase.&lt;/p>
+&lt;p>You can build Grizzly into your continuous deployment pipelines, meaning
+whenever you deploy your application, your observability is updated too.&lt;/p>
+&lt;h2 id="getting-started">Getting Started&lt;/h2>
+&lt;p>The simplest way to achieve this is using YAML resource
+descriptions. (Programmatic description is explained in the section on
+&lt;a href="../jsonnet/">Jsonnet&lt;/a>).&lt;/p></description></item><item><title>With Grafana</title><link>https://grafana.github.io/grizzly/grafana/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/grafana/</guid><description>&lt;h2 id="dashboards">Dashboards&lt;/h2>
+&lt;p>In &lt;a href="../what-is-grizzly/">What is Grizzly?&lt;/a> we saw an example of how to manage
+a Grafana dashboard.&lt;/p>
+&lt;p>When representing a dashboard, the JSON that is downloaded from Grafana should
+be placed into the &lt;code>spec&lt;/code> element. If using YAML, the JSON should be converted
+to YAML before doing so.&lt;/p>
+&lt;h2 id="folders">Folders&lt;/h2>
+&lt;p>Grafana dashboard folders are probably the simplest resources you can manage
+with Grizzly:&lt;/p>
+&lt;pre>&lt;code>apiVersion: grizzly.grafana.com/v1alpha1
+kind: DashboardFolder
+metadata:
+ name: sample
+spec:
+ title: Special Sample Folder
+&lt;/code>&lt;/pre>
+&lt;p>A folder simply has a name and a title.&lt;/p></description></item><item><title>With Prometheus</title><link>https://grafana.github.io/grizzly/prometheus/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/prometheus/</guid><description>&lt;h2 id="which-prometheus-are-supported">Which Prometheus&amp;rsquo; are supported?&lt;/h2>
+&lt;p>Prometheus itself requires its configuration to be present in text files on
+local disk. Since Grizzly focuses on systems that can be managed via HTTP APIs,
+Grizzly cannot (currently) work with Prometheus itself.&lt;/p>
+&lt;p>Various hosted Prometheus installations are supported, such as &lt;a href="https://grafana.com/go/grafana-cloud-prometheus-1/">Grafana Cloud Prometheus&lt;/a>. Systems running &lt;a href="https://grafana.com/docs/mimir/latest/">Grafana Mimir&lt;/a> are supported as well.&lt;/p>
+&lt;h2 id="configuring-prometheus">Configuring Prometheus&lt;/h2>
+&lt;p>Prometheus alert and recording rules are both created using the same &lt;code>kind&lt;/code>:
+&lt;code>PrometheusRuleGroup&lt;/code>. Rule groups need to be placed into a &lt;code>namespace&lt;/code> -
+namespaces simply group these rule groups together.&lt;/p></description></item><item><title>Workflows</title><link>https://grafana.github.io/grizzly/workflows/</link><pubDate>Mon, 28 Jun 2021 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/workflows/</guid><description>&lt;p>Grizzly supports a number of workflows.&lt;/p>
+&lt;h2 id="static-resources">Static Resources&lt;/h2>
+&lt;p>All examples so far have described Grizzly interacting with resources represented
+as static resources in YAML. This is the simplest use-case for Grizzly, but there
+are more powerful workflows available.&lt;/p>
+&lt;h2 id="pullpush">Pull/Push&lt;/h2>
+&lt;p>With &lt;code>grr pull -d&lt;/code> and &lt;code>grr apply -d&lt;/code> it is possible to migrate dashboards between
+Grafana instances. To pull dashboards and folders from one instance to another
+is as simple as:&lt;/p></description></item><item><title>authentication</title><link>https://grafana.github.io/grizzly/authentication/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://grafana.github.io/grizzly/authentication/</guid><description>&lt;p>Moved to &lt;a href="../configuration/">Setup and Configuration&lt;/a>.&lt;/p></description></item></channel></rss>

@@ -22,6 +22,11 @@ html {
     color: #111;
     background-color: #fefefe;
 }
+html,
+body {
+    /* Fixes #77 */
+    overscroll-behavior-y: none;
+}
 template {
   display: none !important;
 }
@@ -168,7 +173,10 @@ code {
     font-weight: bold;
     padding-right: 0.25em;
 }
-
+.cmd code::selection{
+    background: #fefefe;
+    color: rgba(0,0,0,.8);
+}
 /* Lists */
 main ul,
 main ol {
@@ -428,8 +436,8 @@ caption {
     border: 1px solid;
     padding: 1.5rem;
 }
-.toc h2 {
-    font-size: 1rem;
+.toc nav {
+  margin-top: 1rem;
 }
 .toc ol {
     margin-left: 0.75rem;
@@ -809,7 +817,7 @@ h1 svg {
     position: relative;
     font-size: 1.66rem;
 }
-.h2-container a {
+.h2-container .link-icon {
     position: absolute;
     margin-top: 0;
     top: 0;
@@ -911,9 +919,6 @@ h1 svg {
     }
     .main-and-footer {
         margin: 0;
-    }
-    main {
-      min-height: auto;
     }
     #patterns-list {
       margin-top: 0.5rem;
