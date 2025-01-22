@@ -1,0 +1,33 @@
+linters:
+  disable-all: true
+  enable: [
+    "depguard",
+    "dogsled",
+    "errcheck",
+    "exportloopref",
+    "goconst",
+    "gocritic",
+    "gocyclo",
+    "goimports",
+    "goprintffuncname",
+    "gosimple",
+    "govet",
+    "ineffassign",
+    "misspell",
+    "nakedret",
+    "rowserrcheck",
+    "staticcheck",
+    "stylecheck",
+    "typecheck",
+    "unconvert",
+    "unused",
+    "whitespace"
+  ]
+
+linters-settings:
+  depguard:
+    rules:
+      main:
+        deny:
+          - pkg: "github.com/davecgh/go-spew"
+            desc: debug statements should be removed
