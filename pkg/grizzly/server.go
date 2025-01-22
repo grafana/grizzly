@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
@@ -156,7 +155,6 @@ func (s *Server) applyStaticProxyConfig(r chi.Router, config StaticProxyConfig) 
 	}
 	for pattern, response := range config.MockGet {
 		r.Get(s.proxySubPath+pattern, s.mockHandler(response))
-		spew.Dump(s.proxySubPath + pattern)
 	}
 	for pattern, response := range config.MockPost {
 		r.Post(s.proxySubPath+pattern, s.mockHandler(response))
