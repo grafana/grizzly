@@ -9,7 +9,9 @@ import (
 	"net/http/httputil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -37,6 +39,7 @@ type Server struct {
 	UserAgent      string
 	ResourcePath   string
 	WatchPaths     []string
+	jpath          []string
 	watchScript    string
 	OnlySpec       bool
 	OutputFormat   string
@@ -89,9 +92,29 @@ func (s *Server) OpenBrowser() {
 	s.openBrowser = true
 }
 
-func (s *Server) Watch(watchPaths []string) {
+func (s *Server) Watch(watchPaths, jpath []string) {
 	s.watch = true
 	s.WatchPaths = watchPaths
+
+	for _, path := range watchPaths {
+		stat, err := os.Stat(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !stat.IsDir() {
+			parent := filepath.Dir(path)
+			for _, p := range jpath {
+				log.WithField("path", p).Debug("checking if jpath exists")
+				if !filepath.IsAbs(p) {
+					p = filepath.Join(parent, p)
+				}
+				if _, err := os.Stat(p); err == nil {
+					log.WithField("path", p).Debug("adding jpath to watched files")
+					s.jpath = append(s.jpath, p)
+				}
+			}
+		}
+	}
 }
 
 func (s *Server) WatchScript(script string) {
@@ -237,7 +260,8 @@ func (s *Server) Start() error {
 		if err != nil {
 			return err
 		}
-		for _, path := range s.WatchPaths {
+		watchPaths := slices.Concat(s.WatchPaths, s.jpath)
+		for _, path := range watchPaths {
 			err = watcher.Add(path)
 			if err != nil {
 				return err
@@ -312,11 +336,30 @@ func (s *Server) updateWatchedResource(name string) error {
 		log.Infof("[watcher] Skipping %s", uerr.File)
 		return nil
 	}
+
+	if errors.As(err, &ParseError{}) && s.fileInJpath(name) {
+		log.Infof("[watcher] updating all dashboards due to changes in jpath")
+		return s.updateWatchedResources()
+	}
+
 	if err != nil {
 		log.Errorf("[watcher] Error: %s", err)
 		return err
 	}
+	s.reloadDashboad(resources)
+	return nil
+}
 
+func (s *Server) fileInJpath(name string) bool {
+	for _, jpath := range s.jpath {
+		if strings.HasPrefix(name, jpath) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Server) reloadDashboad(resources Resources) {
 	for _, resource := range resources.AsList() {
 		handler, err := s.Registry.GetHandler(resource.Kind())
 		if err != nil {
@@ -328,6 +371,16 @@ func (s *Server) updateWatchedResource(name string) error {
 			log.Infof("[watcher] Changes detected. Reloading %s", resource.Ref())
 			livereload.ReloadDashboard(resource.Name())
 		}
+	}
+}
+
+func (s *Server) updateWatchedResources() error {
+	for _, name := range s.WatchPaths {
+		resources, err := s.ParseResources(name)
+		if err != nil {
+			return err
+		}
+		s.reloadDashboad(resources)
 	}
 	return nil
 }
