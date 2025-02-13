@@ -29,9 +29,9 @@ var Version = "dev"
 func Initialise() {
 	viper.SetConfigName("settings")
 	viper.SetConfigType("yaml")
-
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(configdir.LocalConfig("grizzly"))
+	viper.SetConfigPermissions(0600)
 }
 
 func override(v *viper.Viper) {
