@@ -46,7 +46,7 @@ func (h *AlertNotificationPolicyHandler) Validate(resource grizzly.Resource) err
 }
 
 func (h *AlertNotificationPolicyHandler) GetSpecUID(resource grizzly.Resource) (string, error) {
-	return "", fmt.Errorf("GetSpecUID not implemented for notification policies")
+	return AlertNotificationPolicyKind + "-UID", nil
 }
 
 // GetByUID retrieves JSON for a resource from an endpoint, by UID
