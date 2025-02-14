@@ -1,8 +1,7 @@
 name: Bug Report
 description: File a bug report
-title: "[Bug]: "
-labels: ["bug"]
-projects: ["grafana/513"] # Platform Client Administration Tooling
+type: "bug"
+projects: ["grafana/513"] # Platform Monitoring
 body:
   - type: input
     id: grizzly_version
@@ -27,4 +26,3 @@ body:
       placeholder: |
         Please list the steps required to reproduce the issue, for example:
         1. `grr pull ...`
-        

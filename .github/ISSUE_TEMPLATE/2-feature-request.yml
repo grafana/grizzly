@@ -1,8 +1,7 @@
 name: Feature Request
 description: Suggest an improvement for Grizzly
-title: "[Feature Request]: "
-labels: ["enhancement"]
-projects: ["grafana/513"] # Platform Client Administration Tooling
+type: "enhancement"
+projects: ["grafana/513"] # Platform Monitoring
 body:
   - type: textarea
     id: request
