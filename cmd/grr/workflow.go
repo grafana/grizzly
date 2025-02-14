@@ -407,7 +407,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 		server.SetContext(currentContext.Name)
 		server.SetFormatting(onlySpec, format)
 		if opts.Watch {
-			server.Watch(watchPaths)
+			server.Watch(watchPaths, opts.JsonnetPaths)
 			if opts.WatchScript != "" {
 				server.WatchScript(opts.WatchScript)
 			}
