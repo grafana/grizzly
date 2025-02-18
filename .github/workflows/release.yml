@@ -32,10 +32,10 @@ jobs:
             #### Binary:
             ```bash
             # download the binary (adapt os and arch as needed)
-            $ curl -fSL -o "/usr/local/bin/grr" "https://github.com/grafana/grizzly/releases/download/${{ github.ref_name }}/grr-linux-amd64"
+            $ sudo curl -fSL -o "/usr/local/bin/grr" "https://github.com/grafana/grizzly/releases/download/${{ github.ref_name }}/grr-linux-amd64"
 
             # make it executable
-            $ chmod a+x "/usr/local/bin/grr"
+            $ sudo chmod a+x "/usr/local/bin/grr"
 
             # have fun :)
             $ grr --help
