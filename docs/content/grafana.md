@@ -237,7 +237,7 @@ spec:
 
 ## Notification Templates
 
-To notification templates, use the following structure:
+For notification templates, use the following structure:
 
 ```yaml
 apiVersion: grizzly.grafana.com/v1alpha1
