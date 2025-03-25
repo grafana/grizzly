@@ -399,7 +399,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 			return err
 		}
 
-		server, err := grizzly.NewGrizzlyServer(registry, resourcesPath, opts.ProxyPort)
+		server, err := grizzly.NewGrizzlyServer(registry, resourcesPath, opts.ProxyListenAddr, opts.ProxyPort)
 		if err != nil {
 			return err
 		}
@@ -419,6 +419,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 	}
 	cmd.Flags().BoolVarP(&opts.Watch, "watch", "w", false, "Watch filesystem for changes")
 	cmd.Flags().BoolVarP(&opts.OpenBrowser, "open-browser", "b", false, "Open Grizzly in default browser")
+	cmd.Flags().StringVar(&opts.ProxyListenAddr, "listen", "", "Address on which the server will listen")
 	cmd.Flags().IntVarP(&opts.ProxyPort, "port", "p", 8080, "Port on which the server will listen")
 	cmd.Flags().StringVarP(&opts.WatchScript, "script", "S", "", "Script to execute on filesystem change")
 	cmd = initialiseOnlySpec(cmd, &opts)

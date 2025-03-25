@@ -33,11 +33,12 @@ type Opts struct {
 	ResourceKind string
 
 	// Used for supporting the proxy server
-	OpenBrowser bool
-	ProxyPort   int
-	CanSave     bool
-	Watch       bool
-	WatchScript string
+	OpenBrowser     bool
+	ProxyListenAddr string
+	ProxyPort       int
+	CanSave         bool
+	Watch           bool
+	WatchScript     string
 }
 
 func configPathCmd() *cli.Command {
