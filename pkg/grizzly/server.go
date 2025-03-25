@@ -23,7 +23,10 @@ import (
 )
 
 type Server struct {
-	proxy       *httputil.ReverseProxy
+	proxy *httputil.ReverseProxy
+	// listenAddr specifies the address the server will listen on.
+	// Note: if left empty, 0.0.0.0 is assumed.
+	listenAddr  string
 	port        int
 	openBrowser bool
 
@@ -50,7 +53,7 @@ var upgrader = &websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func NewGrizzlyServer(registry Registry, resourcePath string, port int) (*Server, error) {
+func NewGrizzlyServer(registry Registry, resourcePath string, listenAddr string, port int) (*Server, error) {
 	prov, err := registry.GetProxyProvider()
 	if err != nil {
 		return nil, err
@@ -70,6 +73,7 @@ func NewGrizzlyServer(registry Registry, resourcePath string, port int) (*Server
 		Resources:    NewResources(),
 		UserAgent:    "grizzly",
 		ResourcePath: resourcePath,
+		listenAddr:   listenAddr,
 		port:         port,
 		proxy:        proxy,
 		proxySubPath: strings.TrimSuffix(subPath, "/"),
@@ -250,7 +254,9 @@ func (s *Server) Start() error {
 	}
 
 	log.Infof("Listening on %s\n", s.url("/"))
-	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), r)
+	log.Debugf("Listening address '%s'", max(s.listenAddr, "0.0.0.0"))
+
+	return http.ListenAndServe(fmt.Sprintf("%s:%d", s.listenAddr, s.port), r)
 }
 
 func (s *Server) ParseResources(resourcePath string) (Resources, error) {
