@@ -79,7 +79,8 @@ grr config set mimir.api-key abcdef12345 # Authentication token (if you are usin
 ```
 
 **Notes**
-* Be sure to set `api-key` when you need to interact with Grafana Cloud.
+* For Grafana Cloud, set `mimir.address` to the base URL from your [hosted metrics details page](https://grafana.com/orgs/<your-stack-name>/hosted-metrics/<your-stack-id>). For example, if your hosted metrics URL is `https://prometheus-prod-17-prod-us-east-0.grafana.net/api/prom`, use `https://prometheus-prod-71-prod-us-east-0.grafana.net/` as the address.
+* Be sure to set `api-key` to an [access policy token](https://grafana.com/docs/grafana-cloud/security-and-account-management/authentication-and-permissions/access-policies/) when you need to interact with Grafana Cloud
 
 ## Authenticate with Grafana Synthetic Monitoring
 To interact with Grafana Synthetic Monitoring, you must configure the below settings:
