@@ -186,11 +186,12 @@ func (h *AlertRuleGroupHandler) createAlertRuleGroup(resource grizzly.Resource) 
 	if err != nil {
 		return err
 	}
-
+	
+	folderUid, ruleGroup := h.splitUID(resource.Name())
 	params := provisioning.NewPutAlertRuleGroupParams().
 		WithBody(&group).
-		WithGroup(group.Title).
-		WithFolderUID(group.FolderUID).
+		WithGroup(ruleGroup).
+		WithFolderUID(folderUid).
 		WithXDisableProvenance(&stringtrue)
 	_, err = client.Provisioning.PutAlertRuleGroup(params)
 	return err
@@ -280,11 +281,12 @@ func (h *AlertRuleGroupHandler) putAlertRuleGroup(existing, resource grizzly.Res
 	if err != nil {
 		return err
 	}
-
+	
+	folderUid, ruleGroup := h.splitUID(resource.Name())
 	params := provisioning.NewPutAlertRuleGroupParams().
 		WithBody(group).
-		WithGroup(group.Title).
-		WithFolderUID(group.FolderUID).
+		WithGroup(ruleGroup).
+		WithFolderUID(folderUid).
 		WithXDisableProvenance(&stringtrue)
 	_, err = client.Provisioning.PutAlertRuleGroup(params, nil)
 	return err
