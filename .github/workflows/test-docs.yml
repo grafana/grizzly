@@ -5,6 +5,9 @@ on:
     paths:
       - 'docs/**'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -12,6 +15,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
         with:
           fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+          persist-credentials: false
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@75d2e84710de30f6ff7268e08f310b60ef14033f #v3.0.0

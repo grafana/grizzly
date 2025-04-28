@@ -14,10 +14,14 @@ concurrency:
   group: '${{ github.workflow }}-${{ github.ref }}'
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   publish-docs:
-    uses: grafana/shared-workflows/.github/workflows/publish-techdocs.yaml@main
-    secrets: inherit
+    uses: grafana/shared-workflows/.github/workflows/publish-techdocs.yaml@14df4c1f79d86403ff5b0254b69c83488fba1904
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     with:
       namespace: default
       kind: component
