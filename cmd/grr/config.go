@@ -39,6 +39,7 @@ type Opts struct {
 	CanSave         bool
 	Watch           bool
 	WatchScript     string
+	IgnorePatterns  []string
 }
 
 func configPathCmd() *cli.Command {

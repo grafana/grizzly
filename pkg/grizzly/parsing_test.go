@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/gobwas/glob"
 	"github.com/grafana/grizzly/pkg/grafana"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/stretchr/testify/require"
@@ -237,6 +238,69 @@ func TestParseKindDetection(t *testing.T) {
 				} else {
 					require.Equal(t, test.ExpectedResources, resources.Len(), fmt.Sprintf("Expected %d resources from parsing", test.ExpectedResources))
 				}
+			})
+		}
+	})
+}
+
+func TestParseIgnoreFiles(t *testing.T) {
+	t.Run("Parse ignore files", func(t *testing.T) {
+		resourcePath := "testdata/parsing/ignore"
+
+		registry := grizzly.NewRegistry(
+			[]grizzly.Provider{
+				&grafana.Provider{},
+			},
+		)
+
+		tests := []struct {
+			Name                string
+			IgnorePatterns      []glob.Glob
+			ExpectedResources   int
+			ExpectedSourcePaths []string
+		}{
+			{
+				Name:           "ignore no files",
+				IgnorePatterns: []glob.Glob{},
+				ExpectedSourcePaths: []string{
+					"testdata/parsing/ignore/dashboard.yaml",
+					"testdata/parsing/ignore/dashboard.json",
+				},
+			},
+			{
+				Name:           "ignore json files",
+				IgnorePatterns: []glob.Glob{glob.MustCompile("*.json")},
+				ExpectedSourcePaths: []string{
+					"testdata/parsing/ignore/dashboard.yaml",
+				},
+			},
+			{
+				Name:           "ignore yaml files",
+				IgnorePatterns: []glob.Glob{glob.MustCompile("*.yaml")},
+				ExpectedSourcePaths: []string{
+					"testdata/parsing/ignore/dashboard.json",
+				},
+			},
+			{
+				Name:                "ignore json/yaml files",
+				IgnorePatterns:      []glob.Glob{glob.MustCompile("*.json"), glob.MustCompile("*.yaml")},
+				ExpectedSourcePaths: []string{},
+			},
+		}
+
+		for _, test := range tests {
+			t.Run(test.Name, func(t *testing.T) {
+				parser := grizzly.DefaultParser(registry, nil, nil, grizzly.ParserIgnorePatterns(test.IgnorePatterns))
+				parseOpts := grizzly.ParserOptions{
+					DefaultResourceKind: "",
+					DefaultFolderUID:    grafana.DefaultFolder,
+				}
+				resources, _ := parser.Parse(resourcePath, parseOpts)
+				sourcePaths := make([]string, resources.Len())
+				for i, resource := range resources.AsList() {
+					sourcePaths[i] = resource.Source.Path
+				}
+				require.ElementsMatch(t, test.ExpectedSourcePaths, sourcePaths)
 			})
 		}
 	})
