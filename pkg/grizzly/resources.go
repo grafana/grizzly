@@ -154,6 +154,19 @@ func (r *Resource) GetSpecValue(key string) interface{} {
 	return r.Spec()[key]
 }
 
+func (r *Resource) GetSpecValueInt(key string) (int, bool) {
+	valInt, ok := r.Spec()[key].(int)
+	if ok {
+		return valInt, true
+	}
+	valFloat64, ok := r.Spec()[key].(float64)
+	if ok {
+		return int(valFloat64), true
+	}
+
+	return 0, false
+}
+
 func (r *Resource) SetSpecValue(key string, value interface{}) {
 	spec := r.Spec()
 	spec[key] = value
