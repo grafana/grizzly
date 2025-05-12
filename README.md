@@ -1,5 +1,8 @@
 # Grizzly: Manage your Observability Systems
 
+> [!IMPORTANT]
+> Grizzly has been marked for deprecation and will be superseded by [grafanactl](https://github.com/grafana/grafanactl). See this [discussion](https://github.com/grafana/grafanactl/discussions/97) for more information.
+
 Grafana Grizzly is a command line tool that allows you to manage your observability resources as code.
 
 Now you can define your dashboards, alerting and recording rules,… all from within your codebase.
