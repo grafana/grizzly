@@ -23,8 +23,15 @@ test-clean:
 test:
 	go test -v ./cmd/... ./internal/... ./pkg/...
 
+testsum:
+	gotestsum ./cmd/... ./pkg/...
+
 integration: run-test-image-locally dev
 	go test -v ./integration/...
+	make stop-test-image-locally
+
+integrationsum: run-test-image-locally dev
+	gotestsum ./integration/...
 	make stop-test-image-locally
 
 # Compilation
