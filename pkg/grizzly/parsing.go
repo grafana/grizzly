@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/gobwas/glob"
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -40,6 +41,7 @@ type Parser interface {
 
 type parsersConfig struct {
 	continueOnError bool
+	ignorePatterns  []glob.Glob
 }
 
 type ParserOpt func(config *parsersConfig)
@@ -47,6 +49,12 @@ type ParserOpt func(config *parsersConfig)
 func ParserContinueOnError(continueOnError bool) ParserOpt {
 	return func(config *parsersConfig) {
 		config.continueOnError = continueOnError
+	}
+}
+
+func ParserIgnorePatterns(ignorePatterns []glob.Glob) ParserOpt {
+	return func(config *parsersConfig) {
+		config.ignorePatterns = ignorePatterns
 	}
 }
 
@@ -63,7 +71,7 @@ func DefaultParser(registry Registry, targets []string, jsonnetPaths []string, o
 			NewJSONParser(registry),
 			NewYAMLParser(registry),
 			NewJsonnetParser(registry, jsonnetPaths),
-		}, config.continueOnError),
+		}, config.continueOnError, config.ignorePatterns),
 		targets,
 	)
 }
@@ -111,12 +119,14 @@ func (parser *FilteredParser) Parse(resourcePath string, options ParserOptions) 
 type ChainParser struct {
 	formatParsers   []FormatParser
 	continueOnError bool
+	ignorePatterns  []glob.Glob
 }
 
-func NewChainParser(formatParsers []FormatParser, continueOnError bool) *ChainParser {
+func NewChainParser(formatParsers []FormatParser, continueOnError bool, ignorePatterns []glob.Glob) *ChainParser {
 	return &ChainParser{
 		formatParsers:   formatParsers,
 		continueOnError: continueOnError,
+		ignorePatterns:  ignorePatterns,
 	}
 }
 
@@ -154,6 +164,11 @@ func (parser *ChainParser) Parse(resourcePath string, options ParserOptions) (Re
 			return nil
 		}
 
+		if parser.isIgnored(path) {
+			log.Debugf("Ignoring %s", path)
+			return nil
+		}
+
 		r, err := parser.parseFile(path, options)
 		if err != nil {
 			finalErr = multierror.Append(finalErr, err)
@@ -186,6 +201,16 @@ func (parser *ChainParser) parseFile(file string, options ParserOptions) (Resour
 	}
 
 	return Resources{}, NewWarning(NewUnrecognisedFormatError(file))
+}
+
+func (parser *ChainParser) isIgnored(file string) bool {
+	for _, p := range parser.ignorePatterns {
+		if p.Match(file) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func parseAny(registry Registry, data any, resourceKind, folderUID string, source Source) (Resources, error) {

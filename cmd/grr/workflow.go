@@ -7,6 +7,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/go-clix/cli"
+	"github.com/gobwas/glob"
 	"github.com/grafana/grizzly/pkg/config"
 	"github.com/grafana/grizzly/pkg/grizzly"
 	"github.com/grafana/grizzly/pkg/grizzly/notifier"
@@ -387,8 +388,13 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 			watchPaths = args[1:]
 		}
 
+		ignorePatterns, err := getIgnorePatterns(opts)
+		if err != nil {
+			return err
+		}
+
 		targets := currentContext.GetTargets(opts.Targets)
-		parser := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(true))
+		parser := grizzly.DefaultParser(registry, targets, opts.JsonnetPaths, grizzly.ParserContinueOnError(true), grizzly.ParserIgnorePatterns(ignorePatterns))
 		parserOpts := grizzly.ParserOptions{
 			DefaultResourceKind: resourceKind,
 			DefaultFolderUID:    folderUID,
@@ -422,6 +428,7 @@ func serveCmd(registry grizzly.Registry) *cli.Command {
 	cmd.Flags().StringVar(&opts.ProxyListenAddr, "listen", "", "Address on which the server will listen")
 	cmd.Flags().IntVarP(&opts.ProxyPort, "port", "p", 8080, "Port on which the server will listen")
 	cmd.Flags().StringVarP(&opts.WatchScript, "script", "S", "", "Script to execute on filesystem change")
+	cmd.Flags().StringArrayVarP(&opts.IgnorePatterns, "ignore", "i", []string{}, "Glob pattern for ignoring files")
 	cmd = initialiseOnlySpec(cmd, &opts)
 	return initialiseCmd(cmd, &opts)
 }
@@ -624,4 +631,18 @@ func getEventFormatter() grizzly.EventFormatter {
 	}
 
 	return grizzly.EventToPlainText
+}
+
+func getIgnorePatterns(opts Opts) ([]glob.Glob, error) {
+	ignorePatterns := make([]glob.Glob, len(opts.IgnorePatterns))
+
+	for i, pattern := range opts.IgnorePatterns {
+		g, err := glob.Compile(pattern)
+		if err != nil {
+			return nil, err
+		}
+		ignorePatterns[i] = g
+	}
+
+	return ignorePatterns, nil
 }
