@@ -64,7 +64,12 @@ func (c *alertRuleProxyConfigurator) alertRuleGroupJSONGetHandler(s grizzly.Serv
 			return
 		}
 
-		interval := time.Duration(ruleGroup.GetSpecValue("interval").(int)) * time.Second
+		intervalInt, ok := ruleGroup.GetSpecValueInt("interval")
+		if !ok {
+			httputils.Error(w, fmt.Sprintf("Could not parse alert rule interval as int: %s", fullUID), fmt.Errorf("could not parse alert rule interval as int: %s", fullUID), http.StatusBadRequest)
+			return
+		}
+		interval := time.Duration(intervalInt) * time.Second
 
 		rules := ruleGroup.GetSpecValue("rules").([]any)
 		formattedRules := make([]map[string]any, 0, len(rules))
@@ -115,7 +120,12 @@ func (c *alertRuleProxyConfigurator) alertRuleJSONGetHandler(s grizzly.Server) h
 			return
 		}
 
-		interval := time.Duration(ruleGroup.GetSpecValue("interval").(int)) * time.Second
+		intervalInt, ok := ruleGroup.GetSpecValueInt("interval")
+		if !ok {
+			httputils.Error(w, fmt.Sprintf("Could not parse alert rule interval as int: %s", ruleUID), fmt.Errorf("could not parse alert rule interval as int: %s", ruleUID), http.StatusBadRequest)
+			return
+		}
+		interval := time.Duration(intervalInt) * time.Second
 
 		httputils.WriteJSON(w, toGrafanaAlert(rule, interval))
 	}
