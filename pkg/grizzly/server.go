@@ -343,7 +343,13 @@ func (s *Server) executeWatchScript() ([]byte, error) {
 	var stderr bytes.Buffer
 	log.Debugf("[watch script] executing %s", s.watchScript)
 
-	cmd := exec.Command("sh", "-c", s.watchScript)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", s.watchScript)
+	} else {
+		cmd = exec.Command("sh", "-c", s.watchScript)
+	}
+
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
