@@ -12,6 +12,6 @@ metadata:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: grafana/grizzly
 spec:
-  type: service
+  type: tool
   owner: group:default/platform-monitoring
-  lifecycle: production
+  lifecycle: deprecation
